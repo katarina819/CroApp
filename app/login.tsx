@@ -1,40 +1,40 @@
-import { useState } from 'react';
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { router } from "expo-router";
+import { useState } from "react";
 import {
-  View,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  StyleSheet,
+  ActivityIndicator,
   Alert,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
-  ActivityIndicator
-} from 'react-native';
-import { router } from 'expo-router';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { API_ENDPOINTS } from './config/api'; // 🔥 DODAJ OVAJ IMPORT
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
+} from "react-native";
+import { API_ENDPOINTS } from "./config/api"; // 🔥 DODAJ OVAJ IMPORT
 
 export default function LoginScreen() {
-  const [username, setUsername] = useState('');
-  const [password, setPassword] = useState('');
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
   const handleLogin = async () => {
     if (!username.trim() || !password.trim()) {
-      Alert.alert('Greška', 'Molimo unesite email/telefon i lozinku');
+      Alert.alert("Greška", "Molimo unesite email/telefon i lozinku");
       return;
     }
 
     setIsLoading(true);
     try {
       // 🔥 PROMIJENI OVAJ URL
-      console.log('🔗 Login URL:', API_ENDPOINTS.LOGIN);
-      
+      console.log("🔗 Login URL:", API_ENDPOINTS.LOGIN);
+
       const response = await fetch(API_ENDPOINTS.LOGIN, {
-        method: 'POST',
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify({ username: username.trim(), password }),
       });
@@ -42,19 +42,22 @@ export default function LoginScreen() {
       const data = await response.json();
 
       if (response.ok) {
-        await AsyncStorage.setItem('token', data.token);
-        await AsyncStorage.setItem('firstName', data.firstName);
-        await AsyncStorage.setItem('lastName', data.lastName);
-        
-        Alert.alert('Uspjeh!', `Dobrodošli, ${data.firstName}!`, [
-          { text: 'OK', onPress: () => router.replace('/dashboard') }
+        await AsyncStorage.setItem("token", data.token);
+        await AsyncStorage.setItem("firstName", data.firstName);
+        await AsyncStorage.setItem("lastName", data.lastName);
+
+        Alert.alert("Uspjeh!", `Dobrodošli, ${data.firstName}!`, [
+          { text: "OK", onPress: () => router.replace("/(tabs)/index") },
         ]);
       } else {
-        Alert.alert('Greška', data.message || data || 'Prijava nije uspjela. Provjerite podatke.');
+        Alert.alert(
+          "Greška",
+          data.message || data || "Prijava nije uspjela. Provjerite podatke.",
+        );
       }
     } catch (error) {
-      console.error('Greška prilikom prijave:', error);
-      Alert.alert('Greška', 'Došlo je do greške. Pokušajte ponovno.');
+      console.error("Greška prilikom prijave:", error);
+      Alert.alert("Greška", "Došlo je do greške. Pokušajte ponovno.");
     } finally {
       setIsLoading(false);
     }
@@ -63,7 +66,7 @@ export default function LoginScreen() {
   return (
     <KeyboardAvoidingView
       style={styles.container}
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
     >
       <ScrollView contentContainerStyle={styles.scrollContainer}>
         <View style={styles.content}>
@@ -111,14 +114,17 @@ export default function LoginScreen() {
             </TouchableOpacity>
 
             <View style={styles.footer}>
-              <TouchableOpacity onPress={() => router.push('/register')}>
+              <TouchableOpacity onPress={() => router.push("/register")}>
                 <Text style={styles.linkText}>
-                  Nemate račun? <Text style={styles.linkBold}>Registrirajte se</Text>
+                  Nemate račun?{" "}
+                  <Text style={styles.linkBold}>Registrirajte se</Text>
                 </Text>
               </TouchableOpacity>
-              
+
               <TouchableOpacity style={styles.forgotPassword}>
-                <Text style={styles.forgotPasswordText}>Zaboravili ste lozinku?</Text>
+                <Text style={styles.forgotPasswordText}>
+                  Zaboravili ste lozinku?
+                </Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -133,92 +139,92 @@ export default function LoginScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f5f7fa',
+    backgroundColor: "#f5f7fa",
   },
   scrollContainer: {
     flexGrow: 1,
   },
   content: {
     flex: 1,
-    justifyContent: 'center',
+    justifyContent: "center",
     paddingHorizontal: 24,
     paddingVertical: 40,
   },
   title: {
     fontSize: 32,
-    fontWeight: 'bold',
-    color: '#333',
+    fontWeight: "bold",
+    color: "#333",
     marginBottom: 8,
-    textAlign: 'center',
+    textAlign: "center",
   },
   subtitle: {
     fontSize: 16,
-    color: '#666',
+    color: "#666",
     marginBottom: 48,
-    textAlign: 'center',
+    textAlign: "center",
   },
   form: {
-    width: '100%',
+    width: "100%",
   },
   inputContainer: {
     marginBottom: 20,
   },
   label: {
     fontSize: 14,
-    fontWeight: '500',
-    color: '#333',
+    fontWeight: "500",
+    color: "#333",
     marginBottom: 8,
   },
   input: {
-    backgroundColor: '#fff',
+    backgroundColor: "#fff",
     borderRadius: 12,
     paddingHorizontal: 16,
     paddingVertical: 14,
     fontSize: 16,
     borderWidth: 1,
-    borderColor: '#e0e0e0',
-    color: '#333',
+    borderColor: "#e0e0e0",
+    color: "#333",
   },
   button: {
-    backgroundColor: '#667eea',
+    backgroundColor: "#667eea",
     borderRadius: 12,
     paddingVertical: 16,
     marginTop: 24,
-    alignItems: 'center',
-    shadowColor: '#667eea',
+    alignItems: "center",
+    shadowColor: "#667eea",
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 8,
     elevation: 5,
   },
   buttonDisabled: {
-    backgroundColor: '#a0aec0',
+    backgroundColor: "#a0aec0",
     opacity: 0.7,
   },
   buttonText: {
-    color: '#fff',
+    color: "#fff",
     fontSize: 16,
-    fontWeight: '600',
-    textAlign: 'center',
+    fontWeight: "600",
+    textAlign: "center",
   },
   footer: {
     marginTop: 24,
-    alignItems: 'center',
+    alignItems: "center",
   },
   linkText: {
     fontSize: 14,
-    color: '#666',
+    color: "#666",
   },
   linkBold: {
-    color: '#667eea',
-    fontWeight: '600',
+    color: "#667eea",
+    fontWeight: "600",
   },
   forgotPassword: {
     marginTop: 16,
   },
   forgotPasswordText: {
     fontSize: 14,
-    color: '#999',
-    textDecorationLine: 'underline',
+    color: "#999",
+    textDecorationLine: "underline",
   },
 });
