@@ -22,7 +22,7 @@ export default function LoginScreen() {
 
   const handleLogin = async () => {
     if (!username.trim() || !password.trim()) {
-      Alert.alert("Greška", "Molimo unesite email/telefon i lozinku");
+      Alert.alert("Greška", "Molimo unesite korisničko ime i lozinku");
       return;
     }
 
@@ -45,9 +45,10 @@ export default function LoginScreen() {
         await AsyncStorage.setItem("token", data.token);
         await AsyncStorage.setItem("firstName", data.firstName);
         await AsyncStorage.setItem("lastName", data.lastName);
+        
 
         Alert.alert("Uspjeh!", `Dobrodošli, ${data.firstName}!`, [
-          { text: "OK", onPress: () => router.replace("/(tabs)/index") },
+          { text: "OK", onPress: () => router.replace("/(tabs)") },
         ]);
       } else {
         Alert.alert(
@@ -75,10 +76,10 @@ export default function LoginScreen() {
 
           <View style={styles.form}>
             <View style={styles.inputContainer}>
-              <Text style={styles.label}>Email ili telefon</Text>
+              <Text style={styles.label}>Korisničko ime</Text>
               <TextInput
                 style={styles.input}
-                placeholder="Unesite email ili telefon"
+                placeholder="Unesite korisničko ime"
                 placeholderTextColor="#999"
                 value={username}
                 onChangeText={setUsername}

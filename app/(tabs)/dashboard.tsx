@@ -1,35 +1,42 @@
-import { 
-  View, 
-  Text, 
-  StyleSheet, 
-  TouchableOpacity, 
-  Alert, 
-  TextInput, 
-  Modal, 
-  FlatList, 
-  Platform, 
-  ActivityIndicator, 
-  ScrollView,
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import * as Location from "expo-location";
+import { router } from "expo-router";
+import { useCallback, useEffect, useRef, useState } from "react";
+import {
+  ActivityIndicator,
+  Alert,
+  FlatList,
   Keyboard,
+  Modal,
+  Platform,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
   TouchableWithoutFeedback,
-  Image
-} from 'react-native';
-import { router } from 'expo-router';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useEffect, useState, useRef, useCallback } from 'react';
-import MapView, { Marker, Region, Circle } from 'react-native-maps';
-import * as Location from 'expo-location';
-import { searchPlaces, placeCategories, getPlacesInRadius, Place } from '../services/locationService';
+  View,
+} from "react-native";
+import MapView, { Circle, Marker, Region } from "react-native-maps";
+import {
+  getPlacesInRadius,
+  Place,
+  placeCategories,
+  searchPlaces,
+} from "../services/locationService";
 
 export default function DashboardScreen() {
-  const [firstName, setFirstName] = useState('');
-  const [lastName, setLastName] = useState('');
-  const [searchQuery, setSearchQuery] = useState('');
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
+  const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<Place[]>([]);
   const [showSearchResults, setShowSearchResults] = useState(false);
   const [selectedLocation, setSelectedLocation] = useState<Place | null>(null);
   const [modalVisible, setModalVisible] = useState(false);
-  const [userLocation, setUserLocation] = useState<{ latitude: number; longitude: number } | null>(null);
+  const [userLocation, setUserLocation] = useState<{
+    latitude: number;
+    longitude: number;
+  } | null>(null);
   const [locationPermission, setLocationPermission] = useState<boolean>(false);
   const [mapRegion, setMapRegion] = useState<Region | null>(null);
   const [isSearching, setIsSearching] = useState(false);
@@ -39,7 +46,6 @@ export default function DashboardScreen() {
   const [isLoadingPlaces, setIsLoadingPlaces] = useState(false);
   const [showRadiusCircle, setShowRadiusCircle] = useState(true);
   const [showFilterPanel, setShowFilterPanel] = useState(false); // 🔥 NOVO: kontrolira prikaz filter panela
-  const [activeTab, setActiveTab] = useState('home');
 
   const mapRef = useRef<MapView>(null);
   const searchInputRef = useRef<TextInput>(null);
@@ -54,10 +60,16 @@ export default function DashboardScreen() {
   useEffect(() => {
     loadUserData();
     requestLocationPermission();
-    
-    const keyboardDidShowListener = Keyboard.addListener('keyboardDidShow', () => {});
-    const keyboardDidHideListener = Keyboard.addListener('keyboardDidHide', () => {});
-    
+
+    const keyboardDidShowListener = Keyboard.addListener(
+      "keyboardDidShow",
+      () => {},
+    );
+    const keyboardDidHideListener = Keyboard.addListener(
+      "keyboardDidHide",
+      () => {},
+    );
+
     return () => {
       keyboardDidShowListener.remove();
       keyboardDidHideListener.remove();
@@ -72,21 +84,24 @@ export default function DashboardScreen() {
 
   const loadUserData = async () => {
     try {
-      const first = await AsyncStorage.getItem('firstName');
-      const last = await AsyncStorage.getItem('lastName');
+      const first = await AsyncStorage.getItem("firstName");
+      const last = await AsyncStorage.getItem("lastName");
       if (first) setFirstName(first);
       if (last) setLastName(last);
     } catch (error) {
-      console.error('Error loading user data:', error);
+      console.error("Error loading user data:", error);
     }
   };
 
   const requestLocationPermission = async () => {
     try {
       const { status } = await Location.requestForegroundPermissionsAsync();
-      
-      if (status !== 'granted') {
-        Alert.alert('Dozvola za lokaciju', 'Za prikazivanje vaše trenutne lokacije na mapi, potrebno je omogućiti pristup lokaciji.');
+
+      if (status !== "granted") {
+        Alert.alert(
+          "Dozvola za lokaciju",
+          "Za prikazivanje vaše trenutne lokacije na mapi, potrebno je omogućiti pristup lokaciji.",
+        );
         setLocationPermission(false);
         return;
       }
@@ -94,7 +109,7 @@ export default function DashboardScreen() {
       setLocationPermission(true);
       getCurrentLocation();
     } catch (error) {
-      console.error('Error requesting location permission:', error);
+      console.error("Error requesting location permission:", error);
     }
   };
 
@@ -103,23 +118,26 @@ export default function DashboardScreen() {
       const location = await Location.getCurrentPositionAsync({
         accuracy: Location.Accuracy.High,
       });
-      
+
       const userLoc = {
         latitude: location.coords.latitude,
         longitude: location.coords.longitude,
       };
-      
+
       setUserLocation(userLoc);
-      
+
       if (mapRef.current) {
-        mapRef.current.animateToRegion({
-          latitude: userLoc.latitude,
-          longitude: userLoc.longitude,
-          latitudeDelta: 0.05,
-          longitudeDelta: 0.05,
-        }, 1000);
+        mapRef.current.animateToRegion(
+          {
+            latitude: userLoc.latitude,
+            longitude: userLoc.longitude,
+            latitudeDelta: 0.05,
+            longitudeDelta: 0.05,
+          },
+          1000,
+        );
       }
-      
+
       setMapRegion({
         latitude: userLoc.latitude,
         longitude: userLoc.longitude,
@@ -127,30 +145,30 @@ export default function DashboardScreen() {
         longitudeDelta: 0.05,
       });
     } catch (error) {
-      console.error('Error getting location:', error);
-      Alert.alert('Greška', 'Nije moguće dohvatiti trenutnu lokaciju.');
+      console.error("Error getting location:", error);
+      Alert.alert("Greška", "Nije moguće dohvatiti trenutnu lokaciju.");
     }
   };
 
   const loadPlacesInRadius = async () => {
     if (!userLocation) return;
-    
+
     if (selectedTypes.length === 0) {
       setPlaces([]);
       return;
     }
-    
+
     setIsLoadingPlaces(true);
     try {
       const placesData = await getPlacesInRadius(
         userLocation.latitude,
         userLocation.longitude,
         radius,
-        selectedTypes as any
+        selectedTypes as any,
       );
       setPlaces(placesData);
     } catch (error) {
-      console.error('Error loading places:', error);
+      console.error("Error loading places:", error);
     } finally {
       setIsLoadingPlaces(false);
     }
@@ -158,20 +176,20 @@ export default function DashboardScreen() {
 
   const handleSearch = async () => {
     if (!searchQuery.trim()) return;
-    
+
     setIsSearching(true);
     Keyboard.dismiss();
     try {
       const results = await searchPlaces(
         searchQuery,
         userLocation?.latitude,
-        userLocation?.longitude
+        userLocation?.longitude,
       );
       setSearchResults(results);
       setShowSearchResults(true);
     } catch (error) {
-      console.error('Search error:', error);
-      Alert.alert('Greška', 'Pretraga nije uspjela. Pokušajte ponovno.');
+      console.error("Search error:", error);
+      Alert.alert("Greška", "Pretraga nije uspjela. Pokušajte ponovno.");
     } finally {
       setIsSearching(false);
     }
@@ -179,14 +197,17 @@ export default function DashboardScreen() {
 
   const handleSelectSearchResult = (place: Place) => {
     if (mapRef.current) {
-      mapRef.current.animateToRegion({
-        latitude: place.latitude,
-        longitude: place.longitude,
-        latitudeDelta: 0.02,
-        longitudeDelta: 0.02,
-      }, 1000);
+      mapRef.current.animateToRegion(
+        {
+          latitude: place.latitude,
+          longitude: place.longitude,
+          latitudeDelta: 0.02,
+          longitudeDelta: 0.02,
+        },
+        1000,
+      );
     }
-    
+
     setSearchQuery(place.name);
     setShowSearchResults(false);
     setSelectedLocation(place);
@@ -194,8 +215,8 @@ export default function DashboardScreen() {
   };
 
   const toggleTypeFilter = useCallback((type: string) => {
-    setSelectedTypes(prev => 
-      prev.includes(type) ? prev.filter(t => t !== type) : [...prev, type]
+    setSelectedTypes((prev) =>
+      prev.includes(type) ? prev.filter((t) => t !== type) : [...prev, type],
     );
   }, []);
 
@@ -204,14 +225,14 @@ export default function DashboardScreen() {
   }, []);
 
   const handleLogout = async () => {
-    Alert.alert('Odjava', 'Jeste li sigurni da se želite odjaviti?', [
-      { text: 'Otkaži', style: 'cancel' },
+    Alert.alert("Odjava", "Jeste li sigurni da se želite odjaviti?", [
+      { text: "Otkaži", style: "cancel" },
       {
-        text: 'Odjavi se',
-        style: 'destructive',
+        text: "Odjavi se",
+        style: "destructive",
         onPress: async () => {
           await AsyncStorage.clear();
-          router.replace('/login');
+          router.replace("/login");
         },
       },
     ]);
@@ -219,29 +240,21 @@ export default function DashboardScreen() {
 
   const getMarkerIcon = (type: string) => {
     const category = placeCategories[type as keyof typeof placeCategories];
-    return category?.icon || '📍';
+    return category?.icon || "📍";
   };
 
   const getMarkerColor = (type: string) => {
     const category = placeCategories[type as keyof typeof placeCategories];
-    return category?.color || '#95A5A6';
-  };
-
-  const navigateToTab = (tabName: string) => {
-    setActiveTab(tabName);
-    if (tabName === 'profile') {
-      // Ovdje se odjava nalazi u profilu
-      handleLogout();
-    } else if (tabName !== 'home') {
-      Alert.alert('Uskoro', `${tabName} sekcija dolazi uskoro!`);
-    }
+    return category?.color || "#95A5A6";
   };
 
   return (
-    <TouchableWithoutFeedback onPress={() => {
-      Keyboard.dismiss();
-      setShowSearchResults(false);
-    }}>
+    <TouchableWithoutFeedback
+      onPress={() => {
+        Keyboard.dismiss();
+        setShowSearchResults(false);
+      }}
+    >
       <View style={styles.container}>
         {/* Cijeli ekran je mapa */}
         <MapView
@@ -256,7 +269,7 @@ export default function DashboardScreen() {
           loadingBackgroundColor="#ffffff"
           moveOnMarkerPress={true}
           zoomTapEnabled={true}
-          zoomControlEnabled={Platform.OS === 'android'}
+          zoomControlEnabled={Platform.OS === "android"}
           scrollEnabled={true}
           zoomEnabled={true}
           rotateEnabled={true}
@@ -277,7 +290,7 @@ export default function DashboardScreen() {
               zIndex={1}
             />
           )}
-          
+
           {userLocation && (
             <Marker
               coordinate={userLocation}
@@ -289,7 +302,7 @@ export default function DashboardScreen() {
               </View>
             </Marker>
           )}
-          
+
           {places.map((place) => (
             <Marker
               key={place.id}
@@ -304,38 +317,51 @@ export default function DashboardScreen() {
                 setModalVisible(true);
               }}
             >
-              <View style={[styles.marker, { backgroundColor: getMarkerColor(place.type) }]}>
-                <Text style={styles.markerText}>{getMarkerIcon(place.type)}</Text>
+              <View
+                style={[
+                  styles.marker,
+                  { backgroundColor: getMarkerColor(place.type) },
+                ]}
+              >
+                <Text style={styles.markerText}>
+                  {getMarkerIcon(place.type)}
+                </Text>
               </View>
             </Marker>
           ))}
         </MapView>
 
         {/* Dugme za otvaranje filter panela */}
-        <TouchableOpacity 
-          style={styles.filterButton} 
+        <TouchableOpacity
+          style={styles.filterButton}
           onPress={() => setShowFilterPanel(!showFilterPanel)}
         >
           <Text style={styles.filterButtonText}>🔍</Text>
         </TouchableOpacity>
 
         {/* Centriraj na trenutnu lokaciju */}
-        <TouchableOpacity style={styles.centerButton} onPress={getCurrentLocation}>
+        <TouchableOpacity
+          style={styles.centerButton}
+          onPress={getCurrentLocation}
+        >
           <Text style={styles.centerButtonText}>📍</Text>
         </TouchableOpacity>
 
         {/* Toggle Radius Circle Button */}
-        <TouchableOpacity style={styles.toggleRadiusButton} onPress={() => setShowRadiusCircle(!showRadiusCircle)}>
+        <TouchableOpacity
+          style={styles.toggleRadiusButton}
+          onPress={() => setShowRadiusCircle(!showRadiusCircle)}
+        >
           <Text style={styles.toggleRadiusText}>
-            {showRadiusCircle ? '🔘' : '⚪'}
+            {showRadiusCircle ? "🔘" : "⚪"}
           </Text>
         </TouchableOpacity>
 
         {/* Padajući filter panel */}
         {showFilterPanel && (
           <View style={styles.filterPanel}>
-            <TouchableOpacity 
-              style={styles.closePanelButton} 
+            <TouchableOpacity
+              style={styles.closePanelButton}
               onPress={() => setShowFilterPanel(false)}
             >
               <Text style={styles.closePanelText}>✕</Text>
@@ -354,7 +380,10 @@ export default function DashboardScreen() {
                   onSubmitEditing={handleSearch}
                   returnKeyType="search"
                 />
-                <TouchableOpacity style={styles.panelSearchButton} onPress={handleSearch}>
+                <TouchableOpacity
+                  style={styles.panelSearchButton}
+                  onPress={handleSearch}
+                >
                   <Text style={styles.panelSearchButtonText}>Traži</Text>
                 </TouchableOpacity>
               </View>
@@ -370,11 +399,15 @@ export default function DashboardScreen() {
                         style={styles.panelSearchResultItem}
                         onPress={() => handleSelectSearchResult(item)}
                       >
-                        <Text style={styles.panelSearchResultIcon}>{getMarkerIcon(item.type)}</Text>
+                        <Text style={styles.panelSearchResultIcon}>
+                          {getMarkerIcon(item.type)}
+                        </Text>
                         <View style={styles.panelSearchResultContent}>
-                          <Text style={styles.panelSearchResultTitle}>{item.name}</Text>
+                          <Text style={styles.panelSearchResultTitle}>
+                            {item.name}
+                          </Text>
                           <Text style={styles.panelSearchResultType}>
-                            {placeCategories[item.type]?.name || 'Lokacija'}
+                            {placeCategories[item.type]?.name || "Lokacija"}
                           </Text>
                         </View>
                       </TouchableOpacity>
@@ -388,7 +421,8 @@ export default function DashboardScreen() {
               {/* Filter header */}
               <View style={styles.panelFilterHeader}>
                 <Text style={styles.panelFilterTitle}>
-                  📍 Kategorije {selectedTypes.length > 0 && `(${selectedTypes.length})`}
+                  📍 Kategorije{" "}
+                  {selectedTypes.length > 0 && `(${selectedTypes.length})`}
                 </Text>
                 {selectedTypes.length > 0 && (
                   <TouchableOpacity onPress={clearAllFilters}>
@@ -398,9 +432,9 @@ export default function DashboardScreen() {
               </View>
 
               {/* Filters */}
-              <ScrollView 
-                horizontal 
-                showsHorizontalScrollIndicator={false} 
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
                 style={styles.panelFiltersContainer}
                 contentContainerStyle={styles.panelFiltersContent}
               >
@@ -409,15 +443,21 @@ export default function DashboardScreen() {
                     key={key}
                     style={[
                       styles.panelFilterChip,
-                      selectedTypes.includes(key) && styles.panelFilterChipActive,
+                      selectedTypes.includes(key) &&
+                        styles.panelFilterChipActive,
                     ]}
                     onPress={() => toggleTypeFilter(key)}
                   >
-                    <Text style={styles.panelFilterChipIcon}>{category.icon}</Text>
-                    <Text style={[
-                      styles.panelFilterChipText,
-                      selectedTypes.includes(key) && styles.panelFilterChipTextActive,
-                    ]}>
+                    <Text style={styles.panelFilterChipIcon}>
+                      {category.icon}
+                    </Text>
+                    <Text
+                      style={[
+                        styles.panelFilterChipText,
+                        selectedTypes.includes(key) &&
+                          styles.panelFilterChipTextActive,
+                      ]}
+                    >
                       {category.name}
                     </Text>
                   </TouchableOpacity>
@@ -426,15 +466,25 @@ export default function DashboardScreen() {
 
               {/* Radius Controller */}
               <View style={styles.panelRadiusContainer}>
-                <Text style={styles.panelRadiusLabel}>📏 Radijus: {radius} km</Text>
+                <Text style={styles.panelRadiusLabel}>
+                  📏 Radijus: {radius} km
+                </Text>
                 <View style={styles.panelRadiusButtons}>
                   {[1, 5, 10, 20, 50].map((r) => (
                     <TouchableOpacity
                       key={r}
-                      style={[styles.panelRadiusButton, radius === r && styles.panelRadiusButtonActive]}
+                      style={[
+                        styles.panelRadiusButton,
+                        radius === r && styles.panelRadiusButtonActive,
+                      ]}
                       onPress={() => setRadius(r)}
                     >
-                      <Text style={[styles.panelRadiusButtonText, radius === r && styles.panelRadiusButtonTextActive]}>
+                      <Text
+                        style={[
+                          styles.panelRadiusButtonText,
+                          radius === r && styles.panelRadiusButtonTextActive,
+                        ]}
+                      >
                         {r}km
                       </Text>
                     </TouchableOpacity>
@@ -453,14 +503,16 @@ export default function DashboardScreen() {
               )}
 
               {/* No results message */}
-              {!isLoadingPlaces && places.length === 0 && selectedTypes.length > 0 && (
-                <View style={styles.panelNoResultsMessage}>
-                  <Text style={styles.panelNoResultsIcon}>🗺️</Text>
-                  <Text style={styles.panelNoResultsText}>
-                    Nema pronađenih lokacija u radijusu od {radius} km
-                  </Text>
-                </View>
-              )}
+              {!isLoadingPlaces &&
+                places.length === 0 &&
+                selectedTypes.length > 0 && (
+                  <View style={styles.panelNoResultsMessage}>
+                    <Text style={styles.panelNoResultsIcon}>🗺️</Text>
+                    <Text style={styles.panelNoResultsText}>
+                      Nema pronađenih lokacija u radijusu od {radius} km
+                    </Text>
+                  </View>
+                )}
 
               {isLoadingPlaces && (
                 <View style={styles.panelLoading}>
@@ -471,31 +523,6 @@ export default function DashboardScreen() {
             </ScrollView>
           </View>
         )}
-
-        {/* Bottom Navigation */}
-        <View style={styles.bottomNav}>
-          <TouchableOpacity style={styles.navItem} onPress={() => navigateToTab('home')}>
-            <Text style={[styles.navIcon, activeTab === 'home' && styles.navIconActive]}>🏠</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity style={styles.navItem} onPress={() => navigateToTab('videos')}>
-            <Text style={[styles.navIcon, activeTab === 'videos' && styles.navIconActive]}>🎥</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity style={styles.navItem} onPress={() => navigateToTab('messages')}>
-            <Text style={[styles.navIcon, activeTab === 'messages' && styles.navIconActive]}>💬</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity style={styles.navItem} onPress={() => navigateToTab('search')}>
-            <Text style={[styles.navIcon, activeTab === 'search' && styles.navIconActive]}>🔍</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity style={styles.navItem} onPress={() => navigateToTab('profile')}>
-            <View style={[styles.profileIcon, activeTab === 'profile' && styles.profileIconActive]}>
-              <Text style={styles.profileIconText}>👤</Text>
-            </View>
-          </TouchableOpacity>
-        </View>
 
         {/* Location Details Modal */}
         <Modal
@@ -508,16 +535,19 @@ export default function DashboardScreen() {
             <View style={styles.modalContent}>
               <Text style={styles.modalTitle}>{selectedLocation?.name}</Text>
               <Text style={styles.modalRating}>
-                {placeCategories[selectedLocation?.type || 'other']?.icon}{' '}
-                {placeCategories[selectedLocation?.type || 'other']?.name}
+                {placeCategories[selectedLocation?.type || "other"]?.icon}{" "}
+                {placeCategories[selectedLocation?.type || "other"]?.name}
               </Text>
               <Text style={styles.modalDescription}>
-                {selectedLocation?.description || 'Više informacija o lokaciji.'}
+                {selectedLocation?.description ||
+                  "Više informacija o lokaciji."}
               </Text>
               {selectedLocation?.distance && (
-                <Text style={styles.modalDistance}>📏 Udaljenost: {selectedLocation.distance.toFixed(1)} km</Text>
+                <Text style={styles.modalDistance}>
+                  📏 Udaljenost: {selectedLocation.distance.toFixed(1)} km
+                </Text>
               )}
-              
+
               <View style={styles.modalButtons}>
                 <TouchableOpacity
                   style={[styles.modalButton, styles.modalButtonPrimary]}
@@ -537,22 +567,22 @@ export default function DashboardScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
+    backgroundColor: "#f5f5f5",
   },
   fullMap: {
     flex: 1,
   },
   filterButton: {
-    position: 'absolute',
+    position: "absolute",
     top: 50,
     left: 20,
-    backgroundColor: 'white',
+    backgroundColor: "white",
     width: 50,
     height: 50,
     borderRadius: 25,
-    justifyContent: 'center',
-    alignItems: 'center',
-    shadowColor: '#000',
+    justifyContent: "center",
+    alignItems: "center",
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.25,
     shadowRadius: 4,
@@ -563,16 +593,16 @@ const styles = StyleSheet.create({
     fontSize: 24,
   },
   centerButton: {
-    position: 'absolute',
+    position: "absolute",
     bottom: 80,
     right: 20,
-    backgroundColor: 'white',
+    backgroundColor: "white",
     width: 50,
     height: 50,
     borderRadius: 25,
-    justifyContent: 'center',
-    alignItems: 'center',
-    shadowColor: '#000',
+    justifyContent: "center",
+    alignItems: "center",
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.25,
     shadowRadius: 4,
@@ -583,16 +613,16 @@ const styles = StyleSheet.create({
     fontSize: 24,
   },
   toggleRadiusButton: {
-    position: 'absolute',
+    position: "absolute",
     bottom: 150,
     right: 20,
-    backgroundColor: 'white',
+    backgroundColor: "white",
     width: 44,
     height: 44,
     borderRadius: 22,
-    justifyContent: 'center',
-    alignItems: 'center',
-    shadowColor: '#000',
+    justifyContent: "center",
+    alignItems: "center",
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.25,
     shadowRadius: 4,
@@ -603,64 +633,64 @@ const styles = StyleSheet.create({
     fontSize: 24,
   },
   filterPanel: {
-    position: 'absolute',
+    position: "absolute",
     top: 0,
     left: 0,
     right: 0,
     bottom: 0,
-    backgroundColor: 'white',
+    backgroundColor: "white",
     zIndex: 20,
     paddingTop: 60,
     paddingHorizontal: 20,
     paddingBottom: 20,
   },
   closePanelButton: {
-    position: 'absolute',
+    position: "absolute",
     top: 50,
     right: 20,
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: '#f0f0f0',
-    justifyContent: 'center',
-    alignItems: 'center',
+    backgroundColor: "#f0f0f0",
+    justifyContent: "center",
+    alignItems: "center",
     zIndex: 25,
   },
   closePanelText: {
     fontSize: 20,
-    fontWeight: 'bold',
-    color: '#666',
+    fontWeight: "bold",
+    color: "#666",
   },
   panelSearchContainer: {
-    flexDirection: 'row',
+    flexDirection: "row",
     gap: 8,
     marginBottom: 16,
-     marginTop: 80,
+    marginTop: 80,
   },
   panelSearchInput: {
     flex: 1,
     padding: 12,
-    backgroundColor: '#f0f0f0',
+    backgroundColor: "#f0f0f0",
     borderRadius: 8,
     fontSize: 16,
   },
   panelSearchButton: {
     paddingHorizontal: 16,
     paddingVertical: 12,
-    backgroundColor: '#667eea',
+    backgroundColor: "#667eea",
     borderRadius: 8,
-    justifyContent: 'center',
+    justifyContent: "center",
   },
   panelSearchButtonText: {
-    color: 'white',
-    fontWeight: '500',
+    color: "white",
+    fontWeight: "500",
   },
   panelSearchResults: {
-    backgroundColor: 'white',
+    backgroundColor: "white",
     borderRadius: 8,
     marginBottom: 16,
     elevation: 3,
-    shadowColor: '#000',
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
@@ -669,11 +699,11 @@ const styles = StyleSheet.create({
     maxHeight: 200,
   },
   panelSearchResultItem: {
-    flexDirection: 'row',
+    flexDirection: "row",
     padding: 12,
     borderBottomWidth: 1,
-    borderBottomColor: '#eee',
-    alignItems: 'center',
+    borderBottomColor: "#eee",
+    alignItems: "center",
   },
   panelSearchResultIcon: {
     fontSize: 24,
@@ -684,29 +714,29 @@ const styles = StyleSheet.create({
   },
   panelSearchResultTitle: {
     fontSize: 14,
-    fontWeight: '500',
-    color: '#333',
+    fontWeight: "500",
+    color: "#333",
   },
   panelSearchResultType: {
     fontSize: 12,
-    color: '#999',
+    color: "#999",
     marginTop: 2,
   },
   panelFilterHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     marginBottom: 12,
   },
   panelFilterTitle: {
     fontSize: 16,
-    fontWeight: '600',
-    color: '#333',
+    fontWeight: "600",
+    color: "#333",
   },
   panelClearFilters: {
     fontSize: 12,
-    color: '#667eea',
-    fontWeight: '500',
+    color: "#667eea",
+    fontWeight: "500",
   },
   panelFiltersContainer: {
     marginBottom: 16,
@@ -715,59 +745,59 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   panelFilterChip: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     paddingHorizontal: 12,
     paddingVertical: 8,
-    backgroundColor: '#f0f0f0',
+    backgroundColor: "#f0f0f0",
     borderRadius: 20,
     marginRight: 8,
     gap: 4,
   },
   panelFilterChipActive: {
-    backgroundColor: '#667eea',
+    backgroundColor: "#667eea",
   },
   panelFilterChipIcon: {
     fontSize: 14,
   },
   panelFilterChipText: {
     fontSize: 12,
-    color: '#666',
+    color: "#666",
   },
   panelFilterChipTextActive: {
-    color: 'white',
+    color: "white",
   },
   panelRadiusContainer: {
     marginBottom: 16,
   },
   panelRadiusLabel: {
     fontSize: 14,
-    color: '#666',
+    color: "#666",
     marginBottom: 8,
   },
   panelRadiusButtons: {
-    flexDirection: 'row',
+    flexDirection: "row",
     gap: 8,
-    flexWrap: 'wrap',
+    flexWrap: "wrap",
   },
   panelRadiusButton: {
     paddingHorizontal: 12,
     paddingVertical: 6,
-    backgroundColor: '#f0f0f0',
+    backgroundColor: "#f0f0f0",
     borderRadius: 20,
   },
   panelRadiusButtonActive: {
-    backgroundColor: '#667eea',
+    backgroundColor: "#667eea",
   },
   panelRadiusButtonText: {
     fontSize: 12,
-    color: '#666',
+    color: "#666",
   },
   panelRadiusButtonTextActive: {
-    color: 'white',
+    color: "white",
   },
   panelNoFiltersMessage: {
-    alignItems: 'center',
+    alignItems: "center",
     padding: 40,
   },
   panelNoFiltersIcon: {
@@ -776,11 +806,11 @@ const styles = StyleSheet.create({
   },
   panelNoFiltersText: {
     fontSize: 16,
-    color: '#666',
-    textAlign: 'center',
+    color: "#666",
+    textAlign: "center",
   },
   panelNoResultsMessage: {
-    alignItems: 'center',
+    alignItems: "center",
     padding: 40,
   },
   panelNoResultsIcon: {
@@ -789,30 +819,30 @@ const styles = StyleSheet.create({
   },
   panelNoResultsText: {
     fontSize: 14,
-    color: '#666',
-    textAlign: 'center',
+    color: "#666",
+    textAlign: "center",
   },
   panelLoading: {
-    alignItems: 'center',
+    alignItems: "center",
     padding: 20,
   },
   panelLoadingText: {
     marginTop: 8,
     fontSize: 12,
-    color: '#667eea',
+    color: "#667eea",
   },
   bottomNav: {
-    position: 'absolute',
+    position: "absolute",
     bottom: 20,
     left: 20,
     right: 20,
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    alignItems: 'center',
-    backgroundColor: 'white',
+    flexDirection: "row",
+    justifyContent: "space-around",
+    alignItems: "center",
+    backgroundColor: "white",
     paddingVertical: 12,
     borderRadius: 30,
-    shadowColor: '#000',
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 8,
@@ -820,43 +850,43 @@ const styles = StyleSheet.create({
     zIndex: 15,
   },
   navItem: {
-    alignItems: 'center',
+    alignItems: "center",
     padding: 8,
   },
   navIcon: {
     fontSize: 24,
-    color: '#666',
+    color: "#666",
   },
   navIconActive: {
-    color: '#667eea',
+    color: "#667eea",
   },
   profileIcon: {
     width: 32,
     height: 32,
     borderRadius: 16,
-    backgroundColor: '#f0f0f0',
-    justifyContent: 'center',
-    alignItems: 'center',
+    backgroundColor: "#f0f0f0",
+    justifyContent: "center",
+    alignItems: "center",
   },
   profileIconActive: {
-    backgroundColor: '#667eea',
+    backgroundColor: "#667eea",
   },
   profileIconText: {
     fontSize: 16,
-    color: '#666',
+    color: "#666",
   },
   userLocationMarker: {
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
   },
   userLocationDot: {
     width: 20,
     height: 20,
     borderRadius: 10,
-    backgroundColor: '#667eea',
+    backgroundColor: "#667eea",
     borderWidth: 3,
-    borderColor: '#fff',
-    shadowColor: '#000',
+    borderColor: "#fff",
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.25,
     shadowRadius: 4,
@@ -866,10 +896,10 @@ const styles = StyleSheet.create({
     width: 36,
     height: 36,
     borderRadius: 18,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
     borderWidth: 2,
-    borderColor: 'white',
+    borderColor: "white",
     elevation: 3,
   },
   markerText: {
@@ -877,41 +907,41 @@ const styles = StyleSheet.create({
   },
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.5)',
-    justifyContent: 'center',
-    alignItems: 'center',
+    backgroundColor: "rgba(0,0,0,0.5)",
+    justifyContent: "center",
+    alignItems: "center",
   },
   modalContent: {
-    backgroundColor: 'white',
+    backgroundColor: "white",
     borderRadius: 16,
     padding: 20,
-    width: '85%',
+    width: "85%",
     maxWidth: 400,
   },
   modalTitle: {
     fontSize: 20,
-    fontWeight: 'bold',
-    color: '#333',
+    fontWeight: "bold",
+    color: "#333",
     marginBottom: 8,
   },
   modalRating: {
     fontSize: 16,
-    color: '#666',
+    color: "#666",
     marginBottom: 12,
   },
   modalDescription: {
     fontSize: 14,
-    color: '#666',
+    color: "#666",
     marginBottom: 12,
     lineHeight: 20,
   },
   modalDistance: {
     fontSize: 12,
-    color: '#667eea',
+    color: "#667eea",
     marginBottom: 8,
   },
   modalButtons: {
-    flexDirection: 'row',
+    flexDirection: "row",
     gap: 12,
     marginTop: 8,
   },
@@ -919,14 +949,34 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingVertical: 10,
     borderRadius: 8,
-    alignItems: 'center',
+    alignItems: "center",
   },
   modalButtonPrimary: {
-    backgroundColor: '#667eea',
+    backgroundColor: "#667eea",
   },
   modalButtonText: {
     fontSize: 14,
-    fontWeight: '500',
-    color: 'white',
+    fontWeight: "500",
+    color: "white",
+  },
+  topIconNav: {
+    position: "absolute",
+    top: 40, // udaljenost od vrha
+    left: 10,
+    right: 10,
+    flexDirection: "row",
+    justifyContent: "space-around",
+    backgroundColor: "white",
+    borderRadius: 20,
+    paddingVertical: 8,
+    paddingHorizontal: 10,
+    elevation: 5, // shadow na androidu
+    shadowColor: "#000", // shadow na iOS-u
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 5,
+  },
+  topIcon: {
+    fontSize: 28,
   },
 });
