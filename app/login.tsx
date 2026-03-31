@@ -43,9 +43,9 @@ export default function LoginScreen() {
 
       if (response.ok) {
         await AsyncStorage.setItem("token", data.token);
+        await AsyncStorage.setItem("userId", data.userId.toString());
         await AsyncStorage.setItem("firstName", data.firstName);
         await AsyncStorage.setItem("lastName", data.lastName);
-        
 
         Alert.alert("Uspjeh!", `Dobrodošli, ${data.firstName}!`, [
           { text: "OK", onPress: () => router.replace("/(tabs)") },

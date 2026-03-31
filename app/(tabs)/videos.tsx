@@ -1,6 +1,9 @@
-// app/videos.tsx (server-side auth verzija)
+// app/videos.tsx
 import { Ionicons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import * as FileSystem from "expo-file-system/legacy";
+import * as ImagePicker from "expo-image-picker";
+import * as MediaLibrary from "expo-media-library";
 import { VideoView, useVideoPlayer } from "expo-video";
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
@@ -26,7 +29,8 @@ const { width, height } = Dimensions.get("window");
 interface VideoItem {
   id: number;
   title: string;
-  description: string;
+  additionalDescription: string;
+  location: string;
   filePath: string;
   userId: number;
   createdAt: string;
@@ -36,6 +40,7 @@ interface VideoItem {
   isLiked?: boolean;
   isSaved?: boolean;
   isOwner?: boolean;
+  isInWishlist?: boolean;
 }
 
 // ==================== SINGLE VIDEO COMPONENT ====================
@@ -44,15 +49,23 @@ function VideoItemComponent({
   isActive,
   onLikeToggle,
   onSaveToggle,
+  onWishlistToggle,
   onDeleteVideo,
   onOpenComments,
+  onOpenMessenger,
+  onOpenShare,
+  onDownload,
 }: {
   item: VideoItem;
   isActive: boolean;
   onLikeToggle: (videoId: number) => void;
   onSaveToggle: (videoId: number) => void;
+  onWishlistToggle: (videoId: number) => void;
   onDeleteVideo: (videoId: number) => void;
   onOpenComments: (video: VideoItem) => void;
+  onOpenMessenger: (video: VideoItem) => void;
+  onOpenShare: (video: VideoItem) => void;
+  onDownload: (video: VideoItem) => void;
 }) {
   const player = useVideoPlayer(item.filePath, (p) => {
     p.loop = true;
@@ -73,7 +86,9 @@ function VideoItemComponent({
         nativeControls={false}
       />
 
+      {/* RIGHT SIDEBAR */}
       <View style={styles.rightSidebar}>
+        {/* LIKE */}
         <TouchableOpacity
           style={styles.actionButton}
           onPress={() => onLikeToggle(item.id)}
@@ -86,6 +101,7 @@ function VideoItemComponent({
           <Text style={styles.actionText}>{item.likeCount || 0}</Text>
         </TouchableOpacity>
 
+        {/* COMMENTS */}
         <TouchableOpacity
           style={styles.actionButton}
           onPress={() => onOpenComments(item)}
@@ -94,6 +110,34 @@ function VideoItemComponent({
           <Text style={styles.actionText}>{item.commentCount || 0}</Text>
         </TouchableOpacity>
 
+        {/* MESSENGER */}
+        <TouchableOpacity
+          style={styles.actionButton}
+          onPress={() => onOpenMessenger(item)}
+        >
+          <Ionicons name="paper-plane-outline" size={28} color="white" />
+          <Text style={styles.actionText}>Poruka</Text>
+        </TouchableOpacity>
+
+        {/* SHARE */}
+        <TouchableOpacity
+          style={styles.actionButton}
+          onPress={() => onOpenShare(item)}
+        >
+          <Ionicons name="share-social-outline" size={28} color="white" />
+          <Text style={styles.actionText}>Dijeli</Text>
+        </TouchableOpacity>
+
+        {/* DOWNLOAD */}
+        <TouchableOpacity
+          style={styles.actionButton}
+          onPress={() => onDownload(item)}
+        >
+          <Ionicons name="download-outline" size={28} color="white" />
+          <Text style={styles.actionText}>Preuzmi</Text>
+        </TouchableOpacity>
+
+        {/* BOX / SAVE */}
         <TouchableOpacity
           style={styles.actionButton}
           onPress={() => onSaveToggle(item.id)}
@@ -101,20 +145,26 @@ function VideoItemComponent({
           <Ionicons
             name={item.isSaved ? "bookmark" : "bookmark-outline"}
             size={28}
-            color="white"
+            color={item.isSaved ? "#667eea" : "white"}
           />
+          <Text style={styles.actionText}>Box</Text>
         </TouchableOpacity>
 
-        {item.isOwner && (
-          <TouchableOpacity
-            style={styles.actionButton}
-            onPress={() => onDeleteVideo(item.id)}
-          >
-            <Ionicons name="trash-outline" size={28} color="#ff3b30" />
-          </TouchableOpacity>
-        )}
+        {/* WISHLIST */}
+        <TouchableOpacity
+          style={styles.actionButton}
+          onPress={() => onWishlistToggle(item.id)}
+        >
+          <Ionicons
+            name={item.isInWishlist ? "star" : "star-outline"}
+            size={28}
+            color={item.isInWishlist ? "#FFD700" : "white"}
+          />
+          <Text style={styles.actionText}>Wishlist</Text>
+        </TouchableOpacity>
       </View>
 
+      {/* BOTTOM INFO */}
       <View style={styles.bottomInfo}>
         <View style={styles.userInfo}>
           <Ionicons name="person-circle" size={40} color="white" />
@@ -123,8 +173,20 @@ function VideoItemComponent({
           </Text>
         </View>
         <Text style={styles.videoTitle}>{item.title}</Text>
-        {item.description && (
-          <Text style={styles.videoDescription}>{item.description}</Text>
+        {item.location && (
+          <View style={styles.locationRow}>
+            <Ionicons
+              name="location-outline"
+              size={14}
+              color="rgba(255,255,255,0.8)"
+            />
+            <Text style={styles.locationText}>{item.location}</Text>
+          </View>
+        )}
+        {item.additionalDescription && (
+          <Text style={styles.videoDescription}>
+            {item.additionalDescription}
+          </Text>
         )}
       </View>
     </View>
@@ -150,48 +212,41 @@ function CommentsModal({
   const scrollViewRef = useRef<ScrollView>(null);
 
   const loadComments = async () => {
-    const authToken = await AsyncStorage.getItem("token");
+    const token = await AsyncStorage.getItem("token");
     if (!video) return;
     setLoading(true);
     try {
-      const response = await fetch(
-        `${API_BASE_URL}/api/comment/video/${video.id}`,
-        {
-          headers: { Authorization: `Bearer ${authToken}` },
-        },
-      );
-      const data = await response.json();
-      setComments(data);
-    } catch (error) {
-      console.error("Greška pri učitavanju komentara:", error);
+      const res = await fetch(`${API_BASE_URL}/api/comment/video/${video.id}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setComments(await res.json());
+    } catch (e) {
+      console.error(e);
     } finally {
       setLoading(false);
     }
   };
 
   const addComment = async () => {
-    const authToken = await AsyncStorage.getItem("token");
+    const token = await AsyncStorage.getItem("token");
     if (!video || !newComment.trim()) return;
     setSubmitting(true);
     try {
-      const response = await fetch(`${API_BASE_URL}/api/comment`, {
+      const res = await fetch(`${API_BASE_URL}/api/comment`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${authToken}`,
+          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({ content: newComment.trim(), videoId: video.id }),
       });
-      if (response.ok) {
+      if (res.ok) {
         setNewComment("");
         await loadComments();
         onCommentAdded();
-      } else {
-        Alert.alert("Greška", "Neuspješno dodavanje komentara");
       }
-    } catch (error) {
-      console.error("Greška:", error);
-      Alert.alert("Greška", "Neuspješno dodavanje komentara");
+    } catch (e) {
+      console.error(e);
     } finally {
       setSubmitting(false);
     }
@@ -213,24 +268,24 @@ function CommentsModal({
       <KeyboardAvoidingView
         style={{ flex: 1 }}
         behavior={Platform.OS === "ios" ? "padding" : "height"}
-        keyboardVerticalOffset={Platform.OS === "ios" ? 90 : 0}
+        keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 0}
       >
         <View style={{ flex: 1, backgroundColor: "#fff" }}>
-          <View style={styles.commentsHeader}>
+          <View style={styles.modalHeader}>
             <TouchableOpacity onPress={onClose}>
               <Ionicons name="close" size={28} color="black" />
             </TouchableOpacity>
-            <Text style={styles.commentsTitle}>
+            <Text style={styles.modalTitle}>
               Komentari ({video.commentCount || 0})
             </Text>
             <View style={{ width: 28 }} />
           </View>
 
           <ScrollView
-            style={{ flex: 1, paddingHorizontal: 16 }}
-            contentContainerStyle={{ paddingBottom: 80 }}
-            keyboardShouldPersistTaps="handled"
             ref={scrollViewRef}
+            style={{ flex: 1, paddingHorizontal: 16 }}
+            contentContainerStyle={{ paddingBottom: 16 }}
+            keyboardShouldPersistTaps="handled"
             onContentSizeChange={() =>
               scrollViewRef.current?.scrollToEnd({ animated: true })
             }
@@ -242,20 +297,20 @@ function CommentsModal({
                 style={{ marginTop: 40 }}
               />
             ) : comments.length === 0 ? (
-              <Text style={styles.noComments}>
+              <Text style={styles.emptyText}>
                 Nema komentara. Budi prvi! 💬
               </Text>
             ) : (
-              comments.map((item) => (
-                <View key={item.id} style={styles.commentItem}>
+              comments.map((c) => (
+                <View key={c.id} style={styles.commentItem}>
                   <Ionicons name="person-circle" size={36} color="#666" />
                   <View style={styles.commentContent}>
                     <Text style={styles.commentUser}>
-                      {item.userName || `User_${item.userId}`}
+                      {c.userName || `User_${c.userId}`}
                     </Text>
-                    <Text style={styles.commentText}>{item.content}</Text>
+                    <Text style={styles.commentText}>{c.content}</Text>
                     <Text style={styles.commentDate}>
-                      {new Date(item.createdAt).toLocaleDateString()}
+                      {new Date(c.createdAt).toLocaleDateString()}
                     </Text>
                   </View>
                 </View>
@@ -263,19 +318,20 @@ function CommentsModal({
             )}
           </ScrollView>
 
-          <View style={styles.commentInputContainer}>
+          <View style={styles.inputRow}>
             <TextInput
-              style={styles.commentInput}
+              style={styles.textInput}
               placeholder="Dodaj komentar..."
               placeholderTextColor="#999"
               value={newComment}
               onChangeText={setNewComment}
               multiline
+              maxLength={500}
             />
             <TouchableOpacity
               style={[
-                styles.sendButton,
-                (!newComment.trim() || submitting) && styles.sendButtonDisabled,
+                styles.sendBtn,
+                (!newComment.trim() || submitting) && styles.sendBtnDisabled,
               ]}
               onPress={addComment}
               disabled={!newComment.trim() || submitting}
@@ -283,11 +339,563 @@ function CommentsModal({
               {submitting ? (
                 <ActivityIndicator size="small" color="white" />
               ) : (
-                <Ionicons name="send" size={22} color="white" />
+                <Ionicons name="send" size={20} color="white" />
               )}
             </TouchableOpacity>
           </View>
         </View>
+      </KeyboardAvoidingView>
+    </Modal>
+  );
+}
+
+// ==================== MESSENGER MODAL ====================
+function MessengerModal({
+  visible,
+  video,
+  onClose,
+}: {
+  visible: boolean;
+  video: VideoItem | null;
+  onClose: () => void;
+}) {
+  const [message, setMessage] = useState("");
+  const [sending, setSending] = useState(false);
+
+  const sendMessage = async () => {
+    const token = await AsyncStorage.getItem("token");
+    if (!video || !message.trim()) return;
+    setSending(true);
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/message/send`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          receiverId: video.userId,
+          content: message.trim(),
+        }),
+      });
+      if (res.ok) {
+        setMessage("");
+        Alert.alert(
+          "Poslano!",
+          `Poruka je poslana korisniku ${video.userName || "User_" + video.userId}`,
+        );
+        onClose();
+      } else {
+        Alert.alert("Greška", "Poruka nije poslana");
+      }
+    } catch (e) {
+      Alert.alert("Greška", "Poruka nije poslana");
+    } finally {
+      setSending(false);
+    }
+  };
+
+  if (!video) return null;
+
+  return (
+    <Modal
+      animationType="slide"
+      transparent={false}
+      visible={visible}
+      onRequestClose={onClose}
+    >
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+      >
+        <View style={{ flex: 1, backgroundColor: "#fff" }}>
+          <View style={styles.modalHeader}>
+            <TouchableOpacity onPress={onClose}>
+              <Ionicons name="close" size={28} color="black" />
+            </TouchableOpacity>
+            <Text style={styles.modalTitle}>
+              Poruka → {video.userName || `User_${video.userId}`}
+            </Text>
+            <View style={{ width: 28 }} />
+          </View>
+
+          <View style={{ flex: 1, padding: 16 }}>
+            <View style={styles.recipientCard}>
+              <Ionicons name="person-circle" size={44} color="#667eea" />
+              <View style={{ marginLeft: 12 }}>
+                <Text style={styles.recipientName}>
+                  {video.userName || `User_${video.userId}`}
+                </Text>
+                <Text style={styles.recipientSub}>
+                  Objavio video: {video.title}
+                </Text>
+              </View>
+            </View>
+          </View>
+
+          <View style={styles.inputRow}>
+            <TextInput
+              style={styles.textInput}
+              placeholder="Napiši poruku..."
+              placeholderTextColor="#999"
+              value={message}
+              onChangeText={setMessage}
+              multiline
+              maxLength={1000}
+              autoFocus
+            />
+            <TouchableOpacity
+              style={[
+                styles.sendBtn,
+                (!message.trim() || sending) && styles.sendBtnDisabled,
+              ]}
+              onPress={sendMessage}
+              disabled={!message.trim() || sending}
+            >
+              {sending ? (
+                <ActivityIndicator size="small" color="white" />
+              ) : (
+                <Ionicons name="send" size={20} color="white" />
+              )}
+            </TouchableOpacity>
+          </View>
+        </View>
+      </KeyboardAvoidingView>
+    </Modal>
+  );
+}
+
+// ==================== SHARE MODAL ====================
+function ShareModal({
+  visible,
+  video,
+  onClose,
+}: {
+  visible: boolean;
+  video: VideoItem | null;
+  onClose: () => void;
+}) {
+  const [users, setUsers] = useState<any[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [sending, setSending] = useState<number | null>(null);
+  const [search, setSearch] = useState("");
+
+  const loadUsers = async () => {
+    const token = await AsyncStorage.getItem("token");
+    setLoading(true);
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/auth/users`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const data = await res.json();
+      setUsers(data);
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const shareToUser = async (receiverId: number, userName: string) => {
+    const token = await AsyncStorage.getItem("token");
+    if (!video) return;
+    setSending(receiverId);
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/message/send`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          receiverId,
+          content: `📹 Pogledaj ovaj video: "${video.title}"\n${video.filePath}`,
+        }),
+      });
+      if (res.ok) {
+        Alert.alert(
+          "Podijeljeno!",
+          `Video je podijeljen s korisnikom ${userName}`,
+        );
+        onClose();
+      }
+    } catch (e) {
+      Alert.alert("Greška", "Dijeljenje nije uspjelo");
+    } finally {
+      setSending(null);
+    }
+  };
+
+  useEffect(() => {
+    if (visible) {
+      loadUsers();
+      setSearch("");
+    }
+  }, [visible]);
+
+  const filtered = users.filter((u) =>
+    u.username?.toLowerCase().includes(search.toLowerCase()),
+  );
+
+  if (!video) return null;
+
+  return (
+    <Modal
+      animationType="slide"
+      transparent={false}
+      visible={visible}
+      onRequestClose={onClose}
+    >
+      <View style={{ flex: 1, backgroundColor: "#fff" }}>
+        <View style={styles.modalHeader}>
+          <TouchableOpacity onPress={onClose}>
+            <Ionicons name="close" size={28} color="black" />
+          </TouchableOpacity>
+          <Text style={styles.modalTitle}>Podijeli video</Text>
+          <View style={{ width: 28 }} />
+        </View>
+
+        <View style={{ paddingHorizontal: 16, paddingBottom: 8 }}>
+          <TextInput
+            style={styles.searchInput}
+            placeholder="Pretraži korisnike..."
+            placeholderTextColor="#999"
+            value={search}
+            onChangeText={setSearch}
+          />
+        </View>
+
+        {loading ? (
+          <ActivityIndicator
+            size="large"
+            color="#667eea"
+            style={{ marginTop: 40 }}
+          />
+        ) : (
+          <FlatList
+            data={filtered}
+            keyExtractor={(u) => u.id.toString()}
+            renderItem={({ item: u }) => (
+              <TouchableOpacity
+                style={styles.userRow}
+                onPress={() => shareToUser(u.id, u.username)}
+                disabled={sending === u.id}
+              >
+                <Ionicons name="person-circle" size={44} color="#667eea" />
+                <View style={{ flex: 1, marginLeft: 12 }}>
+                  <Text style={styles.recipientName}>{u.username}</Text>
+                  <Text style={styles.recipientSub}>
+                    {u.firstName} {u.lastName}
+                  </Text>
+                </View>
+                {sending === u.id ? (
+                  <ActivityIndicator size="small" color="#667eea" />
+                ) : (
+                  <Ionicons
+                    name="paper-plane-outline"
+                    size={22}
+                    color="#667eea"
+                  />
+                )}
+              </TouchableOpacity>
+            )}
+            contentContainerStyle={{ paddingHorizontal: 16 }}
+          />
+        )}
+      </View>
+    </Modal>
+  );
+}
+
+// ==================== UPLOAD MODAL ====================
+function UploadModal({
+  visible,
+  onClose,
+  onUploaded,
+}: {
+  visible: boolean;
+  onClose: () => void;
+  onUploaded: () => void;
+}) {
+  const [videoUri, setVideoUri] = useState<string | null>(null);
+  const [title, setTitle] = useState("");
+  const [location, setLocation] = useState("");
+  const [description, setDescription] = useState("");
+  const [uploading, setUploading] = useState(false);
+  const [step, setStep] = useState<"pick" | "preview">("pick");
+
+  const previewPlayer = useVideoPlayer(videoUri || "", (p) => {
+    p.loop = true;
+  });
+
+  const pickFromGallery = async () => {
+    const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (!perm.granted) {
+      Alert.alert(
+        "Dozvola potrebna",
+        "Dozvolite pristup galeriji u postavkama",
+      );
+      return;
+    }
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Videos,
+      quality: 1,
+    });
+    if (!result.canceled && result.assets[0]) {
+      setVideoUri(result.assets[0].uri);
+      setStep("preview");
+    }
+  };
+
+  const recordVideo = async () => {
+    const perm = await ImagePicker.requestCameraPermissionsAsync();
+    if (!perm.granted) {
+      Alert.alert("Dozvola potrebna", "Dozvolite pristup kameri u postavkama");
+      return;
+    }
+    const result = await ImagePicker.launchCameraAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Videos,
+      videoMaxDuration: 60,
+      quality: 1,
+    });
+    if (!result.canceled && result.assets[0]) {
+      setVideoUri(result.assets[0].uri);
+      setStep("preview");
+    }
+  };
+
+  const uploadVideo = async () => {
+    const token = await AsyncStorage.getItem("token");
+    let userId = await AsyncStorage.getItem("userId");
+
+    // Fallback: izvuci userId iz JWT tokena
+    if (!userId || userId === "0") {
+      try {
+        const payload = JSON.parse(atob(token!.split(".")[1]));
+        userId =
+          payload[
+            "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier"
+          ];
+      } catch (e) {
+        console.error("Ne mogu pročitati token", e);
+      }
+    }
+
+    console.log("📤 userId koji se šalje:", userId);
+
+    if (!videoUri || !title.trim()) {
+      Alert.alert("Greška", "Naslov videa je obavezan");
+      return;
+    }
+    if (!location.trim()) {
+      Alert.alert("Greška", "Lokacija snimanja je obavezna za objavu videa");
+      return;
+    }
+    if (!userId || userId === "0") {
+      Alert.alert(
+        "Greška",
+        "Niste prijavljeni. Odjavite se i prijavite ponovo.",
+      );
+      return;
+    }
+
+    setUploading(true);
+    try {
+      const formData = new FormData();
+      formData.append("video", {
+        uri: videoUri,
+        type: "video/mp4",
+        name: "video.mp4",
+      } as any);
+      formData.append("title", title.trim());
+      formData.append("location", location.trim());
+      formData.append("description", description.trim());
+      formData.append("userId", userId);
+
+      const res = await fetch(`${API_BASE_URL}/api/video/upload`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` },
+        body: formData,
+      });
+
+      if (res.ok) {
+        Alert.alert("Uspjeh!", "Video je objavljen");
+        resetModal();
+        onUploaded();
+      } else {
+        const err = await res.text();
+        Alert.alert("Greška", err || "Upload nije uspio");
+      }
+    } catch (e) {
+      Alert.alert("Greška", "Upload nije uspio. Provjeri konekciju.");
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const resetModal = () => {
+    setVideoUri(null);
+    setTitle("");
+    setLocation("");
+    setDescription("");
+    setStep("pick");
+    onClose();
+  };
+
+  return (
+    <Modal
+      animationType="slide"
+      transparent={false}
+      visible={visible}
+      onRequestClose={resetModal}
+    >
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+      >
+        <View style={{ flex: 1, backgroundColor: "#fff" }}>
+          <View style={styles.modalHeader}>
+            <TouchableOpacity onPress={resetModal}>
+              <Ionicons name="close" size={28} color="black" />
+            </TouchableOpacity>
+            <Text style={styles.modalTitle}>
+              {step === "pick" ? "Dodaj video" : "Pregled i objava"}
+            </Text>
+            <View style={{ width: 28 }} />
+          </View>
+          <ScrollView
+            keyboardShouldPersistTaps="handled"
+            contentContainerStyle={{ padding: 16 }}
+          >
+            {step === "pick" ? (
+              <View style={styles.pickContainer}>
+                <Text style={styles.pickHint}>
+                  Odaberi način dodavanja videa
+                </Text>
+                <TouchableOpacity
+                  style={styles.pickBtn}
+                  onPress={pickFromGallery}
+                >
+                  <Ionicons name="images" size={40} color="#667eea" />
+                  <Text style={styles.pickBtnText}>Iz galerije</Text>
+                </TouchableOpacity>
+                <TouchableOpacity style={styles.pickBtn} onPress={recordVideo}>
+                  <Ionicons name="videocam" size={40} color="#667eea" />
+                  <Text style={styles.pickBtnText}>Snimi uživo</Text>
+                </TouchableOpacity>
+              </View>
+            ) : (
+              <>
+                {/* VIDEO PREVIEW */}
+                <View style={styles.previewContainer}>
+                  {videoUri && (
+                    <VideoView
+                      player={previewPlayer}
+                      style={styles.previewVideo}
+                      contentFit="cover"
+                      nativeControls
+                    />
+                  )}
+                  <TouchableOpacity
+                    style={styles.changeVideoBtn}
+                    onPress={() => {
+                      setVideoUri(null);
+                      setStep("pick");
+                    }}
+                  >
+                    <Ionicons name="refresh" size={16} color="white" />
+                    <Text
+                      style={{ color: "white", fontSize: 12, marginLeft: 4 }}
+                    >
+                      Promijeni
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+
+                {/* FORM */}
+                <Text style={styles.fieldLabel}>Naslov *</Text>
+                <TextInput
+                  style={styles.fieldInput}
+                  placeholder="Unesite naslov videa"
+                  placeholderTextColor="#999"
+                  value={title}
+                  onChangeText={setTitle}
+                  maxLength={100}
+                />
+
+                <Text style={styles.fieldLabel}>
+                  Lokacija *{" "}
+                  <Text style={{ color: "#ff3b30", fontSize: 12 }}>
+                    (obavezno za objavu)
+                  </Text>
+                </Text>
+                <TextInput
+                  style={styles.fieldInput}
+                  placeholder="Npr. Zagreb, Dolac tržnica"
+                  placeholderTextColor="#999"
+                  value={location}
+                  onChangeText={setLocation}
+                  maxLength={150}
+                />
+
+                <Text style={styles.fieldLabel}>Opis (opcionalno)</Text>
+                <TextInput
+                  style={[
+                    styles.fieldInput,
+                    { height: 80, textAlignVertical: "top" },
+                  ]}
+                  placeholder="Kratki opis videa..."
+                  placeholderTextColor="#999"
+                  value={description}
+                  onChangeText={setDescription}
+                  multiline
+                  maxLength={300}
+                />
+
+                {/* GUMBI: OBRIŠI + OBJAVI */}
+                <View style={{ flexDirection: "row", gap: 12, marginTop: 24 }}>
+                  <TouchableOpacity
+                    style={[
+                      styles.uploadBtn,
+                      { flex: 1, backgroundColor: "#ff3b30" },
+                    ]}
+                    onPress={() => {
+                      setVideoUri(null);
+                      setStep("pick");
+                    }}
+                    disabled={uploading}
+                  >
+                    <Ionicons name="trash-outline" size={22} color="white" />
+                    <Text style={styles.uploadBtnText}>Obriši</Text>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    style={[
+                      styles.uploadBtn,
+                      { flex: 1 },
+                      uploading && styles.uploadBtnDisabled,
+                    ]}
+                    onPress={uploadVideo}
+                    disabled={uploading}
+                  >
+                    {uploading ? (
+                      <ActivityIndicator color="white" />
+                    ) : (
+                      <>
+                        <Ionicons
+                          name="cloud-upload-outline"
+                          size={22}
+                          color="white"
+                        />
+                        <Text style={styles.uploadBtnText}>Objavi</Text>
+                      </>
+                    )}
+                  </TouchableOpacity>
+                </View>
+              </>
+            )}
+          </ScrollView>{" "}
+        </View>{" "}
       </KeyboardAvoidingView>
     </Modal>
   );
@@ -302,50 +910,26 @@ export default function VideosScreen() {
   );
   const [selectedVideoForComments, setSelectedVideoForComments] =
     useState<VideoItem | null>(null);
-  const [showOptionsMenu, setShowOptionsMenu] = useState(false);
+  const [selectedVideoForMessenger, setSelectedVideoForMessenger] =
+    useState<VideoItem | null>(null);
+  const [selectedVideoForShare, setSelectedVideoForShare] =
+    useState<VideoItem | null>(null);
+  const [showUploadModal, setShowUploadModal] = useState(false);
   const flatListRef = useRef<FlatList>(null);
 
   const loadVideos = async () => {
-    const authToken = await AsyncStorage.getItem("token");
-    console.log("Token exists:", !!authToken); // ← DODAJ OVO
-    console.log("Token value:", authToken); // ← DODAJ OVO
-
-    if (!authToken) {
-      console.error("No token found!");
-      Alert.alert("Greška", "Niste prijavljeni. Molimo prijavite se.");
-      return;
-    }
+    const token = await AsyncStorage.getItem("token");
+    if (!token) return;
     setLoading(true);
     try {
-      const response = await fetch(`${API_BASE_URL}/api/video`, {
-        headers: {
-          Authorization: `Bearer ${authToken}`,
-          "Content-Type": "application/json",
-        },
+      const res = await fetch(`${API_BASE_URL}/api/video`, {
+        headers: { Authorization: `Bearer ${token}` },
       });
-
-      console.log("Response status:", response.status); // ← DODAJ OVO
-
-      if (!response.ok) {
-        const errText = await response.text();
-        console.error("API greška:", response.status, errText);
-
-        if (response.status === 401) {
-          Alert.alert(
-            "Greška",
-            "Vaša sesija je istekla. Molimo prijavite se ponovno.",
-          );
-          // Opcionalno: navigiraj na login screen
-        } else {
-          Alert.alert("Greška", `Server greška: ${response.status}`);
-        }
-        return;
+      if (res.ok) {
+        const data: VideoItem[] = await res.json();
+        setVideos(data);
       }
-
-      const allVideos: VideoItem[] = await response.json();
-      setVideos(allVideos);
-    } catch (error) {
-      console.error("Greška pri učitavanju videa:", error);
+    } catch (e) {
       Alert.alert("Greška", "Neuspješno učitavanje videa");
     } finally {
       setLoading(false);
@@ -356,11 +940,9 @@ export default function VideosScreen() {
     loadVideos();
   }, []);
 
-  // Zamijeni handleLikeToggle u VideosScreen
+  // ── LIKE (optimistički) ──
   const handleLikeToggle = async (videoId: number) => {
-    const authToken = await AsyncStorage.getItem("token");
-
-    // ✅ Optimistički update — odmah mijenjamo UI
+    const token = await AsyncStorage.getItem("token");
     setVideos((prev) =>
       prev.map((v) =>
         v.id === videoId
@@ -374,36 +956,17 @@ export default function VideosScreen() {
           : v,
       ),
     );
-
     try {
-      const response = await fetch(`${API_BASE_URL}/api/like/toggle`, {
+      const res = await fetch(`${API_BASE_URL}/api/like/toggle`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${authToken}`,
+          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({ videoId }),
       });
-
-      if (!response.ok) {
-        // ❌ Ako API ne uspije — vrati nazad
-        setVideos((prev) =>
-          prev.map((v) =>
-            v.id === videoId
-              ? {
-                  ...v,
-                  isLiked: !v.isLiked,
-                  likeCount: v.isLiked
-                    ? (v.likeCount ?? 1) - 1
-                    : (v.likeCount ?? 0) + 1,
-                }
-              : v,
-          ),
-        );
-      }
-    } catch (error) {
-      console.error("Greška pri like/unlike:", error);
-      // ❌ Revert i na network grešci
+      if (!res.ok) throw new Error();
+    } catch {
       setVideos((prev) =>
         prev.map((v) =>
           v.id === videoId
@@ -420,72 +983,119 @@ export default function VideosScreen() {
     }
   };
 
-  // Zamijeni handleSaveToggle isto — isti pattern
+  // ── BOX / SAVE (optimistički) ──
   const handleSaveToggle = async (videoId: number) => {
-    const authToken = await AsyncStorage.getItem("token");
-
+    const token = await AsyncStorage.getItem("token");
     setVideos((prev) =>
       prev.map((v) => (v.id === videoId ? { ...v, isSaved: !v.isSaved } : v)),
     );
-
     try {
-      const response = await fetch(`${API_BASE_URL}/api/savedvideo/toggle`, {
+      const res = await fetch(`${API_BASE_URL}/api/savedvideo/toggle`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${authToken}`,
+          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({ videoId }),
       });
-
-      if (!response.ok) {
-        setVideos((prev) =>
-          prev.map((v) =>
-            v.id === videoId ? { ...v, isSaved: !v.isSaved } : v,
-          ),
-        );
-      }
-    } catch (error) {
-      console.error("Greška pri save/unsave:", error);
+      if (!res.ok) throw new Error();
+    } catch {
       setVideos((prev) =>
         prev.map((v) => (v.id === videoId ? { ...v, isSaved: !v.isSaved } : v)),
       );
     }
   };
 
-  const handleDeleteVideo = async (videoId: number) => {
-    Alert.alert(
-      "Obriši video",
-      "Jeste li sigurni da želite obrisati ovaj video?",
-      [
-        { text: "Otkaži", style: "cancel" },
-        {
-          text: "Obriši",
-          style: "destructive",
-          onPress: async () => {
-            const authToken = await AsyncStorage.getItem("token");
-            try {
-              const response = await fetch(
-                `${API_BASE_URL}/api/video/${videoId}`,
-                {
-                  method: "DELETE",
-                  headers: { Authorization: `Bearer ${authToken}` },
-                },
-              );
-              if (response.ok) {
-                setVideos((prev) => prev.filter((v) => v.id !== videoId));
-                Alert.alert("Uspjeh", "Video je obrisan");
-              } else {
-                Alert.alert("Greška", "Ne možete obrisati tuđi video");
-              }
-            } catch (error) {
-              console.error("Greška:", error);
-              Alert.alert("Greška", "Brisanje nije uspjelo");
-            }
-          },
-        },
-      ],
+  // ── WISHLIST (optimistički) ──
+  const handleWishlistToggle = async (videoId: number) => {
+    const token = await AsyncStorage.getItem("token");
+    const video = videos.find((v) => v.id === videoId);
+    if (!video) return;
+
+    setVideos((prev) =>
+      prev.map((v) =>
+        v.id === videoId ? { ...v, isInWishlist: !v.isInWishlist } : v,
+      ),
     );
+
+    try {
+      if (!video.isInWishlist) {
+        const res = await fetch(`${API_BASE_URL}/api/wishlist/add`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({ videoId, notes: "" }),
+        });
+        if (!res.ok) throw new Error();
+      } else {
+        const res = await fetch(
+          `${API_BASE_URL}/api/wishlist/remove/${videoId}`,
+          {
+            method: "DELETE",
+            headers: { Authorization: `Bearer ${token}` },
+          },
+        );
+        if (!res.ok) throw new Error();
+      }
+    } catch {
+      setVideos((prev) =>
+        prev.map((v) =>
+          v.id === videoId ? { ...v, isInWishlist: !v.isInWishlist } : v,
+        ),
+      );
+    }
+  };
+
+  // ── DOWNLOAD ──
+  const handleDownload = async (video: VideoItem) => {
+    const { status } = await MediaLibrary.requestPermissionsAsync();
+    if (status !== "granted") {
+      Alert.alert(
+        "Dozvola potrebna",
+        "Dozvolite pristup medijima u postavkama",
+      );
+      return;
+    }
+    Alert.alert("Preuzimanje", "Video se preuzima...");
+    try {
+      const fileName = `cromap_${video.id}_${Date.now()}.mp4`;
+      const downloadDest = FileSystem.documentDirectory + fileName;
+      const result = await FileSystem.downloadAsync(
+        video.filePath,
+        downloadDest,
+      );
+      await MediaLibrary.saveToLibraryAsync(result.uri);
+      Alert.alert("Uspjeh!", "Video je spremljen u galeriju");
+    } catch (e) {
+      Alert.alert("Greška", "Preuzimanje nije uspjelo");
+    }
+  };
+
+  // ── DELETE ──
+  const handleDeleteVideo = async (videoId: number) => {
+    Alert.alert("Obriši video", "Jeste li sigurni?", [
+      { text: "Otkaži", style: "cancel" },
+      {
+        text: "Obriši",
+        style: "destructive",
+        onPress: async () => {
+          const token = await AsyncStorage.getItem("token");
+          try {
+            const res = await fetch(`${API_BASE_URL}/api/video/${videoId}`, {
+              method: "DELETE",
+              headers: { Authorization: `Bearer ${token}` },
+            });
+            if (res.ok) {
+              setVideos((prev) => prev.filter((v) => v.id !== videoId));
+            }
+          } catch (e) {
+            Alert.alert("Greška", "Brisanje nije uspjelo");
+          }
+        },
+      },
+    ]);
   };
 
   const onViewableItemsChanged = useCallback(({ viewableItems }: any) => {
@@ -502,31 +1112,13 @@ export default function VideosScreen() {
 
   return (
     <View style={styles.container}>
+      {/* ADD BUTTON */}
       <TouchableOpacity
         style={styles.addButton}
-        onPress={() => setShowOptionsMenu(!showOptionsMenu)}
+        onPress={() => setShowUploadModal(true)}
       >
         <Ionicons name="add" size={32} color="white" />
       </TouchableOpacity>
-
-      {showOptionsMenu && (
-        <View style={styles.optionsMenu}>
-          <TouchableOpacity
-            style={styles.optionButton}
-            onPress={async () => {}}
-          >
-            <Ionicons name="images" size={22} color="white" />
-            <Text style={styles.optionText}>Galerija</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={styles.optionButton}
-            onPress={async () => {}}
-          >
-            <Ionicons name="camera" size={22} color="white" />
-            <Text style={styles.optionText}>Snimi</Text>
-          </TouchableOpacity>
-        </View>
-      )}
 
       <FlatList
         ref={flatListRef}
@@ -538,8 +1130,12 @@ export default function VideosScreen() {
             isActive={index === currentPlayingIndex}
             onLikeToggle={handleLikeToggle}
             onSaveToggle={handleSaveToggle}
+            onWishlistToggle={handleWishlistToggle}
             onDeleteVideo={handleDeleteVideo}
             onOpenComments={setSelectedVideoForComments}
+            onOpenMessenger={setSelectedVideoForMessenger}
+            onOpenShare={setSelectedVideoForShare}
+            onDownload={handleDownload}
           />
         )}
         pagingEnabled
@@ -556,11 +1152,29 @@ export default function VideosScreen() {
         onClose={() => setSelectedVideoForComments(null)}
         onCommentAdded={loadVideos}
       />
+
+      <MessengerModal
+        visible={selectedVideoForMessenger !== null}
+        video={selectedVideoForMessenger}
+        onClose={() => setSelectedVideoForMessenger(null)}
+      />
+
+      <ShareModal
+        visible={selectedVideoForShare !== null}
+        video={selectedVideoForShare}
+        onClose={() => setSelectedVideoForShare(null)}
+      />
+
+      <UploadModal
+        visible={showUploadModal}
+        onClose={() => setShowUploadModal(false)}
+        onUploaded={loadVideos}
+      />
     </View>
   );
 }
 
-// ===== STYLES (ostaju isti kao u originalnom kodu) =====
+// ==================== STYLES ====================
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#000" },
   centerContainer: {
@@ -576,97 +1190,94 @@ const styles = StyleSheet.create({
     backgroundColor: "#000",
   },
   video: { width: "100%", height: "100%" },
+
+  // SIDEBAR
   rightSidebar: {
     position: "absolute",
-    bottom: 120,
-    right: 16,
+    bottom: 100,
+    right: 12,
     alignItems: "center",
-    gap: 24,
+    gap: 16,
   },
-  actionButton: { alignItems: "center", gap: 4 },
-  actionText: { color: "white", fontSize: 12, fontWeight: "500" },
-  bottomInfo: { position: "absolute", bottom: 100, left: 16, right: 80 },
-  userInfo: { flexDirection: "row", alignItems: "center", marginBottom: 8 },
-  userName: { color: "white", fontSize: 15, fontWeight: "600", marginLeft: 10 },
+  actionButton: { alignItems: "center", gap: 2 },
+  actionText: { color: "white", fontSize: 11, fontWeight: "500" },
+
+  // BOTTOM INFO
+  bottomInfo: { position: "absolute", bottom: 80, left: 16, right: 90 },
+  userInfo: { flexDirection: "row", alignItems: "center", marginBottom: 6 },
+  userName: { color: "white", fontSize: 15, fontWeight: "600", marginLeft: 8 },
   videoTitle: {
     color: "white",
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: "bold",
-    marginBottom: 4,
+    marginBottom: 2,
   },
-  videoDescription: { color: "rgba(255,255,255,0.8)", fontSize: 13 },
-  addButton: {
-    position: "absolute",
-    bottom: 100,
-    right: 20,
-    backgroundColor: "#667eea",
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    justifyContent: "center",
-    alignItems: "center",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 4,
-    elevation: 5,
-    zIndex: 10,
-  },
-  optionsMenu: {
-    position: "absolute",
-    bottom: 170,
-    right: 20,
-    backgroundColor: "rgba(0,0,0,0.8)",
-    borderRadius: 12,
-    padding: 8,
-    gap: 8,
-    zIndex: 10,
-  },
-  optionButton: {
+  locationRow: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 10,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 8,
+    gap: 4,
+    marginBottom: 2,
   },
-  optionText: { color: "white", fontSize: 14 },
-  commentsHeader: {
+  locationText: { color: "rgba(255,255,255,0.8)", fontSize: 12 },
+  videoDescription: { color: "rgba(255,255,255,0.75)", fontSize: 12 },
+
+  // ADD BUTTON
+  addButton: {
+    position: "absolute",
+    top: Platform.OS === "ios" ? 56 : 40,
+    right: 16,
+    backgroundColor: "#667eea",
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    justifyContent: "center",
+    alignItems: "center",
+    zIndex: 10,
+    elevation: 5,
+  },
+
+  // MODALS
+  modalHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
     padding: 16,
+    paddingTop: Platform.OS === "ios" ? 56 : 40,
     borderBottomWidth: 1,
     borderBottomColor: "#eee",
-    paddingTop: Platform.OS === "ios" ? 50 : 40,
     backgroundColor: "white",
   },
-  commentsTitle: { fontSize: 18, fontWeight: "600", color: "#333" },
-  commentItem: { flexDirection: "row", marginBottom: 20, gap: 12 },
+  modalTitle: { fontSize: 17, fontWeight: "600", color: "#333" },
+
+  // COMMENTS
+  commentItem: { flexDirection: "row", marginVertical: 10, gap: 10 },
   commentContent: { flex: 1 },
   commentUser: {
     fontWeight: "600",
     fontSize: 14,
     color: "#333",
-    marginBottom: 4,
+    marginBottom: 2,
   },
-  commentText: { fontSize: 14, color: "#555", marginBottom: 4 },
+  commentText: { fontSize: 14, color: "#555", marginBottom: 2 },
   commentDate: { fontSize: 11, color: "#999" },
-  noComments: {
+  emptyText: {
     textAlign: "center",
     color: "#999",
     marginTop: 40,
-    fontSize: 16,
+    fontSize: 15,
   },
-  commentInputContainer: {
+
+  // INPUT ROW (comments + messenger)
+  inputRow: {
     flexDirection: "row",
     padding: 12,
     borderTopWidth: 1,
     borderTopColor: "#eee",
     backgroundColor: "white",
     alignItems: "flex-end",
+    gap: 8,
   },
-  commentInput: {
+  textInput: {
     flex: 1,
     backgroundColor: "#f5f5f5",
     borderRadius: 20,
@@ -674,15 +1285,103 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     maxHeight: 100,
     fontSize: 15,
+    color: "#333",
   },
-  sendButton: {
+  sendBtn: {
     backgroundColor: "#667eea",
-    width: 44,
-    height: 44,
-    borderRadius: 22,
+    width: 42,
+    height: 42,
+    borderRadius: 21,
     justifyContent: "center",
     alignItems: "center",
-    marginLeft: 10,
   },
-  sendButtonDisabled: { backgroundColor: "#ccc" },
+  sendBtnDisabled: { backgroundColor: "#ccc" },
+
+  // MESSENGER
+  recipientCard: {
+    flexDirection: "row",
+    alignItems: "center",
+    padding: 16,
+    backgroundColor: "#f8f8ff",
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: "#e0e0ff",
+  },
+  recipientName: { fontSize: 15, fontWeight: "600", color: "#333" },
+  recipientSub: { fontSize: 13, color: "#666", marginTop: 2 },
+
+  // SHARE
+  searchInput: {
+    backgroundColor: "#f5f5f5",
+    borderRadius: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    fontSize: 15,
+    color: "#333",
+    marginBottom: 8,
+  },
+  userRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: "#f0f0f0",
+  },
+
+  // UPLOAD
+  pickContainer: { alignItems: "center", gap: 20, paddingTop: 40 },
+  pickHint: { fontSize: 16, color: "#666", marginBottom: 10 },
+  pickBtn: {
+    width: "80%",
+    alignItems: "center",
+    padding: 28,
+    borderRadius: 16,
+    borderWidth: 2,
+    borderColor: "#667eea",
+    borderStyle: "dashed",
+    gap: 10,
+  },
+  pickBtnText: { fontSize: 16, color: "#667eea", fontWeight: "600" },
+  previewContainer: { position: "relative", marginBottom: 20 },
+  previewVideo: { width: "100%", height: 220, borderRadius: 12 },
+  changeVideoBtn: {
+    position: "absolute",
+    bottom: 8,
+    right: 8,
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "rgba(0,0,0,0.6)",
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 20,
+  },
+  fieldLabel: {
+    fontSize: 14,
+    fontWeight: "500",
+    color: "#333",
+    marginBottom: 6,
+    marginTop: 12,
+  },
+  fieldInput: {
+    backgroundColor: "#f5f5f5",
+    borderRadius: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    fontSize: 15,
+    color: "#333",
+    borderWidth: 1,
+    borderColor: "#e0e0e0",
+  },
+  uploadBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "#667eea",
+    borderRadius: 12,
+    paddingVertical: 16,
+    marginTop: 24,
+    gap: 8,
+  },
+  uploadBtnDisabled: { backgroundColor: "#a0aec0" },
+  uploadBtnText: { color: "white", fontSize: 16, fontWeight: "600" },
 });
