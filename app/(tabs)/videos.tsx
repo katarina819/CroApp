@@ -11,9 +11,11 @@ import {
   Alert,
   Dimensions,
   FlatList,
+  Image,
   KeyboardAvoidingView,
   Modal,
   Platform,
+  SafeAreaView,
   ScrollView,
   StyleSheet,
   Text,
@@ -616,7 +618,7 @@ function ShareModal({
 }
 
 // ==================== UPLOAD MODAL ====================
-function UploadModal({
+export function UploadModal({
   visible,
   onClose,
   onUploaded,
@@ -625,16 +627,20 @@ function UploadModal({
   onClose: () => void;
   onUploaded: () => void;
 }) {
-  const [videoUri, setVideoUri] = useState<string | null>(null);
+  const [mediaUri, setMediaUri] = useState<string | null>(null);
+  const [mediaType, setMediaType] = useState<"video" | "image">("video");
   const [title, setTitle] = useState("");
   const [location, setLocation] = useState("");
   const [description, setDescription] = useState("");
   const [uploading, setUploading] = useState(false);
   const [step, setStep] = useState<"pick" | "preview">("pick");
 
-  const previewPlayer = useVideoPlayer(videoUri || "", (p) => {
-    p.loop = true;
-  });
+  const previewPlayer = useVideoPlayer(
+    mediaType === "video" && mediaUri ? mediaUri : "",
+    (p) => {
+      p.loop = true;
+    },
+  );
 
   const pickFromGallery = async () => {
     const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -646,37 +652,40 @@ function UploadModal({
       return;
     }
     const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ["videos"],
+      mediaTypes: ["images", "videos"], // i slike i videji
       quality: 1,
     });
     if (!result.canceled && result.assets[0]) {
-      setVideoUri(result.assets[0].uri);
+      const asset = result.assets[0];
+      setMediaUri(asset.uri);
+      setMediaType(asset.type === "video" ? "video" : "image");
       setStep("preview");
     }
   };
 
-  const recordVideo = async () => {
+  const recordMedia = async () => {
     const perm = await ImagePicker.requestCameraPermissionsAsync();
     if (!perm.granted) {
       Alert.alert("Dozvola potrebna", "Dozvolite pristup kameri u postavkama");
       return;
     }
     const result = await ImagePicker.launchCameraAsync({
-      mediaTypes: ["videos"],
+      mediaTypes: ["images", "videos"],
       videoMaxDuration: 60,
       quality: 1,
     });
     if (!result.canceled && result.assets[0]) {
-      setVideoUri(result.assets[0].uri);
+      const asset = result.assets[0];
+      setMediaUri(asset.uri);
+      setMediaType(asset.type === "video" ? "video" : "image");
       setStep("preview");
     }
   };
 
-  const uploadVideo = async () => {
+  const uploadMedia = async () => {
     const token = await AsyncStorage.getItem("token");
     let userId = await AsyncStorage.getItem("userId");
 
-    // Fallback: izvuci userId iz JWT tokena
     if (!userId || userId === "0") {
       try {
         const payload = JSON.parse(atob(token!.split(".")[1]));
@@ -684,19 +693,15 @@ function UploadModal({
           payload[
             "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier"
           ];
-      } catch (e) {
-        console.error("Ne mogu pročitati token", e);
-      }
+      } catch {}
     }
 
-    console.log("📤 userId koji se šalje:", userId);
-
-    if (!videoUri || !title.trim()) {
-      Alert.alert("Greška", "Naslov videa je obavezan");
+    if (!mediaUri || !title.trim()) {
+      Alert.alert("Greška", "Naslov je obavezan");
       return;
     }
     if (!location.trim()) {
-      Alert.alert("Greška", "Lokacija snimanja je obavezna za objavu videa");
+      Alert.alert("Greška", "Lokacija je obavezna");
       return;
     }
     if (!userId || userId === "0") {
@@ -710,16 +715,18 @@ function UploadModal({
     setUploading(true);
     try {
       const formData = new FormData();
-      formData.append("video", {
-        uri: videoUri,
-        type: "video/mp4",
-        name: "video.mp4",
+      formData.append("media", {
+        uri: mediaUri,
+        type: mediaType === "video" ? "video/mp4" : "image/jpeg",
+        name: mediaType === "video" ? "media.mp4" : "media.jpg",
       } as any);
+      formData.append("mediaType", mediaType);
       formData.append("title", title.trim());
       formData.append("location", location.trim());
       formData.append("description", description.trim());
       formData.append("userId", userId);
 
+      // Endpoint: api/video/upload (backend treba podržati i slike)
       const res = await fetch(`${API_BASE_URL}/api/video/upload`, {
         method: "POST",
         headers: { Authorization: `Bearer ${token}` },
@@ -727,14 +734,17 @@ function UploadModal({
       });
 
       if (res.ok) {
-        Alert.alert("Uspjeh!", "Video je objavljen");
+        Alert.alert(
+          "Uspjeh!",
+          `${mediaType === "video" ? "Video" : "Slika"} je objavljena`,
+        );
         resetModal();
         onUploaded();
       } else {
         const err = await res.text();
         Alert.alert("Greška", err || "Upload nije uspio");
       }
-    } catch (e) {
+    } catch {
       Alert.alert("Greška", "Upload nije uspio. Provjeri konekciju.");
     } finally {
       setUploading(false);
@@ -742,7 +752,7 @@ function UploadModal({
   };
 
   const resetModal = () => {
-    setVideoUri(null);
+    setMediaUri(null);
     setTitle("");
     setLocation("");
     setDescription("");
@@ -761,70 +771,93 @@ function UploadModal({
         style={{ flex: 1 }}
         behavior={Platform.OS === "ios" ? "padding" : "height"}
       >
-        <View style={{ flex: 1, backgroundColor: "#fff" }}>
+        <SafeAreaView style={{ flex: 1, backgroundColor: "#fff" }}>
+          {/* Header */}
           <View style={styles.modalHeader}>
             <TouchableOpacity onPress={resetModal}>
               <Ionicons name="close" size={28} color="black" />
             </TouchableOpacity>
             <Text style={styles.modalTitle}>
-              {step === "pick" ? "Dodaj video" : "Pregled i objava"}
+              {step === "pick" ? "Dodaj sadržaj" : "Pregled i objava"}
             </Text>
             <View style={{ width: 28 }} />
           </View>
+
           <ScrollView
             keyboardShouldPersistTaps="handled"
             contentContainerStyle={{ padding: 16 }}
           >
             {step === "pick" ? (
               <View style={styles.pickContainer}>
-                <Text style={styles.pickHint}>
-                  Odaberi način dodavanja videa
-                </Text>
+                <Text style={styles.pickHint}>Odaberi vrstu i izvor</Text>
+
+                {/* Galerija */}
                 <TouchableOpacity
                   style={styles.pickBtn}
                   onPress={pickFromGallery}
                 >
                   <Ionicons name="images" size={40} color="#667eea" />
                   <Text style={styles.pickBtnText}>Iz galerije</Text>
+                  <Text style={styles.pickBtnSub}>Slike i videji</Text>
                 </TouchableOpacity>
-                <TouchableOpacity style={styles.pickBtn} onPress={recordVideo}>
-                  <Ionicons name="videocam" size={40} color="#667eea" />
-                  <Text style={styles.pickBtnText}>Snimi uživo</Text>
+
+                {/* Kamera */}
+                <TouchableOpacity style={styles.pickBtn} onPress={recordMedia}>
+                  <Ionicons name="camera" size={40} color="#667eea" />
+                  <Text style={styles.pickBtnText}>Kamera / Snimanje</Text>
+                  <Text style={styles.pickBtnSub}>Snimite sliku ili video</Text>
                 </TouchableOpacity>
               </View>
             ) : (
               <>
-                {/* VIDEO PREVIEW */}
+                {/* Preview */}
                 <View style={styles.previewContainer}>
-                  {videoUri && (
+                  {mediaType === "image" ? (
+                    <Image
+                      source={{ uri: mediaUri ?? "" }}
+                      style={styles.previewMedia}
+                      resizeMode="cover"
+                    />
+                  ) : (
                     <VideoView
                       player={previewPlayer}
-                      style={styles.previewVideo}
+                      style={styles.previewMedia}
                       contentFit="cover"
                       nativeControls
                     />
                   )}
+                  {/* Media type badge */}
+                  <View style={styles.mediaTypeBadge}>
+                    <Ionicons
+                      name={mediaType === "video" ? "videocam" : "image"}
+                      size={14}
+                      color="#fff"
+                    />
+                    <Text style={styles.mediaTypeBadgeText}>
+                      {mediaType === "video" ? "Video" : "Slika"}
+                    </Text>
+                  </View>
                   <TouchableOpacity
-                    style={styles.changeVideoBtn}
+                    style={styles.changeBtn}
                     onPress={() => {
-                      setVideoUri(null);
+                      setMediaUri(null);
                       setStep("pick");
                     }}
                   >
-                    <Ionicons name="refresh" size={16} color="white" />
+                    <Ionicons name="refresh" size={16} color="#fff" />
                     <Text
-                      style={{ color: "white", fontSize: 12, marginLeft: 4 }}
+                      style={{ color: "#fff", fontSize: 12, marginLeft: 4 }}
                     >
                       Promijeni
                     </Text>
                   </TouchableOpacity>
                 </View>
 
-                {/* FORM */}
+                {/* Form */}
                 <Text style={styles.fieldLabel}>Naslov *</Text>
                 <TextInput
                   style={styles.fieldInput}
-                  placeholder="Unesite naslov videa"
+                  placeholder="Naslov objave"
                   placeholderTextColor="#999"
                   value={title}
                   onChangeText={setTitle}
@@ -834,12 +867,12 @@ function UploadModal({
                 <Text style={styles.fieldLabel}>
                   Lokacija *{" "}
                   <Text style={{ color: "#ff3b30", fontSize: 12 }}>
-                    (obavezno za objavu)
+                    (obavezno)
                   </Text>
                 </Text>
                 <TextInput
                   style={styles.fieldInput}
-                  placeholder="Npr. Zagreb, Dolac tržnica"
+                  placeholder="Npr. Zagreb, Dolac"
                   placeholderTextColor="#999"
                   value={location}
                   onChangeText={setLocation}
@@ -852,7 +885,7 @@ function UploadModal({
                     styles.fieldInput,
                     { height: 80, textAlignVertical: "top" },
                   ]}
-                  placeholder="Kratki opis videa..."
+                  placeholder="Kratki opis..."
                   placeholderTextColor="#999"
                   value={description}
                   onChangeText={setDescription}
@@ -860,42 +893,43 @@ function UploadModal({
                   maxLength={300}
                 />
 
-                {/* GUMBI: OBRIŠI + OBJAVI */}
+                {/* Buttons */}
                 <View style={{ flexDirection: "row", gap: 12, marginTop: 24 }}>
                   <TouchableOpacity
                     style={[
-                      styles.uploadBtn,
+                      styles.actionBtn,
                       { flex: 1, backgroundColor: "#ff3b30" },
                     ]}
                     onPress={() => {
-                      setVideoUri(null);
+                      setMediaUri(null);
                       setStep("pick");
                     }}
                     disabled={uploading}
                   >
-                    <Ionicons name="trash-outline" size={22} color="white" />
-                    <Text style={styles.uploadBtnText}>Obriši</Text>
+                    <Ionicons name="trash-outline" size={22} color="#fff" />
+                    <Text style={styles.actionBtnText}>Obriši</Text>
                   </TouchableOpacity>
-
                   <TouchableOpacity
                     style={[
-                      styles.uploadBtn,
-                      { flex: 1 },
-                      uploading && styles.uploadBtnDisabled,
+                      styles.actionBtn,
+                      {
+                        flex: 1,
+                        backgroundColor: uploading ? "#a0aec0" : "#667eea",
+                      },
                     ]}
-                    onPress={uploadVideo}
+                    onPress={uploadMedia}
                     disabled={uploading}
                   >
                     {uploading ? (
-                      <ActivityIndicator color="white" />
+                      <ActivityIndicator color="#fff" />
                     ) : (
                       <>
                         <Ionicons
                           name="cloud-upload-outline"
                           size={22}
-                          color="white"
+                          color="#fff"
                         />
-                        <Text style={styles.uploadBtnText}>Objavi</Text>
+                        <Text style={styles.actionBtnText}>Objavi</Text>
                       </>
                     )}
                   </TouchableOpacity>
@@ -903,7 +937,7 @@ function UploadModal({
               </>
             )}
           </ScrollView>
-        </View>
+        </SafeAreaView>
       </KeyboardAvoidingView>
     </Modal>
   );
@@ -1250,10 +1284,8 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     alignItems: "center",
     padding: 16,
-    paddingTop: Platform.OS === "ios" ? 56 : 40,
     borderBottomWidth: 1,
     borderBottomColor: "#eee",
-    backgroundColor: "white",
   },
   modalTitle: { fontSize: 17, fontWeight: "600", color: "#333" },
 
@@ -1338,24 +1370,65 @@ const styles = StyleSheet.create({
 
   // UPLOAD
   pickContainer: { alignItems: "center", gap: 20, paddingTop: 40 },
-  pickHint: { fontSize: 16, color: "#666", marginBottom: 10 },
+  pickHint: { fontSize: 18, color: "#666", marginBottom: 8 },
   pickBtn: {
     width: "80%",
     alignItems: "center",
-    padding: 28,
+    padding: 24,
     borderRadius: 16,
     borderWidth: 2,
     borderColor: "#667eea",
     borderStyle: "dashed",
-    gap: 10,
+    gap: 8,
   },
   pickBtnText: { fontSize: 16, color: "#667eea", fontWeight: "600" },
-  previewContainer: { position: "relative", marginBottom: 20 },
+
   previewVideo: { width: "100%", height: 220, borderRadius: 12 },
   changeVideoBtn: {
     position: "absolute",
     bottom: 8,
     right: 8,
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "rgba(0,0,0,0.6)",
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 20,
+  },
+
+  uploadBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "#667eea",
+    borderRadius: 12,
+    paddingVertical: 16,
+    marginTop: 24,
+    gap: 8,
+  },
+  uploadBtnDisabled: { backgroundColor: "#a0aec0" },
+  uploadBtnText: { color: "white", fontSize: 16, fontWeight: "600" },
+
+  pickBtnSub: { fontSize: 13, color: "#999" },
+  previewContainer: { position: "relative", marginBottom: 20 },
+  previewMedia: { width: "100%", height: 260, borderRadius: 12 },
+  mediaTypeBadge: {
+    position: "absolute",
+    top: 10,
+    left: 10,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    backgroundColor: "rgba(0,0,0,0.6)",
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 20,
+  },
+  mediaTypeBadgeText: { color: "#fff", fontSize: 12, fontWeight: "600" },
+  changeBtn: {
+    position: "absolute",
+    bottom: 10,
+    right: 10,
     flexDirection: "row",
     alignItems: "center",
     backgroundColor: "rgba(0,0,0,0.6)",
@@ -1380,16 +1453,13 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "#e0e0e0",
   },
-  uploadBtn: {
+  actionBtn: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "#667eea",
     borderRadius: 12,
     paddingVertical: 16,
-    marginTop: 24,
     gap: 8,
   },
-  uploadBtnDisabled: { backgroundColor: "#a0aec0" },
-  uploadBtnText: { color: "white", fontSize: 16, fontWeight: "600" },
+  actionBtnText: { color: "#fff", fontSize: 16, fontWeight: "600" },
 });
