@@ -501,6 +501,14 @@ function ShareModal({
     if (!video) return;
     setSending(receiverId);
     try {
+      // ── NOVO: strukturirani format umjesto slobodnog teksta ──
+      const VIDEO_PREFIX = "__CROMAP_VIDEO__";
+      const videoContent = `${VIDEO_PREFIX}${JSON.stringify({
+        id: video.id,
+        title: video.title,
+        url: video.filePath,
+      })}`;
+
       const res = await fetch(`${API_BASE_URL}/api/message/send`, {
         method: "POST",
         headers: {
@@ -509,7 +517,7 @@ function ShareModal({
         },
         body: JSON.stringify({
           receiverId,
-          content: `📹 Pogledaj ovaj video: "${video.title}"\n${video.filePath}`,
+          content: videoContent, // <── jedina promjena
         }),
       });
       if (res.ok) {
@@ -638,7 +646,7 @@ function UploadModal({
       return;
     }
     const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Videos,
+      mediaTypes: ["videos"],
       quality: 1,
     });
     if (!result.canceled && result.assets[0]) {
@@ -654,7 +662,7 @@ function UploadModal({
       return;
     }
     const result = await ImagePicker.launchCameraAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Videos,
+      mediaTypes: ["videos"],
       videoMaxDuration: 60,
       quality: 1,
     });
@@ -894,8 +902,8 @@ function UploadModal({
                 </View>
               </>
             )}
-          </ScrollView>{" "}
-        </View>{" "}
+          </ScrollView>
+        </View>
       </KeyboardAvoidingView>
     </Modal>
   );
