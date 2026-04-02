@@ -4,12 +4,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as ImagePicker from "expo-image-picker";
 import { router, useFocusEffect } from "expo-router";
 import { VideoView, useVideoPlayer } from "expo-video";
-import {
-  useCallback,
-  useEffect,
-  useRef,
-  useState,
-} from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
   Animated,
   Dimensions,
@@ -65,7 +60,10 @@ function StoryViewer({
 
   const player = useVideoPlayer(
     story.mediaType === "video" ? story.mediaUrl : "",
-    (p) => { p.loop = false; p.muted = false; }
+    (p) => {
+      p.loop = false;
+      p.muted = false;
+    },
   );
 
   useEffect(() => {
@@ -106,9 +104,18 @@ function StoryViewer({
       <View style={sv.bg} />
 
       {story.mediaType === "image" ? (
-        <Image source={{ uri: story.mediaUrl }} style={sv.media} resizeMode="contain" />
+        <Image
+          source={{ uri: story.mediaUrl }}
+          style={sv.media}
+          resizeMode="contain"
+        />
       ) : (
-        <VideoView player={player} style={sv.media} contentFit="contain" nativeControls={false} />
+        <VideoView
+          player={player}
+          style={sv.media}
+          contentFit="contain"
+          nativeControls={false}
+        />
       )}
 
       {/* Progress bar */}
@@ -121,7 +128,10 @@ function StoryViewer({
         <View style={sv.userInfo}>
           <View style={sv.smallAvatar}>
             {story.userAvatar ? (
-              <Image source={{ uri: story.userAvatar }} style={sv.smallAvatarImg} />
+              <Image
+                source={{ uri: story.userAvatar }}
+                style={sv.smallAvatarImg}
+              />
             ) : (
               <Text style={sv.smallAvatarText}>
                 {story.userName?.[0]?.toUpperCase()}
@@ -168,7 +178,12 @@ function StoryViewer({
       </View>
 
       {/* Viewers Modal */}
-      <Modal visible={showViewers} transparent animationType="slide" onRequestClose={() => setShowViewers(false)}>
+      <Modal
+        visible={showViewers}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setShowViewers(false)}
+      >
         <View style={sv.viewersModal}>
           <View style={sv.viewersContent}>
             <View style={sv.viewersHeader}>
@@ -277,7 +292,12 @@ const sv = StyleSheet.create({
     marginBottom: 16,
   },
   viewersTitle: { fontSize: 18, fontWeight: "700", color: "#333" },
-  viewerRow: { flexDirection: "row", alignItems: "center", gap: 12, marginBottom: 12 },
+  viewerRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    marginBottom: 12,
+  },
   viewerName: { fontSize: 15, color: "#333" },
   noViewers: { color: "#999", textAlign: "center", marginTop: 20 },
 });
@@ -303,7 +323,9 @@ function StoriesRow({
     } catch {}
   }, []);
 
-  useEffect(() => { loadStories(); }, []);
+  useEffect(() => {
+    loadStories();
+  }, []);
 
   const handleDelete = async (id: number) => {
     try {
@@ -327,7 +349,13 @@ function StoriesRow({
     byUser[s.userId].push(s);
   });
 
-  interface StoryGroup { userId: number; userName: string; stories: Story[]; unread: boolean; avatar?: string; }
+  interface StoryGroup {
+    userId: number;
+    userName: string;
+    stories: Story[];
+    unread: boolean;
+    avatar?: string;
+  }
   const groups: StoryGroup[] = Object.entries(byUser).map(([uid, ss]) => ({
     userId: parseInt(uid),
     userName: ss[0].userName,
@@ -357,7 +385,10 @@ function StoriesRow({
                     onPress={myLatest ? () => setViewing(myLatest) : onAddStory}
                   >
                     {myLatest ? (
-                      <Image source={{ uri: myLatest.mediaUrl }} style={srs.img} />
+                      <Image
+                        source={{ uri: myLatest.mediaUrl }}
+                        style={srs.img}
+                      />
                     ) : (
                       <View style={srs.addBg}>
                         <Ionicons name="person" size={20} color="#fff" />
@@ -400,7 +431,12 @@ function StoriesRow({
 
       {/* Story Viewer */}
       {viewing && (
-        <Modal visible transparent animationType="fade" onRequestClose={() => setViewing(null)}>
+        <Modal
+          visible
+          transparent
+          animationType="fade"
+          onRequestClose={() => setViewing(null)}
+        >
           <StoryViewer
             story={viewing}
             onClose={() => setViewing(null)}
@@ -469,7 +505,10 @@ function AddStoryModal({
   onClose: () => void;
   onUploaded: () => void;
 }) {
-  const [preview, setPreview] = useState<{ uri: string; type: "image" | "video" } | null>(null);
+  const [preview, setPreview] = useState<{
+    uri: string;
+    type: "image" | "video";
+  } | null>(null);
   const [uploading, setUploading] = useState(false);
 
   const pick = async (source: "gallery" | "camera") => {
@@ -542,11 +581,17 @@ function AddStoryModal({
         {!preview ? (
           <View style={asm.pickContainer}>
             <Text style={asm.hint}>Odaberi medij</Text>
-            <TouchableOpacity style={asm.pickBtn} onPress={() => pick("gallery")}>
+            <TouchableOpacity
+              style={asm.pickBtn}
+              onPress={() => pick("gallery")}
+            >
               <Ionicons name="images" size={40} color="#667eea" />
               <Text style={asm.pickLabel}>Galerija</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={asm.pickBtn} onPress={() => pick("camera")}>
+            <TouchableOpacity
+              style={asm.pickBtn}
+              onPress={() => pick("camera")}
+            >
               <Ionicons name="camera" size={40} color="#667eea" />
               <Text style={asm.pickLabel}>Kamera</Text>
             </TouchableOpacity>
@@ -592,7 +637,12 @@ const asm = StyleSheet.create({
     borderBottomColor: "#eee",
   },
   title: { fontSize: 17, fontWeight: "600", color: "#333" },
-  pickContainer: { flex: 1, justifyContent: "center", alignItems: "center", gap: 24 },
+  pickContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    gap: 24,
+  },
   hint: { fontSize: 18, color: "#666", marginBottom: 8 },
   pickBtn: {
     width: 160,
@@ -655,8 +705,10 @@ export default function MessagesScreen() {
       setLoading(true);
       loadConversations();
       pollRef.current = setInterval(() => loadConversations(true), 8000);
-      return () => { if (pollRef.current) clearInterval(pollRef.current); };
-    }, [])
+      return () => {
+        if (pollRef.current) clearInterval(pollRef.current);
+      };
+    }, []),
   );
 
   const openChat = (userId: number, name: string) => {
@@ -671,11 +723,16 @@ export default function MessagesScreen() {
     const now = new Date();
     const diff = Math.floor((now.getTime() - date.getTime()) / 86400000);
     if (diff === 0)
-      return date.toLocaleTimeString("hr-HR", { hour: "2-digit", minute: "2-digit" });
+      return date.toLocaleTimeString("hr-HR", {
+        hour: "2-digit",
+        minute: "2-digit",
+      });
     if (diff === 1) return "Jučer";
-    if (diff < 7)
-      return date.toLocaleDateString("hr-HR", { weekday: "short" });
-    return date.toLocaleDateString("hr-HR", { day: "2-digit", month: "2-digit" });
+    if (diff < 7) return date.toLocaleDateString("hr-HR", { weekday: "short" });
+    return date.toLocaleDateString("hr-HR", {
+      day: "2-digit",
+      month: "2-digit",
+    });
   };
 
   if (loading && !refreshing) {
@@ -720,24 +777,35 @@ export default function MessagesScreen() {
           renderItem={({ item }) => (
             <ConversationItem
               item={item}
-              onPress={() => openChat(item.userId, `${item.firstName} ${item.lastName}`)}
+              onPress={() =>
+                openChat(item.userId, `${item.firstName} ${item.lastName}`)
+              }
               formatTime={formatTime}
             />
           )}
           refreshControl={
             <RefreshControl
               refreshing={refreshing}
-              onRefresh={() => { setRefreshing(true); loadConversations(); }}
+              onRefresh={() => {
+                setRefreshing(true);
+                loadConversations();
+              }}
               tintColor="#667eea"
             />
           }
           contentContainerStyle={
-            conversations.length === 0 ? styles.emptyContainer : styles.listContent
+            conversations.length === 0
+              ? styles.emptyContainer
+              : styles.listContent
           }
           ListEmptyComponent={
             !loading ? (
               <View style={styles.emptyState}>
-                <Ionicons name="chatbubbles-outline" size={64} color="#d0d0d0" />
+                <Ionicons
+                  name="chatbubbles-outline"
+                  size={64}
+                  color="#d0d0d0"
+                />
                 <Text style={styles.emptyTitle}>Nema poruka</Text>
                 <Text style={styles.emptySubtitle}>
                   Pretraži korisnike i pošalji prvu poruku!
@@ -783,7 +851,10 @@ function ConversationItem({
     `${item.firstName?.[0] ?? ""}${item.lastName?.[0] ?? ""}`.toUpperCase();
 
   const onPressIn = () =>
-    Animated.spring(scaleAnim, { toValue: 0.97, useNativeDriver: true }).start();
+    Animated.spring(scaleAnim, {
+      toValue: 0.97,
+      useNativeDriver: true,
+    }).start();
   const onPressOut = () =>
     Animated.spring(scaleAnim, { toValue: 1, useNativeDriver: true }).start();
 
@@ -802,7 +873,10 @@ function ConversationItem({
         <View style={styles.convInfo}>
           <View style={styles.convNameRow}>
             <Text
-              style={[styles.convName, item.unreadCount > 0 && styles.convNameBold]}
+              style={[
+                styles.convName,
+                item.unreadCount > 0 && styles.convNameBold,
+              ]}
               numberOfLines={1}
             >
               {item.firstName} {item.lastName}
