@@ -2,6 +2,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Stack } from "expo-router";
 import { useEffect, useState } from "react";
 import { ActivityIndicator, View } from "react-native";
+import { UserProvider } from "./contexts/UserContext";
 
 export default function RootLayout() {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
@@ -29,13 +30,15 @@ export default function RootLayout() {
   }
 
   return (
-    <Stack screenOptions={{ headerShown: false }}>
-      {!isAuthenticated ? (
-        <Stack.Screen name="login" />
-      ) : (
-        <Stack.Screen name="(tabs)" />
-      )}
-      <Stack.Screen name="register" />
-    </Stack>
+    <UserProvider>
+      <Stack screenOptions={{ headerShown: false }}>
+        {!isAuthenticated ? (
+          <Stack.Screen name="login" />
+        ) : (
+          <Stack.Screen name="(tabs)" />
+        )}
+        <Stack.Screen name="register" />
+      </Stack>
+    </UserProvider>
   );
 }

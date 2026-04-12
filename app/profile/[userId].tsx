@@ -1,0 +1,1043 @@
+// app/profile/[userId].tsx
+// Pregled profila drugog korisnika
+import { Ionicons } from "@expo/vector-icons";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { router, useLocalSearchParams } from "expo-router";
+import { VideoView, useVideoPlayer } from "expo-video";
+import { useEffect, useRef, useState } from "react";
+import {
+  ActivityIndicator,
+  Alert,
+  Dimensions,
+  FlatList,
+  Image,
+  KeyboardAvoidingView,
+  Modal,
+  Platform,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
+} from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { StoryBadge } from "../../app/StoryBadge";
+import { API_BASE_URL } from "../config/api";
+
+const { width: SCREEN_W } = Dimensions.get("window");
+
+interface PublicProfile {
+  id: number;
+  firstName: string;
+  lastName: string;
+  username: string;
+  avatar?: string | null;
+  followersCount: number;
+  followingCount: number;
+  isPublic: boolean;
+}
+
+interface PublicMedia {
+  id: number;
+  title: string;
+  filePath: string;
+  createdAt: string;
+  mediaType: "image" | "video";
+  likeCount?: number;
+}
+
+// Video Preview Modal komponenta
+function VideoPreviewModal({
+  visible,
+  videoUrl,
+  title,
+  onClose,
+}: {
+  visible: boolean;
+  videoUrl: string;
+  title: string;
+  onClose: () => void;
+}) {
+  const playerRef = useRef<any>(null);
+  const [isPlayerReady, setIsPlayerReady] = useState(false);
+
+  const player = useVideoPlayer(videoUrl, (p) => {
+    p.loop = false;
+    p.muted = false;
+    playerRef.current = p;
+    setIsPlayerReady(true);
+  });
+
+  useEffect(() => {
+    if (!player) return;
+
+    if (visible && isPlayerReady) {
+      setTimeout(() => {
+        if (playerRef.current) {
+          try {
+            playerRef.current.play();
+          } catch (e) {
+            console.log("Error playing video:", e);
+          }
+        }
+      }, 100);
+    } else if (!visible && playerRef.current) {
+      try {
+        playerRef.current.pause();
+      } catch (e) {
+        console.log("Error pausing video:", e);
+      }
+    }
+  }, [visible, player, isPlayerReady]);
+
+  useEffect(() => {
+    return () => {
+      if (playerRef.current) {
+        try {
+          playerRef.current.pause();
+          if (typeof playerRef.current.release === "function") {
+            playerRef.current.release();
+          }
+        } catch (e) {
+          console.log("Error cleaning up video player:", e);
+        }
+        playerRef.current = null;
+      }
+    };
+  }, []);
+
+  return (
+    <Modal
+      visible={visible}
+      animationType="slide"
+      transparent={false}
+      onRequestClose={onClose}
+    >
+      <SafeAreaView style={{ flex: 1, backgroundColor: "#000" }}>
+        <View style={vpModal.header}>
+          <TouchableOpacity onPress={onClose}>
+            <Ionicons name="close" size={28} color="#fff" />
+          </TouchableOpacity>
+          <Text style={vpModal.title} numberOfLines={1}>
+            {title}
+          </Text>
+          <View style={{ width: 28 }} />
+        </View>
+        <View style={vpModal.videoContainer}>
+          {visible && (
+            <VideoView
+              player={player}
+              style={vpModal.video}
+              contentFit="contain"
+              nativeControls={true}
+            />
+          )}
+        </View>
+      </SafeAreaView>
+    </Modal>
+  );
+}
+
+const vpModal = StyleSheet.create({
+  header: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    padding: 16,
+    backgroundColor: "#000",
+  },
+  title: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: "#fff",
+    flex: 1,
+    marginHorizontal: 12,
+    textAlign: "center",
+  },
+  videoContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "#000",
+  },
+  video: {
+    width: "100%",
+    height: "100%",
+  },
+});
+
+// Image Preview Modal
+function ImagePreviewModal({
+  visible,
+  imageUrl,
+  title,
+  onClose,
+}: {
+  visible: boolean;
+  imageUrl: string;
+  title: string;
+  onClose: () => void;
+}) {
+  return (
+    <Modal
+      visible={visible}
+      animationType="slide"
+      transparent={false}
+      onRequestClose={onClose}
+    >
+      <SafeAreaView style={{ flex: 1, backgroundColor: "#000" }}>
+        <View style={styles.imageModalHeader}>
+          <TouchableOpacity onPress={onClose}>
+            <Ionicons name="close" size={28} color="#fff" />
+          </TouchableOpacity>
+          <Text style={styles.imageModalTitle} numberOfLines={1}>
+            {title}
+          </Text>
+          <View style={{ width: 28 }} />
+        </View>
+        <View style={styles.imageModalContent}>
+          <Image
+            source={{ uri: imageUrl }}
+            style={styles.imageModalImage}
+            resizeMode="contain"
+          />
+        </View>
+      </SafeAreaView>
+    </Modal>
+  );
+}
+
+export default function UserProfileScreen() {
+  const { userId } = useLocalSearchParams<{ userId: string }>();
+  const numericUserId = parseInt(userId ?? "0");
+
+  const [profile, setProfile] = useState<PublicProfile | null>(null);
+  const [media, setMedia] = useState<PublicMedia[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [isFollowing, setIsFollowing] = useState(false);
+  const [isGolden, setIsGolden] = useState(false);
+  const [isBlocked, setIsBlocked] = useState(false);
+  const [followLoading, setFollowLoading] = useState(false);
+  const [goldenLoading, setGoldenLoading] = useState(false);
+  const [showCompose, setShowCompose] = useState(false);
+  const [message, setMessage] = useState("");
+  const [sending, setSending] = useState(false);
+
+  // State za medij pregled
+  const [selectedVideo, setSelectedVideo] = useState<PublicMedia | null>(null);
+  const [selectedImage, setSelectedImage] = useState<PublicMedia | null>(null);
+
+  useEffect(() => {
+    if (!numericUserId) return;
+    loadProfile();
+  }, [numericUserId]);
+
+  const loadProfile = async () => {
+    setLoading(true);
+    try {
+      const token = await AsyncStorage.getItem("token");
+
+      // 1. Dohvati profil korisnika
+      const res = await fetch(
+        `${API_BASE_URL}/api/auth/users/${numericUserId}`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        },
+      );
+
+      let profileData: PublicProfile = {
+        id: numericUserId,
+        firstName: "",
+        lastName: "",
+        username: "",
+        avatar: null,
+        followersCount: 0,
+        followingCount: 0,
+        isPublic: true,
+      };
+
+      if (res.ok) {
+        const data = await res.json();
+        profileData = {
+          ...profileData,
+          ...data,
+        };
+      }
+
+      // 2. Dohvati broj pratitelja i praćenih
+      try {
+        const [followersRes, followingRes] = await Promise.all([
+          fetch(`${API_BASE_URL}/api/follow/followers/${numericUserId}`, {
+            headers: { Authorization: `Bearer ${token}` },
+          }),
+          fetch(`${API_BASE_URL}/api/follow/following/${numericUserId}`, {
+            headers: { Authorization: `Bearer ${token}` },
+          }),
+        ]);
+
+        if (followersRes.ok) {
+          const followers = await followersRes.json();
+          profileData.followersCount = followers.length || 0;
+        }
+        if (followingRes.ok) {
+          const following = await followingRes.json();
+          profileData.followingCount = following.length || 0;
+        }
+      } catch (error) {
+        console.error("Error fetching follow counts:", error);
+      }
+
+      setProfile(profileData);
+
+      // 3. Dohvati sve medije korisnika
+      const videosRes = await fetch(
+        `${API_BASE_URL}/api/video/user/${numericUserId}`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        },
+      );
+
+      let allMedia: PublicMedia[] = [];
+
+      if (videosRes.ok) {
+        const videos = await videosRes.json();
+        console.log("Media loaded:", videos.length);
+
+        allMedia = videos.map((v: any) => ({
+          id: v.id,
+          title: v.title || (v.mediaType === "image" ? "Slika" : "Video"),
+          filePath: v.filePath,
+          createdAt: v.createdAt,
+          mediaType: v.mediaType === "image" ? "image" : "video",
+          likeCount: v.likeCount || 0,
+        }));
+      }
+
+      allMedia.sort(
+        (a, b) =>
+          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+      );
+
+      setMedia(allMedia);
+
+      // 4-6. Provjere follow, golden, block...
+      try {
+        const fRes = await fetch(
+          `${API_BASE_URL}/api/follow/is-following/${numericUserId}`,
+          { headers: { Authorization: `Bearer ${token}` } },
+        );
+        if (fRes.ok) {
+          const data = await fRes.json();
+          setIsFollowing(data.isFollowing ?? false);
+        }
+      } catch {}
+
+      try {
+        const gRes = await fetch(
+          `${API_BASE_URL}/api/golden-friends/is-golden/${numericUserId}`,
+          { headers: { Authorization: `Bearer ${token}` } },
+        );
+        if (gRes.ok) {
+          const data = await gRes.json();
+          setIsGolden(data.isGolden ?? false);
+        }
+      } catch {}
+
+      try {
+        const bRes = await fetch(
+          `${API_BASE_URL}/api/block/is-blocked/${numericUserId}`,
+          { headers: { Authorization: `Bearer ${token}` } },
+        );
+        if (bRes.ok) {
+          const data = await bRes.json();
+          setIsBlocked(data.isBlocked ?? false);
+        }
+      } catch {}
+    } catch (error) {
+      console.error("Error loading profile:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Follow / Unfollow
+  const handleFollow = async () => {
+    const token = await AsyncStorage.getItem("token");
+    setFollowLoading(true);
+    const prev = isFollowing;
+    setIsFollowing(!prev);
+    if (profile) {
+      setProfile((p) =>
+        p
+          ? {
+              ...p,
+              followersCount: prev
+                ? p.followersCount - 1
+                : p.followersCount + 1,
+            }
+          : p,
+      );
+    }
+    try {
+      const res = isFollowing
+        ? await fetch(`${API_BASE_URL}/api/follow/unfollow/${numericUserId}`, {
+            method: "DELETE",
+            headers: { Authorization: `Bearer ${token}` },
+          })
+        : await fetch(`${API_BASE_URL}/api/follow/follow/${numericUserId}`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${token}`,
+            },
+          });
+      if (!res.ok) throw new Error();
+    } catch {
+      setIsFollowing(prev);
+      setProfile((p) =>
+        p
+          ? {
+              ...p,
+              followersCount: prev
+                ? p.followersCount + 1
+                : p.followersCount - 1,
+            }
+          : p,
+      );
+    } finally {
+      setFollowLoading(false);
+    }
+  };
+
+  // Golden Star toggle
+  const handleGoldenToggle = async () => {
+    const token = await AsyncStorage.getItem("token");
+    setGoldenLoading(true);
+    try {
+      if (!isGolden) {
+        Alert.alert(
+          "⭐ Dodaj Golden Frienda",
+          `Dodati ${profile?.firstName} ${profile?.lastName} u Golden Friends?`,
+          [
+            { text: "Odustani", style: "cancel" },
+            {
+              text: "Dodaj ⭐",
+              onPress: async () => {
+                const res = await fetch(
+                  `${API_BASE_URL}/api/golden-friends/add/${numericUserId}`,
+                  {
+                    method: "POST",
+                    headers: {
+                      "Content-Type": "application/json",
+                      Authorization: `Bearer ${token}`,
+                    },
+                  },
+                );
+                if (res.ok) {
+                  setIsGolden(true);
+                  Alert.alert(
+                    "⭐ Dodano!",
+                    `${profile?.firstName} je sada tvoj Golden Friend`,
+                  );
+                }
+              },
+            },
+          ],
+        );
+      } else {
+        Alert.alert(
+          "Ukloni Golden Frienda",
+          `Ukloniti ${profile?.firstName} iz Golden Friends?`,
+          [
+            { text: "Odustani", style: "cancel" },
+            {
+              text: "Ukloni",
+              style: "destructive",
+              onPress: async () => {
+                const res = await fetch(
+                  `${API_BASE_URL}/api/golden-friends/remove/${numericUserId}`,
+                  {
+                    method: "DELETE",
+                    headers: { Authorization: `Bearer ${token}` },
+                  },
+                );
+                if (res.ok) setIsGolden(false);
+              },
+            },
+          ],
+        );
+      }
+    } catch {
+    } finally {
+      setGoldenLoading(false);
+    }
+  };
+
+  // Block / Unblock
+  const handleBlock = async () => {
+    const token = await AsyncStorage.getItem("token");
+    if (!isBlocked) {
+      Alert.alert(
+        "Blokiraj korisnika",
+        `Blokiranjem korisnika ${profile?.firstName} ${profile?.lastName} nećete vidjeti njihov sadržaj niti primati poruke od njega/nje.`,
+        [
+          { text: "Odustani", style: "cancel" },
+          {
+            text: "Blokiraj",
+            style: "destructive",
+            onPress: async () => {
+              const res = await fetch(
+                `${API_BASE_URL}/api/block/block/${numericUserId}`,
+                {
+                  method: "POST",
+                  headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${token}`,
+                  },
+                },
+              );
+              if (res.ok) {
+                setIsBlocked(true);
+                Alert.alert(
+                  "Blokirano",
+                  `${profile?.firstName} je blokiran/a.`,
+                );
+              }
+            },
+          },
+        ],
+      );
+    } else {
+      Alert.alert(
+        "Odblokiraj korisnika",
+        `Odblokirati ${profile?.firstName} ${profile?.lastName}?`,
+        [
+          { text: "Odustani", style: "cancel" },
+          {
+            text: "Odblokiraj",
+            onPress: async () => {
+              const res = await fetch(
+                `${API_BASE_URL}/api/block/unblock/${numericUserId}`,
+                {
+                  method: "DELETE",
+                  headers: { Authorization: `Bearer ${token}` },
+                },
+              );
+              if (res.ok) setIsBlocked(false);
+            },
+          },
+        ],
+      );
+    }
+  };
+
+  // Send message
+  const handleSendMessage = async () => {
+    if (!message.trim()) return;
+    setSending(true);
+    try {
+      const token = await AsyncStorage.getItem("token");
+      const res = await fetch(`${API_BASE_URL}/api/message/send`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          receiverId: numericUserId,
+          content: message.trim(),
+        }),
+      });
+      if (res.ok) {
+        Alert.alert("Poslano ✅", `Poruka poslana @${profile?.username}`);
+        setMessage("");
+        setShowCompose(false);
+      }
+    } catch {
+      Alert.alert("Greška", "Poruka nije poslana");
+    } finally {
+      setSending(false);
+    }
+  };
+
+  const activityCount = media.length;
+
+  const getMediaUrl = (filePath: string) => {
+    if (!filePath) return null;
+    if (filePath.startsWith("http")) return filePath;
+    return `${API_BASE_URL}${filePath.startsWith("/") ? "" : "/"}${filePath}`;
+  };
+
+  // Otvaranje medija
+  const openMedia = (item: PublicMedia) => {
+    const mediaUrl = getMediaUrl(item.filePath);
+    if (!mediaUrl) return;
+
+    if (item.mediaType === "video") {
+      setSelectedVideo(item);
+    } else {
+      setSelectedImage(item);
+    }
+  };
+
+  if (loading) {
+    return (
+      <SafeAreaView style={styles.safeArea} edges={["top"]}>
+        <View style={styles.center}>
+          <ActivityIndicator size="large" color="#667eea" />
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  const initials =
+    `${profile?.firstName?.[0] ?? ""}${profile?.lastName?.[0] ?? ""}`.toUpperCase();
+  const avatarUrl = profile?.avatar ? getMediaUrl(profile.avatar) : null;
+
+  return (
+    <SafeAreaView style={styles.safeArea} edges={["top"]}>
+      {/* Header */}
+      <View style={styles.header}>
+        <TouchableOpacity onPress={() => router.back()}>
+          <Ionicons name="arrow-back" size={28} color="#333" />
+        </TouchableOpacity>
+        <Text style={styles.headerTitle} numberOfLines={1}>
+          {profile?.firstName} {profile?.lastName}
+        </Text>
+        <TouchableOpacity onPress={handleBlock}>
+          <Ionicons
+            name={isBlocked ? "ban" : "ellipsis-vertical"}
+            size={22}
+            color={isBlocked ? "#ff4757" : "#333"}
+          />
+        </TouchableOpacity>
+      </View>
+
+      <ScrollView contentContainerStyle={{ paddingBottom: 80 }}>
+        {/* Profile section */}
+        <View style={styles.profileSection}>
+          <StoryBadge userId={numericUserId} size={100}>
+            {avatarUrl ? (
+              <Image source={{ uri: avatarUrl }} style={styles.avatar} />
+            ) : (
+              <View style={styles.avatarPlaceholder}>
+                <Text style={styles.avatarInitials}>{initials}</Text>
+              </View>
+            )}
+          </StoryBadge>
+
+          <Text style={styles.name}>
+            {profile?.firstName} {profile?.lastName}
+          </Text>
+          <Text style={styles.username}>@{profile?.username}</Text>
+
+          <View style={styles.statsRow}>
+            <View style={styles.stat}>
+              <Text style={styles.statNum}>{profile?.followersCount ?? 0}</Text>
+              <Text style={styles.statLabel}>Pratitelji</Text>
+            </View>
+            <View style={styles.statDivider} />
+            <View style={styles.stat}>
+              <Text style={styles.statNum}>{profile?.followingCount ?? 0}</Text>
+              <Text style={styles.statLabel}>Praćeni</Text>
+            </View>
+            <View style={styles.statDivider} />
+            <View style={styles.stat}>
+              <Text style={styles.statNum}>{activityCount}</Text>
+              <Text style={styles.statLabel}>Aktivnosti</Text>
+            </View>
+          </View>
+
+          <View style={styles.actionRow}>
+            <TouchableOpacity
+              style={[styles.followBtn, isFollowing && styles.followingBtn]}
+              onPress={handleFollow}
+              disabled={followLoading}
+            >
+              {followLoading ? (
+                <ActivityIndicator
+                  size="small"
+                  color={isFollowing ? "#667eea" : "#fff"}
+                />
+              ) : (
+                <Text
+                  style={[
+                    styles.followBtnText,
+                    isFollowing && styles.followingBtnText,
+                  ]}
+                >
+                  {isFollowing ? "✓ Praćenje" : "Prati"}
+                </Text>
+              )}
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.msgBtn}
+              onPress={() => setShowCompose(true)}
+            >
+              <Ionicons name="paper-plane-outline" size={18} color="#667eea" />
+              <Text style={styles.msgBtnText}>Poruka</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[styles.goldenBtn, isGolden && styles.goldenBtnActive]}
+              onPress={handleGoldenToggle}
+              disabled={goldenLoading}
+            >
+              <Ionicons
+                name={isGolden ? "star" : "star-outline"}
+                size={20}
+                color={isGolden ? "#fff" : "#FFD700"}
+              />
+            </TouchableOpacity>
+          </View>
+
+          {isBlocked && (
+            <View style={styles.blockedBanner}>
+              <Ionicons name="ban" size={16} color="#ff4757" />
+              <Text style={styles.blockedText}>
+                Ovaj korisnik je blokiran. Dodirnite ⋮ za odblokiravanje.
+              </Text>
+            </View>
+          )}
+        </View>
+
+        {/* Media grid */}
+        <View style={styles.mediaSection}>
+          <Text style={styles.mediaSectionTitle}>
+            Aktivnost ({activityCount})
+          </Text>
+          {media.length === 0 ? (
+            <View style={styles.emptyMedia}>
+              <Ionicons name="images-outline" size={48} color="#ddd" />
+              <Text style={styles.emptyMediaText}>
+                Nema objavljenog sadržaja
+              </Text>
+            </View>
+          ) : (
+            <FlatList
+              data={media}
+              numColumns={3}
+              keyExtractor={(item) => `${item.mediaType}_${item.id}`}
+              scrollEnabled={false}
+              renderItem={({ item }) => {
+                const mediaUrl = getMediaUrl(item.filePath);
+                const isVideo = item.mediaType === "video";
+                const isImage = item.mediaType === "image";
+
+                return (
+                  <TouchableOpacity
+                    style={styles.mediaItem}
+                    onPress={() => openMedia(item)}
+                  >
+                    {isImage && mediaUrl ? (
+                      <Image
+                        source={{ uri: mediaUrl }}
+                        style={styles.mediaThumb}
+                      />
+                    ) : (
+                      <View
+                        style={[styles.mediaThumb, styles.mediaPlaceholder]}
+                      >
+                        <Ionicons name="videocam" size={30} color="#667eea" />
+                      </View>
+                    )}
+                    {isVideo && (
+                      <View style={styles.playIcon}>
+                        <Ionicons name="play-circle" size={28} color="#fff" />
+                      </View>
+                    )}
+                    {item.likeCount !== undefined && item.likeCount > 0 && (
+                      <View style={styles.likeBadge}>
+                        <Ionicons name="heart" size={10} color="#fff" />
+                        <Text style={styles.likeCount}>{item.likeCount}</Text>
+                      </View>
+                    )}
+                  </TouchableOpacity>
+                );
+              }}
+              contentContainerStyle={styles.mediaGrid}
+            />
+          )}
+        </View>
+      </ScrollView>
+
+      {/* Video Preview Modal */}
+      <VideoPreviewModal
+        visible={selectedVideo !== null}
+        videoUrl={
+          selectedVideo ? getMediaUrl(selectedVideo.filePath) || "" : ""
+        }
+        title={selectedVideo?.title || "Video"}
+        onClose={() => setSelectedVideo(null)}
+      />
+
+      {/* Image Preview Modal */}
+      <ImagePreviewModal
+        visible={selectedImage !== null}
+        imageUrl={
+          selectedImage ? getMediaUrl(selectedImage.filePath) || "" : ""
+        }
+        title={selectedImage?.title || "Slika"}
+        onClose={() => setSelectedImage(null)}
+      />
+
+      {/* Compose message modal */}
+      <Modal
+        visible={showCompose}
+        animationType="slide"
+        transparent={false}
+        onRequestClose={() => setShowCompose(false)}
+      >
+        <KeyboardAvoidingView
+          style={{ flex: 1 }}
+          behavior={Platform.OS === "ios" ? "padding" : "height"}
+        >
+          <SafeAreaView
+            style={{ flex: 1, backgroundColor: "#fff" }}
+            edges={["top"]}
+          >
+            <View style={styles.composeHeader}>
+              <TouchableOpacity onPress={() => setShowCompose(false)}>
+                <Ionicons name="close" size={28} color="#333" />
+              </TouchableOpacity>
+              <Text style={styles.composeTitle}>
+                Poruka → @{profile?.username}
+              </Text>
+              <TouchableOpacity
+                style={[
+                  styles.composeSendBtn,
+                  (!message.trim() || sending) && styles.composeSendBtnDisabled,
+                ]}
+                onPress={handleSendMessage}
+                disabled={!message.trim() || sending}
+              >
+                {sending ? (
+                  <ActivityIndicator size="small" color="#fff" />
+                ) : (
+                  <Text style={styles.composeSendBtnText}>Pošalji</Text>
+                )}
+              </TouchableOpacity>
+            </View>
+            <TextInput
+              style={styles.composeInput}
+              placeholder={`Napiši poruku za ${profile?.firstName}...`}
+              placeholderTextColor="#bbb"
+              value={message}
+              onChangeText={setMessage}
+              multiline
+              maxLength={1000}
+              autoFocus
+              textAlignVertical="top"
+            />
+          </SafeAreaView>
+        </KeyboardAvoidingView>
+      </Modal>
+    </SafeAreaView>
+  );
+}
+
+const styles = StyleSheet.create({
+  safeArea: { flex: 1, backgroundColor: "#fff" },
+  center: { flex: 1, justifyContent: "center", alignItems: "center" },
+  header: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    padding: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: "#f0f0f0",
+  },
+  headerTitle: {
+    flex: 1,
+    fontSize: 17,
+    fontWeight: "600",
+    color: "#333",
+    marginHorizontal: 12,
+    textAlign: "center",
+  },
+  profileSection: {
+    alignItems: "center",
+    padding: 24,
+    borderBottomWidth: 1,
+    borderBottomColor: "#f0f0f0",
+  },
+  avatar: { width: 100, height: 100, borderRadius: 50 },
+  avatarPlaceholder: {
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    backgroundColor: "#667eea",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  avatarInitials: { color: "#fff", fontSize: 38, fontWeight: "700" },
+  name: {
+    fontSize: 22,
+    fontWeight: "700",
+    color: "#1a1a1a",
+    marginTop: 12,
+    marginBottom: 4,
+  },
+  username: { fontSize: 15, color: "#667eea", marginBottom: 16 },
+  statsRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 24,
+    marginBottom: 20,
+  },
+  stat: { alignItems: "center" },
+  statNum: { fontSize: 20, fontWeight: "700", color: "#1a1a1a" },
+  statLabel: { fontSize: 12, color: "#999", marginTop: 2 },
+  statDivider: { width: 1, height: 32, backgroundColor: "#e0e0e0" },
+  actionRow: { flexDirection: "row", gap: 10, alignItems: "center" },
+  followBtn: {
+    backgroundColor: "#667eea",
+    borderRadius: 22,
+    paddingHorizontal: 28,
+    paddingVertical: 10,
+    minWidth: 100,
+    alignItems: "center",
+  },
+  followingBtn: {
+    backgroundColor: "#fff",
+    borderWidth: 1.5,
+    borderColor: "#667eea",
+  },
+  followBtnText: { color: "#fff", fontSize: 15, fontWeight: "700" },
+  followingBtnText: { color: "#667eea" },
+  msgBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    backgroundColor: "#f0f0ff",
+    borderRadius: 22,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+  },
+  msgBtnText: { color: "#667eea", fontSize: 14, fontWeight: "600" },
+  goldenBtn: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: "#fff",
+    borderWidth: 2,
+    borderColor: "#FFD700",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  goldenBtnActive: { backgroundColor: "#FFD700", borderColor: "#FFD700" },
+  blockedBanner: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    backgroundColor: "#fff0f0",
+    borderRadius: 10,
+    padding: 10,
+    marginTop: 12,
+  },
+  blockedText: { fontSize: 12, color: "#ff4757", flex: 1 },
+  mediaSection: { padding: 16 },
+  mediaSectionTitle: {
+    fontSize: 16,
+    fontWeight: "700",
+    color: "#1a1a1a",
+    marginBottom: 12,
+  },
+  mediaGrid: { gap: 2 },
+  mediaItem: {
+    width: (SCREEN_W - 32) / 3,
+    aspectRatio: 1,
+    padding: 1,
+    position: "relative",
+  },
+  mediaThumb: { width: "100%", height: "100%", backgroundColor: "#f0f0f0" },
+  mediaPlaceholder: {
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "#f0f0ff",
+  },
+  playIcon: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "rgba(0,0,0,0.2)",
+  },
+  likeBadge: {
+    position: "absolute",
+    bottom: 4,
+    right: 4,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 2,
+    backgroundColor: "rgba(0,0,0,0.6)",
+    borderRadius: 10,
+    paddingHorizontal: 5,
+    paddingVertical: 2,
+  },
+  likeCount: { color: "#fff", fontSize: 10, fontWeight: "600" },
+  emptyMedia: { alignItems: "center", paddingTop: 40, gap: 12 },
+  emptyMediaText: { fontSize: 15, color: "#bbb" },
+  composeHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    padding: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: "#eee",
+  },
+  composeTitle: {
+    fontSize: 15,
+    fontWeight: "600",
+    color: "#333",
+    flex: 1,
+    marginHorizontal: 10,
+  },
+  composeSendBtn: {
+    backgroundColor: "#667eea",
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 20,
+  },
+  composeSendBtnDisabled: { backgroundColor: "#ccc" },
+  composeSendBtnText: { color: "#fff", fontWeight: "700" },
+  composeInput: {
+    flex: 1,
+    fontSize: 16,
+    color: "#333",
+    padding: 16,
+    lineHeight: 24,
+  },
+  imageModalHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    padding: 16,
+    backgroundColor: "#000",
+    borderBottomWidth: 1,
+    borderBottomColor: "#222",
+  },
+  imageModalTitle: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: "#fff",
+    flex: 1,
+    marginHorizontal: 12,
+    textAlign: "center",
+  },
+  imageModalContent: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "#000",
+  },
+  imageModalImage: {
+    width: "100%",
+    height: "100%",
+  },
+});

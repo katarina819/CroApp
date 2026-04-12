@@ -19,6 +19,7 @@ export interface Conversation {
   firstName: string;
   lastName: string;
   username?: string;
+  avatar?: string | null;
   lastMessage: string;
   timestamp: string;
   unreadCount: number;
@@ -51,55 +52,96 @@ export const getCurrentUserId = async (): Promise<number | null> => {
 // ─── API calls ────────────────────────────────────────────────────────────────
 
 /**
- * Dohvati sve poruke korisnika i grupiraj ih u razgovore.
+ * Dohvati sve korisnike s kojima imaš razgovor (pratioci i praćeni)
  */
 export const getConversations = async (): Promise<Conversation[]> => {
   const token = await getToken();
-  const currentUserId = await getCurrentUserId();
-  if (!token || !currentUserId) throw new Error("Not authenticated");
+  const userId = await getCurrentUserId();
 
-  const res = await fetch(`${API_BASE_URL}/api/message/my-messages`, {
-    headers: { Authorization: `Bearer ${token}` },
-  });
-  if (!res.ok) throw new Error("Failed to fetch messages");
+  if (!token || !userId) throw new Error("Not authenticated");
 
-  const messages: Message[] = await res.json();
+  // Dohvati sve korisnike koje korisnik prati i koji prate njega
+  const [followingRes, followersRes] = await Promise.all([
+    fetch(`${API_BASE_URL}/api/follow/following/${userId}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    }),
+    fetch(`${API_BASE_URL}/api/follow/followers/${userId}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    }),
+  ]);
 
-  // Grupiraj po partneru, zadrži najnoviju poruku po razgovoru
-  const convMap = new Map<number, Conversation>();
+  const following = followingRes.ok ? await followingRes.json() : [];
+  const followers = followersRes.ok ? await followersRes.json() : [];
 
-  for (const msg of messages) {
-    const isOwn = msg.senderId === currentUserId;
-    const partnerId = isOwn ? msg.receiverId : msg.senderId;
-    const partnerRawName = isOwn ? msg.receiverName : msg.senderName;
+  // Kombiniraj i ukloni duplikate
+  const allUsers = [...following, ...followers];
+  const uniqueUsers = Array.from(
+    new Map(allUsers.map((u) => [u.id, u])).values(),
+  );
 
-    const nameParts = (partnerRawName || "").trim().split(/\s+/);
-    const firstName = nameParts[0] || `User`;
-    const lastName = nameParts.slice(1).join(" ") || `${partnerId}`;
+  // Za svakog korisnika dohvati zadnju poruku i avatar
+  const conversations = await Promise.all(
+    uniqueUsers.map(async (user) => {
+      // Dohvati avatar korisnika
+      let avatar = null;
+      try {
+        const userRes = await fetch(
+          `${API_BASE_URL}/api/auth/users/${user.id}`,
+          {
+            headers: { Authorization: `Bearer ${token}` },
+          },
+        );
+        if (userRes.ok) {
+          const userData = await userRes.json();
+          if (userData.avatar) {
+            avatar = userData.avatar.startsWith("http")
+              ? userData.avatar
+              : `${API_BASE_URL}${userData.avatar}`;
+          }
+        }
+      } catch (error) {
+        console.error("Error fetching user avatar:", error);
+      }
 
-    const existing = convMap.get(partnerId);
-    const msgDate = new Date(msg.sentAt).getTime();
-    const existingDate = existing ? new Date(existing.timestamp).getTime() : 0;
+      // Dohvati zadnju poruku
+      const messagesRes = await fetch(
+        `${API_BASE_URL}/api/message/conversation/${user.id}`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        },
+      );
 
-    if (!existing || msgDate > existingDate) {
-      convMap.set(partnerId, {
-        userId: partnerId,
-        firstName,
-        lastName,
-        lastMessage: msg.content,
-        timestamp: msg.sentAt,
-        unreadCount: existing?.unreadCount ?? 0,
-      });
-    }
+      let lastMessage = "";
+      let timestamp = new Date().toISOString();
+      let unreadCount = 0;
 
-    // Broji nepročitane poruke koje su stigle meni
-    if (!isOwn && !msg.isRead) {
-      const conv = convMap.get(partnerId)!;
-      conv.unreadCount = (conv.unreadCount || 0) + 1;
-    }
-  }
+      if (messagesRes.ok) {
+        const messages = await messagesRes.json();
+        if (messages.length > 0) {
+          const lastMsg = messages[messages.length - 1];
+          lastMessage = lastMsg.content;
+          timestamp = lastMsg.sentAt;
+          unreadCount = messages.filter(
+            (m: any) => !m.isRead && m.receiverId === userId,
+          ).length;
+        }
+      }
 
-  return Array.from(convMap.values()).sort(
+      return {
+        userId: user.id,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        username: user.username,
+        avatar: avatar,
+        lastMessage,
+        timestamp,
+        unreadCount,
+      };
+    }),
+  );
+
+  // Sortiraj po zadnjoj poruci (najnovije prvo)
+  return conversations.sort(
     (a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime(),
   );
 };
@@ -168,4 +210,30 @@ export const getUnreadCount = async (): Promise<number> => {
   if (!res.ok) return 0;
   const data = await res.json();
   return data.unreadCount ?? 0;
+};
+
+/**
+ * Dohvati avatar korisnika po ID-u.
+ */
+export const getUserAvatar = async (userId: number): Promise<string | null> => {
+  const token = await getToken();
+  if (!token) return null;
+
+  try {
+    const res = await fetch(`${API_BASE_URL}/api/auth/users/${userId}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    if (res.ok) {
+      const userData = await res.json();
+      if (userData.avatar) {
+        return userData.avatar.startsWith("http")
+          ? userData.avatar
+          : `${API_BASE_URL}${userData.avatar}`;
+      }
+    }
+    return null;
+  } catch (error) {
+    console.error("Error fetching user avatar:", error);
+    return null;
+  }
 };

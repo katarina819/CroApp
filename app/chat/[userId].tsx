@@ -1,12 +1,16 @@
-// app/chat/[userId].tsx
 import { Ionicons } from "@expo/vector-icons";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import * as ImagePicker from "expo-image-picker";
 import { router, useLocalSearchParams } from "expo-router";
 import { VideoView, useVideoPlayer } from "expo-video";
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
+  Alert,
   FlatList,
+  Image,
   KeyboardAvoidingView,
+  Modal,
   Platform,
   StyleSheet,
   Text,
@@ -17,15 +21,14 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import {
   Message,
-  getCurrentUserId,
   getConversationMessages,
+  getCurrentUserId,
   markAsRead,
   sendMessage,
 } from "../../utils/messagesApi";
+import { API_BASE_URL } from "../config/api";
 
 // ─── Video Share Format ────────────────────────────────────────────────────────
-// Poruke koje sadrže video imaju prefiks: __CROMAP_VIDEO__{"id":...,"title":...,"url":...}
-
 export const VIDEO_PREFIX = "__CROMAP_VIDEO__";
 
 export interface VideoSharePayload {
@@ -35,7 +38,7 @@ export interface VideoSharePayload {
 }
 
 export function parseVideoMessage(content: string): VideoSharePayload | null {
-  if (!content.startsWith(VIDEO_PREFIX)) return null;
+  if (!content?.startsWith(VIDEO_PREFIX)) return null;
   try {
     return JSON.parse(content.slice(VIDEO_PREFIX.length));
   } catch {
@@ -43,106 +46,105 @@ export function parseVideoMessage(content: string): VideoSharePayload | null {
   }
 }
 
-export function buildVideoShareContent(payload: VideoSharePayload): string {
-  return `${VIDEO_PREFIX}${JSON.stringify(payload)}`;
-}
-
 // ─── Video Bubble Component ────────────────────────────────────────────────────
+const vbStyles = StyleSheet.create({
+  container: {
+    width: 240,
+    height: 160,
+    borderRadius: 12,
+    overflow: "hidden",
+    backgroundColor: "#000",
+  },
+  video: {
+    width: "100%",
+    height: "100%",
+  },
+});
 
-function VideoBubble({
-  payload,
-  isMine,
-}: {
-  payload: VideoSharePayload;
-  isMine: boolean;
-}) {
-  const [playing, setPlaying] = useState(false);
-
-  const player = useVideoPlayer(payload.url, (p) => {
+function VideoBubble({ url }: { url: string }) {
+  const player = useVideoPlayer(url, (p) => {
     p.loop = false;
     p.muted = false;
   });
 
-  const togglePlay = () => {
-    if (playing) {
-      player.pause();
-      setPlaying(false);
-    } else {
-      player.play();
-      setPlaying(true);
-    }
-  };
-
   useEffect(() => {
     return () => {
-      player.pause();
+      try {
+        if (player) player.pause();
+      } catch (e) {
+        console.log("VideoPlayer already released");
+      }
     };
-  }, [player]);
+  }, []);
 
   return (
-    <View
-      style={[
-        styles.videoBubble,
-        isMine ? styles.videoBubbleMine : styles.videoBubbleOther,
-      ]}
-    >
-      {/* Video player area */}
-      <View style={styles.videoPlayerWrapper}>
-        <VideoView
-          player={player}
-          style={styles.inlineVideo}
-          contentFit="cover"
-          nativeControls={false}
-        />
-
-        {/* Play/Pause overlay */}
-        <TouchableOpacity
-          style={styles.playOverlay}
-          onPress={togglePlay}
-          activeOpacity={0.85}
-        >
-          <View style={styles.playBtn}>
-            <Ionicons
-              name={playing ? "pause" : "play"}
-              size={26}
-              color="white"
-            />
-          </View>
-        </TouchableOpacity>
-      </View>
-
-      {/* Naslov videa */}
-      <View style={styles.videoInfo}>
-        <Ionicons
-          name="videocam"
-          size={13}
-          color={isMine ? "rgba(255,255,255,0.8)" : "#667eea"}
-          style={{ marginRight: 5 }}
-        />
-        <Text
-          style={[
-            styles.videoTitle,
-            isMine ? styles.videoTitleMine : styles.videoTitleOther,
-          ]}
-          numberOfLines={2}
-        >
-          {payload.title}
-        </Text>
-      </View>
+    <View style={vbStyles.container}>
+      <VideoView
+        player={player}
+        style={vbStyles.video}
+        contentFit="contain"
+        nativeControls={true}
+      />
     </View>
   );
 }
 
-// ─── Chat Screen ───────────────────────────────────────────────────────────────
+// ─── Image Bubble Component ────────────────────────────────────────────────────
+const ibStyles = StyleSheet.create({
+  container: {
+    width: 200,
+    height: 200,
+    borderRadius: 12,
+    overflow: "hidden",
+    backgroundColor: "#f0f0f0",
+  },
+  image: {
+    width: "100%",
+    height: "100%",
+  },
+});
 
+function ImageBubble({ url }: { url: string }) {
+  return (
+    <View style={ibStyles.container}>
+      <Image source={{ uri: url }} style={ibStyles.image} resizeMode="cover" />
+    </View>
+  );
+}
+
+function parseImageMessage(content: string): string | null {
+  if (!content?.startsWith("__CROMAP_IMAGE__")) return null;
+  try {
+    const data = JSON.parse(content.slice("__CROMAP_IMAGE__".length));
+    return data.url;
+  } catch {
+    return null;
+  }
+}
+
+// ─── Helper funkcija za inicijale ─────────────────────────────────────────────
+const getInitials = (firstName?: string, lastName?: string) => {
+  const first = firstName?.[0] || "";
+  const last = lastName?.[0] || "";
+  return `${first}${last}`.toUpperCase();
+};
+
+// ─── Chat Screen ───────────────────────────────────────────────────────────────
 export default function ChatScreen() {
   const { userId, name } = useLocalSearchParams<{
     userId: string;
-    name: string;
+    name?: string;
   }>();
 
   const otherUserId = parseInt(userId ?? "0", 10);
   const displayName = name ?? `User_${userId}`;
+
+  // State za korisničke podatke (ime, prezime, avatar)
+  const [otherUserInfo, setOtherUserInfo] = useState<{
+    firstName: string;
+    lastName: string;
+    avatar: string | null;
+  } | null>(null);
 
   const [messages, setMessages] = useState<Message[]>([]);
   const [myId, setMyId] = useState<number | null>(null);
@@ -150,21 +152,155 @@ export default function ChatScreen() {
   const [inputText, setInputText] = useState("");
   const [sending, setSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [sendingMedia, setSendingMedia] = useState(false);
+  const [mediaPreview, setMediaPreview] = useState<{
+    uri: string;
+    type: "image" | "video";
+  } | null>(null);
+  const [showMediaPreview, setShowMediaPreview] = useState(false);
 
   const flatListRef = useRef<FlatList>(null);
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const inputRef = useRef<TextInput>(null);
 
-  // ─── Dohvat poruka ───────────────────────────────────────────────────────────
+  // Dohvati podatke o drugom korisniku (ime, prezime, avatar)
+  useEffect(() => {
+    const fetchUserInfo = async () => {
+      try {
+        const token = await AsyncStorage.getItem("token");
+        const res = await fetch(
+          `${API_BASE_URL}/api/auth/users/${otherUserId}`,
+          {
+            headers: { Authorization: `Bearer ${token}` },
+          },
+        );
+        if (res.ok) {
+          const userData = await res.json();
+          let avatar = null;
+          if (userData.avatar) {
+            avatar = userData.avatar.startsWith("http")
+              ? userData.avatar
+              : `${API_BASE_URL}${userData.avatar}`;
+          }
+          setOtherUserInfo({
+            firstName: userData.firstName || "",
+            lastName: userData.lastName || "",
+            avatar: avatar,
+          });
+        }
+      } catch (error) {
+        console.error("Error fetching user info:", error);
+      }
+    };
 
+    if (otherUserId) {
+      fetchUserInfo();
+    }
+  }, [otherUserId]);
+
+  // Funkcija za odabir medija
+  const pickMedia = async (source: "gallery" | "camera") => {
+    const perm =
+      source === "gallery"
+        ? await ImagePicker.requestMediaLibraryPermissionsAsync()
+        : await ImagePicker.requestCameraPermissionsAsync();
+    if (!perm.granted) {
+      Alert.alert("Dozvola potrebna", "Dozvolite pristup za slanje medija");
+      return;
+    }
+
+    const result =
+      source === "gallery"
+        ? await ImagePicker.launchImageLibraryAsync({
+            mediaTypes: ["images", "videos"],
+            quality: 0.8,
+            allowsEditing: false,
+          })
+        : await ImagePicker.launchCameraAsync({
+            mediaTypes: ["images", "videos"],
+            quality: 0.8,
+          });
+
+    if (!result.canceled && result.assets[0]) {
+      const asset = result.assets[0];
+      setMediaPreview({
+        uri: asset.uri,
+        type: asset.type === "video" ? "video" : "image",
+      });
+      setShowMediaPreview(true);
+    }
+  };
+
+  // Funkcija za upload i slanje medija
+  const sendMedia = async () => {
+    if (!mediaPreview) return;
+    setSendingMedia(true);
+
+    try {
+      const token = await AsyncStorage.getItem("token");
+      let userId = await AsyncStorage.getItem("userId");
+
+      if (!userId || userId === "0") {
+        try {
+          const payload = JSON.parse(atob(token!.split(".")[1]));
+          userId =
+            payload[
+              "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier"
+            ];
+        } catch {}
+      }
+
+      const formData = new FormData();
+      formData.append("Video", {
+        uri: mediaPreview.uri,
+        type: mediaPreview.type === "video" ? "video/mp4" : "image/jpeg",
+        name:
+          mediaPreview.type === "video" ? "chat_video.mp4" : "chat_image.jpg",
+      } as any);
+      formData.append("Title", "Chat Media");
+      formData.append("Location", "Chat");
+      formData.append("Description", "");
+      formData.append("UserId", userId || "");
+
+      const uploadRes = await fetch(`${API_BASE_URL}/api/video/upload`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` },
+        body: formData,
+      });
+
+      if (!uploadRes.ok) throw new Error("Upload failed");
+
+      const uploadData = await uploadRes.json();
+      const mediaUrl = uploadData.videoUrl || uploadData.url;
+
+      const mediaContent =
+        mediaPreview.type === "video"
+          ? `${VIDEO_PREFIX}${JSON.stringify({ id: Date.now(), title: "Video", url: mediaUrl })}`
+          : `__CROMAP_IMAGE__${JSON.stringify({ url: mediaUrl })}`;
+
+      const ok = await sendMessage(otherUserId, mediaContent);
+
+      if (ok) {
+        setMediaPreview(null);
+        setShowMediaPreview(false);
+        await loadMessages(true);
+      }
+    } catch (error) {
+      console.error("Send media error:", error);
+      Alert.alert("Greška", "Nije moguće poslati medij");
+    } finally {
+      setSendingMedia(false);
+    }
+  };
+
+  // ─── Dohvat poruka ───────────────────────────────────────────────────────────
   const loadMessages = useCallback(
     async (silent = false) => {
       if (!silent) setError(null);
       try {
         const msgs = await getConversationMessages(otherUserId);
         msgs.sort(
-          (a, b) =>
-            new Date(a.sentAt).getTime() - new Date(b.sentAt).getTime()
+          (a, b) => new Date(a.sentAt).getTime() - new Date(b.sentAt).getTime(),
         );
         setMessages(msgs);
 
@@ -176,7 +312,7 @@ export default function ChatScreen() {
         setLoading(false);
       }
     },
-    [otherUserId, myId]
+    [otherUserId, myId],
   );
 
   useEffect(() => {
@@ -199,13 +335,12 @@ export default function ChatScreen() {
     if (messages.length > 0) {
       setTimeout(
         () => flatListRef.current?.scrollToEnd({ animated: true }),
-        100
+        100,
       );
     }
   }, [messages.length]);
 
   // ─── Slanje poruke ───────────────────────────────────────────────────────────
-
   const handleSend = async () => {
     const text = inputText.trim();
     if (!text || sending) return;
@@ -241,7 +376,6 @@ export default function ChatScreen() {
   };
 
   // ─── Formatiranje ────────────────────────────────────────────────────────────
-
   const formatTime = (sentAt: string) => {
     const date = new Date(sentAt);
     const now = new Date();
@@ -274,17 +408,11 @@ export default function ChatScreen() {
   };
 
   // ─── Render poruke ────────────────────────────────────────────────────────────
-
-  const renderMessage = ({
-    item,
-    index,
-  }: {
-    item: Message;
-    index: number;
-  }) => {
+  const renderMessage = ({ item, index }: { item: Message; index: number }) => {
     const isMine = item.senderId === myId;
-    const prev = index > 0 ? messages[index - 1] : null;
     const videoPayload = parseVideoMessage(item.content);
+    const imageUrl = parseImageMessage(item.content);
+    const prev = index > 0 ? messages[index - 1] : null;
 
     const showDateSep =
       !prev ||
@@ -295,7 +423,7 @@ export default function ChatScreen() {
       prev &&
       prev.senderId === item.senderId &&
       Math.abs(
-        new Date(item.sentAt).getTime() - new Date(prev.sentAt).getTime()
+        new Date(item.sentAt).getTime() - new Date(prev.sentAt).getTime(),
       ) <
         60 * 1000;
 
@@ -304,9 +432,14 @@ export default function ChatScreen() {
       messages[index + 1].senderId !== item.senderId ||
       Math.abs(
         new Date(messages[index + 1].sentAt).getTime() -
-          new Date(item.sentAt).getTime()
+          new Date(item.sentAt).getTime(),
       ) >
         60 * 1000;
+
+    // Inicijali za drugog korisnika (ako nema avatar)
+    const userInitials = otherUserInfo
+      ? getInitials(otherUserInfo.firstName, otherUserInfo.lastName)
+      : (displayName?.[0]?.toUpperCase() ?? "?");
 
     return (
       <>
@@ -327,26 +460,28 @@ export default function ChatScreen() {
             prevSameSender && { marginTop: 2 },
           ]}
         >
-          {/* Avatar sugovornika - samo za primljene */}
           {!isMine && (
             <View style={[styles.msgAvatar, prevSameSender && styles.hidden]}>
-              <Text style={styles.msgAvatarText}>
-                {displayName?.[0]?.toUpperCase() ?? "?"}
-              </Text>
+              {otherUserInfo?.avatar ? (
+                <Image
+                  source={{ uri: otherUserInfo.avatar }}
+                  style={styles.msgAvatarImage}
+                />
+              ) : (
+                <Text style={styles.msgAvatarText}>{userInitials}</Text>
+              )}
             </View>
           )}
 
           <View
             style={[
               isMine ? styles.outgoing : styles.incomingGroup,
-              videoPayload && { maxWidth: "85%" },
+              (videoPayload || imageUrl) && { maxWidth: "85%" },
             ]}
           >
-            {/* ── VIDEO PORUKA ── */}
-            {videoPayload ? (
-              <VideoBubble payload={videoPayload} isMine={isMine} />
-            ) : (
-              /* ── TEKST PORUKA ── */
+            {videoPayload && <VideoBubble url={videoPayload.url} />}
+            {!videoPayload && imageUrl && <ImageBubble url={imageUrl} />}
+            {!videoPayload && !imageUrl && (
               <View
                 style={[
                   styles.bubble,
@@ -363,7 +498,6 @@ export default function ChatScreen() {
               </View>
             )}
 
-            {/* Vrijeme + kvačica */}
             {showTime && (
               <View
                 style={[
@@ -388,21 +522,32 @@ export default function ChatScreen() {
     );
   };
 
-  // ─── UI ──────────────────────────────────────────────────────────────────────
+  // Inicijali za header
+  const headerInitials = otherUserInfo
+    ? getInitials(otherUserInfo.firstName, otherUserInfo.lastName)
+    : (displayName?.[0]?.toUpperCase() ?? "?");
 
+  // ─── UI ──────────────────────────────────────────────────────────────────────
   return (
     <SafeAreaView style={styles.safeArea} edges={["top", "bottom"]}>
-      {/* Header */}
+      {/* Header s avatarom */}
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
           <Ionicons name="chevron-back" size={26} color="#333" />
         </TouchableOpacity>
+
         <View style={styles.headerCenter}>
-          <View style={styles.headerAvatar}>
-            <Text style={styles.headerAvatarText}>
-              {displayName?.[0]?.toUpperCase() ?? "?"}
-            </Text>
-          </View>
+          {otherUserInfo?.avatar ? (
+            <Image
+              source={{ uri: otherUserInfo.avatar }}
+              style={styles.headerAvatar}
+            />
+          ) : (
+            <View style={styles.headerAvatar}>
+              <Text style={styles.headerAvatarText}>{headerInitials}</Text>
+            </View>
+          )}
+
           <View>
             <Text style={styles.headerName} numberOfLines={1}>
               {displayName}
@@ -410,6 +555,7 @@ export default function ChatScreen() {
             <Text style={styles.headerStatus}>Aktivan korisnik</Text>
           </View>
         </View>
+
         <View style={{ width: 40 }} />
       </View>
 
@@ -464,6 +610,22 @@ export default function ChatScreen() {
         )}
 
         <View style={styles.inputArea}>
+          <TouchableOpacity
+            style={styles.mediaBtn}
+            onPress={() => pickMedia("gallery")}
+            disabled={sendingMedia}
+          >
+            <Ionicons name="images-outline" size={24} color="#667eea" />
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.mediaBtn}
+            onPress={() => pickMedia("camera")}
+            disabled={sendingMedia}
+          >
+            <Ionicons name="camera-outline" size={24} color="#667eea" />
+          </TouchableOpacity>
+
           <TextInput
             ref={inputRef}
             style={styles.textInput}
@@ -475,33 +637,84 @@ export default function ChatScreen() {
             maxLength={1000}
             returnKeyType="default"
           />
+
           <TouchableOpacity
             style={[
               styles.sendBtn,
-              (!inputText.trim() || sending) && styles.sendBtnDisabled,
+              (!inputText.trim() && !mediaPreview) || sending
+                ? styles.sendBtnDisabled
+                : null,
             ]}
-            onPress={handleSend}
-            disabled={!inputText.trim() || sending}
+            onPress={inputText.trim() ? handleSend : () => pickMedia("gallery")}
+            disabled={(!inputText.trim() && !mediaPreview) || sending}
           >
             {sending ? (
               <ActivityIndicator size="small" color="white" />
             ) : (
-              <Ionicons name="send" size={18} color="white" />
+              <Ionicons
+                name={inputText.trim() ? "send" : "attach"}
+                size={18}
+                color="white"
+              />
             )}
           </TouchableOpacity>
         </View>
       </KeyboardAvoidingView>
+
+      {/* Preview Modal */}
+      <Modal
+        visible={showMediaPreview}
+        animationType="slide"
+        transparent={false}
+        onRequestClose={() => setShowMediaPreview(false)}
+      >
+        <SafeAreaView style={{ flex: 1, backgroundColor: "#000" }}>
+          <View style={styles.previewHeader}>
+            <TouchableOpacity onPress={() => setShowMediaPreview(false)}>
+              <Ionicons name="close" size={28} color="#fff" />
+            </TouchableOpacity>
+            <Text style={styles.previewTitle}>Pregled</Text>
+            <TouchableOpacity
+              style={styles.previewSendBtn}
+              onPress={sendMedia}
+              disabled={sendingMedia}
+            >
+              {sendingMedia ? (
+                <ActivityIndicator size="small" color="#fff" />
+              ) : (
+                <Text style={styles.previewSendBtnText}>Pošalji</Text>
+              )}
+            </TouchableOpacity>
+          </View>
+          <View style={styles.previewContainer}>
+            {mediaPreview?.type === "video" ? (
+              <VideoView
+                player={useVideoPlayer(mediaPreview.uri, (p) => {
+                  p.loop = true;
+                  p.play();
+                })}
+                style={styles.previewMedia}
+                contentFit="contain"
+                nativeControls
+              />
+            ) : (
+              <Image
+                source={{ uri: mediaPreview?.uri }}
+                style={styles.previewMedia}
+                resizeMode="contain"
+              />
+            )}
+          </View>
+        </SafeAreaView>
+      </Modal>
     </SafeAreaView>
   );
 }
-
-// ─── Styles ───────────────────────────────────────────────────────────────────
 
 const BUBBLE_RADIUS = 18;
 
 const styles = StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: "#fff" },
-
   header: {
     flexDirection: "row",
     alignItems: "center",
@@ -535,7 +748,6 @@ const styles = StyleSheet.create({
     maxWidth: 180,
   },
   headerStatus: { fontSize: 12, color: "#aaa", marginTop: 1 },
-
   errorBanner: {
     flexDirection: "row",
     alignItems: "center",
@@ -547,10 +759,8 @@ const styles = StyleSheet.create({
     borderBottomColor: "#ffe0e0",
   },
   errorText: { fontSize: 13, color: "#ff3b30", flex: 1 },
-
   messagesList: { padding: 12, paddingBottom: 8 },
   emptyList: { flex: 1, justifyContent: "center" },
-
   dateSep: {
     flexDirection: "row",
     alignItems: "center",
@@ -563,11 +773,9 @@ const styles = StyleSheet.create({
     backgroundColor: "#e8e8e8",
   },
   dateSepText: { fontSize: 12, color: "#bbb", fontWeight: "500" },
-
   msgRow: { flexDirection: "row", marginVertical: 4, alignItems: "flex-end" },
   msgRowLeft: { justifyContent: "flex-start" },
   msgRowRight: { justifyContent: "flex-end" },
-
   msgAvatar: {
     width: 30,
     height: 30,
@@ -577,56 +785,30 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginRight: 8,
     flexShrink: 0,
+    overflow: "hidden",
+  },
+  msgAvatarImage: {
+    width: 30,
+    height: 30,
+    borderRadius: 15,
   },
   msgAvatarText: { color: "white", fontSize: 12, fontWeight: "700" },
   hidden: { opacity: 0 },
-
   outgoing: { alignItems: "flex-end", maxWidth: "75%" },
   incomingGroup: { alignItems: "flex-start", maxWidth: "75%" },
-
-  // Text bubble
-  bubble: { borderRadius: BUBBLE_RADIUS, paddingHorizontal: 14, paddingVertical: 10 },
+  bubble: {
+    borderRadius: BUBBLE_RADIUS,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+  },
   bubbleMine: { backgroundColor: "#667eea", borderBottomRightRadius: 4 },
   bubbleOther: { backgroundColor: "#f2f2f7", borderBottomLeftRadius: 4 },
   bubbleTextMine: { color: "white", fontSize: 15, lineHeight: 21 },
   bubbleTextOther: { color: "#1a1a1a", fontSize: 15, lineHeight: 21 },
-
-  // Video bubble
-  videoBubble: { borderRadius: 16, overflow: "hidden", width: 240 },
-  videoBubbleMine: { backgroundColor: "#667eea", borderBottomRightRadius: 4 },
-  videoBubbleOther: { backgroundColor: "#f2f2f7", borderBottomLeftRadius: 4 },
-  videoPlayerWrapper: { width: "100%", height: 160, backgroundColor: "#000" },
-  inlineVideo: { width: "100%", height: "100%" },
-  playOverlay: {
-    ...StyleSheet.absoluteFillObject,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  playBtn: {
-    width: 52,
-    height: 52,
-    borderRadius: 26,
-    backgroundColor: "rgba(0,0,0,0.55)",
-    justifyContent: "center",
-    alignItems: "center",
-    borderWidth: 2,
-    borderColor: "rgba(255,255,255,0.4)",
-  },
-  videoInfo: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: 12,
-    paddingVertical: 9,
-  },
-  videoTitle: { fontSize: 13, fontWeight: "600", flex: 1 },
-  videoTitleMine: { color: "rgba(255,255,255,0.92)" },
-  videoTitleOther: { color: "#333" },
-
   timeRow: { flexDirection: "row", alignItems: "center", marginTop: 3 },
   timeRowRight: { justifyContent: "flex-end" },
   timeRowLeft: { justifyContent: "flex-start" },
   timeText: { fontSize: 11, color: "#bbb" },
-
   emptyState: { alignItems: "center", paddingHorizontal: 48, gap: 12 },
   emptyTitle: { fontSize: 18, fontWeight: "700", color: "#aaa" },
   emptySubtitle: {
@@ -635,10 +817,8 @@ const styles = StyleSheet.create({
     textAlign: "center",
     lineHeight: 20,
   },
-
   center: { flex: 1, justifyContent: "center", alignItems: "center", gap: 12 },
   loadingText: { color: "#aaa", fontSize: 14 },
-
   inputArea: {
     flexDirection: "row",
     alignItems: "flex-end",
@@ -675,4 +855,34 @@ const styles = StyleSheet.create({
     elevation: 3,
   },
   sendBtnDisabled: { backgroundColor: "#d0d0d0", shadowOpacity: 0 },
+  previewHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    padding: 16,
+    backgroundColor: "#000",
+  },
+  previewTitle: { fontSize: 17, fontWeight: "600", color: "#fff" },
+  previewSendBtn: {
+    backgroundColor: "#667eea",
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 20,
+  },
+  previewSendBtnText: { color: "#fff", fontWeight: "600" },
+  previewContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "#000",
+  },
+  previewMedia: { width: "100%", height: "100%" },
+  mediaBtn: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "#f0f0ff",
+  },
 });

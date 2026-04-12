@@ -1,4 +1,10 @@
 // app/(tabs)/messages.tsx
+// KLJUČNE IZMJENE:
+// 1. StoriesRow – uklonjen dupli border (hasStory/viewedStory) s TouchableOpacity;
+//    jedini vizualni indikator je sada StoryIndicator prsten
+// 2. Komentar input – ispravan KeyboardAvoidingView za iOS i Android
+// 3. Vlasnik storyja vidi popis pregleda s brojem i imenima
+
 import { Ionicons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as ImagePicker from "expo-image-picker";
@@ -6,20 +12,25 @@ import { router, useFocusEffect } from "expo-router";
 import { VideoView, useVideoPlayer } from "expo-video";
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
+  ActivityIndicator,
+  Alert,
   Animated,
   Dimensions,
   FlatList,
   Image,
+  KeyboardAvoidingView,
   Modal,
   Platform,
   RefreshControl,
   StyleSheet,
   Text,
+  TextInput,
   TouchableOpacity,
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { API_BASE_URL } from "../../app/config/api";
+import { StoryBadge } from "../../app/StoryBadge";
 import {
   Conversation,
   getConversations,
@@ -28,7 +39,6 @@ import {
 
 const { width: SCREEN_W, height: SCREEN_H } = Dimensions.get("window");
 
-// ─── Types ────────────────────────────────────────────────────────────────────
 interface Story {
   id: number;
   userId: number;
@@ -39,8 +49,106 @@ interface Story {
   createdAt: string;
   viewedByMe: boolean;
   viewCount: number;
-  viewers?: { userId: number; userName: string }[];
+  likeCount?: number;
+  likedByMe?: boolean;
+  viewers?: { userId: number; userName: string; userAvatar?: string }[];
+  likes?: {
+    userId: number;
+    userName: string;
+    userAvatar?: string;
+    reactionType?: string;
+  }[];
+  comments?: {
+    id: number;
+    userId: number;
+    userName: string;
+    userAvatar?: string;
+    text: string;
+    createdAt: string;
+    reactions?: { userId: number; reactionType: string }[];
+  }[];
 }
+
+// ─── Helper funkcija za countdown ─────────────────────────────────────────────
+function useStoryCountdown(createdAt: string) {
+  const [remaining, setRemaining] = useState<string>("");
+  const [expired, setExpired] = useState(false);
+
+  useEffect(() => {
+    const expiresAt = new Date(createdAt).getTime() + 24 * 60 * 60 * 1000;
+
+    const update = () => {
+      const diff = expiresAt - Date.now();
+      if (diff <= 0) {
+        setExpired(true);
+        setRemaining("Isteklo");
+        return;
+      }
+      const h = Math.floor(diff / 3600000);
+      const m = Math.floor((diff % 3600000) / 60000);
+      const s = Math.floor((diff % 60000) / 1000);
+      if (h > 0) {
+        setRemaining(`${h}h ${m}m`);
+      } else {
+        setRemaining(`${m}m ${s.toString().padStart(2, "0")}s`);
+      }
+    };
+
+    update();
+    const interval = setInterval(update, 1000);
+    return () => clearInterval(interval);
+  }, [createdAt]);
+
+  return { remaining, expired };
+}
+
+// ─── Story Timer komponenta ───────────────────────────────────────────────────
+function StoryTimer({ createdAt }: { createdAt: string }) {
+  const { remaining, expired } = useStoryCountdown(createdAt);
+
+  return (
+    <View
+      style={[
+        storyTimerStyle.container,
+        expired && storyTimerStyle.expiredContainer,
+      ]}
+    >
+      <Ionicons
+        name="time-outline"
+        size={13}
+        color={expired ? "#ff4757" : "rgba(255,255,255,0.9)"}
+      />
+      <Text
+        style={[storyTimerStyle.text, expired && storyTimerStyle.expiredText]}
+      >
+        {expired ? "Isteklo" : `Ističe za ${remaining}`}
+      </Text>
+    </View>
+  );
+}
+
+const storyTimerStyle = StyleSheet.create({
+  container: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    backgroundColor: "rgba(0,0,0,0.45)",
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 14,
+  },
+  expiredContainer: {
+    backgroundColor: "rgba(255,71,87,0.3)",
+  },
+  text: {
+    fontSize: 12,
+    color: "rgba(255,255,255,0.9)",
+    fontWeight: "600",
+  },
+  expiredText: {
+    color: "#ff4757",
+  },
+});
 
 // ─── Story Viewer ─────────────────────────────────────────────────────────────
 function StoryViewer({
@@ -48,16 +156,33 @@ function StoryViewer({
   onClose,
   onDelete,
   isOwner,
+  onSendMessage,
+  currentUserId,
 }: {
   story: Story;
   onClose: () => void;
   onDelete: (id: number) => void;
   isOwner: boolean;
+  onSendMessage?: (userId: number, name: string) => void;
+  currentUserId?: number | null;
 }) {
+  console.log("StoryViewer opened with story:", story?.id, story?.userName); // Debug
   const progress = useRef(new Animated.Value(0)).current;
+  const animationRef = useRef<Animated.CompositeAnimation | null>(null);
   const [showViewers, setShowViewers] = useState(false);
-  const DURATION = story.mediaType === "image" ? 5000 : 15000;
+  const [showLikes, setShowLikes] = useState(false);
+  const [showComments, setShowComments] = useState(false);
+  const [commentText, setCommentText] = useState("");
+  const [liked, setLiked] = useState(story.likedByMe || false);
+  const [likeCount, setLikeCount] = useState(story.likeCount || 0);
+  const [comments, setComments] = useState(story.comments || []);
+  const [paused, setPaused] = useState(false);
+  const [showReactionPicker, setShowReactionPicker] = useState(false);
+  const [localStory, setLocalStory] = useState(story);
+  const [viewers, setViewers] = useState(story.viewers || []);
+  const [loadingViewers, setLoadingViewers] = useState(false);
 
+  const DURATION = story.mediaType === "image" ? 5000 : 15000;
   const player = useVideoPlayer(
     story.mediaType === "video" ? story.mediaUrl : "",
     (p) => {
@@ -66,32 +191,254 @@ function StoryViewer({
     },
   );
 
-  useEffect(() => {
-    // Mark as viewed
-    AsyncStorage.getItem("token").then((token) => {
-      if (!token) return;
-      fetch(`${API_BASE_URL}/api/story/${story.id}/view`, {
-        method: "POST",
-        headers: { Authorization: `Bearer ${token}` },
-      }).catch(() => {});
-    });
+  const reactions = ["👍", "❤️", "😊", "😂", "😮", "😢", "🔥"];
 
+  const startProgress = () => {
     progress.setValue(0);
-    Animated.timing(progress, {
+    const anim = Animated.timing(progress, {
       toValue: 1,
       duration: DURATION,
       useNativeDriver: false,
-    }).start(({ finished }) => {
+    });
+    animationRef.current = anim;
+    anim.start(({ finished }) => {
       if (finished) onClose();
     });
+  };
 
+  const pauseProgress = () => {
+    if (animationRef.current) {
+      animationRef.current.stop();
+      setPaused(true);
+      if (story.mediaType === "video") player.pause();
+    }
+  };
+
+  const resumeProgress = () => {
+    progress.stopAnimation((value) => {
+      const remainingDuration = DURATION * (1 - value);
+      const anim = Animated.timing(progress, {
+        toValue: 1,
+        duration: remainingDuration,
+        useNativeDriver: false,
+      });
+      animationRef.current = anim;
+      anim.start(({ finished }) => {
+        if (finished) onClose();
+      });
+      setPaused(false);
+      if (story.mediaType === "video") player.play();
+    });
+  };
+
+  const handleTap = () => {
+    if (paused) resumeProgress();
+    else pauseProgress();
+  };
+
+  // U StoryViewer, zamijeni markAsViewed funkciju
+
+  useEffect(() => {
+    const markAsViewed = async () => {
+      const token = await AsyncStorage.getItem("token");
+      console.log("markAsViewed called, token exists:", !!token);
+      if (!token) return;
+      try {
+        console.log("Calling API: /api/story/mark-viewed/${story.id}");
+        const response = await fetch(
+          `${API_BASE_URL}/api/story/mark-viewed/${story.id}`,
+          {
+            method: "POST",
+            headers: {
+              Authorization: `Bearer ${token}`,
+              "Content-Type": "application/json",
+            },
+          },
+        );
+        console.log("Mark as viewed response status:", response.status);
+
+        const data = await response.json();
+        console.log("Mark as viewed response data:", data);
+
+        // Dohvati svježe viewers za ovaj story
+        const viewersRes = await fetch(
+          `${API_BASE_URL}/api/story/viewers/${story.id}`,
+          {
+            headers: { Authorization: `Bearer ${token}` },
+          },
+        );
+        if (viewersRes.ok) {
+          const freshViewers = await viewersRes.json();
+          console.log("Fresh viewers:", freshViewers); // Debug
+          setViewers(freshViewers);
+          setLocalStory((prev) => ({
+            ...prev,
+            viewers: freshViewers,
+            viewCount: freshViewers.length,
+          }));
+        }
+
+        // Osvježi ostale podatke
+        const storyRes = await fetch(`${API_BASE_URL}/api/story`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (storyRes.ok) {
+          const stories = await storyRes.json();
+          const updatedStory = stories.find((s: Story) => s.id === story.id);
+          if (updatedStory) {
+            setLocalStory(updatedStory);
+            setLikeCount(updatedStory.likeCount || 0);
+            setLiked(updatedStory.likedByMe || false);
+            setComments(updatedStory.comments || []);
+          }
+        }
+      } catch (error) {
+        console.error("Mark as viewed error:", error);
+      }
+    };
+
+    markAsViewed();
+    startProgress();
     if (story.mediaType === "video") player.play();
 
     return () => {
-      progress.stopAnimation();
+      if (animationRef.current) animationRef.current.stop();
       if (story.mediaType === "video") player.pause();
     };
   }, [story.id]);
+
+  // Osvježi viewerse kad vlasnik otvori modal
+  const handleOpenViewers = async () => {
+    pauseProgress();
+    setLoadingViewers(true);
+    try {
+      const token = await AsyncStorage.getItem("token");
+      const res = await fetch(
+        `${API_BASE_URL}/api/story/mark-viewed/${story.id}`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        },
+      );
+      if (res.ok) {
+        const data = await res.json();
+        setViewers(data);
+      }
+    } catch (error) {
+      console.error("Error fetching viewers:", error);
+    } finally {
+      setLoadingViewers(false);
+      setShowViewers(true);
+    }
+  };
+
+  const handleLike = async (reactionType: string = "like") => {
+    const token = await AsyncStorage.getItem("token");
+    if (!token) return;
+    const wasLiked = liked;
+    setLiked(!wasLiked);
+    setLikeCount((prev) => (wasLiked ? prev - 1 : prev + 1));
+    try {
+      if (wasLiked) {
+        await fetch(`${API_BASE_URL}/api/story/like/${story.id}`, {
+          method: "DELETE",
+          headers: { Authorization: `Bearer ${token}` },
+        });
+      } else {
+        await fetch(`${API_BASE_URL}/api/story/like/${story.id}`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({ reactionType }),
+        });
+      }
+    } catch {
+      setLiked(wasLiked);
+      setLikeCount((prev) => (wasLiked ? prev + 1 : prev - 1));
+      Alert.alert("Greška", "Nije moguće lajkati.");
+    }
+  };
+
+  const handleAddComment = async () => {
+    if (!commentText.trim()) return;
+    const token = await AsyncStorage.getItem("token");
+    if (!token) return;
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/story/comment/${story.id}`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ text: commentText }),
+      });
+      if (res.ok) {
+        const newComment = await res.json();
+        setComments((prev: any[]) => [newComment, ...prev]);
+        setCommentText("");
+      }
+    } catch {
+      Alert.alert("Greška", "Nije moguće komentirati.");
+    }
+  };
+
+  const handleReactToComment = async (
+    commentId: number,
+    reactionType: string,
+  ) => {
+    const token = await AsyncStorage.getItem("token");
+    if (!token) return;
+    try {
+      await fetch(`${API_BASE_URL}/api/story/comment/react/${commentId}`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ reactionType }),
+      });
+      setComments((prev: any[]) =>
+        prev.map((c: any) => {
+          if (c.id !== commentId) return c;
+          const existing = c.reactions?.find(
+            (r: any) => r.userId === currentUserId,
+          );
+          if (existing) {
+            return {
+              ...c,
+              reactions: c.reactions?.map((r: any) =>
+                r.userId === currentUserId ? { ...r, reactionType } : r,
+              ),
+            };
+          }
+          return {
+            ...c,
+            reactions: [
+              ...(c.reactions || []),
+              {
+                id: Date.now(),
+                commentId,
+                userId: currentUserId!,
+                reactionType,
+                createdAt: new Date().toISOString(),
+              },
+            ],
+          };
+        }),
+      );
+    } catch {}
+  };
+
+  const handleOpenComments = () => {
+    pauseProgress();
+    setShowComments(true);
+  };
+
+  const handleCloseComments = () => {
+    setShowComments(false);
+    resumeProgress();
+  };
 
   const progressWidth = progress.interpolate({
     inputRange: [0, 1],
@@ -100,25 +447,29 @@ function StoryViewer({
 
   return (
     <View style={sv.container}>
-      {/* Background */}
       <View style={sv.bg} />
+      <TouchableOpacity
+        activeOpacity={1}
+        onPress={handleTap}
+        style={StyleSheet.absoluteFillObject}
+      >
+        {story.mediaType === "image" ? (
+          <Image
+            source={{ uri: story.mediaUrl }}
+            style={sv.media}
+            resizeMode="contain"
+          />
+        ) : (
+          <VideoView
+            player={player}
+            style={sv.media}
+            contentFit="contain"
+            nativeControls={false}
+          />
+        )}
+      </TouchableOpacity>
 
-      {story.mediaType === "image" ? (
-        <Image
-          source={{ uri: story.mediaUrl }}
-          style={sv.media}
-          resizeMode="contain"
-        />
-      ) : (
-        <VideoView
-          player={player}
-          style={sv.media}
-          contentFit="contain"
-          nativeControls={false}
-        />
-      )}
-
-      {/* Progress bar */}
+      {/* Traka napretka */}
       <View style={sv.progressBar}>
         <Animated.View style={[sv.progressFill, { width: progressWidth }]} />
       </View>
@@ -126,20 +477,28 @@ function StoryViewer({
       {/* Header */}
       <View style={sv.header}>
         <View style={sv.userInfo}>
-          <View style={sv.smallAvatar}>
-            {story.userAvatar ? (
-              <Image
-                source={{ uri: story.userAvatar }}
-                style={sv.smallAvatarImg}
-              />
-            ) : (
-              <Text style={sv.smallAvatarText}>
-                {story.userName?.[0]?.toUpperCase()}
-              </Text>
-            )}
-          </View>
+          <TouchableOpacity
+            onPress={() => onSendMessage?.(story.userId, story.userName)}
+          >
+            <View style={sv.smallAvatar}>
+              {story.userAvatar ? (
+                <Image
+                  source={{ uri: story.userAvatar }}
+                  style={sv.smallAvatarImg}
+                />
+              ) : (
+                <Text style={sv.smallAvatarText}>
+                  {story.userName?.[0]?.toUpperCase()}
+                </Text>
+              )}
+            </View>
+          </TouchableOpacity>
           <View>
-            <Text style={sv.storyUser}>{story.userName}</Text>
+            <TouchableOpacity
+              onPress={() => onSendMessage?.(story.userId, story.userName)}
+            >
+              <Text style={sv.storyUser}>{story.userName}</Text>
+            </TouchableOpacity>
             <Text style={sv.storyTime}>
               {new Date(story.createdAt).toLocaleTimeString("hr-HR", {
                 hour: "2-digit",
@@ -153,16 +512,86 @@ function StoryViewer({
         </TouchableOpacity>
       </View>
 
-      {/* Footer */}
+      {/* Interakcije */}
+      <View style={sv.interactions}>
+        <TouchableOpacity
+          onLongPress={() => setShowReactionPicker(true)}
+          onPress={() => handleLike()}
+          style={sv.interactionBtn}
+        >
+          <Ionicons
+            name={liked ? "heart" : "heart-outline"}
+            size={28}
+            color={liked ? "#ff4757" : "#fff"}
+          />
+          <Text style={sv.interactionCount}>{likeCount}</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          onPress={handleOpenComments}
+          style={sv.interactionBtn}
+        >
+          <Ionicons name="chatbubble-outline" size={26} color="#fff" />
+          <Text style={sv.interactionCount}>{comments.length}</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          onPress={() => onSendMessage?.(story.userId, story.userName)}
+          style={sv.interactionBtn}
+        >
+          <Ionicons name="paper-plane-outline" size={26} color="#fff" />
+        </TouchableOpacity>
+      </View>
+
+      {/* Reaction Picker */}
+      <Modal
+        visible={showReactionPicker}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setShowReactionPicker(false)}
+      >
+        <TouchableOpacity
+          style={sv.reactionPickerOverlay}
+          activeOpacity={1}
+          onPress={() => setShowReactionPicker(false)}
+        >
+          <View style={sv.reactionPickerContainer}>
+            {reactions.map((reaction, idx) => (
+              <TouchableOpacity
+                key={idx}
+                onPress={() => {
+                  handleLike(reaction);
+                  setShowReactionPicker(false);
+                }}
+                style={sv.reactionOption}
+              >
+                <Text style={sv.reactionEmoji}>{reaction}</Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        </TouchableOpacity>
+      </Modal>
+
+      {/* Footer – SAMO za vlasnika */}
       <View style={sv.footer}>
         {isOwner && (
           <>
-            <TouchableOpacity
-              style={sv.viewersBtn}
-              onPress={() => setShowViewers(true)}
-            >
+            <TouchableOpacity style={sv.viewersBtn} onPress={handleOpenViewers}>
               <Ionicons name="eye-outline" size={18} color="#fff" />
-              <Text style={sv.viewersBtnText}>{story.viewCount} pregleda</Text>
+              <Text style={sv.viewersBtnText}>
+                Pregledano{" "}
+                {viewers.length > 0 ? viewers.length : localStory.viewCount}
+              </Text>
+            </TouchableOpacity>
+
+            <StoryTimer createdAt={story.createdAt} />
+            <TouchableOpacity
+              style={sv.likesBtn}
+              onPress={() => {
+                pauseProgress();
+                setShowLikes(true);
+              }}
+            >
+              <Ionicons name="heart-outline" size={18} color="#fff" />
+              <Text style={sv.viewersBtnText}>{likeCount} lajk</Text>
             </TouchableOpacity>
             <TouchableOpacity
               style={sv.deleteBtn}
@@ -177,32 +606,257 @@ function StoryViewer({
         )}
       </View>
 
-      {/* Viewers Modal */}
+      {/* ── Viewers Modal ── */}
+      {/* ── Viewers Modal ── */}
       <Modal
         visible={showViewers}
         transparent
         animationType="slide"
-        onRequestClose={() => setShowViewers(false)}
+        onRequestClose={() => {
+          setShowViewers(false);
+          resumeProgress();
+        }}
       >
         <View style={sv.viewersModal}>
           <View style={sv.viewersContent}>
             <View style={sv.viewersHeader}>
-              <Text style={sv.viewersTitle}>Pregledi</Text>
-              <TouchableOpacity onPress={() => setShowViewers(false)}>
+              <Text style={sv.viewersTitle}>Pregledali ({viewers.length})</Text>
+              <TouchableOpacity
+                onPress={() => {
+                  setShowViewers(false);
+                  resumeProgress();
+                }}
+              >
                 <Ionicons name="close" size={24} color="#333" />
               </TouchableOpacity>
             </View>
-            {(story.viewers ?? []).map((v, i) => (
-              <View key={i} style={sv.viewerRow}>
-                <Ionicons name="person-circle" size={32} color="#667eea" />
-                <Text style={sv.viewerName}>{v.userName}</Text>
+
+            {/* DODAJ OVAJ DIO ZA LOADING */}
+            {loadingViewers ? (
+              <View style={{ padding: 40, alignItems: "center" }}>
+                <ActivityIndicator size="large" color="#667eea" />
+                <Text style={{ marginTop: 12, color: "#999" }}>
+                  Učitavanje...
+                </Text>
               </View>
-            ))}
-            {(story.viewers ?? []).length === 0 && (
-              <Text style={sv.noViewers}>Nema pregleda</Text>
+            ) : (
+              <FlatList
+                data={viewers}
+                keyExtractor={(item, i) => i.toString()}
+                renderItem={({ item }) => (
+                  <View style={sv.viewerRow}>
+                    {item.userAvatar ? (
+                      <Image
+                        source={{ uri: item.userAvatar }}
+                        style={sv.viewerAvatar}
+                      />
+                    ) : (
+                      <View style={sv.viewerAvatarPlaceholder}>
+                        <Text style={sv.viewerAvatarText}>
+                          {item.userName?.[0]?.toUpperCase()}
+                        </Text>
+                      </View>
+                    )}
+                    <Text style={sv.viewerName}>{item.userName}</Text>
+                    <Ionicons
+                      name="eye"
+                      size={16}
+                      color="#ccc"
+                      style={{ marginLeft: "auto" }}
+                    />
+                  </View>
+                )}
+                ListEmptyComponent={
+                  <Text style={sv.noViewers}>Nema pregleda još</Text>
+                }
+              />
             )}
           </View>
         </View>
+      </Modal>
+
+      {/* ── Likes Modal ── */}
+      <Modal
+        visible={showLikes}
+        transparent
+        animationType="slide"
+        onRequestClose={() => {
+          setShowLikes(false);
+          resumeProgress();
+        }}
+      >
+        <View style={sv.viewersModal}>
+          <View style={sv.viewersContent}>
+            <View style={sv.viewersHeader}>
+              <Text style={sv.viewersTitle}>Lajkovi ({likeCount})</Text>
+              <TouchableOpacity
+                onPress={() => {
+                  setShowLikes(false);
+                  resumeProgress();
+                }}
+              >
+                <Ionicons name="close" size={24} color="#333" />
+              </TouchableOpacity>
+            </View>
+            <FlatList
+              data={localStory.likes || []}
+              keyExtractor={(item, i) => i.toString()}
+              renderItem={({ item }) => (
+                <View style={sv.viewerRow}>
+                  {item.userAvatar ? (
+                    <Image
+                      source={{ uri: item.userAvatar }}
+                      style={sv.viewerAvatar}
+                    />
+                  ) : (
+                    <Ionicons name="person-circle" size={40} color="#667eea" />
+                  )}
+                  <Text style={sv.viewerName}>{item.userName}</Text>
+                  <Text style={sv.reactionType}>{item.reactionType}</Text>
+                </View>
+              )}
+              ListEmptyComponent={
+                <Text style={sv.noViewers}>Nema lajkova</Text>
+              }
+            />
+          </View>
+        </View>
+      </Modal>
+
+      {/* ── Comments Modal – ISPRAVLJEN keyboard ── */}
+      <Modal
+        visible={showComments}
+        transparent
+        animationType="slide"
+        onRequestClose={handleCloseComments}
+      >
+        {/*
+          FIX: KeyboardAvoidingView mora omotati CIJELI modal sadržaj.
+          Za iOS koristimo "padding", za Android "height".
+          Modal je transparent pa flex: 1 + justifyContent: "flex-end" radi ispravno.
+        */}
+        <KeyboardAvoidingView
+          style={sv.commentsKAV}
+          behavior={Platform.OS === "ios" ? "padding" : "height"}
+          keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 0}
+        >
+          <TouchableOpacity
+            style={sv.commentsOverlay}
+            activeOpacity={1}
+            onPress={handleCloseComments}
+          />
+          <View style={sv.commentsContent}>
+            <View style={sv.commentsHeader}>
+              <Text style={sv.commentsTitle}>
+                Komentari ({comments.length})
+              </Text>
+              <TouchableOpacity onPress={handleCloseComments}>
+                <Ionicons name="close" size={24} color="#333" />
+              </TouchableOpacity>
+            </View>
+
+            <FlatList
+              data={comments}
+              keyExtractor={(item) => item.id.toString()}
+              style={sv.commentsList}
+              showsVerticalScrollIndicator={false}
+              keyboardShouldPersistTaps="handled"
+              renderItem={({ item }) => (
+                <View style={sv.commentItem}>
+                  <View style={sv.commentHeader}>
+                    {item.userAvatar ? (
+                      <Image
+                        source={{ uri: item.userAvatar }}
+                        style={sv.commentAvatar}
+                      />
+                    ) : (
+                      <Ionicons
+                        name="person-circle"
+                        size={32}
+                        color="#667eea"
+                      />
+                    )}
+                    <Text style={sv.commentUserName}>{item.userName}</Text>
+                    <Text style={sv.commentTime}>
+                      {new Date(item.createdAt).toLocaleTimeString("hr-HR", {
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      })}
+                    </Text>
+                  </View>
+                  <Text style={sv.commentText}>{item.text}</Text>
+                  {item.reactions && item.reactions.length > 0 && (
+                    <View style={sv.commentReactionsList}>
+                      {item.reactions.map((reaction, idx) => (
+                        <View key={idx} style={sv.commentReactionBadge}>
+                          <Text style={sv.commentReactionBadgeText}>
+                            {reaction.reactionType}
+                          </Text>
+                        </View>
+                      ))}
+                    </View>
+                  )}
+                  {isOwner && (
+                    <View style={sv.commentReactionButtons}>
+                      {reactions.map((reaction, idx) => {
+                        const hasReaction = item.reactions?.some(
+                          (r) =>
+                            r.userId === currentUserId &&
+                            r.reactionType === reaction,
+                        );
+                        return (
+                          <TouchableOpacity
+                            key={idx}
+                            onPress={() =>
+                              handleReactToComment(item.id, reaction)
+                            }
+                            style={[
+                              sv.commentReactionBtn,
+                              hasReaction && sv.commentReactionBtnActive,
+                            ]}
+                          >
+                            <Text style={sv.commentReactionEmoji}>
+                              {reaction}
+                            </Text>
+                          </TouchableOpacity>
+                        );
+                      })}
+                    </View>
+                  )}
+                </View>
+              )}
+            />
+
+            {/* Input – uvijek vidljiv iznad tipkovnice */}
+            <View style={sv.commentInputContainer}>
+              <View style={sv.commentInputWrapper}>
+                <TextInput
+                  style={sv.commentInput}
+                  placeholder="Napiši komentar..."
+                  placeholderTextColor="#999"
+                  value={commentText}
+                  onChangeText={setCommentText}
+                  multiline
+                  maxLength={300}
+                  returnKeyType="send"
+                  onSubmitEditing={handleAddComment}
+                  blurOnSubmit={false}
+                />
+                <TouchableOpacity
+                  onPress={handleAddComment}
+                  style={sv.commentSendBtn}
+                  disabled={!commentText.trim()}
+                >
+                  <Ionicons
+                    name="send"
+                    size={22}
+                    color={commentText.trim() ? "#667eea" : "#ccc"}
+                  />
+                </TouchableOpacity>
+              </View>
+            </View>
+          </View>
+        </KeyboardAvoidingView>
       </Modal>
     </View>
   );
@@ -249,6 +903,30 @@ const sv = StyleSheet.create({
   storyUser: { color: "#fff", fontWeight: "700", fontSize: 15 },
   storyTime: { color: "rgba(255,255,255,0.7)", fontSize: 12 },
   closeBtn: { padding: 8 },
+  interactions: {
+    position: "absolute",
+    bottom: Platform.OS === "ios" ? 100 : 80,
+    right: 16,
+    gap: 20,
+    alignItems: "center",
+  },
+  interactionBtn: { alignItems: "center", gap: 4 },
+  interactionCount: { color: "#fff", fontSize: 12, fontWeight: "600" },
+  reactionPickerOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.5)",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  reactionPickerContainer: {
+    flexDirection: "row",
+    backgroundColor: "#fff",
+    borderRadius: 40,
+    padding: 12,
+    gap: 12,
+  },
+  reactionOption: { padding: 8 },
+  reactionEmoji: { fontSize: 32 },
   footer: {
     position: "absolute",
     bottom: Platform.OS === "ios" ? 40 : 24,
@@ -262,17 +940,28 @@ const sv = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 6,
-    backgroundColor: "rgba(0,0,0,0.5)",
+    backgroundColor: "rgba(0,0,0,0.55)",
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 20,
+  },
+  likesBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    backgroundColor: "rgba(0,0,0,0.55)",
     paddingHorizontal: 14,
     paddingVertical: 8,
     borderRadius: 20,
   },
   viewersBtnText: { color: "#fff", fontSize: 14 },
   deleteBtn: {
-    backgroundColor: "rgba(0,0,0,0.5)",
+    backgroundColor: "rgba(0,0,0,0.55)",
     padding: 10,
     borderRadius: 22,
   },
+
+  // Viewers/Likes Modal
   viewersModal: {
     flex: 1,
     backgroundColor: "rgba(0,0,0,0.5)",
@@ -284,6 +973,7 @@ const sv = StyleSheet.create({
     borderTopRightRadius: 20,
     padding: 20,
     minHeight: 200,
+    maxHeight: "70%",
   },
   viewersHeader: {
     flexDirection: "row",
@@ -298,8 +988,139 @@ const sv = StyleSheet.create({
     gap: 12,
     marginBottom: 12,
   },
+  viewerAvatar: { width: 40, height: 40, borderRadius: 20 },
+  viewerAvatarPlaceholder: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: "#667eea",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  viewerAvatarText: { color: "#fff", fontWeight: "700" },
   viewerName: { fontSize: 15, color: "#333" },
+  reactionType: { marginLeft: "auto", fontSize: 18 },
   noViewers: { color: "#999", textAlign: "center", marginTop: 20 },
+
+  // Comments Modal – KLJUČNI FIX
+  commentsKAV: {
+    flex: 1,
+    justifyContent: "flex-end",
+    backgroundColor: "rgba(0,0,0,0.5)",
+  },
+  commentsOverlay: {
+    // Transparentni prostor iznad modala – klik zatvara
+    flex: 1,
+  },
+  commentsContent: {
+    backgroundColor: "#fff",
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    height: "90%",
+  },
+  commentsList: { flex: 1, paddingHorizontal: 16 },
+  commentItem: {
+    paddingVertical: 16, // POVEĆANO sa 12 na 16
+    paddingHorizontal: 16, // DODANO
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: "#eee",
+    backgroundColor: "#fff",
+  },
+  commentHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10, // POVEĆANO sa 8 na 10
+    marginBottom: 10, // POVEĆANO sa 8 na 10
+  },
+  commentAvatar: { width: 32, height: 32, borderRadius: 16 },
+  commentUserName: {
+    fontWeight: "700", // PROMIJENO sa 600 na 700
+    color: "#333",
+    fontSize: 15,
+  },
+  commentTime: { fontSize: 11, color: "#999", marginLeft: "auto" },
+  commentText: {
+    fontSize: 15, // POVEĆANO sa 14 na 15
+    color: "#444",
+    lineHeight: 22, // POVEĆANO sa 20 na 22
+    marginLeft: 42,
+  },
+  commentReactionsList: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 6,
+    marginTop: 6,
+    marginLeft: 40,
+  },
+  commentReactionBadge: {
+    backgroundColor: "#f0f0f0",
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 16,
+  },
+  commentReactionBadgeText: { fontSize: 14 },
+  commentReactionButtons: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 8,
+    marginTop: 8,
+    marginLeft: 40,
+  },
+  commentReactionBtn: {
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    backgroundColor: "#f0f0f0",
+    borderRadius: 16,
+  },
+  commentReactionBtnActive: {
+    backgroundColor: "#e0e0e0",
+    transform: [{ scale: 1.05 }],
+  },
+  commentReactionEmoji: { fontSize: 16 },
+  // Input uvijek prilijepljen na dno sadržaja
+  commentInputContainer: {
+    padding: 16, // POVEĆANO sa 12 na 16
+    borderTopWidth: 1,
+    borderTopColor: "#eee",
+    backgroundColor: "#fff",
+    paddingBottom: Platform.OS === "ios" ? 34 : 16, // Dodatni padding za iOS
+  },
+  commentInputWrapper: {
+    flexDirection: "row",
+    alignItems: "flex-end",
+    backgroundColor: "#f5f5f5",
+    borderRadius: 28, // POVEĆANO sa 24 na 28
+    paddingHorizontal: 16,
+    paddingVertical: 10, // POVEĆANO sa 6 na 10
+  },
+  commentsHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    padding: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: "#eee",
+    backgroundColor: "#fff",
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+  },
+  commentsTitle: {
+    fontSize: 18,
+    fontWeight: "700",
+    color: "#333",
+  },
+  commentInput: {
+    flex: 1,
+    fontSize: 16, // POVEĆANO sa 15 na 16
+    color: "#333",
+    maxHeight: 120, // POVEĆANO sa 100 na 120
+    paddingVertical: 10,
+    minHeight: 44, // POVEĆANO sa 40 na 44
+  },
+  commentSendBtn: {
+    padding: 10, // POVEĆANO sa 8 na 10
+    marginLeft: 8,
+  },
 });
 
 // ─── Stories Row ─────────────────────────────────────────────────────────────
@@ -338,11 +1159,9 @@ function StoriesRow({
     } catch {}
   };
 
-  // Group: My story first, then others
   const myStories = stories.filter((s) => s.userId === currentUserId);
   const otherStories = stories.filter((s) => s.userId !== currentUserId);
 
-  // Group others by user
   const byUser: Record<number, Story[]> = {};
   otherStories.forEach((s) => {
     if (!byUser[s.userId]) byUser[s.userId] = [];
@@ -356,6 +1175,7 @@ function StoriesRow({
     unread: boolean;
     avatar?: string;
   }
+
   const groups: StoryGroup[] = Object.entries(byUser).map(([uid, ss]) => ({
     userId: parseInt(uid),
     userName: ss[0].userName,
@@ -369,19 +1189,27 @@ function StoriesRow({
       <View style={srs.container}>
         <FlatList
           horizontal
-          data={["add-btn", ...groups]}
+          data={["add-btn", ...groups] as any[]}
           keyExtractor={(item, i) =>
             item === "add-btn" ? "add" : `group-${(item as StoryGroup).userId}`
           }
           showsHorizontalScrollIndicator={false}
           contentContainerStyle={srs.list}
           renderItem={({ item }) => {
+            // ── Moj story gumb ──
             if (item === "add-btn") {
               const myLatest = myStories[0];
               return (
                 <View style={srs.storyItem}>
+                  {/*
+                    Za "Moj story" NE koristimo StoryIndicator jer je to vlastiti story.
+                    Koristimo standardni border indicator.
+                  */}
                   <TouchableOpacity
-                    style={[srs.ring, myLatest ? srs.hasStory : srs.noStory]}
+                    style={[
+                      srs.avatarWrap,
+                      myLatest ? srs.myHasStory : srs.noStory,
+                    ]}
                     onPress={myLatest ? () => setViewing(myLatest) : onAddStory}
                   >
                     {myLatest ? (
@@ -404,22 +1232,41 @@ function StoriesRow({
                 </View>
               );
             }
+
+            // ── Tuđi story ──
             const g = item as StoryGroup;
             const initials = g.userName?.[0]?.toUpperCase() ?? "?";
+
+            console.log(
+              "Story group:",
+              g.userName,
+              "has stories:",
+              g.stories.length,
+            ); // Debug
+
+            // U StoriesRow, za tuđi story, makni TouchableOpacity i stavi onPress na StoryIndicator
+
             return (
               <View style={srs.storyItem}>
-                <TouchableOpacity
-                  style={[srs.ring, g.unread ? srs.hasStory : srs.viewedStory]}
-                  onPress={() => setViewing(g.stories[0])}
-                >
-                  {g.avatar ? (
-                    <Image source={{ uri: g.avatar }} style={srs.img} />
-                  ) : (
-                    <View style={[srs.addBg, { backgroundColor: "#8e9cf0" }]}>
-                      <Text style={srs.initials}>{initials}</Text>
-                    </View>
-                  )}
-                </TouchableOpacity>
+                <StoryBadge userId={g.userId} size={64}>
+                  <TouchableOpacity
+                    style={srs.avatarWrap}
+                    onPress={() => {
+                      console.log("Pressed story from:", g.userName);
+                      console.log("Story data:", g.stories[0]);
+                      setViewing(g.stories[0]);
+                    }}
+                  >
+                    {g.avatar ? (
+                      <Image source={{ uri: g.avatar }} style={srs.img} />
+                    ) : (
+                      <View style={[srs.addBg, { backgroundColor: "#8e9cf0" }]}>
+                        <Text style={srs.initials}>{initials}</Text>
+                      </View>
+                    )}
+                  </TouchableOpacity>
+                </StoryBadge>
+
                 <Text style={srs.label} numberOfLines={1}>
                   {g.userName.split(" ")[0]}
                 </Text>
@@ -429,19 +1276,34 @@ function StoriesRow({
         />
       </View>
 
-      {/* Story Viewer */}
       {viewing && (
         <Modal
           visible
           transparent
           animationType="fade"
-          onRequestClose={() => setViewing(null)}
+          onRequestClose={() => {
+            console.log("Closing story modal, refreshing stories");
+            loadStories(); // Osvježi storyje
+            setViewing(null);
+          }}
         >
           <StoryViewer
             story={viewing}
-            onClose={() => setViewing(null)}
+            onClose={() => {
+              console.log("StoryViewer onClose, refreshing stories");
+              loadStories(); // Osvježi storyje
+              setViewing(null);
+            }}
             onDelete={handleDelete}
             isOwner={viewing.userId === currentUserId}
+            onSendMessage={(userId, name) => {
+              setViewing(null);
+              router.push({
+                pathname: "/chat/[userId]",
+                params: { userId: userId.toString(), name },
+              });
+            }}
+            currentUserId={currentUserId}
           />
         </Modal>
       )}
@@ -456,29 +1318,41 @@ const srs = StyleSheet.create({
     paddingVertical: 12,
   },
   list: { paddingHorizontal: 12, gap: 12 },
-  storyItem: { alignItems: "center", width: 68 },
-  ring: {
+  storyItem: { alignItems: "center", width: 72 },
+  // Bez bordera – StoryIndicator dodaje prsten sam
+  avatarWrap: {
     width: 64,
     height: 64,
     borderRadius: 32,
-    padding: 2,
-    marginBottom: 4,
+    overflow: "hidden",
     justifyContent: "center",
     alignItems: "center",
+    marginBottom: 4,
   },
-  hasStory: { borderWidth: 2.5, borderColor: "#667eea" },
-  viewedStory: { borderWidth: 2.5, borderColor: "#ccc" },
-  noStory: { borderWidth: 2, borderColor: "#ddd", borderStyle: "dashed" },
-  img: { width: 56, height: 56, borderRadius: 28 },
+  myHasStory: {
+    borderWidth: 2.5,
+    borderColor: "#667eea",
+  },
+  noStory: {
+    borderWidth: 2,
+    borderColor: "#ddd",
+    borderStyle: "dashed",
+  },
+  viewedRing: {
+    borderRadius: 32,
+    borderWidth: 2,
+    borderColor: "#ccc",
+  },
+  img: { width: 64, height: 64, borderRadius: 32 },
   addBg: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
+    width: 64,
+    height: 64,
+    borderRadius: 32,
     backgroundColor: "#667eea",
     justifyContent: "center",
     alignItems: "center",
   },
-  initials: { color: "#fff", fontSize: 20, fontWeight: "700" },
+  initials: { color: "#fff", fontSize: 22, fontWeight: "700" },
   addIcon: {
     position: "absolute",
     bottom: -2,
@@ -517,7 +1391,6 @@ function AddStoryModal({
         ? await ImagePicker.requestMediaLibraryPermissionsAsync()
         : await ImagePicker.requestCameraPermissionsAsync();
     if (!perm.granted) return;
-
     const result =
       source === "gallery"
         ? await ImagePicker.launchImageLibraryAsync({
@@ -528,7 +1401,6 @@ function AddStoryModal({
             mediaTypes: ["images", "videos"],
             quality: 1,
           });
-
     if (!result.canceled && result.assets[0]) {
       const asset = result.assets[0];
       setPreview({
@@ -544,24 +1416,40 @@ function AddStoryModal({
     try {
       const token = await AsyncStorage.getItem("token");
       const formData = new FormData();
-      formData.append("media", {
+      formData.append("file", {
         uri: preview.uri,
         type: preview.type === "video" ? "video/mp4" : "image/jpeg",
         name: preview.type === "video" ? "story.mp4" : "story.jpg",
       } as any);
-      formData.append("mediaType", preview.type);
-
-      const res = await fetch(`${API_BASE_URL}/api/story/upload`, {
+      const mediaRes = await fetch(`${API_BASE_URL}/api/upload/media`, {
         method: "POST",
         headers: { Authorization: `Bearer ${token}` },
         body: formData,
       });
-      if (res.ok) {
+      if (!mediaRes.ok)
+        throw new Error(`Media upload failed: ${mediaRes.status}`);
+      const mediaData = await mediaRes.json();
+      const storyRes = await fetch(`${API_BASE_URL}/api/story/upload`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          mediaUrl: mediaData.url,
+          mediaType: preview.type,
+        }),
+      });
+      if (storyRes.ok) {
         setPreview(null);
         onUploaded();
         onClose();
+        Alert.alert("Uspjeh!", "Story je objavljen");
+      } else {
+        Alert.alert("Greška", "Story nije objavljen");
       }
-    } catch {
+    } catch (error) {
+      Alert.alert("Greška", "Story nije objavljen. Provjeri konekciju.");
     } finally {
       setUploading(false);
     }
@@ -577,7 +1465,6 @@ function AddStoryModal({
           <Text style={asm.title}>Dodaj story</Text>
           <View style={{ width: 28 }} />
         </View>
-
         {!preview ? (
           <View style={asm.pickContainer}>
             <Text style={asm.hint}>Odaberi medij</Text>
@@ -656,17 +1543,8 @@ const asm = StyleSheet.create({
   },
   pickLabel: { fontSize: 16, color: "#667eea", fontWeight: "600" },
   preview: { flex: 1 },
-  previewActions: {
-    flexDirection: "row",
-    gap: 12,
-    padding: 16,
-  },
-  btn: {
-    flex: 1,
-    padding: 16,
-    borderRadius: 12,
-    alignItems: "center",
-  },
+  previewActions: { flexDirection: "row", gap: 12, padding: 16 },
+  btn: { flex: 1, padding: 16, borderRadius: 12, alignItems: "center" },
   btnText: { color: "#fff", fontSize: 16, fontWeight: "600" },
 });
 
@@ -746,7 +1624,6 @@ export default function MessagesScreen() {
   return (
     <SafeAreaView style={styles.safeArea} edges={["top"]}>
       <View style={styles.container}>
-        {/* Header */}
         <View style={styles.header}>
           <Text style={styles.headerTitle}>Poruke</Text>
           {totalUnread > 0 && (
@@ -756,13 +1633,11 @@ export default function MessagesScreen() {
           )}
         </View>
 
-        {/* Stories Row */}
         <StoriesRow
           currentUserId={currentUserId}
           onAddStory={() => setShowAddStory(true)}
         />
 
-        {/* Error */}
         {error && (
           <View style={styles.errorBanner}>
             <Ionicons name="warning-outline" size={16} color="#ff3b30" />
@@ -770,7 +1645,6 @@ export default function MessagesScreen() {
           </View>
         )}
 
-        {/* Conversations */}
         <FlatList
           data={conversations}
           keyExtractor={(item) => item.userId.toString()}
@@ -781,6 +1655,7 @@ export default function MessagesScreen() {
                 openChat(item.userId, `${item.firstName} ${item.lastName}`)
               }
               formatTime={formatTime}
+              currentUserId={currentUserId}
             />
           )}
           refreshControl={
@@ -822,11 +1697,10 @@ export default function MessagesScreen() {
         />
       </View>
 
-      {/* Add Story Modal */}
       <AddStoryModal
         visible={showAddStory}
         onClose={() => setShowAddStory(false)}
-        onUploaded={() => {}}
+        onUploaded={() => setShowAddStory(false)}
       />
     </SafeAreaView>
   );
@@ -841,12 +1715,46 @@ function ConversationItem({
   item,
   onPress,
   formatTime,
+  currentUserId,
 }: {
   item: Conversation;
   onPress: () => void;
   formatTime: (t: string) => string;
+  currentUserId?: number | null;
 }) {
   const scaleAnim = useRef(new Animated.Value(1)).current;
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (item.avatar) {
+      const url = item.avatar.startsWith("http")
+        ? item.avatar
+        : `${API_BASE_URL}${item.avatar.startsWith("/") ? "" : "/"}${item.avatar}`;
+      setAvatarUrl(url);
+    } else {
+      const loadAvatar = async () => {
+        try {
+          const token = await AsyncStorage.getItem("token");
+          const res = await fetch(
+            `${API_BASE_URL}/api/auth/users/${item.userId}`,
+            { headers: { Authorization: `Bearer ${token}` } },
+          );
+          if (res.ok) {
+            const userData = await res.json();
+            if (userData.avatar) {
+              setAvatarUrl(
+                userData.avatar.startsWith("http")
+                  ? userData.avatar
+                  : `${API_BASE_URL}${userData.avatar}`,
+              );
+            }
+          }
+        } catch {}
+      };
+      loadAvatar();
+    }
+  }, [item.userId, item.avatar]);
+
   const initials =
     `${item.firstName?.[0] ?? ""}${item.lastName?.[0] ?? ""}`.toUpperCase();
 
@@ -867,9 +1775,20 @@ function ConversationItem({
         onPressOut={onPressOut}
         activeOpacity={1}
       >
-        <View style={styles.convAvatar}>
-          <Text style={styles.convAvatarText}>{initials}</Text>
-        </View>
+        {/*
+          StoryIndicator dodaje JEDAN prsten.
+          Avatar unutar njega nema nikakav dodatan border.
+        */}
+        <StoryBadge userId={item.userId} size={56}>
+          {avatarUrl ? (
+            <Image source={{ uri: avatarUrl }} style={styles.convAvatar} />
+          ) : (
+            <View style={styles.convAvatar}>
+              <Text style={styles.convAvatarText}>{initials}</Text>
+            </View>
+          )}
+        </StoryBadge>
+
         <View style={styles.convInfo}>
           <View style={styles.convNameRow}>
             <Text
