@@ -1,5 +1,5 @@
 // app/services/locationService.ts
-import { API_BASE_URL } from "../config/api";
+import { getPlacesFromGoogle } from "./googlePlacesService";
 
 // Tipovi za lokacije
 export interface Place {
@@ -14,7 +14,16 @@ export interface Place {
     | "beach"
     | "landmark"
     | "farm"
-    | "other";
+    | "paintball"
+    | "cinema"
+    | "park"
+    | "escapeRoom"
+    | "museum"
+    | "theater"
+    | "mountain"
+    | "nationalPark"
+    | "cave"
+    | "spa";
   rating?: number;
   address?: string;
   description?: string;
@@ -56,7 +65,7 @@ export const placeCategories = {
   },
   landmark: {
     name: "Znamenitost",
-    icon: "🏛️",
+    icon: "🏰",
     color: "#F1C40F",
     marker: "landmark",
     osmTag: "historic=*",
@@ -68,13 +77,99 @@ export const placeCategories = {
     marker: "farm",
     osmTag: "shop=farm",
   },
-  other: {
-    name: "Ostalo",
-    icon: "📍",
-    color: "#95A5A6",
-    marker: "other",
-    osmTag: "",
+  paintball: {
+    name: "Paintball",
+    icon: "🎯",
+    color: "#E67E22",
+    marker: "paintball",
+    osmTag: "sport=paintball",
   },
+  cinema: {
+    name: "Kino",
+    icon: "🎬",
+    color: "#E74C3C",
+    marker: "cinema",
+    osmTag: "amenity=cinema",
+  },
+  park: {
+    name: "Park",
+    icon: "🌳",
+    color: "#27AE60",
+    marker: "park",
+    osmTag: "leisure=park",
+  },
+  escapeRoom: {
+    name: "Escape Room",
+    icon: "🔐",
+    color: "#F39C12",
+    marker: "escape_room",
+    osmTag: "leisure=escape_game",
+  },
+  museum: {
+    name: "Muzej",
+    icon: "🏛️",
+    color: "#8E44AD",
+    marker: "museum",
+    osmTag: "tourism=museum",
+  },
+  theater: {
+    name: "Kazalište",
+    icon: "🎭",
+    color: "#D35400",
+    marker: "theatre",
+    osmTag: "amenity=theatre",
+  },
+  mountain: {
+    name: "Planina",
+    icon: "⛰️",
+    color: "#7F8C8D",
+    marker: "mountain",
+    osmTag: "natural=peak",
+  },
+  nationalPark: {
+    name: "Nacionalni park",
+    icon: "🏞️",
+    color: "#2ECC71",
+    marker: "national_park",
+    osmTag: "leisure=nature_reserve",
+  },
+  cave: {
+    name: "Špilja",
+    icon: "🕳️",
+    color: "#95A5A6",
+    marker: "cave",
+    osmTag: "natural=cave_entrance",
+  },
+  spa: {
+    name: "Toplice",
+    icon: "💧",
+    color: "#1ABC9C",
+    marker: "spa",
+    osmTag: "amenity=spa",
+  },
+};
+
+// 🔥 CACHE ZA MJESTA
+let placesCache: Map<string, { places: Place[]; timestamp: number }> =
+  new Map();
+const CACHE_DURATION = 5 * 60 * 1000; // 5 minuta
+
+let googleCache: Map<string, { places: Place[]; timestamp: number }> =
+  new Map();
+const GOOGLE_CACHE_DURATION = 10 * 60 * 1000;
+
+function chunkArray<T>(array: T[], size: number): T[][] {
+  const chunks: T[][] = [];
+  for (let i = 0; i < array.length; i += size) {
+    chunks.push(array.slice(i, i + size));
+  }
+  return chunks;
+}
+
+export const clearPlacesCache = () => {
+  placesCache.clear();
+  googleCache.clear();
+  console.log("🗑️ Cache cleared");
 };
 
 // Pretraga mjesta
@@ -95,13 +190,13 @@ export const searchPlaces = async (
     }
 
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 10000); // 🔥 DODANO: timeout 10s
+    const timeoutId = setTimeout(() => controller.abort(), 10000);
 
     const response = await fetch(url, {
       headers: {
         "User-Agent": "CroMapApp/1.0",
       },
-      signal: controller.signal, // 🔥 DODANO: abort signal
+      signal: controller.signal,
     });
 
     clearTimeout(timeoutId);
@@ -142,102 +237,131 @@ export const searchPlaces = async (
 const categorizePlaceByTags = (item: any): Place["type"] => {
   const type = item.type?.toLowerCase() || "";
   const class_ = item.class?.toLowerCase() || "";
+  const tags = item.tags || {};
 
   if (type === "restaurant" || class_ === "restaurant") return "restaurant";
   if (type === "cafe" || class_ === "cafe") return "cafe";
   if (type === "nightclub" || type === "bar" || class_ === "nightclub")
     return "club";
   if (type === "beach" || class_ === "beach") return "beach";
-  if (type === "historic" || type === "tourism" || class_ === "attraction")
-    return "landmark";
   if (type === "farm" || class_ === "farm") return "farm";
+  if (type === "cinema" || class_ === "cinema") return "cinema";
+  if (type === "park" || class_ === "park") return "park";
+  if (type === "escape_room" || class_ === "escape_room") return "escapeRoom";
+  if (type === "theatre" || class_ === "theatre") return "theater";
+  if (type === "mountain" || class_ === "mountain" || type === "peak")
+    return "mountain";
+  if (type === "national_park" || class_ === "national_park")
+    return "nationalPark";
+  if (type === "cave" || class_ === "cave") return "cave";
+  if (type === "spa" || class_ === "spa") return "spa";
+  if (type === "paintball" || class_ === "paintball") return "paintball";
 
-  return "other";
+  if (type === "museum" || class_ === "museum" || tags.tourism === "museum") {
+    return "museum";
+  }
+
+  if (
+    type === "historic" ||
+    class_ === "historic" ||
+    tags.historic ||
+    (type === "tourism" && tags.tourism !== "museum") ||
+    (class_ === "attraction" && tags.tourism !== "museum") ||
+    tags.heritage ||
+    tags.castle ||
+    tags.ruins ||
+    tags.memorial ||
+    tags.monument
+  ) {
+    return "landmark";
+  }
+
+  return "landmark";
 };
 
-// Dohvati mjesta u radijusu - glavna funkcija
+// 🔥 GLAVNA FUNKCIJA - OPTIMIZIRANA ZA VELIKE RADIJUSE
 export const getPlacesInRadius = async (
   latitude: number,
   longitude: number,
   radiusKm: number,
   types?: Place["type"][],
 ): Promise<Place[]> => {
-  if (!types || types.length === 0) {
-    console.log("No types selected, returning empty array");
-    return [];
+  if (!types || types.length === 0) return [];
+
+  console.log(`🎯 getPlacesInRadius called with radius: ${radiusKm}km`);
+
+  // 🔥 ZA VELIKE RADIJUSE (>50km) PRESKOČI GOOGLE (ima limit 50km)
+  if (radiusKm > 50) {
+    console.log(
+      `⚠️ Radius ${radiusKm}km > 50km, skipping Google, using OSM directly`,
+    );
+    return fetchFromOpenStreetMap(latitude, longitude, radiusKm, types);
   }
 
-  console.log(
-    `Fetching places for types: ${types.join(", ")}, radius: ${radiusKm}km`,
-  );
+  const cacheKey = `${latitude.toFixed(3)},${longitude.toFixed(3)},${radiusKm},${types.sort().join(",")}`;
+  const cached = placesCache.get(cacheKey);
+  if (cached && Date.now() - cached.timestamp < CACHE_DURATION) {
+    console.log(`📦 Using cached places for ${cacheKey}`);
+    return cached.places;
+  }
 
-  // 🔥 PRVO POKUŠAJ S BACKEND-OM
-  try {
-    const backendPlaces = await fetchFromBackend(
+  let allPlaces: Place[] = [];
+
+  const googleCacheKey = `${latitude.toFixed(3)},${longitude.toFixed(3)},${radiusKm},${types.sort().join(",")}`;
+  const googleCached = googleCache.get(googleCacheKey);
+
+  if (
+    googleCached &&
+    Date.now() - googleCached.timestamp < GOOGLE_CACHE_DURATION
+  ) {
+    console.log(`📦 Using cached Google Places`);
+    allPlaces = googleCached.places;
+  } else {
+    try {
+      const googlePlaces = await getPlacesFromGoogle(
+        latitude,
+        longitude,
+        radiusKm,
+        types,
+      );
+      if (googlePlaces.length > 0) {
+        console.log(`✅ Found ${googlePlaces.length} places from Google`);
+        allPlaces = googlePlaces;
+        googleCache.set(googleCacheKey, {
+          places: googlePlaces,
+          timestamp: Date.now(),
+        });
+      }
+    } catch (error) {
+      console.log("❌ Google failed:", error);
+    }
+  }
+
+  if (allPlaces.length === 0) {
+    allPlaces = await fetchFromOpenStreetMap(
       latitude,
       longitude,
       radiusKm,
       types,
     );
-    if (backendPlaces.length > 0) {
-      console.log(`Found ${backendPlaces.length} places from backend`);
-      return backendPlaces;
-    }
-  } catch (error) {
-    console.log("Backend not available, using OpenStreetMap");
   }
 
-  // 🔥 FALLBACK NA OPENSTREETMAP
-  return fetchFromOpenStreetMap(latitude, longitude, radiusKm, types);
-};
-
-// Dohvat s backend-a
-const fetchFromBackend = async (
-  latitude: number,
-  longitude: number,
-  radiusKm: number,
-  types: Place["type"][],
-): Promise<Place[]> => {
-  try {
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 8000); // 🔥 timeout 8s
-
-    const response = await fetch(`${API_BASE_URL}/api/places/nearby`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        latitude,
-        longitude,
-        radius: radiusKm,
-        types,
-      }),
-      signal: controller.signal,
-    });
-
-    clearTimeout(timeoutId);
-
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-
-    const data = await response.json();
-    return data.places || [];
-  } catch (error) {
-    console.error("Error fetching from backend:", error);
-    return [];
+  if (allPlaces.length > 0) {
+    placesCache.set(cacheKey, { places: allPlaces, timestamp: Date.now() });
   }
+
+  return allPlaces;
 };
 
-// Dohvat s OpenStreetMap - JEDAN ZAHTJEV ZA SVE TIPOVE
+// 🔥 OPTIMIZIRANA OSM FUNKCIJA ZA VELIKE RADIJUSE
 const fetchFromOpenStreetMap = async (
   latitude: number,
   longitude: number,
   radiusKm: number,
   types: Place["type"][],
 ): Promise<Place[]> => {
-  // Mapiranje tipova na OSM tagove
+  console.log(`🌍 OSM fetch started for radius: ${radiusKm}km`);
+
   const typeToTag: Record<string, string> = {
     restaurant: "amenity=restaurant",
     cafe: "amenity=cafe",
@@ -245,154 +369,146 @@ const fetchFromOpenStreetMap = async (
     beach: "natural=beach",
     landmark: "historic=*",
     farm: "shop=farm",
-    other: "",
+    cinema: "amenity=cinema",
+    park: "leisure=park",
+    museum: "tourism=museum",
+    theater: "amenity=theatre",
+    mountain: "natural=peak",
+    nationalPark: "leisure=nature_reserve",
+    cave: "natural=cave_entrance",
+    spa: "amenity=spa",
+    paintball: "sport=paintball",
   };
 
-  // Kreiraj JEDAN query za sve tipove (umjesto više zasebnih)
-  const tags: string[] = [];
-  types.forEach((type) => {
-    const tag = typeToTag[type];
-    if (tag && !tags.includes(tag)) {
-      tags.push(tag);
-    }
-  });
+  const groupSize = radiusKm > 100 ? 4 : radiusKm > 50 ? 3 : 2;
+  const typeGroups = chunkArray(types, groupSize);
+  let allPlaces: Place[] = [];
 
-  if (tags.length === 0) {
-    return [];
-  }
+  for (const group of typeGroups) {
+    const tags: string[] = [];
+    group.forEach((type) => {
+      const tag = typeToTag[type];
+      if (tag && !tags.includes(tag)) tags.push(tag);
+    });
+    if (tags.length === 0) continue;
 
-  console.log(`Fetching from OpenStreetMap for tags: ${tags.join(", ")}`);
-
-  // Izračunaj bounding box
-  const offset = radiusKm / 100;
-  const minLat = latitude - offset;
-  const maxLat = latitude + offset;
-  const minLon = longitude - offset;
-  const maxLon = longitude + offset;
-
-  // 🔥 JEDAN query za sve tagove
-  const queries = tags.map((tag) => {
-    const [key, value] = tag.split("=");
-    if (value === "*") {
-      return `node["${key}"](${minLat},${minLon},${maxLat},${maxLon});`;
-    } else {
-      return `node["${key}"="${value}"](${minLat},${minLon},${maxLat},${maxLon});`;
-    }
-  });
-
-  const overpassQuery = `
-    [out:json][timeout:15];
-    (
-      ${queries.join("\n")}
+    console.log(
+      `🌍 Fetching OSM for: ${tags.join(", ")} (group size: ${groupSize})`,
     );
-    out body;
-  `;
 
-  // 🔥 VIŠE ENDPOINTA ZA FALLBACK
-  const endpoints = [
-    "https://overpass-api.de/api/interpreter",
-    "https://overpass.kumi.systems/api/interpreter",
-    "https://overpass.openstreetmap.fr/api/interpreter",
-  ];
+    const offset = radiusKm / 85;
+    const minLat = latitude - offset;
+    const maxLat = latitude + offset;
+    const minLon = longitude - offset;
+    const maxLon = longitude + offset;
 
-  for (const endpoint of endpoints) {
-    try {
-      console.log(`Trying OpenStreetMap endpoint: ${endpoint}`);
-
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 15000); // 🔥 timeout 15s
-
-      const response = await fetch(endpoint, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/x-www-form-urlencoded",
-        },
-        body: `data=${encodeURIComponent(overpassQuery)}`,
-        signal: controller.signal,
-      });
-
-      clearTimeout(timeoutId);
-
-      if (!response.ok) {
-        console.log(`Endpoint ${endpoint} returned ${response.status}`);
-        continue;
+    const queries = tags.map((tag) => {
+      const [key, value] = tag.split("=");
+      if (value === "*") {
+        return `node["${key}"](${minLat},${minLon},${maxLat},${maxLon});`;
+      } else {
+        return `node["${key}"="${value}"](${minLat},${minLon},${maxLat},${maxLon});`;
       }
+    });
 
-      const text = await response.text();
+    const timeoutSec = radiusKm > 100 ? 60 : radiusKm > 50 ? 50 : 35;
+    const overpassQuery = `[out:json][timeout:${timeoutSec}];(${queries.join("")});out body;`;
+    console.log(`📤 Query timeout: ${timeoutSec}s`);
 
-      if (!text.trim().startsWith("{")) {
-        console.log(`Invalid response from ${endpoint} (not JSON)`);
-        continue;
-      }
+    const endpoints = [
+      "https://overpass-api.de/api/interpreter",
+      "https://overpass.openstreetmap.fr/api/interpreter",
+    ];
 
-      let data;
+    for (const endpoint of endpoints) {
       try {
-        data = JSON.parse(text);
-      } catch (e) {
-        console.log(`JSON parse error from ${endpoint}`);
-        continue;
+        console.log(`🌍 Trying: ${endpoint}`);
+        const controller = new AbortController();
+        const timeoutMs = timeoutSec * 1000 + 5000;
+        const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+
+        const response = await fetch(endpoint, {
+          method: "POST",
+          headers: { "Content-Type": "application/x-www-form-urlencoded" },
+          body: `data=${encodeURIComponent(overpassQuery)}`,
+          signal: controller.signal,
+        });
+
+        clearTimeout(timeoutId);
+
+        if (!response.ok) {
+          console.log(`⚠️ ${endpoint} returned ${response.status}`);
+          continue;
+        }
+
+        const data = await response.json();
+        if (!data.elements?.length) {
+          console.log(`⚠️ No elements from ${endpoint}`);
+          continue;
+        }
+
+        console.log(`✅ Found ${data.elements.length} raw elements`);
+
+        const places = data.elements
+          .map((element: any) => {
+            const tags = element.tags || {};
+            const lat = element.lat;
+            const lon = element.lon;
+            if (!lat || !lon) return null;
+
+            const distance = calculateDistance(latitude, longitude, lat, lon);
+            if (distance > radiusKm) return null;
+
+            let placeType: Place["type"] = "landmark";
+            if (tags.amenity === "restaurant") placeType = "restaurant";
+            else if (tags.amenity === "cafe") placeType = "cafe";
+            else if (tags.amenity === "nightclub") placeType = "club";
+            else if (tags.natural === "beach") placeType = "beach";
+            else if (tags.shop === "farm") placeType = "farm";
+            else if (tags.amenity === "cinema") placeType = "cinema";
+            else if (tags.leisure === "park") placeType = "park";
+            else if (tags.leisure === "escape_game") placeType = "escapeRoom";
+            else if (tags.tourism === "museum") placeType = "museum";
+            else if (tags.amenity === "theatre") placeType = "theater";
+            else if (tags.natural === "peak") placeType = "mountain";
+            else if (tags.leisure === "nature_reserve")
+              placeType = "nationalPark";
+            else if (tags.natural === "cave_entrance") placeType = "cave";
+            else if (tags.amenity === "spa") placeType = "spa";
+            else if (tags.sport === "paintball") placeType = "paintball";
+            else if (tags.historic || tags.tourism === "attraction")
+              placeType = "landmark";
+            else return null;
+
+            if (!group.includes(placeType)) return null;
+
+            const name = tags.name || tags["name:hr"] || tags["name:en"];
+            if (!name) return null;
+
+            return {
+              id: `${element.type}_${element.id}`,
+              name: name,
+              latitude: lat,
+              longitude: lon,
+              type: placeType,
+              distance: distance,
+            } as Place;
+          })
+          .filter((p: Place | null): p is Place => p !== null);
+
+        if (places.length > 0) {
+          allPlaces.push(...places);
+          console.log(`✅ Added ${places.length} places from ${endpoint}`);
+          break;
+        }
+      } catch (error) {
+        console.log(`❌ Error with ${endpoint}:`, error);
       }
-
-      if (!data.elements || !Array.isArray(data.elements)) {
-        console.log(`No elements from ${endpoint}`);
-        continue;
-      }
-
-      const places = data.elements
-        .map((element: any) => {
-          const tags = element.tags || {};
-          const lat = element.lat;
-          const lon = element.lon;
-
-          if (!lat || !lon) return null;
-
-          const distance = calculateDistance(latitude, longitude, lat, lon);
-          if (distance > radiusKm) return null;
-
-          // Odredi tip
-          let placeType: Place["type"] = "other";
-          if (tags.amenity === "restaurant") placeType = "restaurant";
-          else if (tags.amenity === "cafe") placeType = "cafe";
-          else if (tags.amenity === "nightclub") placeType = "club";
-          else if (tags.natural === "beach") placeType = "beach";
-          else if (tags.historic || tags.tourism === "attraction")
-            placeType = "landmark";
-          else if (tags.shop === "farm") placeType = "farm";
-
-          // Provjeri da li je tip u odabranim tipovima
-          if (!types.includes(placeType)) return null;
-
-          const name = tags.name || tags["name:hr"] || tags["name:en"];
-          if (!name) return null;
-
-          return {
-            id: element.id.toString(),
-            name: name,
-            latitude: lat,
-            longitude: lon,
-            type: placeType,
-            description: tags.description || "",
-            distance: distance,
-            phone: tags.phone || tags["contact:phone"],
-            website: tags.website || tags.url,
-            openingHours: tags.opening_hours,
-          } as Place;
-        })
-        .filter((place: Place | null): place is Place => place !== null);
-
-      console.log(`Found ${places.length} places from ${endpoint}`);
-
-      if (places.length > 0) {
-        return places;
-      }
-    } catch (error) {
-      console.log(`Error with endpoint ${endpoint}:`, error);
-      continue;
     }
   }
 
-  console.log("All OpenStreetMap endpoints failed");
-  return [];
+  console.log(`🌍 Total OSM places found: ${allPlaces.length}`);
+  return allPlaces;
 };
 
 // Izračun udaljenosti (Haversine formula)
@@ -420,4 +536,5 @@ export default {
   searchPlaces,
   getPlacesInRadius,
   placeCategories,
+  clearPlacesCache,
 };

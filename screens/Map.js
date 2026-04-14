@@ -1,4 +1,4 @@
-import { View, Text, StyleSheet } from "react-native";
+/* import { View, Text, StyleSheet } from "react-native";
 import MapView, { Marker } from "react-native-maps";
 
 export default function Map({ locations = [], center, zoom = 7 }) {
@@ -44,4 +44,4 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
   },
-});
+}); */
