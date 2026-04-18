@@ -2660,6 +2660,8 @@ export default function ProfileScreen() {
   const load = useCallback(async () => {
     try {
       const token = await AsyncStorage.getItem("token");
+
+      // 🔥 Pokušaj dohvatiti profil sa servera
       try {
         const res = await fetch(`${API_BASE_URL}/api/auth/my-profile`, {
           headers: { Authorization: `Bearer ${token}` },
@@ -2670,8 +2672,13 @@ export default function ProfileScreen() {
           setLoading(false);
           return;
         }
-      } catch {}
-      // Fallback
+      } catch (networkError) {
+        // 🔥 TIHO IGNORIRAJ — network nije dostupan
+        // Ne prikazujemo grešku korisniku, samo koristimo cached podatke
+        console.log("Network not available, using cached data");
+      }
+
+      // 🔥 FALLBACK: Učitaj iz AsyncStorage (cached podaci)
       const [first, last, userId] = await Promise.all([
         AsyncStorage.getItem("firstName"),
         AsyncStorage.getItem("lastName"),
@@ -2681,6 +2688,7 @@ export default function ProfileScreen() {
       const cachedShowUsername = await AsyncStorage.getItem(
         "profileShowUsername",
       );
+
       setProfile({
         id: parseInt(userId ?? "0"),
         firstName: first ?? "",
@@ -2692,12 +2700,14 @@ export default function ProfileScreen() {
         showUsername:
           cachedShowUsername !== null ? cachedShowUsername === "true" : true,
       });
-    } catch {
+    } catch (error) {
+      // 🔥 Potpuni fallback - čak ni cached podaci ne postoje
+      console.log("Failed to load profile from any source");
+      // Ne radimo ništa, profile ostaje null
     } finally {
       setLoading(false);
     }
   }, []);
-
   useFocusEffect(
     useCallback(() => {
       load();
