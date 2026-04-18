@@ -1,3 +1,4 @@
+// app/login.tsx  — VARA redesign (logika nepromijenjena)
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { router } from "expo-router";
 import { useState } from "react";
@@ -7,228 +8,368 @@ import {
   KeyboardAvoidingView,
   Platform,
   ScrollView,
+  StatusBar,
   StyleSheet,
   Text,
   TextInput,
   TouchableOpacity,
   View,
 } from "react-native";
-import { API_ENDPOINTS } from "./config/api"; // 🔥 DODAJ OVAJ IMPORT
+import Svg, { Defs, LinearGradient, Path, Stop } from "react-native-svg";
+import { API_ENDPOINTS } from "./config/api";
 
+// ─── Inline VARA shield logo (no extra dependency) ────────────────────────────
+function VaraShield({ size = 72 }: { size?: number }) {
+  return (
+    <Svg width={size} height={size * 1.15} viewBox="0 0 100 115">
+      <Defs>
+        <LinearGradient id="sg" x1="0" y1="0" x2="0" y2="1">
+          <Stop offset="0%" stopColor="#3A7D1F" />
+          <Stop offset="100%" stopColor="#1B3F0E" />
+        </LinearGradient>
+        <LinearGradient id="vg" x1="0" y1="0" x2="0" y2="1">
+          <Stop offset="0%" stopColor="#E8EEEE" />
+          <Stop offset="50%" stopColor="#FFFFFF" />
+          <Stop offset="100%" stopColor="#B8C4C2" />
+        </LinearGradient>
+        <LinearGradient id="bg2" x1="0" y1="0" x2="1" y2="1">
+          <Stop offset="0%" stopColor="#D1DADB" />
+          <Stop offset="45%" stopColor="#FFFFFF" />
+          <Stop offset="100%" stopColor="#9AA9A7" />
+        </LinearGradient>
+      </Defs>
+      {/* Shield */}
+      <Path
+        d="M 50 5 C 35 5, 10 12, 10 12 L 10 55 C 10 82, 30 100, 50 110 C 70 100, 90 82, 90 55 L 90 12 C 90 12, 65 5, 50 5 Z"
+        fill="url(#sg)"
+        stroke="url(#bg2)"
+        strokeWidth="3.5"
+        strokeLinejoin="round"
+      />
+      {/* Inner bevel */}
+      <Path
+        d="M 50 10 C 37 10, 16 16, 16 16 L 16 55 C 16 80, 33 96, 50 105 C 67 96, 84 80, 84 55 L 84 16 C 84 16, 63 10, 50 10 Z"
+        fill="none"
+        stroke="rgba(255,255,255,0.15)"
+        strokeWidth="1.5"
+      />
+      {/* V letter */}
+      <Path
+        d="M 29 26 L 38 26 L 50 62 L 62 26 L 71 26 L 52 74 L 50 77 L 48 74 Z"
+        fill="url(#vg)"
+      />
+      {/* Nib */}
+      <Path d="M 48 74 L 50 80 L 52 74 Z" fill="#9AA9A7" />
+      {/* Highlight */}
+      <Path
+        d="M 35 12 C 28 13, 18 17, 16 19"
+        fill="none"
+        stroke="rgba(255,255,255,0.28)"
+        strokeWidth="2"
+        strokeLinecap="round"
+      />
+    </Svg>
+  );
+}
+
+// ─── Screen ───────────────────────────────────────────────────────────────────
 export default function LoginScreen() {
+  // ── state (logika nepromijenjena) ──
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [usernameFocused, setUsernameFocused] = useState(false);
+  const [passwordFocused, setPasswordFocused] = useState(false);
 
   const handleLogin = async () => {
     if (!username.trim() || !password.trim()) {
       Alert.alert("Greška", "Molimo unesite korisničko ime i lozinku");
       return;
     }
-
     setIsLoading(true);
     try {
-      // 🔥 PROMIJENI OVAJ URL
-      console.log("🔗 Login URL:", API_ENDPOINTS.LOGIN);
-
       const response = await fetch(API_ENDPOINTS.LOGIN, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ username: username.trim(), password }),
       });
-
       const data = await response.json();
-
       if (response.ok) {
         await AsyncStorage.setItem("token", data.token);
         await AsyncStorage.setItem("userId", data.userId.toString());
         await AsyncStorage.setItem("firstName", data.firstName);
         await AsyncStorage.setItem("lastName", data.lastName);
-
-        Alert.alert("Uspjeh!", `Dobrodošli, ${data.firstName}!`, [
-          { text: "OK", onPress: () => router.replace("/(tabs)") },
+        Alert.alert("Dobrodošli!", `${data.firstName}`, [
+          { text: "Nastavi", onPress: () => router.replace("/(tabs)") },
         ]);
       } else {
-        Alert.alert(
-          "Greška",
-          data.message || data || "Prijava nije uspjela. Provjerite podatke.",
-        );
+        Alert.alert("Greška", data.message || "Prijava nije uspjela.");
       }
-    } catch (error) {
-      console.error("Greška prilikom prijave:", error);
+    } catch {
       Alert.alert("Greška", "Došlo je do greške. Pokušajte ponovno.");
     } finally {
       setIsLoading(false);
     }
   };
 
+  // ── UI ────────────────────────────────────────────────────────────────────
   return (
     <KeyboardAvoidingView
-      style={styles.container}
+      style={s.root}
       behavior={Platform.OS === "ios" ? "padding" : "height"}
     >
-      <ScrollView contentContainerStyle={styles.scrollContainer}>
-        <View style={styles.content}>
-          <Text style={styles.title}>Dobrodošli natrag</Text>
-          <Text style={styles.subtitle}>Prijavite se za nastavak</Text>
+      <StatusBar barStyle="light-content" backgroundColor="#1B3F0E" />
 
-          <View style={styles.form}>
-            <View style={styles.inputContainer}>
-              <Text style={styles.label}>Korisničko ime</Text>
-              <TextInput
-                style={styles.input}
-                placeholder="Unesite korisničko ime"
-                placeholderTextColor="#999"
-                value={username}
-                onChangeText={setUsername}
-                autoCapitalize="none"
-                autoFocus
-                editable={!isLoading}
-              />
-            </View>
+      {/* Dark green header band */}
+      <View style={s.headerBand} />
 
-            <View style={styles.inputContainer}>
-              <Text style={styles.label}>Lozinka</Text>
-              <TextInput
-                style={styles.input}
-                placeholder="Unesite lozinku"
-                placeholderTextColor="#999"
-                value={password}
-                onChangeText={setPassword}
-                secureTextEntry
-                editable={!isLoading}
-              />
-            </View>
-
-            <TouchableOpacity
-              style={[styles.button, isLoading && styles.buttonDisabled]}
-              onPress={handleLogin}
-              disabled={isLoading}
-            >
-              {isLoading ? (
-                <ActivityIndicator color="#fff" />
-              ) : (
-                <Text style={styles.buttonText}>Prijavi se</Text>
-              )}
-            </TouchableOpacity>
-
-            <View style={styles.footer}>
-              <TouchableOpacity onPress={() => router.push("/register")}>
-                <Text style={styles.linkText}>
-                  Nemate račun?{" "}
-                  <Text style={styles.linkBold}>Registrirajte se</Text>
-                </Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                style={styles.forgotPassword}
-                onPress={() => router.push("/forgot-password")}
-              >
-                <Text style={styles.forgotPasswordText}>
-                  Zaboravili ste lozinku?
-                </Text>
-              </TouchableOpacity>
-            </View>
-          </View>
+      <ScrollView
+        contentContainerStyle={s.scroll}
+        keyboardShouldPersistTaps="handled"
+        bounces={false}
+      >
+        {/* Logo + wordmark */}
+        <View style={s.logoSection}>
+          <VaraShield size={80} />
+          <Text style={s.appName}>VARA</Text>
+          <Text style={s.tagline}>Otkrijte svako mjesto</Text>
         </View>
+
+        {/* Card */}
+        <View style={s.card}>
+          <Text style={s.cardTitle}>Prijava</Text>
+
+          {/* Username */}
+          <View style={s.fieldWrap}>
+            <Text style={s.label}>KORISNIČKO IME</Text>
+            <TextInput
+              style={[s.input, usernameFocused && s.inputFocused]}
+              placeholder="Unesite korisničko ime"
+              placeholderTextColor="#9AA9A7"
+              value={username}
+              onChangeText={setUsername}
+              autoCapitalize="none"
+              autoFocus
+              editable={!isLoading}
+              onFocus={() => setUsernameFocused(true)}
+              onBlur={() => setUsernameFocused(false)}
+            />
+          </View>
+
+          {/* Password */}
+          <View style={s.fieldWrap}>
+            <Text style={s.label}>LOZINKA</Text>
+            <TextInput
+              style={[s.input, passwordFocused && s.inputFocused]}
+              placeholder="Unesite lozinku"
+              placeholderTextColor="#9AA9A7"
+              value={password}
+              onChangeText={setPassword}
+              secureTextEntry
+              editable={!isLoading}
+              onFocus={() => setPasswordFocused(true)}
+              onBlur={() => setPasswordFocused(false)}
+            />
+          </View>
+
+          {/* Forgot password */}
+          <TouchableOpacity
+            style={s.forgotWrap}
+            onPress={() => router.push("/forgot-password")}
+          >
+            <Text style={s.forgotText}>Zaboravili ste lozinku?</Text>
+          </TouchableOpacity>
+
+          {/* Login button */}
+          <TouchableOpacity
+            style={[s.btn, isLoading && s.btnDisabled]}
+            onPress={handleLogin}
+            disabled={isLoading}
+            activeOpacity={0.85}
+          >
+            {isLoading ? (
+              <ActivityIndicator color="#fff" />
+            ) : (
+              <Text style={s.btnText}>Prijavi se</Text>
+            )}
+          </TouchableOpacity>
+
+          {/* Divider */}
+          <View style={s.divider}>
+            <View style={s.dividerLine} />
+            <Text style={s.dividerText}>ili</Text>
+            <View style={s.dividerLine} />
+          </View>
+
+          {/* Register */}
+          <TouchableOpacity
+            style={s.outlineBtn}
+            onPress={() => router.push("/register")}
+            activeOpacity={0.85}
+          >
+            <Text style={s.outlineBtnText}>Kreiraj račun</Text>
+          </TouchableOpacity>
+        </View>
+
+        {/* Bottom note */}
+        <Text style={s.bottomNote}>
+          Registracijom prihvaćate Uvjete i Pravila privatnosti
+        </Text>
       </ScrollView>
     </KeyboardAvoidingView>
   );
 }
 
-// ... styles ostaju isti
+// ─── Styles ───────────────────────────────────────────────────────────────────
+const GREEN = "#2D6418";
+const GREEN_DARK = "#1B3F0E";
+const GREEN_LIGHT = "#3A7D1F";
+const SILVER = "#9AA9A7";
+const SILVER_LIGHT = "#E8EEEE";
+const TEXT = "#142F09";
+const MUTED = "#5C6765";
 
-const styles = StyleSheet.create({
-  container: {
+const s = StyleSheet.create({
+  root: {
     flex: 1,
-    backgroundColor: "#f5f7fa",
+    backgroundColor: "#F2EDE4", // cream/terrain beige
   },
-  scrollContainer: {
+  headerBand: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    height: 260,
+    backgroundColor: GREEN_DARK,
+    borderBottomLeftRadius: 32,
+    borderBottomRightRadius: 32,
+  },
+  scroll: {
     flexGrow: 1,
-  },
-  content: {
-    flex: 1,
-    justifyContent: "center",
     paddingHorizontal: 24,
-    paddingVertical: 40,
+    paddingTop: Platform.OS === "ios" ? 60 : 48,
+    paddingBottom: 40,
   },
-  title: {
+  logoSection: {
+    alignItems: "center",
+    marginBottom: 32,
+  },
+  appName: {
     fontSize: 32,
-    fontWeight: "bold",
-    color: "#333",
-    marginBottom: 8,
-    textAlign: "center",
+    fontWeight: "700",
+    color: "#FFFFFF",
+    letterSpacing: 6,
+    marginTop: 10,
   },
-  subtitle: {
-    fontSize: 16,
-    color: "#666",
-    marginBottom: 48,
-    textAlign: "center",
+  tagline: {
+    fontSize: 14,
+    color: "rgba(255,255,255,0.6)",
+    letterSpacing: 1,
+    marginTop: 4,
   },
-  form: {
-    width: "100%",
+  card: {
+    backgroundColor: "#FFFFFF",
+    borderRadius: 20,
+    padding: 28,
+    shadowColor: GREEN_DARK,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.14,
+    shadowRadius: 20,
+    elevation: 8,
   },
-  inputContainer: {
-    marginBottom: 20,
+  cardTitle: {
+    fontSize: 22,
+    fontWeight: "700",
+    color: TEXT,
+    marginBottom: 24,
+    letterSpacing: 0.3,
+  },
+  fieldWrap: {
+    marginBottom: 18,
   },
   label: {
-    fontSize: 14,
-    fontWeight: "500",
-    color: "#333",
-    marginBottom: 8,
+    fontSize: 11,
+    fontWeight: "600",
+    color: MUTED,
+    letterSpacing: 1,
+    marginBottom: 6,
   },
   input: {
-    backgroundColor: "#fff",
-    borderRadius: 12,
+    backgroundColor: SILVER_LIGHT,
+    borderRadius: 10,
+    borderWidth: 1.5,
+    borderColor: "#D1DADB",
     paddingHorizontal: 16,
-    paddingVertical: 14,
+    paddingVertical: 13,
     fontSize: 16,
-    borderWidth: 1,
-    borderColor: "#e0e0e0",
-    color: "#333",
+    color: TEXT,
   },
-  button: {
-    backgroundColor: "#667eea",
+  inputFocused: {
+    borderColor: GREEN,
+    backgroundColor: "#FFFFFF",
+  },
+  forgotWrap: {
+    alignSelf: "flex-end",
+    marginBottom: 22,
+    marginTop: -4,
+  },
+  forgotText: {
+    fontSize: 13,
+    color: GREEN,
+    fontWeight: "500",
+  },
+  btn: {
+    backgroundColor: GREEN,
     borderRadius: 12,
-    paddingVertical: 16,
-    marginTop: 24,
+    paddingVertical: 15,
     alignItems: "center",
-    shadowColor: "#667eea",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
+    shadowColor: GREEN_DARK,
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.25,
     shadowRadius: 8,
     elevation: 5,
   },
-  buttonDisabled: {
-    backgroundColor: "#a0aec0",
-    opacity: 0.7,
+  btnDisabled: {
+    backgroundColor: SILVER,
+    shadowOpacity: 0,
   },
-  buttonText: {
-    color: "#fff",
+  btnText: {
+    color: "#FFFFFF",
     fontSize: 16,
     fontWeight: "600",
-    textAlign: "center",
+    letterSpacing: 0.5,
   },
-  footer: {
-    marginTop: 24,
+  divider: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginVertical: 20,
+    gap: 10,
+  },
+  dividerLine: {
+    flex: 1,
+    height: 1,
+    backgroundColor: "#E8EEEE",
+  },
+  dividerText: {
+    fontSize: 13,
+    color: MUTED,
+  },
+  outlineBtn: {
+    borderRadius: 12,
+    borderWidth: 1.5,
+    borderColor: GREEN,
+    paddingVertical: 15,
     alignItems: "center",
   },
-  linkText: {
-    fontSize: 14,
-    color: "#666",
-  },
-  linkBold: {
-    color: "#667eea",
+  outlineBtnText: {
+    color: GREEN,
+    fontSize: 16,
     fontWeight: "600",
   },
-  forgotPassword: {
-    marginTop: 16,
-  },
-  forgotPasswordText: {
-    fontSize: 14,
-    color: "#999",
-    textDecorationLine: "underline",
+  bottomNote: {
+    fontSize: 12,
+    color: "rgba(255,255,255,0.45)",
+    textAlign: "center",
+    marginTop: 24,
   },
 });

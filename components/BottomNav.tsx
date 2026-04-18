@@ -1,84 +1,142 @@
+// components/BottomNav.tsx  — VARA redesign
+// Logika navigacije nepromijenjena, samo stilovi
+import { Ionicons } from "@expo/vector-icons";
 import { router, usePathname } from "expo-router";
-import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import {
+  Platform,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
+
+const GREEN = "#2D6418";
+const GREEN_DARK = "#1B3F0E";
+const SILVER = "#9AA9A7";
+const SILVER_LIGHT = "#D1DADB";
+
+const TABS = [
+  { route: "/(tabs)", label: "Karta", icon: "map-outline", iconActive: "map" },
+  {
+    route: "/(tabs)/videos",
+    label: "Videi",
+    icon: "play-circle-outline",
+    iconActive: "play-circle",
+  },
+  {
+    route: "/(tabs)/messages",
+    label: "Poruke",
+    icon: "chatbubble-outline",
+    iconActive: "chatbubble",
+  },
+  {
+    route: "/(tabs)/search",
+    label: "Pretraga",
+    icon: "search-outline",
+    iconActive: "search",
+  },
+  {
+    route: "/(tabs)/profile",
+    label: "Profil",
+    icon: "person-outline",
+    iconActive: "person",
+  },
+] as const;
 
 export default function BottomNav() {
   const pathname = usePathname();
 
-  const navigateTo = (tab: string) => {
-    if (tab === "home") {
-      router.replace("/(tabs)");
-    } else if (tab === "search") {
-      router.push("/(tabs)/search");
-    } else if (tab === "videos") {
-      router.push("/(tabs)/videos");
-    } else if (tab === "messages") {
-      router.push("/(tabs)/messages");
-    } else if (tab === "profile") {
-      router.push("/(tabs)/profile");
-    }
-  };
-
-  const isActive = (tab: string) => {
-    if (tab === "home") {
-      return pathname === "/(tabs)" || pathname === "/(tabs)/index";
-    }
-    return pathname === `/(tabs)/${tab}`;
+  const isActive = (route: string) => {
+    if (route === "/(tabs)")
+      return (
+        pathname === "/" || pathname === "/(tabs)" || pathname === "/index"
+      );
+    return pathname.startsWith(route.replace("/(tabs)", ""));
   };
 
   return (
-    <View style={styles.bottomNav}>
-      <TouchableOpacity onPress={() => navigateTo("home")}>
-        <Text style={[styles.icon, isActive("home") && styles.activeIcon]}>
-          🏠
-        </Text>
-      </TouchableOpacity>
-      <TouchableOpacity onPress={() => navigateTo("videos")}>
-        <Text style={[styles.icon, isActive("videos") && styles.activeIcon]}>
-          🎥
-        </Text>
-      </TouchableOpacity>
-      <TouchableOpacity onPress={() => navigateTo("messages")}>
-        <Text style={[styles.icon, isActive("messages") && styles.activeIcon]}>
-          💬
-        </Text>
-      </TouchableOpacity>
-      <TouchableOpacity onPress={() => navigateTo("search")}>
-        <Text style={[styles.icon, isActive("search") && styles.activeIcon]}>
-          🔍
-        </Text>
-      </TouchableOpacity>
-      <TouchableOpacity onPress={() => navigateTo("profile")}>
-        <Text style={[styles.icon, isActive("profile") && styles.activeIcon]}>
-          👤
-        </Text>
-      </TouchableOpacity>
+    <View style={s.wrapper}>
+      {/* Green accent bar at top of nav */}
+      <View style={s.topAccent} />
+      <View style={s.nav}>
+        {TABS.map((tab) => {
+          const active = isActive(tab.route);
+          return (
+            <TouchableOpacity
+              key={tab.route}
+              style={s.tab}
+              onPress={() => router.push(tab.route as any)}
+              activeOpacity={0.7}
+            >
+              {/* Active indicator pill */}
+              {active && <View style={s.activePill} />}
+              <Ionicons
+                name={(active ? tab.iconActive : tab.icon) as any}
+                size={22}
+                color={active ? GREEN : SILVER}
+              />
+              <Text style={[s.label, active && s.labelActive]}>
+                {tab.label}
+              </Text>
+            </TouchableOpacity>
+          );
+        })}
+      </View>
     </View>
   );
 }
 
-const styles = StyleSheet.create({
-  bottomNav: {
+const s = StyleSheet.create({
+  wrapper: {
     position: "absolute",
-    bottom: 50, // umjesto top:40
-    left: 10,
-    right: 10,
+    bottom: 0,
+    left: 0,
+    right: 0,
+    backgroundColor: "#FFFFFF",
+    borderTopWidth: 0,
+    shadowColor: "#1B3F0E",
+    shadowOffset: { width: 0, height: -2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 12,
+    elevation: 12,
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    overflow: "hidden",
+  },
+  topAccent: {
+    height: 2,
+    backgroundColor: GREEN,
+    marginHorizontal: 32,
+    borderBottomLeftRadius: 2,
+    borderBottomRightRadius: 2,
+  },
+  nav: {
     flexDirection: "row",
-    justifyContent: "space-around",
-    backgroundColor: "white",
-    borderRadius: 20,
+    paddingTop: 6,
+    paddingBottom: Platform.OS === "ios" ? 28 : 8,
+  },
+  tab: {
+    flex: 1,
+    alignItems: "center",
     paddingVertical: 8,
-    paddingHorizontal: 10,
-    elevation: 5,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 5,
-    zIndex: 20,
+    gap: 3,
+    position: "relative",
   },
-  icon: {
-    fontSize: 28,
+  activePill: {
+    position: "absolute",
+    top: 2,
+    width: 36,
+    height: 3,
+    borderRadius: 2,
+    backgroundColor: GREEN,
   },
-  activeIcon: {
-    color: "#667eea",
+  label: {
+    fontSize: 11,
+    color: SILVER,
+    fontWeight: "400",
+  },
+  labelActive: {
+    color: GREEN,
+    fontWeight: "600",
   },
 });

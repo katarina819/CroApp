@@ -243,7 +243,7 @@ const av = StyleSheet.create({
     width: 96,
     height: 96,
     borderRadius: 48,
-    backgroundColor: "#667eea",
+    backgroundColor: "#2D6418",
     justifyContent: "center",
     alignItems: "center",
   },
@@ -264,7 +264,7 @@ const av = StyleSheet.create({
     width: 28,
     height: 28,
     borderRadius: 14,
-    backgroundColor: "#667eea",
+    backgroundColor: "#2D6418",
     justifyContent: "center",
     alignItems: "center",
     borderWidth: 2,
@@ -529,7 +529,7 @@ function FollowListModal({
           <View style={{ width: 28 }} />
         </View>
         {loading ? (
-          <ActivityIndicator style={{ marginTop: 40 }} color="#667eea" />
+          <ActivityIndicator style={{ marginTop: 40 }} color="#2D6418" />
         ) : list.length === 0 ? (
           <View style={fl.empty}>
             <Ionicons name="people-outline" size={56} color="#ddd" />
@@ -656,14 +656,14 @@ const fl = StyleSheet.create({
   avatarContainer: { marginRight: 12 },
   avatar: { width: 50, height: 50, borderRadius: 25 },
   avatarPlaceholder: {
-    backgroundColor: "#667eea",
+    backgroundColor: "#2D6418",
     justifyContent: "center",
     alignItems: "center",
   },
   avatarText: { color: "#fff", fontSize: 16, fontWeight: "700" },
   userInfo: { flex: 1 },
   name: { fontSize: 15, fontWeight: "600", color: "#333" },
-  username: { fontSize: 13, color: "#667eea", marginTop: 2 },
+  username: { fontSize: 13, color: "#2D6418", marginTop: 2 },
   actionButtons: { flexDirection: "row", gap: 8 },
   goldenBtn: {
     width: 40,
@@ -745,7 +745,7 @@ function ActivityArchive({ userId }: { userId: number | null }) {
   };
 
   if (loading)
-    return <ActivityIndicator color="#667eea" style={{ marginTop: 20 }} />;
+    return <ActivityIndicator color="#2D6418" style={{ marginTop: 20 }} />;
 
   const totalLikes = data.reduce((s, d) => s + d.likes, 0);
   const totalComments = data.reduce((s, d) => s + d.comments, 0);
@@ -791,9 +791,9 @@ function ActivityArchive({ userId }: { userId: number | null }) {
           </Text>
           <Text style={ac.summaryLabel}>Lajkovi</Text>
         </View>
-        <View style={[ac.summaryCard, { borderTopColor: "#667eea" }]}>
-          <Ionicons name="chatbubble" size={20} color="#667eea" />
-          <Text style={[ac.summaryNum, { color: "#667eea" }]}>
+        <View style={[ac.summaryCard, { borderTopColor: "#2D6418" }]}>
+          <Ionicons name="chatbubble" size={20} color="#2D6418" />
+          <Text style={[ac.summaryNum, { color: "#2D6418" }]}>
             {totalComments}
           </Text>
           <Text style={ac.summaryLabel}>Komentari</Text>
@@ -816,7 +816,7 @@ function ActivityArchive({ userId }: { userId: number | null }) {
 
       {/* Followers Card */}
       <View style={ac.followersCard}>
-        <Ionicons name="people" size={24} color="#667eea" />
+        <Ionicons name="people" size={24} color="#2D6418" />
         <View>
           <Text style={ac.followersNum}>{currentFollowers}</Text>
           <Text style={ac.followersLabel}>Trenutno pratitelja</Text>
@@ -849,7 +849,7 @@ function ActivityArchive({ userId }: { userId: number | null }) {
       {renderBarChart(
         data.map((d) => d.comments),
         "💬 Komentari",
-        "#667eea",
+        "#2D6418",
         maxComments,
         BAR_HEIGHT,
       )}
@@ -912,7 +912,7 @@ const ac = StyleSheet.create({
     borderRadius: 20,
     backgroundColor: "#f0f0f0",
   },
-  periodBtnActive: { backgroundColor: "#667eea" },
+  periodBtnActive: { backgroundColor: "#2D6418" },
   periodBtnText: { fontSize: 13, color: "#666" },
   periodBtnTextActive: { color: "#fff" },
   summaryRow: { flexDirection: "row", flexWrap: "wrap", gap: 8, padding: 16 },
@@ -937,7 +937,7 @@ const ac = StyleSheet.create({
     padding: 16,
     borderRadius: 12,
   },
-  followersNum: { fontSize: 24, fontWeight: "800", color: "#667eea" },
+  followersNum: { fontSize: 24, fontWeight: "800", color: "#2D6418" },
   followersLabel: { fontSize: 12, color: "#999" },
   sectionTitle: {
     fontSize: 15,
@@ -1180,7 +1180,7 @@ function ScreenTimeCountdown() {
       <Ionicons
         name="time-outline"
         size={16}
-        color={isWarning ? "#ff3b30" : "#667eea"}
+        color={isWarning ? "#ff3b30" : "#2D6418"}
       />
       <Text style={[sct.text, isWarning && sct.warningText]}>
         Preostalo: {mins}:{secs.toString().padStart(2, "0")}
@@ -1202,7 +1202,7 @@ const sct = StyleSheet.create({
     marginBottom: 8,
   },
   warning: { backgroundColor: "#fff0f0" },
-  text: { fontSize: 13, color: "#667eea", fontWeight: "600" },
+  text: { fontSize: 13, color: "#2D6418", fontWeight: "600" },
   warningText: { color: "#ff3b30" },
 });
 
@@ -1424,7 +1424,7 @@ function MeTab({ userId }: { userId: number | null }) {
   };
 
   if (loading)
-    return <ActivityIndicator style={{ marginTop: 40 }} color="#667eea" />;
+    return <ActivityIndicator style={{ marginTop: 40 }} color="#2D6418" />;
 
   return (
     <View style={{ flex: 1 }}>
@@ -1471,7 +1471,7 @@ function MeTab({ userId }: { userId: number | null }) {
                       },
                     ]}
                   >
-                    <Ionicons name="videocam" size={32} color="#667eea" />
+                    <Ionicons name="videocam" size={32} color="#2D6418" />
                   </View>
                 )}
                 {isVideo && (
@@ -1615,7 +1615,7 @@ function BoxTab() {
   };
 
   if (loading)
-    return <ActivityIndicator style={{ marginTop: 40 }} color="#667eea" />;
+    return <ActivityIndicator style={{ marginTop: 40 }} color="#2D6418" />;
   if (items.length === 0)
     return <EmptyTab icon="bookmark-outline" text="Box je prazan" />;
 
@@ -1648,7 +1648,7 @@ function BoxTab() {
                     },
                   ]}
                 >
-                  <Ionicons name="videocam" size={30} color="#667eea" />
+                  <Ionicons name="videocam" size={30} color="#2D6418" />
                 </View>
                 <View style={tab.playIcon}>
                   <Ionicons name="play-circle" size={28} color="#fff" />
@@ -1799,7 +1799,7 @@ function WishlistTab() {
   };
 
   if (loading)
-    return <ActivityIndicator style={{ marginTop: 40 }} color="#667eea" />;
+    return <ActivityIndicator style={{ marginTop: 40 }} color="#2D6418" />;
 
   return (
     <>
@@ -1856,7 +1856,7 @@ function WishlistTab() {
                         },
                       ]}
                     >
-                      <Ionicons name="videocam" size={30} color="#667eea" />
+                      <Ionicons name="videocam" size={30} color="#2D6418" />
                     </View>
                     <View style={tab.playIcon}>
                       <Ionicons name="play-circle" size={28} color="#fff" />
@@ -1970,7 +1970,7 @@ function GoldenFriendsTab() {
   };
 
   if (loading)
-    return <ActivityIndicator style={{ marginTop: 40 }} color="#667eea" />;
+    return <ActivityIndicator style={{ marginTop: 40 }} color="#2D6418" />;
   if (friends.length === 0)
     return (
       <EmptyTab
@@ -2052,7 +2052,7 @@ function GoldenFriendsTab() {
                 <Ionicons
                   name="paper-plane-outline"
                   size={18}
-                  color="#667eea"
+                  color="#2D6418"
                 />
               </TouchableOpacity>
               <TouchableOpacity
@@ -2229,7 +2229,7 @@ function SettingsModal({
           <Text style={sm.title}>Postavke</Text>
           <TouchableOpacity onPress={saveSettings} disabled={saving}>
             {saving ? (
-              <ActivityIndicator size="small" color="#667eea" />
+              <ActivityIndicator size="small" color="#2D6418" />
             ) : (
               <Text style={sm.saveBtn}>Spremi</Text>
             )}
@@ -2249,7 +2249,7 @@ function SettingsModal({
               <Switch
                 value={isPublic}
                 onValueChange={(val) => setIsPublic(val)}
-                trackColor={{ true: "#667eea", false: "#ccc" }}
+                trackColor={{ true: "#2D6418", false: "#ccc" }}
                 thumbColor="#fff"
               />
             </View>
@@ -2265,7 +2265,7 @@ function SettingsModal({
               <Switch
                 value={showUsernameOnProfile}
                 onValueChange={(val) => setShowUsernameOnProfile(val)}
-                trackColor={{ true: "#667eea", false: "#ccc" }}
+                trackColor={{ true: "#2D6418", false: "#ccc" }}
                 thumbColor="#fff"
               />
             </View>
@@ -2280,7 +2280,7 @@ function SettingsModal({
             <Text style={sm.rowSub}>Dnevno ograničenje korištenja</Text>
             {screenLimit > 0 && (
               <View style={sm.activeLimit}>
-                <Ionicons name="time-outline" size={16} color="#667eea" />
+                <Ionicons name="time-outline" size={16} color="#2D6418" />
                 <Text style={sm.activeLimitText}>
                   Aktivno ograničenje: {screenLimit} min
                 </Text>
@@ -2324,7 +2324,7 @@ function SettingsModal({
                         {u.firstName} {u.lastName}
                       </Text>
                       <TouchableOpacity onPress={() => unblockUser(u.id)}>
-                        <Text style={{ color: "#667eea", fontSize: 13 }}>
+                        <Text style={{ color: "#2D6418", fontSize: 13 }}>
                           Odblokiraj
                         </Text>
                       </TouchableOpacity>
@@ -2346,7 +2346,7 @@ function SettingsModal({
               <Ionicons
                 name={showActivityArchive ? "chevron-up" : "chevron-down"}
                 size={20}
-                color="#667eea"
+                color="#2D6418"
               />
             </TouchableOpacity>
             {showActivityArchive && (
@@ -2389,7 +2389,7 @@ const sm = StyleSheet.create({
     borderBottomColor: "#eee",
   },
   title: { fontSize: 17, fontWeight: "600", color: "#333" },
-  saveBtn: { color: "#667eea", fontSize: 16, fontWeight: "600" },
+  saveBtn: { color: "#2D6418", fontSize: 16, fontWeight: "600" },
   section: { marginTop: 24, paddingHorizontal: 16 },
   sectionTitle: {
     fontSize: 13,
@@ -2411,7 +2411,7 @@ const sm = StyleSheet.create({
   rowSub: { fontSize: 13, color: "#999", marginTop: 2 },
   currentValue: {
     fontSize: 12,
-    color: "#667eea",
+    color: "#2D6418",
     marginTop: 4,
     marginBottom: 8,
   },
@@ -2424,7 +2424,7 @@ const sm = StyleSheet.create({
     borderRadius: 8,
     marginVertical: 8,
   },
-  activeLimitText: { fontSize: 13, color: "#667eea", fontWeight: "600" },
+  activeLimitText: { fontSize: 13, color: "#2D6418", fontWeight: "600" },
   timeRow: { flexDirection: "row", flexWrap: "wrap", gap: 8, marginTop: 12 },
   timeBtn: {
     paddingHorizontal: 12,
@@ -2432,7 +2432,7 @@ const sm = StyleSheet.create({
     borderRadius: 20,
     backgroundColor: "#f0f0f0",
   },
-  timeBtnActive: { backgroundColor: "#667eea" },
+  timeBtnActive: { backgroundColor: "#2D6418" },
   timeBtnText: { fontSize: 13, color: "#666" },
   timeBtnTextActive: { color: "#fff" },
   blockedUser: {
@@ -2470,7 +2470,7 @@ const tab = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "#667eea",
+    backgroundColor: "#2D6418",
     borderRadius: 12,
     margin: 16,
     paddingVertical: 12,
@@ -2530,7 +2530,7 @@ const tab = StyleSheet.create({
     color: "#333",
     marginBottom: 3,
   },
-  itemMeta: { fontSize: 13, color: "#667eea", marginBottom: 2 },
+  itemMeta: { fontSize: 13, color: "#2D6418", marginBottom: 2 },
   itemDate: { fontSize: 12, color: "#999" },
   removeBtn: { padding: 8 },
   empty: {
@@ -2566,10 +2566,10 @@ const tab = StyleSheet.create({
     padding: 4,
     zIndex: 1,
   },
-  filterBtnActive: { backgroundColor: "#667eea" },
+  filterBtnActive: { backgroundColor: "#2D6418" },
   filterBtnText: { fontSize: 13, color: "#666" },
   filterBtnTextActive: { color: "#fff" },
-  goingBadge: { fontSize: 13, color: "#667eea", marginTop: 4 },
+  goingBadge: { fontSize: 13, color: "#2D6418", marginTop: 4 },
 });
 
 // Praćenje vremena sesije - DODAJTE OVO PRIJE ProfileScreen
@@ -2750,7 +2750,7 @@ export default function ProfileScreen() {
   if (loading)
     return (
       <View style={styles.center}>
-        <ActivityIndicator size="large" color="#667eea" />
+        <ActivityIndicator size="large" color="#2D6418" />
       </View>
     );
 
@@ -2788,7 +2788,7 @@ export default function ProfileScreen() {
             <Ionicons
               name={profile?.isPublic ? "globe-outline" : "lock-closed-outline"}
               size={12}
-              color="#667eea"
+              color="#2D6418"
             />
             <Text style={styles.privacyText}>
               {profile?.isPublic ? "Javni profil" : "Privatni profil"}
@@ -2829,7 +2829,7 @@ export default function ProfileScreen() {
               <Ionicons
                 name={t.icon}
                 size={18}
-                color={activeTab === t.key ? "#667eea" : "#999"}
+                color={activeTab === t.key ? "#2D6418" : "#999"}
               />
               <Text
                 style={[
@@ -2865,7 +2865,7 @@ export default function ProfileScreen() {
           <TouchableOpacity
             onPress={() => router.push("/admin/login")}
             style={{
-              backgroundColor: "#667eea",
+              backgroundColor: "#2D6418",
               paddingHorizontal: 20,
               paddingVertical: 10,
               borderRadius: 20,
@@ -2933,7 +2933,7 @@ const styles = StyleSheet.create({
     borderBottomColor: "#f0f0f0",
   },
   name: { fontSize: 22, fontWeight: "700", color: "#1a1a1a", marginBottom: 2 },
-  usernameText: { fontSize: 15, color: "#667eea", marginBottom: 6 },
+  usernameText: { fontSize: 15, color: "#2D6418", marginBottom: 6 },
   privacyBadge: {
     flexDirection: "row",
     alignItems: "center",
@@ -2944,7 +2944,7 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     marginBottom: 16,
   },
-  privacyText: { fontSize: 12, color: "#667eea", fontWeight: "500" },
+  privacyText: { fontSize: 12, color: "#2D6418", fontWeight: "500" },
   statsRow: { flexDirection: "row", alignItems: "center", gap: 32 },
   stat: { alignItems: "center" },
   statNum: { fontSize: 22, fontWeight: "700", color: "#1a1a1a" },
@@ -2963,9 +2963,9 @@ const styles = StyleSheet.create({
     borderBottomWidth: 2,
     borderBottomColor: "transparent",
   },
-  tabBtnActive: { borderBottomColor: "#667eea" },
+  tabBtnActive: { borderBottomColor: "#2D6418" },
   tabBtnText: { fontSize: 11, color: "#999" },
-  tabBtnTextActive: { color: "#667eea", fontWeight: "600" },
+  tabBtnTextActive: { color: "#2D6418", fontWeight: "600" },
   thumbContainer: {
     position: "relative",
     width: 60,
@@ -2989,7 +2989,7 @@ const styles = StyleSheet.create({
     color: "#333",
     marginBottom: 3,
   },
-  itemMeta: { fontSize: 13, color: "#667eea", marginBottom: 2 },
+  itemMeta: { fontSize: 13, color: "#2D6418 ", marginBottom: 2 },
   itemDate: { fontSize: 12, color: "#999" },
   removeBtn: { padding: 8 },
   empty: {
@@ -3016,10 +3016,10 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     backgroundColor: "#f0f0f0",
   },
-  filterBtnActive: { backgroundColor: "#667eea" },
+  filterBtnActive: { backgroundColor: "#2D6418" },
   filterBtnText: { fontSize: 13, color: "#666" },
   filterBtnTextActive: { color: "#fff" },
-  goingBadge: { fontSize: 13, color: "#667eea", marginTop: 4 },
+  goingBadge: { fontSize: 13, color: "#2D6418", marginTop: 4 },
   deleteOverlay: {
     position: "absolute",
     top: 4,
@@ -3060,7 +3060,7 @@ const styles = StyleSheet.create({
     height: "100%",
   },
   goldenAvatar: {
-    backgroundColor: "#667eea",
+    backgroundColor: "#2D6418",
     justifyContent: "center",
     alignItems: "center",
   },

@@ -634,7 +634,7 @@ function StoryViewer({
             {/* DODAJ OVAJ DIO ZA LOADING */}
             {loadingViewers ? (
               <View style={{ padding: 40, alignItems: "center" }}>
-                <ActivityIndicator size="large" color="#667eea" />
+                <ActivityIndicator size="large" color="#2D6418" />
                 <Text style={{ marginTop: 12, color: "#999" }}>
                   Učitavanje...
                 </Text>
@@ -709,7 +709,7 @@ function StoryViewer({
                       style={sv.viewerAvatar}
                     />
                   ) : (
-                    <Ionicons name="person-circle" size={40} color="#667eea" />
+                    <Ionicons name="person-circle" size={40} color="#2D6418" />
                   )}
                   <Text style={sv.viewerName}>{item.userName}</Text>
                   <Text style={sv.reactionType}>{item.reactionType}</Text>
@@ -773,7 +773,7 @@ function StoryViewer({
                       <Ionicons
                         name="person-circle"
                         size={32}
-                        color="#667eea"
+                        color="#2D6418"
                       />
                     )}
                     <Text style={sv.commentUserName}>{item.userName}</Text>
@@ -850,7 +850,7 @@ function StoryViewer({
                   <Ionicons
                     name="send"
                     size={22}
-                    color={commentText.trim() ? "#667eea" : "#ccc"}
+                    color={commentText.trim() ? "#2D6418" : "#ccc"}
                   />
                 </TouchableOpacity>
               </View>
@@ -891,7 +891,7 @@ const sv = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: "#667eea",
+    backgroundColor: "#2D6418",
     justifyContent: "center",
     alignItems: "center",
     borderWidth: 2,
@@ -993,7 +993,7 @@ const sv = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: "#667eea",
+    backgroundColor: "#2D6418",
     justifyContent: "center",
     alignItems: "center",
   },
@@ -1331,7 +1331,7 @@ const srs = StyleSheet.create({
   },
   myHasStory: {
     borderWidth: 2.5,
-    borderColor: "#667eea",
+    borderColor: "#2D6418",
   },
   noStory: {
     borderWidth: 2,
@@ -1348,7 +1348,7 @@ const srs = StyleSheet.create({
     width: 64,
     height: 64,
     borderRadius: 32,
-    backgroundColor: "#667eea",
+    backgroundColor: "#2D6418",
     justifyContent: "center",
     alignItems: "center",
   },
@@ -1360,7 +1360,7 @@ const srs = StyleSheet.create({
     width: 22,
     height: 22,
     borderRadius: 11,
-    backgroundColor: "#667eea",
+    backgroundColor: "#2D6418",
     justifyContent: "center",
     alignItems: "center",
     borderWidth: 2,
@@ -1472,14 +1472,14 @@ function AddStoryModal({
               style={asm.pickBtn}
               onPress={() => pick("gallery")}
             >
-              <Ionicons name="images" size={40} color="#667eea" />
+              <Ionicons name="images" size={40} color="#2D6418" />
               <Text style={asm.pickLabel}>Galerija</Text>
             </TouchableOpacity>
             <TouchableOpacity
               style={asm.pickBtn}
               onPress={() => pick("camera")}
             >
-              <Ionicons name="camera" size={40} color="#667eea" />
+              <Ionicons name="camera" size={40} color="#2D6418" />
               <Text style={asm.pickLabel}>Kamera</Text>
             </TouchableOpacity>
           </View>
@@ -1498,7 +1498,7 @@ function AddStoryModal({
                 <Text style={asm.btnText}>Obriši</Text>
               </TouchableOpacity>
               <TouchableOpacity
-                style={[asm.btn, { backgroundColor: "#667eea" }]}
+                style={[asm.btn, { backgroundColor: "#2D6418" }]}
                 onPress={upload}
                 disabled={uploading}
               >
@@ -1537,11 +1537,11 @@ const asm = StyleSheet.create({
     padding: 28,
     borderRadius: 16,
     borderWidth: 2,
-    borderColor: "#667eea",
+    borderColor: "#2D6418",
     borderStyle: "dashed",
     gap: 10,
   },
-  pickLabel: { fontSize: 16, color: "#667eea", fontWeight: "600" },
+  pickLabel: { fontSize: 16, color: "#2D6418", fontWeight: "600" },
   preview: { flex: 1 },
   previewActions: { flexDirection: "row", gap: 12, padding: 16 },
   btn: { flex: 1, padding: 16, borderRadius: 12, alignItems: "center" },
@@ -1665,7 +1665,7 @@ export default function MessagesScreen() {
                 setRefreshing(true);
                 loadConversations();
               }}
-              tintColor="#667eea"
+              tintColor="#2D6418"
             />
           }
           contentContainerStyle={
@@ -1708,7 +1708,7 @@ export default function MessagesScreen() {
 
 function ActivityIndicatorView() {
   const { ActivityIndicator } = require("react-native");
-  return <ActivityIndicator size="large" color="#667eea" />;
+  return <ActivityIndicator size="large" color="#2D6418" />;
 }
 
 function ConversationItem({
@@ -1891,7 +1891,7 @@ const styles = StyleSheet.create({
   },
   newMsgBtn: {
     marginTop: 8,
-    backgroundColor: "#667eea",
+    backgroundColor: "#2D6418",
     paddingHorizontal: 24,
     paddingVertical: 12,
     borderRadius: 24,
@@ -1909,7 +1909,7 @@ const styles = StyleSheet.create({
     width: 56,
     height: 56,
     borderRadius: 28,
-    backgroundColor: "#667eea",
+    backgroundColor: "#2D6418",
     justifyContent: "center",
     alignItems: "center",
     marginRight: 12,
@@ -1924,7 +1924,7 @@ const styles = StyleSheet.create({
   convName: { fontSize: 15, fontWeight: "500", color: "#333", flex: 1 },
   convNameBold: { fontWeight: "700", color: "#1a1a1a" },
   convTime: { fontSize: 12, color: "#bbb", marginLeft: 8 },
-  convTimeUnread: { color: "#667eea", fontWeight: "600" },
+  convTimeUnread: { color: "#2D6418", fontWeight: "600" },
   convMsgRow: {
     flexDirection: "row",
     alignItems: "center",
@@ -1933,7 +1933,7 @@ const styles = StyleSheet.create({
   convLastMsg: { fontSize: 14, color: "#999", flex: 1 },
   convLastMsgUnread: { color: "#333", fontWeight: "600" },
   unreadBadge: {
-    backgroundColor: "#667eea",
+    backgroundColor: "#2D6418",
     borderRadius: 12,
     paddingHorizontal: 7,
     paddingVertical: 2,

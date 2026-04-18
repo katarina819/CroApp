@@ -186,7 +186,7 @@ function VideoItemComponent({
           <Ionicons
             name={item.isSaved ? "bookmark" : "bookmark-outline"}
             size={28}
-            color={item.isSaved ? "#667eea" : "white"}
+            color={item.isSaved ? "#2D6418" : "white"}
           />
           <Text style={styles.actionText}>Box</Text>
         </TouchableOpacity>
@@ -351,7 +351,7 @@ function CommentsModal({
           {loading ? (
             <ActivityIndicator
               size="large"
-              color="#667eea"
+              color="#2D6418"
               style={{ marginTop: 40, flex: 1 }}
             />
           ) : comments.length === 0 ? (
@@ -371,7 +371,8 @@ function CommentsModal({
               {comments.map((item) => (
                 <View key={item.id} style={styles.commentItem}>
                   <View style={styles.commentAvatar}>
-                    <Ionicons name="person-circle" size={36} color="#667eea" />
+                    #2D6418
+                    <Ionicons name="person-circle" size={36} color="" />
                   </View>
                   <View style={styles.commentContent}>
                     <Text style={styles.commentUser}>
@@ -515,7 +516,7 @@ const cm = StyleSheet.create({
     width: 36,
     height: 36,
     borderRadius: 18,
-    backgroundColor: "#667eea",
+    backgroundColor: "#2D6418",
     justifyContent: "center",
     alignItems: "center",
     flexShrink: 0,
@@ -539,7 +540,7 @@ const cm = StyleSheet.create({
     width: 44,
     height: 44,
     borderRadius: 22,
-    backgroundColor: "#667eea",
+    backgroundColor: "#2D6418",
     justifyContent: "center",
     alignItems: "center",
     flexShrink: 0,
@@ -624,7 +625,7 @@ function MessengerModal({
           </View>
 
           <View style={mm.recipientRow}>
-            <Ionicons name="person-circle" size={44} color="#667eea" />
+            <Ionicons name="person-circle" size={44} color="#2D6418" />
             <View style={{ flex: 1, marginLeft: 10 }}>
               <Text style={mm.recipientName}>
                 {video.userName || `User_${video.userId}`}
@@ -736,7 +737,7 @@ const mm = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 7,
   },
-  quickText: { fontSize: 13, color: "#667eea" },
+  quickText: { fontSize: 13, color: "#2D6418" },
   inputRow: {
     flexDirection: "row",
     alignItems: "flex-end",
@@ -763,7 +764,7 @@ const mm = StyleSheet.create({
     width: 44,
     height: 44,
     borderRadius: 22,
-    backgroundColor: "#667eea",
+    backgroundColor: "#2D6418",
     justifyContent: "center",
     alignItems: "center",
     flexShrink: 0,
@@ -868,7 +869,7 @@ function ShareModal({
         {loading ? (
           <ActivityIndicator
             size="large"
-            color="#667eea"
+            color="#2D6418"
             style={{ marginTop: 40 }}
           />
         ) : (
@@ -881,7 +882,7 @@ function ShareModal({
                 onPress={() => shareToUser(u.id, u.username)}
                 disabled={sending === u.id}
               >
-                <Ionicons name="person-circle" size={44} color="#667eea" />
+                <Ionicons name="person-circle" size={44} color="#2D6418" />
                 <View style={{ flex: 1, marginLeft: 12 }}>
                   <Text style={styles.recipientName}>{u.username}</Text>
                   <Text style={styles.recipientSub}>
@@ -889,12 +890,12 @@ function ShareModal({
                   </Text>
                 </View>
                 {sending === u.id ? (
-                  <ActivityIndicator size="small" color="#667eea" />
+                  <ActivityIndicator size="small" color="#2D6418" />
                 ) : (
                   <Ionicons
                     name="paper-plane-outline"
                     size={22}
-                    color="#667eea"
+                    color="#2D6418"
                   />
                 )}
               </TouchableOpacity>
@@ -1148,12 +1149,12 @@ export function UploadModal({
                   style={styles.pickBtn}
                   onPress={pickFromGallery}
                 >
-                  <Ionicons name="images" size={40} color="#667eea" />
+                  <Ionicons name="images" size={40} color="#2D6418" />
                   <Text style={styles.pickBtnText}>Iz galerije</Text>
                   <Text style={styles.pickBtnSub}>Slike i videji</Text>
                 </TouchableOpacity>
                 <TouchableOpacity style={styles.pickBtn} onPress={recordMedia}>
-                  <Ionicons name="camera" size={40} color="#667eea" />
+                  <Ionicons name="camera" size={40} color="#2D6418" />
                   <Text style={styles.pickBtnText}>Kamera / Snimanje</Text>
                   <Text style={styles.pickBtnSub}>Snimite sliku ili video</Text>
                 </TouchableOpacity>
@@ -1256,7 +1257,7 @@ export function UploadModal({
                       styles.actionBtn,
                       {
                         flex: 1,
-                        backgroundColor: uploading ? "#a0aec0" : "#667eea",
+                        backgroundColor: uploading ? "#a0aec0" : "#2D6418",
                       },
                     ]}
                     onPress={uploadMedia}
@@ -1535,7 +1536,7 @@ export default function VideosScreen() {
   if (loading)
     return (
       <View style={styles.centerContainer}>
-        <ActivityIndicator size="large" color="#667eea" />
+        <ActivityIndicator size="large" color="#2D6418" />
       </View>
     );
 
@@ -1669,7 +1670,7 @@ const styles = StyleSheet.create({
     position: "absolute",
     top: Platform.OS === "ios" ? 56 : 40,
     right: 16,
-    backgroundColor: "#667eea",
+    backgroundColor: "#2D6418",
     width: 48,
     height: 48,
     borderRadius: 24,
@@ -1717,7 +1718,7 @@ const styles = StyleSheet.create({
     color: "#333",
   },
   sendBtn: {
-    backgroundColor: "#667eea",
+    backgroundColor: "#2D6418",
     width: 42,
     height: 42,
     borderRadius: 21,
@@ -1760,11 +1761,11 @@ const styles = StyleSheet.create({
     padding: 24,
     borderRadius: 16,
     borderWidth: 2,
-    borderColor: "#667eea",
+    borderColor: "#2D6418",
     borderStyle: "dashed",
     gap: 8,
   },
-  pickBtnText: { fontSize: 16, color: "#667eea", fontWeight: "600" },
+  pickBtnText: { fontSize: 16, color: "#2D6418", fontWeight: "600" },
   pickBtnSub: { fontSize: 13, color: "#999" },
   previewContainer: { position: "relative", marginBottom: 20 },
   previewMedia: { width: "100%", height: 260, borderRadius: 12 },

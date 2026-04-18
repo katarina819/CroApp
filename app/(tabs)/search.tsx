@@ -200,7 +200,7 @@ const cs = StyleSheet.create({
   },
   title: { fontSize: 17, fontWeight: "600", color: "#333" },
   sendHeaderBtn: {
-    backgroundColor: "#667eea",
+    backgroundColor: "#2D6418",
     paddingHorizontal: 16,
     paddingVertical: 8,
     borderRadius: 20,
@@ -229,12 +229,12 @@ const cs = StyleSheet.create({
   },
   chipAvatar: { width: 28, height: 28, borderRadius: 14 },
   chipAvatarPlaceholder: {
-    backgroundColor: "#667eea",
+    backgroundColor: "#2D6418",
     justifyContent: "center",
     alignItems: "center",
   },
   chipInitials: { color: "#fff", fontSize: 11, fontWeight: "700" },
-  chipName: { fontSize: 14, fontWeight: "600", color: "#667eea" },
+  chipName: { fontSize: 14, fontWeight: "600", color: "#2D6418" },
   inputArea: { flex: 1, padding: 16 },
   input: { flex: 1, fontSize: 16, color: "#333", lineHeight: 24 },
   counter: { fontSize: 12, color: "#ccc", textAlign: "right", marginTop: 4 },
@@ -453,7 +453,7 @@ export default function SearchScreen() {
             {isLoadingThis ? (
               <ActivityIndicator
                 size="small"
-                color={isFollowing ? "#667eea" : "#fff"}
+                color={isFollowing ? "#2D6418" : "#fff"}
               />
             ) : (
               <Text
@@ -471,7 +471,7 @@ export default function SearchScreen() {
             style={styles.msgBtn}
             onPress={() => handleOpenCompose(item)}
           >
-            <Ionicons name="paper-plane-outline" size={18} color="#667eea" />
+            <Ionicons name="paper-plane-outline" size={18} color="#2D6418" />
           </TouchableOpacity>
         </View>
       </View>
@@ -517,7 +517,7 @@ export default function SearchScreen() {
 
         {loading ? (
           <View style={styles.center}>
-            <ActivityIndicator size="large" color="#667eea" />
+            <ActivityIndicator size="large" color="#2D6418" />
             <Text style={styles.loadingText}>Učitavanje korisnika...</Text>
           </View>
         ) : (
@@ -536,7 +536,7 @@ export default function SearchScreen() {
                   setRefreshing(true);
                   loadData(true);
                 }}
-                tintColor="#667eea"
+                tintColor="#2D6418"
               />
             }
             ListEmptyComponent={
@@ -608,7 +608,7 @@ const styles = StyleSheet.create({
   avatarContainer: { marginRight: 12 },
   avatar: { width: 54, height: 54, borderRadius: 27 },
   avatarPlaceholder: {
-    backgroundColor: "#667eea",
+    backgroundColor: "#2D6418",
     justifyContent: "center",
     alignItems: "center",
   },
@@ -626,11 +626,11 @@ const styles = StyleSheet.create({
     color: "#1a1a1a",
     marginBottom: 2,
   },
-  userUsername: { fontSize: 13, color: "#667eea", marginBottom: 2 },
+  userUsername: { fontSize: 13, color: "#2D6418", marginBottom: 2 },
   followersCount: { fontSize: 12, color: "#999" },
   actions: { flexDirection: "row", alignItems: "center", gap: 8 },
   followBtn: {
-    backgroundColor: "#667eea",
+    backgroundColor: "#2D6418",
     borderRadius: 20,
     paddingHorizontal: 14,
     paddingVertical: 7,
@@ -640,10 +640,10 @@ const styles = StyleSheet.create({
   followingBtn: {
     backgroundColor: "#fff",
     borderWidth: 1.5,
-    borderColor: "#667eea",
+    borderColor: "#2D6418",
   },
   followBtnText: { color: "#fff", fontSize: 13, fontWeight: "600" },
-  followingBtnText: { color: "#667eea" },
+  followingBtnText: { color: "#2D6418" },
   msgBtn: {
     width: 38,
     height: 38,
