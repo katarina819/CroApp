@@ -1,4 +1,4 @@
-// app/register.tsx  — VARA redesign (logika iz originala nepromijenjena)
+// app/register.tsx — VARA redesign v2 (puna zelena pozadina)
 import { router } from "expo-router";
 import { useState } from "react";
 import {
@@ -17,30 +17,39 @@ import {
 import Svg, { Defs, LinearGradient, Path, Stop } from "react-native-svg";
 import { API_ENDPOINTS } from "./config/api";
 
-// ─── Inline mini shield ───────────────────────────────────────────────────────
+// ─── Mini shield za header ────────────────────────────────────────────────────
 function MiniShield() {
+  const shield = `M 100 8 L 28 38 L 18 55 L 18 128 C 18 182 56 218 100 232 C 144 218 182 182 182 128 L 182 55 L 172 38 Z`;
+  const vShape = `M 40 68 L 68 68 L 100 158 L 132 68 L 160 68 L 112 172 L 100 176 L 88 172 Z`;
+  const penNib = `M 100 62 L 114 100 L 100 140 L 86 100 Z`;
+
   return (
-    <Svg width={32} height={37} viewBox="0 0 100 115">
+    <Svg width={36} height={44} viewBox="0 0 200 240">
       <Defs>
-        <LinearGradient id="sg2" x1="0" y1="0" x2="0" y2="1">
-          <Stop offset="0%" stopColor="#3A7D1F" />
-          <Stop offset="100%" stopColor="#1B3F0E" />
+        <LinearGradient id="sbg2" x1="0.4" y1="0" x2="0.6" y2="1">
+          <Stop offset="0%" stopColor="#2D6418" />
+          <Stop offset="100%" stopColor="#142F09" />
         </LinearGradient>
-        <LinearGradient id="vg2" x1="0" y1="0" x2="0" y2="1">
-          <Stop offset="0%" stopColor="#E8EEEE" />
-          <Stop offset="100%" stopColor="#B8C4C2" />
+        <LinearGradient id="sb2" x1="0.1" y1="0" x2="0.9" y2="1">
+          <Stop offset="0%" stopColor="#8A9A98" />
+          <Stop offset="40%" stopColor="#FFFFFF" />
+          <Stop offset="100%" stopColor="#7A8A88" />
+        </LinearGradient>
+        <LinearGradient id="sv2" x1="0.2" y1="0" x2="0.8" y2="1">
+          <Stop offset="0%" stopColor="#D0DCDA" />
+          <Stop offset="50%" stopColor="#FFFFFF" />
+          <Stop offset="100%" stopColor="#A8B4B2" />
         </LinearGradient>
       </Defs>
       <Path
-        d="M 50 5 C 35 5, 10 12, 10 12 L 10 55 C 10 82, 30 100, 50 110 C 70 100, 90 82, 90 55 L 90 12 C 90 12, 65 5, 50 5 Z"
-        fill="url(#sg2)"
-        stroke="#D1DADB"
-        strokeWidth="3"
+        d={shield}
+        fill="url(#sbg2)"
+        stroke="url(#sb2)"
+        strokeWidth="9"
+        strokeLinejoin="round"
       />
-      <Path
-        d="M 29 26 L 38 26 L 50 62 L 62 26 L 71 26 L 52 74 L 50 77 L 48 74 Z"
-        fill="url(#vg2)"
-      />
+      <Path d={vShape} fill="url(#sv2)" />
+      <Path d={penNib} fill="url(#sv2)" />
     </Svg>
   );
 }
@@ -56,7 +65,6 @@ interface RegisterData {
 }
 
 export default function RegisterScreen() {
-  // ── state (originalna logika) ──
   const [form, setForm] = useState({
     firstName: "",
     lastName: "",
@@ -140,20 +148,18 @@ export default function RegisterScreen() {
     }
   };
 
-  // ── UI ────────────────────────────────────────────────────────────────────
   return (
     <KeyboardAvoidingView
       style={s.root}
       behavior={Platform.OS === "ios" ? "padding" : "height"}
     >
-      <StatusBar barStyle="light-content" backgroundColor="#1B3F0E" />
-      <View style={s.headerBand} />
+      <StatusBar barStyle="light-content" backgroundColor="#0D2406" />
 
       <ScrollView
         contentContainerStyle={s.scroll}
         keyboardShouldPersistTaps="handled"
       >
-        {/* Header */}
+        {/* Header na zelenoj pozadini */}
         <View style={s.header}>
           <MiniShield />
           <View>
@@ -162,9 +168,9 @@ export default function RegisterScreen() {
           </View>
         </View>
 
-        {/* Card */}
+        {/* Bijela kartica */}
         <View style={s.card}>
-          {/* Name row */}
+          {/* Ime i prezime */}
           <View style={s.row}>
             <View style={[s.fieldWrap, s.half]}>
               <Text style={s.label}>IME *</Text>
@@ -200,7 +206,6 @@ export default function RegisterScreen() {
             editable={!isLoading}
             optional
           />
-
           <Field
             label="TELEFON"
             placeholder="+385 99 123 4567"
@@ -210,7 +215,6 @@ export default function RegisterScreen() {
             editable={!isLoading}
             optional
           />
-
           <Field
             label="KORISNIČKO IME *"
             placeholder="Odaberite username"
@@ -219,7 +223,6 @@ export default function RegisterScreen() {
             autoCapitalize="none"
             editable={!isLoading}
           />
-
           <Field
             label="LOZINKA *"
             placeholder="Min. 6 znakova"
@@ -228,7 +231,6 @@ export default function RegisterScreen() {
             secureTextEntry
             editable={!isLoading}
           />
-
           <Field
             label="DATUM ROĐENJA *"
             placeholder="YYYY-MM-DD"
@@ -237,7 +239,6 @@ export default function RegisterScreen() {
             editable={!isLoading}
           />
 
-          {/* Register button */}
           <TouchableOpacity
             style={[s.btn, isLoading && s.btnDisabled]}
             onPress={handleRegister}
@@ -251,7 +252,6 @@ export default function RegisterScreen() {
             )}
           </TouchableOpacity>
 
-          {/* Login link */}
           <TouchableOpacity
             style={s.linkWrap}
             onPress={() => router.push("/login")}
@@ -270,7 +270,6 @@ export default function RegisterScreen() {
   );
 }
 
-// ─── Reusable field ───────────────────────────────────────────────────────────
 function Field(props: {
   label: string;
   placeholder: string;
@@ -306,24 +305,14 @@ function Field(props: {
   );
 }
 
-// ─── Styles ───────────────────────────────────────────────────────────────────
-const GREEN = "#2D6418";
 const GREEN_DARK = "#1B3F0E";
+const GREEN_MID = "#2D6418";
+const SILVER_LIGHT = "#E8EEEE";
 const TEXT = "#142F09";
 const MUTED = "#5C6765";
 
 const s = StyleSheet.create({
-  root: { flex: 1, backgroundColor: "#F2EDE4" },
-  headerBand: {
-    position: "absolute",
-    top: 0,
-    left: 0,
-    right: 0,
-    height: 180,
-    backgroundColor: GREEN_DARK,
-    borderBottomLeftRadius: 32,
-    borderBottomRightRadius: 32,
-  },
+  root: { flex: 1, backgroundColor: GREEN_DARK },
   scroll: {
     flexGrow: 1,
     paddingHorizontal: 20,
@@ -339,39 +328,42 @@ const s = StyleSheet.create({
   },
   appName: {
     fontSize: 26,
-    fontWeight: "700",
+    fontWeight: "900",
     color: "#FFFFFF",
-    letterSpacing: 4,
+    letterSpacing: 8,
+    textShadowColor: "rgba(180,210,180,0.5)",
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 6,
   },
   headerSub: {
     fontSize: 13,
-    color: "rgba(255,255,255,0.55)",
+    color: "rgba(200,225,200,0.55)",
     letterSpacing: 0.5,
     marginTop: 2,
   },
   card: {
     backgroundColor: "#FFFFFF",
-    borderRadius: 20,
+    borderRadius: 24,
     padding: 24,
-    shadowColor: GREEN_DARK,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.12,
-    shadowRadius: 20,
-    elevation: 8,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.35,
+    shadowRadius: 24,
+    elevation: 12,
   },
   row: { flexDirection: "row", gap: 12 },
   half: { flex: 1 },
   fieldWrap: { marginBottom: 16 },
   label: {
     fontSize: 11,
-    fontWeight: "600",
+    fontWeight: "700",
     color: MUTED,
-    letterSpacing: 1,
+    letterSpacing: 1.2,
     marginBottom: 6,
   },
   optional: { color: "#9AA9A7", fontWeight: "400" },
   input: {
-    backgroundColor: "#F4F7F7",
+    backgroundColor: SILVER_LIGHT,
     borderRadius: 10,
     borderWidth: 1.5,
     borderColor: "#D1DADB",
@@ -380,32 +372,32 @@ const s = StyleSheet.create({
     fontSize: 15,
     color: TEXT,
   },
-  inputFocused: { borderColor: GREEN, backgroundColor: "#FFFFFF" },
+  inputFocused: { borderColor: GREEN_MID, backgroundColor: "#FFFFFF" },
   btn: {
-    backgroundColor: GREEN,
-    borderRadius: 12,
-    paddingVertical: 15,
+    backgroundColor: GREEN_MID,
+    borderRadius: 14,
+    paddingVertical: 16,
     alignItems: "center",
     marginTop: 8,
-    shadowColor: GREEN_DARK,
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.25,
-    shadowRadius: 8,
-    elevation: 5,
+    shadowColor: "#0D2406",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 10,
+    elevation: 6,
   },
-  btnDisabled: { backgroundColor: "#9AA9A7", shadowOpacity: 0 },
+  btnDisabled: { backgroundColor: "#9AA9A7", shadowOpacity: 0, elevation: 0 },
   btnText: {
     color: "#FFFFFF",
     fontSize: 16,
-    fontWeight: "600",
+    fontWeight: "700",
     letterSpacing: 0.5,
   },
   linkWrap: { marginTop: 20, alignItems: "center" },
   linkText: { fontSize: 14, color: MUTED },
-  linkBold: { color: GREEN, fontWeight: "600" },
+  linkBold: { color: GREEN_MID, fontWeight: "700" },
   bottomNote: {
-    fontSize: 12,
-    color: "rgba(255,255,255,0.4)",
+    fontSize: 11,
+    color: "rgba(200,225,200,0.4)",
     textAlign: "center",
     marginTop: 24,
   },
