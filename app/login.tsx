@@ -5,6 +5,7 @@ import { useState } from "react";
 import {
   ActivityIndicator,
   Alert,
+  Image,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
@@ -15,204 +16,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import Svg, {
-  Circle,
-  Defs,
-  LinearGradient,
-  Path,
-  Stop,
-} from "react-native-svg";
 import { API_ENDPOINTS } from "./config/api";
-
-// ─── VARA Shield Logo — detaljna metalik verzija ──────────────────────────────
-function VaraShieldLogo({ size = 120 }: { size?: number }) {
-  const w = size;
-  const h = size * 1.18;
-
-  // Shield path — angularan vrh, zaobljeno dno
-  const shield = `
-    M 100 8
-    L 28 38
-    L 18 55
-    L 18 128
-    C 18 182 56 218 100 232
-    C 144 218 182 182 182 128
-    L 182 55
-    L 172 38
-    Z
-  `;
-
-  // Unutarnji bevel rub
-  const innerBevel = `
-    M 100 22
-    L 38 48
-    L 30 62
-    L 30 128
-    C 30 175 63 207 100 218
-    C 137 207 170 175 170 128
-    L 170 62
-    L 162 48
-    Z
-  `;
-
-  // V slovo — debele noge, ravni vrh
-  const vShape = `
-    M 40 68
-    L 68 68
-    L 100 158
-    L 132 68
-    L 160 68
-    L 112 172
-    L 100 176
-    L 88 172
-    Z
-  `;
-
-  // Pen nib — dijamant koji pokazuje gore iz centra V
-  const penNib = `
-    M 100 62
-    L 114 100
-    L 100 140
-    L 86 100
-    Z
-  `;
-
-  // Pen nib vanjski highlight
-  const penNibOuter = `
-    M 100 55
-    L 120 98
-    L 100 145
-    L 80 98
-    Z
-  `;
-
-  return (
-    <View style={{ width: w, height: h }}>
-      <Svg width={w} height={h} viewBox="0 0 200 240">
-        <Defs>
-          {/* Tamnozelena pozadina štita */}
-          <LinearGradient id="shieldBg" x1="0.4" y1="0" x2="0.6" y2="1">
-            <Stop offset="0%" stopColor="#2D6418" />
-            <Stop offset="50%" stopColor="#1E4B10" />
-            <Stop offset="100%" stopColor="#142F09" />
-          </LinearGradient>
-
-          {/* Srebrna metalik boja ruba */}
-          <LinearGradient id="silverBorder" x1="0.1" y1="0" x2="0.9" y2="1">
-            <Stop offset="0%" stopColor="#8A9A98" />
-            <Stop offset="20%" stopColor="#C8D4D2" />
-            <Stop offset="40%" stopColor="#FFFFFF" />
-            <Stop offset="60%" stopColor="#D8E0DE" />
-            <Stop offset="80%" stopColor="#B0BCBA" />
-            <Stop offset="100%" stopColor="#7A8A88" />
-          </LinearGradient>
-
-          {/* Srebrna metalik boja V slova */}
-          <LinearGradient id="silverV" x1="0.2" y1="0" x2="0.8" y2="1">
-            <Stop offset="0%" stopColor="#C0CCCA" />
-            <Stop offset="25%" stopColor="#E8F0EE" />
-            <Stop offset="50%" stopColor="#FFFFFF" />
-            <Stop offset="75%" stopColor="#D8E4E2" />
-            <Stop offset="100%" stopColor="#A0ACAA" />
-          </LinearGradient>
-
-          {/* Pen nib gradient — svjetliji */}
-          <LinearGradient id="nibGrad" x1="0.3" y1="0" x2="0.7" y2="1">
-            <Stop offset="0%" stopColor="#FFFFFF" />
-            <Stop offset="50%" stopColor="#E0ECEA" />
-            <Stop offset="100%" stopColor="#B8C8C6" />
-          </LinearGradient>
-
-          {/* Pen nib vanjski — tamniji obrub */}
-          <LinearGradient id="nibOuter" x1="0.2" y1="0" x2="0.8" y2="1">
-            <Stop offset="0%" stopColor="#8A9A98" />
-            <Stop offset="50%" stopColor="#C0CCCA" />
-            <Stop offset="100%" stopColor="#6A7A78" />
-          </LinearGradient>
-        </Defs>
-
-        {/* === ŠTIT === */}
-        {/* Vanjski rub — debeli srebrni obrub */}
-        <Path
-          d={shield}
-          fill="url(#shieldBg)"
-          stroke="url(#silverBorder)"
-          strokeWidth="9"
-          strokeLinejoin="round"
-        />
-
-        {/* Unutarnji bevel — suptilni highlight */}
-        <Path
-          d={innerBevel}
-          fill="none"
-          stroke="rgba(255,255,255,0.18)"
-          strokeWidth="2.5"
-          strokeLinejoin="round"
-        />
-
-        {/* Drugi unutarnji rub za dubinu */}
-        <Path
-          d={innerBevel}
-          fill="none"
-          stroke="rgba(0,0,0,0.15)"
-          strokeWidth="1"
-          strokeLinejoin="round"
-          strokeDasharray="0"
-          transform="translate(2,2)"
-        />
-
-        {/* === PEN NIB pozadina (vanjski dijamant, tamniji) === */}
-        <Path d={penNibOuter} fill="url(#nibOuter)" opacity="0.7" />
-
-        {/* === V SLOVO === */}
-        <Path
-          d={vShape}
-          fill="url(#silverV)"
-          stroke="rgba(255,255,255,0.4)"
-          strokeWidth="0.8"
-        />
-
-        {/* === PEN NIB (unutarnji dijamant, svjetliji) === */}
-        <Path d={penNib} fill="url(#nibGrad)" />
-
-        {/* Pen nib srednja linija — rub nib-a */}
-        <Path
-          d="M 100 62 L 114 100 L 100 140 L 86 100 Z"
-          fill="none"
-          stroke="rgba(255,255,255,0.5)"
-          strokeWidth="0.8"
-        />
-
-        {/* Kružica u nib-u — otvor pen nib-a */}
-        <Circle cx="100" cy="104" r="8" fill="#1E4B10" />
-        <Circle
-          cx="100"
-          cy="104"
-          r="8"
-          fill="none"
-          stroke="rgba(255,255,255,0.6)"
-          strokeWidth="1.5"
-        />
-
-        {/* Gornji highlight na štitu — refleksija */}
-        <Path
-          d="M 42 45 C 35 48, 26 55, 24 62"
-          fill="none"
-          stroke="rgba(255,255,255,0.3)"
-          strokeWidth="2.5"
-          strokeLinecap="round"
-        />
-        <Path
-          d="M 158 45 C 165 48, 174 55, 176 62"
-          fill="none"
-          stroke="rgba(255,255,255,0.15)"
-          strokeWidth="2"
-          strokeLinecap="round"
-        />
-      </Svg>
-    </View>
-  );
-}
 
 // ─── Stiliziran VARA natpis ───────────────────────────────────────────────────
 function VaraWordmark() {
@@ -303,7 +107,11 @@ export default function LoginScreen() {
       >
         {/* Logo sekcija — na zelenoj pozadini */}
         <View style={s.logoSection}>
-          <VaraShieldLogo size={130} />
+          <Image
+            source={require("../assets/images/vara_icon.png")}
+            style={{ width: 130, height: 130, borderRadius: 24 }}
+            resizeMode="contain"
+          />
           <VaraWordmark />
           <Text style={s.tagline}>Otkrijte svako mjesto</Text>
         </View>

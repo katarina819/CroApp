@@ -7,6 +7,7 @@ import LanguageSelector from "../components/LanguageSelector";
 import {
   ActivityIndicator,
   Alert,
+  Image,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
@@ -17,45 +18,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import Svg, { Defs, LinearGradient, Path, Stop } from "react-native-svg";
 import { API_ENDPOINTS } from "./config/api";
-
-// ─── Mini shield za header ────────────────────────────────────────────────────
-function MiniShield() {
-  const shield = `M 100 8 L 28 38 L 18 55 L 18 128 C 18 182 56 218 100 232 C 144 218 182 182 182 128 L 182 55 L 172 38 Z`;
-  const vShape = `M 40 68 L 68 68 L 100 158 L 132 68 L 160 68 L 112 172 L 100 176 L 88 172 Z`;
-  const penNib = `M 100 62 L 114 100 L 100 140 L 86 100 Z`;
-
-  return (
-    <Svg width={36} height={44} viewBox="0 0 200 240">
-      <Defs>
-        <LinearGradient id="sbg2" x1="0.4" y1="0" x2="0.6" y2="1">
-          <Stop offset="0%" stopColor="#2D6418" />
-          <Stop offset="100%" stopColor="#142F09" />
-        </LinearGradient>
-        <LinearGradient id="sb2" x1="0.1" y1="0" x2="0.9" y2="1">
-          <Stop offset="0%" stopColor="#8A9A98" />
-          <Stop offset="40%" stopColor="#FFFFFF" />
-          <Stop offset="100%" stopColor="#7A8A88" />
-        </LinearGradient>
-        <LinearGradient id="sv2" x1="0.2" y1="0" x2="0.8" y2="1">
-          <Stop offset="0%" stopColor="#D0DCDA" />
-          <Stop offset="50%" stopColor="#FFFFFF" />
-          <Stop offset="100%" stopColor="#A8B4B2" />
-        </LinearGradient>
-      </Defs>
-      <Path
-        d={shield}
-        fill="url(#sbg2)"
-        stroke="url(#sb2)"
-        strokeWidth="9"
-        strokeLinejoin="round"
-      />
-      <Path d={vShape} fill="url(#sv2)" />
-      <Path d={penNib} fill="url(#sv2)" />
-    </Svg>
-  );
-}
 
 interface RegisterData {
   firstName: string;
@@ -161,7 +124,11 @@ export default function RegisterScreen() {
       >
         {/* Header na zelenoj pozadini */}
         <View style={s.header}>
-          <MiniShield />
+          <Image
+            source={require("../assets/images/vara_icon.png")}
+            style={{ width: 36, height: 36, borderRadius: 6 }}
+            resizeMode="contain"
+          />
           <View style={{ flex: 1 }}>
             <Text style={s.appName}>VARA</Text>
             <Text style={s.headerSub}>{t("auth.register")}</Text>
