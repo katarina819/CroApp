@@ -21,6 +21,7 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import Svg, { Defs, LinearGradient, Path, Stop } from "react-native-svg";
 import { StoryBadge } from "../../app/StoryBadge";
 import { API_BASE_URL } from "../config/api";
 import { useUser } from "./../contexts/UserContext";
@@ -89,17 +90,240 @@ interface DailyActivity {
   followersCount?: number;
 }
 
+function AvatarMale({ size = 96 }: { size?: number }) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 100 100">
+      <Defs>
+        <LinearGradient id="bgM" x1="0" y1="0" x2="0" y2="1">
+          <Stop offset="0%" stopColor="#2D6418" />
+          <Stop offset="100%" stopColor="#142F09" />
+        </LinearGradient>
+        <LinearGradient id="skinM" x1="0" y1="0" x2="0" y2="1">
+          <Stop offset="0%" stopColor="#D4A574" />
+          <Stop offset="100%" stopColor="#B8845A" />
+        </LinearGradient>
+        <LinearGradient id="shirtM" x1="0" y1="0" x2="0" y2="1">
+          <Stop offset="0%" stopColor="#8A9A98" />
+          <Stop offset="100%" stopColor="#5C6E6C" />
+        </LinearGradient>
+      </Defs>
+      {/* Pozadina */}
+      <Path d="M 0 0 L 100 0 L 100 100 L 0 100 Z" fill="url(#bgM)" />
+      {/* Tijelo - košulja */}
+      <Path d="M 20 100 L 20 72 Q 50 62 80 72 L 80 100 Z" fill="url(#shirtM)" />
+      {/* Vrat */}
+      <Path d="M 42 58 L 42 68 Q 50 72 58 68 L 58 58 Z" fill="url(#skinM)" />
+      {/* Ogrlica/ovratnik */}
+      <Path d="M 36 68 Q 50 78 64 68 L 64 72 Q 50 82 36 72 Z" fill="#5C6E6C" />
+      {/* Glava */}
+      <Path
+        d="M 32 38 Q 32 20 50 20 Q 68 20 68 38 Q 68 56 50 58 Q 32 56 32 38 Z"
+        fill="url(#skinM)"
+      />
+      {/* Kosa */}
+      <Path
+        d="M 32 36 Q 32 18 50 18 Q 68 18 68 36 Q 65 24 50 22 Q 35 24 32 36 Z"
+        fill="#3A2A1A"
+      />
+      {/* Obrve */}
+      <Path
+        d="M 37 34 Q 42 32 45 34"
+        stroke="#3A2A1A"
+        strokeWidth="1.5"
+        fill="none"
+        strokeLinecap="round"
+      />
+      <Path
+        d="M 55 34 Q 58 32 63 34"
+        stroke="#3A2A1A"
+        strokeWidth="1.5"
+        fill="none"
+        strokeLinecap="round"
+      />
+      {/* Oči */}
+      <Path d="M 38 37 Q 41 35 44 37 Q 41 40 38 37 Z" fill="#2A1A0A" />
+      <Path d="M 56 37 Q 59 35 62 37 Q 59 40 56 37 Z" fill="#2A1A0A" />
+      {/* Nos */}
+      <Path
+        d="M 49 40 L 48 47 Q 50 49 52 47 L 51 40"
+        fill="none"
+        stroke="#B8845A"
+        strokeWidth="1"
+        strokeLinecap="round"
+      />
+      {/* Usta */}
+      <Path
+        d="M 44 51 Q 50 55 56 51"
+        fill="none"
+        stroke="#8B5E3C"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+      />
+      {/* Metalni štit - VARA logo mali */}
+      <Path
+        d="M 44 84 L 38 87 L 38 93 Q 44 96 50 97 Q 56 96 62 93 L 62 87 L 56 84 Z"
+        fill="none"
+        stroke="rgba(200,215,200,0.5)"
+        strokeWidth="1"
+      />
+    </Svg>
+  );
+}
+
+function AvatarFemale({ size = 96 }: { size?: number }) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 100 100">
+      <Defs>
+        <LinearGradient id="bgF" x1="0" y1="0" x2="0" y2="1">
+          <Stop offset="0%" stopColor="#2D6418" />
+          <Stop offset="100%" stopColor="#142F09" />
+        </LinearGradient>
+        <LinearGradient id="skinF" x1="0" y1="0" x2="0" y2="1">
+          <Stop offset="0%" stopColor="#E8B896" />
+          <Stop offset="100%" stopColor="#C8907A" />
+        </LinearGradient>
+        <LinearGradient id="topF" x1="0" y1="0" x2="0" y2="1">
+          <Stop offset="0%" stopColor="#A8B8A8" />
+          <Stop offset="100%" stopColor="#6A7A6A" />
+        </LinearGradient>
+        <LinearGradient id="hairF" x1="0" y1="0" x2="0" y2="1">
+          <Stop offset="0%" stopColor="#4A2A0A" />
+          <Stop offset="100%" stopColor="#2A1A08" />
+        </LinearGradient>
+      </Defs>
+      {/* Pozadina */}
+      <Path d="M 0 0 L 100 0 L 100 100 L 0 100 Z" fill="url(#bgF)" />
+      {/* Tijelo */}
+      <Path d="M 22 100 L 22 70 Q 50 58 78 70 L 78 100 Z" fill="url(#topF)" />
+      {/* Detalj bluze */}
+      <Path d="M 42 68 Q 50 74 58 68 L 60 72 Q 50 80 40 72 Z" fill="#8A9898" />
+      {/* Vrat */}
+      <Path d="M 43 57 L 43 68 Q 50 71 57 68 L 57 57 Z" fill="url(#skinF)" />
+      {/* Glava */}
+      <Path
+        d="M 33 38 Q 33 20 50 20 Q 67 20 67 38 Q 67 56 50 58 Q 33 56 33 38 Z"
+        fill="url(#skinF)"
+      />
+      {/* Kosa - gornji dio */}
+      <Path
+        d="M 33 36 Q 32 16 50 15 Q 68 16 67 36 Q 65 20 50 18 Q 35 20 33 36 Z"
+        fill="url(#hairF)"
+      />
+      {/* Kosa - sa strane */}
+      <Path d="M 33 36 Q 28 45 30 56 Q 32 52 33 48 Z" fill="url(#hairF)" />
+      <Path d="M 67 36 Q 72 45 70 56 Q 68 52 67 48 Z" fill="url(#hairF)" />
+      {/* Kosa - duga */}
+      <Path d="M 28 56 Q 24 70 26 85 Q 30 72 33 65 Z" fill="url(#hairF)" />
+      <Path d="M 72 56 Q 76 70 74 85 Q 70 72 67 65 Z" fill="url(#hairF)" />
+      {/* Obrve - lučne */}
+      <Path
+        d="M 37 33 Q 41 30 45 33"
+        stroke="#4A2A0A"
+        strokeWidth="1.5"
+        fill="none"
+        strokeLinecap="round"
+      />
+      <Path
+        d="M 55 33 Q 59 30 63 33"
+        stroke="#4A2A0A"
+        strokeWidth="1.5"
+        fill="none"
+        strokeLinecap="round"
+      />
+      {/* Oči - veće */}
+      <Path d="M 37 37 Q 41 34 45 37 Q 41 41 37 37 Z" fill="#2A1A0A" />
+      <Path d="M 55 37 Q 59 34 63 37 Q 59 41 55 37 Z" fill="#2A1A0A" />
+      {/* Trepavice */}
+      <Path
+        d="M 37 36 L 36 34 M 39 35 L 39 33 M 41 35 L 41 33 M 43 35 L 44 33 M 45 36 L 46 34"
+        stroke="#2A1A0A"
+        strokeWidth="0.8"
+      />
+      <Path
+        d="M 55 36 L 54 34 M 57 35 L 57 33 M 59 35 L 59 33 M 61 35 L 62 33 M 63 36 L 64 34"
+        stroke="#2A1A0A"
+        strokeWidth="0.8"
+      />
+      {/* Nos */}
+      <Path
+        d="M 49 40 L 48 46 Q 50 48 52 46 L 51 40"
+        fill="none"
+        stroke="#C8907A"
+        strokeWidth="0.8"
+        strokeLinecap="round"
+      />
+      {/* Usta - veća s ruž */}
+      <Path
+        d="M 43 51 Q 50 56 57 51"
+        fill="none"
+        stroke="#C04060"
+        strokeWidth="2"
+        strokeLinecap="round"
+      />
+      <Path d="M 43 51 Q 50 54 57 51" fill="#C04060" opacity="0.3" />
+      {/* Naušnice */}
+      <Path
+        d="M 33 47 L 33 52"
+        stroke="#C0C8C0"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+      />
+      <Path
+        d="M 67 47 L 67 52"
+        stroke="#C0C8C0"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+      />
+      {/* Metalni štit */}
+      <Path
+        d="M 44 84 L 38 87 L 38 93 Q 44 96 50 97 Q 56 96 62 93 L 62 87 L 56 84 Z"
+        fill="none"
+        stroke="rgba(200,215,200,0.5)"
+        strokeWidth="1"
+      />
+    </Svg>
+  );
+}
+
 function AvatarSection({ onUpdate }: { onUpdate: () => void }) {
   const { profile, updateAvatar, refreshProfile } = useUser();
   const [loading, setLoading] = useState(false);
+  const [showAvatarModal, setShowAvatarModal] = useState(false);
 
   const pickAndUpload = async () => {
     Alert.alert("Profilna slika", "Odaberi izvor", [
       { text: "Galerija", onPress: () => pickImage("gallery") },
+      { text: "Odaberi avatar", onPress: () => setShowAvatarModal(true) },
       { text: "Kamera", onPress: () => pickImage("camera") },
       { text: "Ukloni sliku", style: "destructive", onPress: removeAvatar },
       { text: "Odustani", style: "cancel" },
     ]);
+  };
+
+  const selectAvatar = async (type: "male" | "female") => {
+    setShowAvatarModal(false);
+    setLoading(true);
+    try {
+      const token = await AsyncStorage.getItem("token");
+      const res = await fetch(`${API_BASE_URL}/api/auth/profile-photo/avatar`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ avatarType: type }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        updateAvatar(data.avatarUrl);
+        await refreshProfile();
+        onUpdate();
+      }
+    } catch {
+      Alert.alert("Greška", "Nije moguće postaviti avatar");
+    } finally {
+      setLoading(false);
+    }
   };
 
   const pickImage = async (source: "gallery" | "camera") => {
@@ -184,47 +408,107 @@ function AvatarSection({ onUpdate }: { onUpdate: () => void }) {
 
   const getAvatarUrl = () => {
     if (!profile?.avatar) return null;
+    // Avatar identifikatori se ne trebaju konvertirati u URL
+    if (profile.avatar.startsWith("avatar:")) return null;
     return profile.avatar.startsWith("http")
       ? profile.avatar
       : `${API_BASE_URL}${profile.avatar.startsWith("/") ? "" : "/"}${profile.avatar}`;
   };
 
   const avatarUrl = getAvatarUrl();
+  const isMaleAvatar = profile?.avatar === "avatar:male";
+  const isFemaleAvatar = profile?.avatar === "avatar:female";
   const initials =
     `${profile?.firstName?.[0] ?? ""}${profile?.lastName?.[0] ?? ""}`.toUpperCase();
 
   return (
-    <TouchableOpacity
-      onPress={pickAndUpload}
-      style={av.wrapper}
-      activeOpacity={0.8}
-    >
-      {/*
-        StoryBadge koristi /api/story/has-story/{userId} koji ispravno provjerava
-        ima li korisnik aktivnih storija — radi jednako za vlastiti i tuđi profil.
-        Nema više isCurrentUser propsa koji je uzrokovao konfuziju.
-      */}
-      <StoryBadge userId={profile?.id ?? 0} size={96}>
-        {avatarUrl ? (
-          <Image source={{ uri: avatarUrl }} style={av.img} />
-        ) : (
-          <View style={av.placeholder}>
-            <Text style={av.initials}>{initials}</Text>
+    <>
+      <TouchableOpacity
+        onPress={pickAndUpload}
+        style={av.wrapper}
+        activeOpacity={0.8}
+      >
+        <StoryBadge userId={profile?.id ?? 0} size={96}>
+          {isMaleAvatar ? (
+            <AvatarMale size={96} />
+          ) : isFemaleAvatar ? (
+            <AvatarFemale size={96} />
+          ) : avatarUrl ? (
+            <Image source={{ uri: avatarUrl }} style={av.img} />
+          ) : (
+            <View style={av.placeholder}>
+              <Text style={av.initials}>{initials}</Text>
+            </View>
+          )}
+        </StoryBadge>
+        {loading && (
+          <View style={av.overlay}>
+            <ActivityIndicator color="#fff" />
           </View>
         )}
-      </StoryBadge>
-
-      {loading && (
-        <View style={av.overlay}>
-          <ActivityIndicator color="#fff" />
+        <View style={av.editIcon}>
+          <Ionicons name="camera" size={14} color="#fff" />
         </View>
-      )}
+      </TouchableOpacity>
 
-      {/* Ikona kamere za uređivanje */}
-      <View style={av.editIcon}>
-        <Ionicons name="camera" size={14} color="#fff" />
-      </View>
-    </TouchableOpacity>
+      <Modal
+        visible={showAvatarModal}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setShowAvatarModal(false)}
+      >
+        <TouchableOpacity
+          style={avModal.overlay}
+          activeOpacity={1}
+          onPress={() => setShowAvatarModal(false)}
+        >
+          <View style={avModal.container}>
+            <Text style={avModal.title}>Odaberi avatar</Text>
+            <Text style={avModal.subtitle}>Prilagođeno dizajnu VARA</Text>
+            <View style={avModal.avatarRow}>
+              <TouchableOpacity
+                style={[avModal.option, isMaleAvatar && avModal.optionActive]}
+                onPress={() => selectAvatar("male")}
+                activeOpacity={0.8}
+              >
+                <View style={avModal.avatarWrapper}>
+                  <AvatarMale size={88} />
+                  {isMaleAvatar && (
+                    <View style={avModal.checkBadge}>
+                      <Ionicons name="checkmark" size={14} color="#fff" />
+                    </View>
+                  )}
+                </View>
+                <Text style={avModal.optionLabel}>Muški</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={[avModal.option, isFemaleAvatar && avModal.optionActive]}
+                onPress={() => selectAvatar("female")}
+                activeOpacity={0.8}
+              >
+                <View style={avModal.avatarWrapper}>
+                  <AvatarFemale size={88} />
+                  {isFemaleAvatar && (
+                    <View style={avModal.checkBadge}>
+                      <Ionicons name="checkmark" size={14} color="#fff" />
+                    </View>
+                  )}
+                </View>
+                <Text style={avModal.optionLabel}>Ženski</Text>
+              </TouchableOpacity>
+            </View>
+
+            <TouchableOpacity
+              style={avModal.cancelBtn}
+              onPress={() => setShowAvatarModal(false)}
+            >
+              <Text style={avModal.cancelText}>Odustani</Text>
+            </TouchableOpacity>
+          </View>
+        </TouchableOpacity>
+      </Modal>
+    </>
   );
 }
 
@@ -232,8 +516,7 @@ const av = StyleSheet.create({
   wrapper: {
     alignSelf: "center",
     marginBottom: 12,
-    // Eksplicitna veličina = veličina avatara + prostor za prsten (4px sa svake strane)
-    width: 104, // 96 + 8
+    width: 104,
     height: 104,
     justifyContent: "center",
     alignItems: "center",
@@ -249,6 +532,7 @@ const av = StyleSheet.create({
   },
   initials: { color: "#fff", fontSize: 36, fontWeight: "700" },
   overlay: {
+    // ← samo JEDAN overlay, za loading
     position: "absolute",
     width: 96,
     height: 96,
@@ -259,7 +543,7 @@ const av = StyleSheet.create({
   },
   editIcon: {
     position: "absolute",
-    bottom: 4, // Malo viši zbog većeg wrappera
+    bottom: 4,
     right: 4,
     width: 28,
     height: 28,
@@ -271,6 +555,61 @@ const av = StyleSheet.create({
     borderColor: "#fff",
     zIndex: 10,
   },
+});
+
+const avModal = StyleSheet.create({
+  overlay: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.6)",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  container: {
+    backgroundColor: "#fff",
+    borderRadius: 20,
+    padding: 24,
+    width: 300,
+    alignItems: "center",
+    shadowColor: "#000",
+    shadowOpacity: 0.3,
+    shadowRadius: 20,
+    elevation: 12,
+  },
+  title: { fontSize: 18, fontWeight: "700", color: "#1a1a1a", marginBottom: 4 },
+  subtitle: { fontSize: 13, color: "#999", marginBottom: 24 },
+  avatarRow: { flexDirection: "row", gap: 20, marginBottom: 20 },
+  option: {
+    alignItems: "center",
+    padding: 12,
+    borderRadius: 16,
+    borderWidth: 2,
+    borderColor: "#e0e0e0",
+    backgroundColor: "#fafafa",
+  },
+  optionActive: { borderColor: "#2D6418", backgroundColor: "#f0f7ee" },
+  avatarWrapper: {
+    position: "relative",
+    width: 88,
+    height: 88,
+    borderRadius: 44,
+    overflow: "hidden",
+  },
+  checkBadge: {
+    position: "absolute",
+    bottom: 2,
+    right: 2,
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    backgroundColor: "#2D6418",
+    justifyContent: "center",
+    alignItems: "center",
+    borderWidth: 2,
+    borderColor: "#fff",
+  },
+  optionLabel: { marginTop: 8, fontSize: 13, fontWeight: "600", color: "#333" },
+  cancelBtn: { paddingVertical: 10, paddingHorizontal: 32 },
+  cancelText: { color: "#999", fontSize: 15 },
 });
 
 // ─── Followers / Following List Modal ─────────────────────────────────────────

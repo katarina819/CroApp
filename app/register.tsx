@@ -1,6 +1,9 @@
 // app/register.tsx — VARA redesign v2 (puna zelena pozadina)
 import { router } from "expo-router";
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
+import LanguageSelector from "../components/LanguageSelector";
+
 import {
   ActivityIndicator,
   Alert,
@@ -61,15 +64,14 @@ interface RegisterData {
   password: string;
   birthDate: string;
   email?: string | null;
-  phone?: string | null;
 }
 
 export default function RegisterScreen() {
+  const { t } = useTranslation();
   const [form, setForm] = useState({
     firstName: "",
     lastName: "",
     email: "",
-    phone: "",
     username: "",
     password: "",
     birthDate: "",
@@ -81,40 +83,39 @@ export default function RegisterScreen() {
 
   const validateForm = () => {
     if (!form.firstName.trim()) {
-      Alert.alert("Greška", "Unesite ime");
+      Alert.alert(t("common.error"), t("validation.enterFirstName"));
       return false;
     }
     if (!form.lastName.trim()) {
-      Alert.alert("Greška", "Unesite prezime");
+      Alert.alert(t("common.error"), t("validation.enterLastName"));
       return false;
     }
-    if (!form.email.trim() && !form.phone.trim()) {
-      Alert.alert("Greška", "Unesite email ili telefon");
+    if (!form.email.trim()) {
+      Alert.alert(t("common.error"), t("validation.enterEmail"));
       return false;
     }
-    if (form.email.trim() && !form.email.includes("@")) {
-      Alert.alert("Greška", "Neispravan email");
+    if (!form.email.includes("@")) {
+      Alert.alert(t("common.error"), t("validation.invalidEmail"));
       return false;
     }
     if (!form.username.trim()) {
-      Alert.alert("Greška", "Unesite korisničko ime");
+      Alert.alert(t("common.error"), t("validation.enterUsername"));
       return false;
     }
     if (!/^[a-zA-Z0-9]+$/.test(form.username)) {
-      Alert.alert("Greška", "Samo slova i brojevi");
+      Alert.alert(t("common.error"), t("validation.usernameChars"));
       return false;
     }
     if (form.password.length < 6) {
-      Alert.alert("Greška", "Lozinka min 6 znakova");
+      Alert.alert(t("common.error"), t("validation.passwordMin"));
       return false;
     }
     if (!form.birthDate) {
-      Alert.alert("Greška", "Unesite datum rođenja");
+      Alert.alert(t("common.error"), t("validation.enterBirthDate"));
       return false;
     }
     return true;
   };
-
   const handleRegister = async () => {
     if (!validateForm()) return;
     setIsLoading(true);
@@ -126,7 +127,6 @@ export default function RegisterScreen() {
         birthDate: form.birthDate,
         username: form.username.trim(),
         email: form.email.trim() || null,
-        phone: form.phone.trim() || null,
       };
       const response = await fetch(API_ENDPOINTS.REGISTER, {
         method: "POST",
@@ -134,12 +134,12 @@ export default function RegisterScreen() {
         body: JSON.stringify(dataToSend),
       });
       if (response.ok) {
-        Alert.alert("Uspjeh!", "Registracija uspješna!", [
-          { text: "Prijava", onPress: () => router.push("/login") },
+        Alert.alert(t("common.success"), t("auth.registerSuccess"), [
+          { text: t("auth.loginBtn"), onPress: () => router.push("/login") },
         ]);
       } else {
         const text = await response.text();
-        Alert.alert("Greška", text || "Registracija nije uspjela.");
+        Alert.alert(t("common.error"), text || t("validation.registerFailed"));
       }
     } catch {
       Alert.alert("Greška", "Provjeri internetsku vezu.");
@@ -162,21 +162,23 @@ export default function RegisterScreen() {
         {/* Header na zelenoj pozadini */}
         <View style={s.header}>
           <MiniShield />
-          <View>
+          <View style={{ flex: 1 }}>
             <Text style={s.appName}>VARA</Text>
-            <Text style={s.headerSub}>Kreiranje računa</Text>
+            <Text style={s.headerSub}>{t("auth.register")}</Text>
           </View>
+          <LanguageSelector />
         </View>
 
         {/* Bijela kartica */}
         <View style={s.card}>
           {/* Ime i prezime */}
+          {/* Ime i prezime */}
           <View style={s.row}>
             <View style={[s.fieldWrap, s.half]}>
-              <Text style={s.label}>IME *</Text>
+              <Text style={s.label}>{t("auth.firstName").toUpperCase()} *</Text>
               <TextInput
                 style={s.input}
-                placeholder="Vaše ime"
+                placeholder={t("auth.firstNamePlaceholder")}
                 placeholderTextColor="#9AA9A7"
                 value={form.firstName}
                 onChangeText={(v) => handleChange("firstName", v)}
@@ -184,10 +186,10 @@ export default function RegisterScreen() {
               />
             </View>
             <View style={[s.fieldWrap, s.half]}>
-              <Text style={s.label}>PREZIME *</Text>
+              <Text style={s.label}>{t("auth.lastName").toUpperCase()} *</Text>
               <TextInput
                 style={s.input}
-                placeholder="Vaše prezime"
+                placeholder={t("auth.lastNamePlaceholder")}
                 placeholderTextColor="#9AA9A7"
                 value={form.lastName}
                 onChangeText={(v) => handleChange("lastName", v)}
@@ -197,42 +199,32 @@ export default function RegisterScreen() {
           </View>
 
           <Field
-            label="EMAIL"
+            label={`${t("auth.email").toUpperCase()}`}
             placeholder="vaš@email.com"
             value={form.email}
             onChangeText={(v) => handleChange("email", v)}
             keyboardType="email-address"
             autoCapitalize="none"
             editable={!isLoading}
-            optional
           />
           <Field
-            label="TELEFON"
-            placeholder="+385 99 123 4567"
-            value={form.phone}
-            onChangeText={(v) => handleChange("phone", v)}
-            keyboardType="phone-pad"
-            editable={!isLoading}
-            optional
-          />
-          <Field
-            label="KORISNIČKO IME *"
-            placeholder="Odaberite username"
+            label={`${t("auth.username").toUpperCase()} *`}
+            placeholder={t("auth.usernamePlaceholder")}
             value={form.username}
             onChangeText={(v) => handleChange("username", v)}
             autoCapitalize="none"
             editable={!isLoading}
           />
           <Field
-            label="LOZINKA *"
-            placeholder="Min. 6 znakova"
+            label={`${t("auth.password").toUpperCase()} *`}
+            placeholder={t("auth.passwordPlaceholder")}
             value={form.password}
             onChangeText={(v) => handleChange("password", v)}
             secureTextEntry
             editable={!isLoading}
           />
           <Field
-            label="DATUM ROĐENJA *"
+            label={`${t("auth.birthDate").toUpperCase()} *`}
             placeholder="YYYY-MM-DD"
             value={form.birthDate}
             onChangeText={(v) => handleChange("birthDate", v)}
@@ -256,8 +248,11 @@ export default function RegisterScreen() {
             style={s.linkWrap}
             onPress={() => router.push("/login")}
           >
+            <Text style={s.btnText}>{t("auth.registerBtn")}</Text>
+
             <Text style={s.linkText}>
-              Već imate račun? <Text style={s.linkBold}>Prijavite se</Text>
+              {t("auth.hasAccount")}{" "}
+              <Text style={s.linkBold}>{t("auth.loginBtn")}</Text>
             </Text>
           </TouchableOpacity>
         </View>

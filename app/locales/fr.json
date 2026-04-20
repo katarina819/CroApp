@@ -1,0 +1,40 @@
+{
+  "common": {
+    "save": "Enregistrer",
+    "cancel": "Annuler",
+    "loading": "Chargement...",
+    "error": "Erreur",
+    "success": "Succès"
+  },
+  "auth": {
+    "login": "Connexion",
+    "register": "Inscription",
+    "username": "Nom d'utilisateur",
+    "password": "Mot de passe",
+    "email": "Adresse e-mail",
+    "firstName": "Prénom",
+    "lastName": "Nom",
+    "birthDate": "Date de naissance",
+    "forgotPassword": "Mot de passe oublié?",
+    "noAccount": "Pas de compte?",
+    "hasAccount": "Déjà un compte?",
+    "registerBtn": "S'inscrire",
+    "loginBtn": "Se connecter",
+    "sendCode": "Envoyer le code",
+    "confirmCode": "Confirmer le code",
+    "changePassword": "Changer le mot de passe",
+    "newPassword": "Nouveau mot de passe",
+    "confirmPassword": "Confirmer le mot de passe",
+    "passwordMismatch": "Les mots de passe ne correspondent pas",
+    "codeSent": "Code envoyé à: {{contact}}",
+    "registerSuccess": "Inscription réussie!",
+    "language": "Langue"
+  },
+  "languages": {
+    "hr": "Hrvatski",
+    "en": "English",
+    "it": "Italiano",
+    "de": "Deutsch",
+    "fr": "Français"
+  }
+}

@@ -1,0 +1,40 @@
+{
+  "common": {
+    "save": "Spremi",
+    "cancel": "Odustani",
+    "loading": "Učitavanje...",
+    "error": "Greška",
+    "success": "Uspjeh"
+  },
+  "auth": {
+    "login": "Prijava",
+    "register": "Registracija",
+    "username": "Korisničko ime",
+    "password": "Lozinka",
+    "email": "Email adresa",
+    "firstName": "Ime",
+    "lastName": "Prezime",
+    "birthDate": "Datum rođenja",
+    "forgotPassword": "Zaboravili ste lozinku?",
+    "noAccount": "Nemate račun?",
+    "hasAccount": "Već imate račun?",
+    "registerBtn": "Registriraj se",
+    "loginBtn": "Prijavi se",
+    "sendCode": "Pošalji kod",
+    "confirmCode": "Potvrdi kod",
+    "changePassword": "Promijeni lozinku",
+    "newPassword": "Nova lozinka",
+    "confirmPassword": "Potvrdi lozinku",
+    "passwordMismatch": "Lozinke se ne podudaraju",
+    "codeSent": "Kod poslan na: {{contact}}",
+    "registerSuccess": "Registracija uspješna!",
+    "language": "Jezik"
+  },
+  "languages": {
+    "hr": "Hrvatski",
+    "en": "English",
+    "it": "Italiano",
+    "de": "Deutsch",
+    "fr": "Français"
+  }
+}

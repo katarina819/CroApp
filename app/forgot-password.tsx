@@ -1,16 +1,16 @@
 import { router } from "expo-router";
 import { useState } from "react";
 import {
-    ActivityIndicator,
-    Alert,
-    KeyboardAvoidingView,
-    Platform,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View,
+  ActivityIndicator,
+  Alert,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from "react-native";
 import { API_ENDPOINTS } from "./config/api";
 
@@ -20,13 +20,14 @@ export default function ForgotPasswordScreen() {
   const [step, setStep] = useState<Step>("email");
   const [email, setEmail] = useState("");
   const [code, setCode] = useState("");
+  const [contact, setContact] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
   const handleRequestCode = async () => {
-    if (!email.trim() || !email.includes("@")) {
-      Alert.alert("Greška", "Unesite ispravnu email adresu");
+    if (!contact.trim()) {
+      Alert.alert("Greška", "Unesite email ili broj telefona");
       return;
     }
     setIsLoading(true);
@@ -36,17 +37,24 @@ export default function ForgotPasswordScreen() {
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ email: email.trim() }),
+          body: JSON.stringify(
+            contact.includes("@")
+              ? { email: contact.trim() }
+              : { phone: contact.trim() },
+          ),
         },
       );
+
       if (response.ok) {
         setStep("code");
+        Alert.alert("Kod poslan! 📨", `Poslan je kod na: ${contact}`);
+      } else if (response.status === 404) {
         Alert.alert(
-          "Email poslan! 📧",
-          "Ako email postoji u sustavu, poslan je 6-znamenkasti kod. Provjerite inbox (i spam).",
+          "Nije pronađeno ❌",
+          "Nema korisnika s tim emailom ili brojem telefona.",
         );
       } else {
-        Alert.alert("Greška", "Nije moguće poslati email. Pokušajte ponovo.");
+        Alert.alert("Greška", "Pokušajte ponovo.");
       }
     } catch {
       Alert.alert("Greška", "Provjeri internetsku vezu.");
@@ -150,10 +158,10 @@ export default function ForgotPasswordScreen() {
             <Text style={styles.label}>Email adresa</Text>
             <TextInput
               style={styles.input}
-              placeholder="vaš@email.com"
+              placeholder="Email ili broj telefona"
               placeholderTextColor="#999"
-              value={email}
-              onChangeText={setEmail}
+              value={contact}
+              onChangeText={setContact}
               keyboardType="email-address"
               autoCapitalize="none"
               autoFocus

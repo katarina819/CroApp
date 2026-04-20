@@ -3,6 +3,8 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Stack, router } from "expo-router";
 import { useEffect, useState } from "react";
 import { ActivityIndicator, Text, View } from "react-native";
+import { AdaptiveThemeProvider } from "../components/AdaptiveThemeProvider"; // ← NOVO
+import "./config/i18n"; // ← dodaj ovo kao prvi import
 import { UserProvider } from "./contexts/UserContext";
 
 export default function RootLayout() {
@@ -102,18 +104,22 @@ export default function RootLayout() {
   }
 
   return (
-    <UserProvider>
-      {/* Svi ekrani uvijek registrirani – ne uvjetno */}
-      <Stack screenOptions={{ headerShown: false }}>
-        <Stack.Screen name="login" />
-        <Stack.Screen name="register" />
-        <Stack.Screen name="forgot-password" />
-        <Stack.Screen name="(tabs)" />
-        <Stack.Screen name="profile/[userId]" />
-        <Stack.Screen name="chat/[userId]" />
-        <Stack.Screen name="admin/login" />
-        <Stack.Screen name="adminn/dashboard" />
-      </Stack>
-    </UserProvider>
+    <AdaptiveThemeProvider>
+      {" "}
+      {/* ← NOVO — omotava SVE */}
+      <UserProvider>
+        {/* Svi ekrani uvijek registrirani – ne uvjetno */}
+        <Stack screenOptions={{ headerShown: false }}>
+          <Stack.Screen name="login" />
+          <Stack.Screen name="register" />
+          <Stack.Screen name="forgot-password" />
+          <Stack.Screen name="(tabs)" />
+          <Stack.Screen name="profile/[userId]" />
+          <Stack.Screen name="chat/[userId]" />
+          <Stack.Screen name="admin/login" />
+          <Stack.Screen name="adminn/dashboard" />
+        </Stack>
+      </UserProvider>
+    </AdaptiveThemeProvider>
   );
 }
