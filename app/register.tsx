@@ -215,8 +215,6 @@ export default function RegisterScreen() {
             style={s.linkWrap}
             onPress={() => router.push("/login")}
           >
-            <Text style={s.btnText}>{t("auth.registerBtn")}</Text>
-
             <Text style={s.linkText}>
               {t("auth.hasAccount")}{" "}
               <Text style={s.linkBold}>{t("auth.loginBtn")}</Text>

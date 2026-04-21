@@ -105,8 +105,6 @@ export default function RootLayout() {
 
   return (
     <AdaptiveThemeProvider>
-      {" "}
-      {/* ← NOVO — omotava SVE */}
       <UserProvider>
         {/* Svi ekrani uvijek registrirani – ne uvjetno */}
         <Stack screenOptions={{ headerShown: false }}>
