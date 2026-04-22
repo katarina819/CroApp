@@ -1,5 +1,6 @@
 // app/_layout.tsx
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import * as Linking from "expo-linking";
 import { Stack, router } from "expo-router";
 import { useEffect, useState } from "react";
 import { ActivityIndicator, Text, View } from "react-native";
@@ -10,6 +11,18 @@ import { UserProvider } from "./contexts/UserContext";
 export default function RootLayout() {
   const [ready, setReady] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const handleDeepLink = (event: { url: string }) => {
+      const { path } = Linking.parse(event.url);
+      if (path === "login") {
+        router.replace("/login");
+      }
+    };
+
+    const subscription = Linking.addEventListener("url", handleDeepLink);
+    return () => subscription.remove();
+  }, []);
 
   useEffect(() => {
     // Kratki delay da se Expo Router navigator inicijalizira

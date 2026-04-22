@@ -47,7 +47,19 @@
         "googleMaps": {
           "apiKey": "AIzaSyAzgl_HOUh-kwD_eQQaWLerARekr36qrgg"
         }
-      }
+      },
+      "intentFilters": [
+        {
+          "action": "VIEW",
+          "autoVerify": true,
+          "data": [
+            {
+              "scheme": "vara"
+            }
+          ],
+          "category": ["BROWSABLE", "DEFAULT"]
+        }
+      ]
     },
     "web": {
       "output": "static",
