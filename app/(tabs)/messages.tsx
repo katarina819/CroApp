@@ -4,13 +4,13 @@
 //    jedini vizualni indikator je sada StoryIndicator prsten
 // 2. Komentar input – ispravan KeyboardAvoidingView za iOS i Android
 // 3. Vlasnik storyja vidi popis pregleda s brojem i imenima
-
 import { Ionicons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as ImagePicker from "expo-image-picker";
 import { router, useFocusEffect } from "expo-router";
 import { VideoView, useVideoPlayer } from "expo-video";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import {
   ActivityIndicator,
   Alert,
@@ -31,6 +31,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { API_BASE_URL } from "../../app/config/api";
 import { StoryBadge } from "../../app/StoryBadge";
+import UserAvatar from "../../components/UserAvatar";
 import {
   Conversation,
   getConversations,
@@ -104,6 +105,7 @@ function useStoryCountdown(createdAt: string) {
 
 // ─── Story Timer komponenta ───────────────────────────────────────────────────
 function StoryTimer({ createdAt }: { createdAt: string }) {
+  const { t } = useTranslation();
   const { remaining, expired } = useStoryCountdown(createdAt);
 
   return (
@@ -121,7 +123,7 @@ function StoryTimer({ createdAt }: { createdAt: string }) {
       <Text
         style={[storyTimerStyle.text, expired && storyTimerStyle.expiredText]}
       >
-        {expired ? "Isteklo" : `Ističe za ${remaining}`}
+        {expired ? t("story.expired") : `${t("story.expiresIn")} ${remaining}`}
       </Text>
     </View>
   );
@@ -166,6 +168,7 @@ function StoryViewer({
   onSendMessage?: (userId: number, name: string) => void;
   currentUserId?: number | null;
 }) {
+  const { t } = useTranslation();
   console.log("StoryViewer opened with story:", story?.id, story?.userName); // Debug
   const progress = useRef(new Animated.Value(0)).current;
   const animationRef = useRef<Animated.CompositeAnimation | null>(null);
@@ -356,7 +359,7 @@ function StoryViewer({
     } catch {
       setLiked(wasLiked);
       setLikeCount((prev) => (wasLiked ? prev + 1 : prev - 1));
-      Alert.alert("Greška", "Nije moguće lajkati.");
+      Alert.alert(t("common.error"), t("story.cannotLike"));
     }
   };
 
@@ -379,7 +382,7 @@ function StoryViewer({
         setCommentText("");
       }
     } catch {
-      Alert.alert("Greška", "Nije moguće komentirati.");
+      Alert.alert(t("common.error"), t("story.cannotComment"));
     }
   };
 
@@ -620,7 +623,9 @@ function StoryViewer({
         <View style={sv.viewersModal}>
           <View style={sv.viewersContent}>
             <View style={sv.viewersHeader}>
-              <Text style={sv.viewersTitle}>Pregledali ({viewers.length})</Text>
+              <Text style={sv.viewersTitle}>
+                {t("story.viewedBy")} ({viewers.length})
+              </Text>
               <TouchableOpacity
                 onPress={() => {
                   setShowViewers(false);
@@ -667,7 +672,7 @@ function StoryViewer({
                   </View>
                 )}
                 ListEmptyComponent={
-                  <Text style={sv.noViewers}>Nema pregleda još</Text>
+                  <Text style={sv.noViewers}>{t("story.noViewsYet")}</Text>
                 }
               />
             )}
@@ -688,7 +693,9 @@ function StoryViewer({
         <View style={sv.viewersModal}>
           <View style={sv.viewersContent}>
             <View style={sv.viewersHeader}>
-              <Text style={sv.viewersTitle}>Lajkovi ({likeCount})</Text>
+              <Text style={sv.viewersTitle}>
+                {t("story.likes")} ({likeCount})
+              </Text>
               <TouchableOpacity
                 onPress={() => {
                   setShowLikes(false);
@@ -716,7 +723,7 @@ function StoryViewer({
                 </View>
               )}
               ListEmptyComponent={
-                <Text style={sv.noViewers}>Nema lajkova</Text>
+                <Text style={sv.noViewers}>{t("story.noLikesYet")}</Text>
               }
             />
           </View>
@@ -748,7 +755,7 @@ function StoryViewer({
           <View style={sv.commentsContent}>
             <View style={sv.commentsHeader}>
               <Text style={sv.commentsTitle}>
-                Komentari ({comments.length})
+                {t("story.comments")} ({comments.length})
               </Text>
               <TouchableOpacity onPress={handleCloseComments}>
                 <Ionicons name="close" size={24} color="#333" />
@@ -832,7 +839,7 @@ function StoryViewer({
               <View style={sv.commentInputWrapper}>
                 <TextInput
                   style={sv.commentInput}
-                  placeholder="Napiši komentar..."
+                  placeholder={t("story.writeComment")}
                   placeholderTextColor="#999"
                   value={commentText}
                   onChangeText={setCommentText}
@@ -1131,6 +1138,7 @@ function StoriesRow({
   currentUserId: number | null;
   onAddStory: () => void;
 }) {
+  const { t } = useTranslation();
   const [stories, setStories] = useState<Story[]>([]);
   const [viewing, setViewing] = useState<Story | null>(null);
 
@@ -1227,7 +1235,7 @@ function StoriesRow({
                     </View>
                   </TouchableOpacity>
                   <Text style={srs.label} numberOfLines={1}>
-                    Moj story
+                    {t("story.myStory")}
                   </Text>
                 </View>
               );
@@ -1379,6 +1387,7 @@ function AddStoryModal({
   onClose: () => void;
   onUploaded: () => void;
 }) {
+  const { t } = useTranslation();
   const [preview, setPreview] = useState<{
     uri: string;
     type: "image" | "video";
@@ -1444,9 +1453,9 @@ function AddStoryModal({
         setPreview(null);
         onUploaded();
         onClose();
-        Alert.alert("Uspjeh!", "Story je objavljen");
+        Alert.alert(t("common.success"), t("story.storyPosted"));
       } else {
-        Alert.alert("Greška", "Story nije objavljen");
+        Alert.alert(t("common.error"), t("story.storyFailed"));
       }
     } catch (error) {
       Alert.alert("Greška", "Story nije objavljen. Provjeri konekciju.");
@@ -1462,25 +1471,26 @@ function AddStoryModal({
           <TouchableOpacity onPress={onClose}>
             <Ionicons name="close" size={28} color="#333" />
           </TouchableOpacity>
-          <Text style={asm.title}>Dodaj story</Text>
+          <Text style={asm.title}>{t("story.addStory")}</Text>
           <View style={{ width: 28 }} />
         </View>
         {!preview ? (
           <View style={asm.pickContainer}>
-            <Text style={asm.hint}>Odaberi medij</Text>
+            <Text style={asm.hint}>{t("story.selectMedia")}</Text>
+
             <TouchableOpacity
               style={asm.pickBtn}
               onPress={() => pick("gallery")}
             >
               <Ionicons name="images" size={40} color="#2D6418" />
-              <Text style={asm.pickLabel}>Galerija</Text>
+              <Text style={asm.pickLabel}>{t("profile.gallery")}</Text>
             </TouchableOpacity>
             <TouchableOpacity
               style={asm.pickBtn}
               onPress={() => pick("camera")}
             >
               <Ionicons name="camera" size={40} color="#2D6418" />
-              <Text style={asm.pickLabel}>Kamera</Text>
+              <Text style={asm.pickLabel}>{t("profile.camera")}</Text>
             </TouchableOpacity>
           </View>
         ) : (
@@ -1495,7 +1505,7 @@ function AddStoryModal({
                 style={[asm.btn, { backgroundColor: "#ff4757" }]}
                 onPress={() => setPreview(null)}
               >
-                <Text style={asm.btnText}>Obriši</Text>
+                <Text style={asm.btnText}>{t("common.delete")}</Text>
               </TouchableOpacity>
               <TouchableOpacity
                 style={[asm.btn, { backgroundColor: "#2D6418" }]}
@@ -1503,7 +1513,7 @@ function AddStoryModal({
                 disabled={uploading}
               >
                 <Text style={asm.btnText}>
-                  {uploading ? "Objavljujem..." : "Objavi"}
+                  {uploading ? t("common.loading") : t("story.publish")}
                 </Text>
               </TouchableOpacity>
             </View>
@@ -1550,6 +1560,7 @@ const asm = StyleSheet.create({
 
 // ─── Main Messages Screen ─────────────────────────────────────────────────────
 export default function MessagesScreen() {
+  const { t } = useTranslation();
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -1605,7 +1616,7 @@ export default function MessagesScreen() {
         hour: "2-digit",
         minute: "2-digit",
       });
-    if (diff === 1) return "Jučer";
+    if (diff === 1) return t("messages.yesterday");
     if (diff < 7) return date.toLocaleDateString("hr-HR", { weekday: "short" });
     return date.toLocaleDateString("hr-HR", {
       day: "2-digit",
@@ -1625,7 +1636,7 @@ export default function MessagesScreen() {
     <SafeAreaView style={styles.safeArea} edges={["top"]}>
       <View style={styles.container}>
         <View style={styles.header}>
-          <Text style={styles.headerTitle}>Poruke</Text>
+          <Text style={styles.headerTitle}>{t("nav.messages")}</Text>
           {totalUnread > 0 && (
             <View style={styles.badge}>
               <Text style={styles.badgeText}>{totalUnread}</Text>
@@ -1681,15 +1692,19 @@ export default function MessagesScreen() {
                   size={64}
                   color="#d0d0d0"
                 />
-                <Text style={styles.emptyTitle}>Nema poruka</Text>
+                <Text style={styles.emptyTitle}>
+                  {t("messages.noMessages")}
+                </Text>
                 <Text style={styles.emptySubtitle}>
-                  Pretraži korisnike i pošalji prvu poruku!
+                  {t("messages.searchHint")}
                 </Text>
                 <TouchableOpacity
                   style={styles.newMsgBtn}
                   onPress={() => router.push("/(tabs)/search")}
                 >
-                  <Text style={styles.newMsgBtnText}>Pronađi korisnike</Text>
+                  <Text style={styles.newMsgBtnText}>
+                    {t("messages.findUsers")}
+                  </Text>
                 </TouchableOpacity>
               </View>
             ) : null
@@ -1780,13 +1795,12 @@ function ConversationItem({
           Avatar unutar njega nema nikakav dodatan border.
         */}
         <StoryBadge userId={item.userId} size={56}>
-          {avatarUrl ? (
-            <Image source={{ uri: avatarUrl }} style={styles.convAvatar} />
-          ) : (
-            <View style={styles.convAvatar}>
-              <Text style={styles.convAvatarText}>{initials}</Text>
-            </View>
-          )}
+          <UserAvatar
+            avatar={item.avatar}
+            firstName={item.firstName}
+            lastName={item.lastName}
+            size={56}
+          />
         </StoryBadge>
 
         <View style={styles.convInfo}>

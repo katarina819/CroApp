@@ -6,6 +6,7 @@ import * as ImagePicker from "expo-image-picker";
 import * as MediaLibrary from "expo-media-library";
 import { VideoView, useVideoPlayer } from "expo-video";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import {
   ActivityIndicator,
   Alert,
@@ -24,6 +25,7 @@ import {
   View,
 } from "react-native";
 import { StoryBadge } from "../../app/StoryBadge";
+import UserAvatar from "../../components/UserAvatar";
 import { API_BASE_URL } from "../config/api";
 
 const { width, height } = Dimensions.get("window");
@@ -70,6 +72,7 @@ function VideoItemComponent({
   onOpenShare: (video: VideoItem) => void;
   onDownload: (video: VideoItem) => void;
 }) {
+  const { t } = useTranslation();
   const [videoOwnerAvatar, setVideoOwnerAvatar] = useState<string | null>(null);
 
   const mediaUrl = item.filePath?.startsWith("http")
@@ -163,21 +166,21 @@ function VideoItemComponent({
           onPress={() => onOpenMessenger(item)}
         >
           <Ionicons name="paper-plane-outline" size={28} color="white" />
-          <Text style={styles.actionText}>Poruka</Text>
+          <Text style={styles.actionText}>{t("profile.message")}</Text>
         </TouchableOpacity>
         <TouchableOpacity
           style={styles.actionButton}
           onPress={() => onOpenShare(item)}
         >
           <Ionicons name="share-social-outline" size={28} color="white" />
-          <Text style={styles.actionText}>Dijeli</Text>
+          <Text style={styles.actionText}>{t("common.share")}</Text>
         </TouchableOpacity>
         <TouchableOpacity
           style={styles.actionButton}
           onPress={() => onDownload(item)}
         >
           <Ionicons name="download-outline" size={28} color="white" />
-          <Text style={styles.actionText}>Preuzmi</Text>
+          <Text style={styles.actionText}>{t("common.download")}</Text>
         </TouchableOpacity>
         <TouchableOpacity
           style={styles.actionButton}
@@ -188,7 +191,7 @@ function VideoItemComponent({
             size={28}
             color={item.isSaved ? "#2D6418" : "white"}
           />
-          <Text style={styles.actionText}>Box</Text>
+          <Text style={styles.actionText}>{t("profile.box")}</Text>
         </TouchableOpacity>
         <TouchableOpacity
           style={styles.actionButton}
@@ -199,21 +202,18 @@ function VideoItemComponent({
             size={28}
             color={item.isInWishlist ? "#FFD700" : "white"}
           />
-          <Text style={styles.actionText}>Wishlist</Text>
+          <Text style={styles.actionText}>{t("profile.wishlist")}</Text>
         </TouchableOpacity>
       </View>
 
       <View style={styles.bottomInfo}>
         <View style={styles.userInfo}>
           <StoryBadge userId={item.userId} size={40}>
-            {videoOwnerAvatar ? (
-              <Image
-                source={{ uri: videoOwnerAvatar }}
-                style={styles.userAvatar}
-              />
-            ) : (
-              <Ionicons name="person-circle" size={40} color="white" />
-            )}
+            <UserAvatar
+              userId={item.userId}
+              firstName={item.userName}
+              size={40}
+            />
           </StoryBadge>
           <Text style={styles.userName}>
             {item.userName || `User_${item.userId}`}
@@ -256,6 +256,7 @@ function CommentsModal({
   onClose: () => void;
   onCommentAdded: () => void;
 }) {
+  const { t } = useTranslation();
   const [comments, setComments] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [newComment, setNewComment] = useState("");
@@ -342,7 +343,7 @@ function CommentsModal({
               <Ionicons name="close" size={28} color="#333" />
             </TouchableOpacity>
             <Text style={styles.modalTitle}>
-              Komentari ({video.commentCount || 0})
+              {t("videos.comments", { count: video?.commentCount || 0 })}
             </Text>
             <View style={{ width: 28 }} />
           </View>
@@ -358,7 +359,7 @@ function CommentsModal({
             <View style={[styles.emptyComments, { flex: 1 }]}>
               <Ionicons name="chatbubbles-outline" size={56} color="#ddd" />
               <Text style={styles.emptyCommentsText}>
-                Nema komentara. Budi prvi! 💬
+                {t("videos.noComments")}
               </Text>
             </View>
           ) : (
@@ -392,7 +393,7 @@ function CommentsModal({
           <View style={styles.inputRow}>
             <TextInput
               style={styles.textInput}
-              placeholder="Dodaj komentar..."
+              placeholder={t("videos.addComment")}
               placeholderTextColor="#999"
               value={newComment}
               onChangeText={setNewComment}
@@ -558,6 +559,7 @@ function MessengerModal({
   video: VideoItem | null;
   onClose: () => void;
 }) {
+  const { t } = useTranslation();
   const [message, setMessage] = useState("");
   const [sending, setSending] = useState(false);
 
@@ -579,16 +581,19 @@ function MessengerModal({
       });
       if (res.ok) {
         setMessage("");
+
         Alert.alert(
-          "Poslano! ✅",
-          `Poruka je poslana korisniku ${video.userName || "User_" + video.userId}`,
+          t("common.success"),
+          t("messages.messageSent", {
+            username: video?.userName || `User_${video?.userId}`,
+          }),
         );
         onClose();
       } else {
-        Alert.alert("Greška", "Poruka nije poslana");
+        Alert.alert(t("common.error"), t("messages.messageFailed"));
       }
     } catch {
-      Alert.alert("Greška", "Poruka nije poslana");
+      Alert.alert(t("common.error"), t("messages.messageFailed"));
     } finally {
       setSending(false);
     }
@@ -618,7 +623,7 @@ function MessengerModal({
           <View style={mm.handle} />
 
           <View style={mm.header}>
-            <Text style={mm.title}>Pošalji poruku</Text>
+            <Text style={mm.title}>{t("messages.sendMessage")}</Text>
             <TouchableOpacity onPress={onClose}>
               <Ionicons name="close" size={24} color="#333" />
             </TouchableOpacity>
@@ -654,7 +659,9 @@ function MessengerModal({
           <View style={mm.inputRow}>
             <TextInput
               style={mm.input}
-              placeholder="Napiši poruku..."
+              placeholder={t("messages.writeMessage", {
+                name: video?.userName || "",
+              })}
               placeholderTextColor="#aaa"
               value={message}
               onChangeText={setMessage}
@@ -782,6 +789,7 @@ function ShareModal({
   video: VideoItem | null;
   onClose: () => void;
 }) {
+  const { t } = useTranslation();
   const [users, setUsers] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [sending, setSending] = useState<number | null>(null);
@@ -819,13 +827,13 @@ function ShareModal({
       });
       if (res.ok) {
         Alert.alert(
-          "Podijeljeno!",
-          `Video je podijeljen s korisnikom ${userName}`,
+          t("common.success"),
+          t("videos.sharedWith", { name: userName }),
         );
         onClose();
       }
     } catch {
-      Alert.alert("Greška", "Dijeljenje nije uspjelo");
+      Alert.alert(t("common.error"), t("videos.shareFailed"));
     } finally {
       setSending(null);
     }
@@ -854,13 +862,13 @@ function ShareModal({
           <TouchableOpacity onPress={onClose}>
             <Ionicons name="close" size={28} color="black" />
           </TouchableOpacity>
-          <Text style={styles.modalTitle}>Podijeli video</Text>
+          <Text style={styles.modalTitle}>{t("videos.shareVideo")}</Text>
           <View style={{ width: 28 }} />
         </View>
         <View style={{ paddingHorizontal: 16, paddingBottom: 8 }}>
           <TextInput
             style={styles.searchInput}
-            placeholder="Pretraži korisnike..."
+            placeholder={t("videos.searchUsers")}
             placeholderTextColor="#999"
             value={search}
             onChangeText={setSearch}
@@ -918,6 +926,7 @@ export function UploadModal({
   onClose: () => void;
   onUploaded: () => void;
 }) {
+  const { t } = useTranslation();
   const [mediaUri, setMediaUri] = useState<string | null>(null);
   const [mediaType, setMediaType] = useState<"video" | "image">("video");
   const [title, setTitle] = useState("");
@@ -937,8 +946,8 @@ export function UploadModal({
     const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (!perm.granted) {
       Alert.alert(
-        "Dozvola potrebna",
-        "Dozvolite pristup galeriji u postavkama",
+        t("common.permissionRequired"),
+        t("common.galleryPermission"),
       );
       return;
     }
@@ -958,7 +967,7 @@ export function UploadModal({
     const perm = await ImagePicker.requestCameraPermissionsAsync();
 
     if (!perm.granted) {
-      Alert.alert("Dozvola potrebna", "Dozvolite pristup kameri u postavkama");
+      Alert.alert(t("common.permissionRequired"), t("common.cameraPermission"));
       return;
     }
 
@@ -993,26 +1002,23 @@ export function UploadModal({
     }
 
     if (!mediaUri || !title.trim()) {
-      Alert.alert("Greška", "Naslov je obavezan");
+      Alert.alert(t("common.error"), t("videos.titleRequired"));
       return;
     }
 
     if (!location.trim()) {
-      Alert.alert("Greška", "Lokacija je obavezna");
+      Alert.alert(t("common.error"), t("videos.locationRequired"));
       return;
     }
 
     if (!userId || userId === "0") {
-      Alert.alert(
-        "Greška",
-        "Niste prijavljeni. Odjavite se i prijavite ponovo.",
-      );
+      Alert.alert(t("common.error"), t("auth.notLoggedIn"));
       return;
     }
 
     // 🔥 IZMJENA: Podrži i slike i videe
     if (mediaType !== "video" && mediaType !== "image") {
-      Alert.alert("Greška", "Nepodržani tip medija");
+      Alert.alert(t("common.error"), t("videos.unsupportedMediaType"));
       return;
     }
 
@@ -1090,19 +1096,20 @@ export function UploadModal({
         }).catch(() => {});
 
         Alert.alert(
-          "Uspjeh!",
-          `${mediaType === "image" ? "Slika" : "Video"} je uspješno objavljen`,
+          t("common.success"),
+          t("videos.publishSuccess", {
+            type: mediaType === "image" ? t("videos.image") : t("videos.video"),
+          }),
         );
         resetModal();
         onUploaded();
       } else {
         const errorText = await res.text();
-        console.error("Upload error response:", errorText);
-        Alert.alert("Greška", `Upload nije uspio: ${errorText}`);
+        Alert.alert(t("common.error"), t("videos.uploadFailed"));
       }
     } catch (error) {
       console.error("Upload exception:", error);
-      Alert.alert("Greška", "Upload nije uspio. Provjeri konekciju.");
+      Alert.alert(t("common.error"), t("videos.uploadFailedCheckConnection"));
     } finally {
       setUploading(false);
     }
@@ -1288,6 +1295,7 @@ export function UploadModal({
 
 // ==================== MAIN SCREEN ====================
 export default function VideosScreen() {
+  const { t } = useTranslation();
   const [videos, setVideos] = useState<VideoItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [currentPlayingIndex, setCurrentPlayingIndex] = useState<number | null>(
@@ -1312,7 +1320,7 @@ export default function VideosScreen() {
       });
       if (res.ok) setVideos(await res.json());
     } catch {
-      Alert.alert("Greška", "Neuspješno učitavanje videa");
+      Alert.alert(t("common.error"), t("videos.loadFailed"));
     } finally {
       setLoading(false);
     }
@@ -1411,11 +1419,10 @@ export default function VideosScreen() {
       setVideos((prev) =>
         prev.map((v) => (v.id === videoId ? { ...v, isSaved: !v.isSaved } : v)),
       );
-      Alert.alert("Greška", "Nije moguće promijeniti Box status");
+      Alert.alert(t("common.error"), t("videos.boxToggleFailed"));
     }
   };
 
-  // ── WISHLIST ──
   // ── WISHLIST ──
   const handleWishlistToggle = async (videoId: number) => {
     const token = await AsyncStorage.getItem("token");
@@ -1475,7 +1482,7 @@ export default function VideosScreen() {
           v.id === videoId ? { ...v, isInWishlist: !v.isInWishlist } : v,
         ),
       );
-      Alert.alert("Greška", "Nije moguće promijeniti Wishlist status");
+      Alert.alert(t("common.error"), t("videos.wishlistToggleFailed"));
     }
   };
 
@@ -1483,13 +1490,10 @@ export default function VideosScreen() {
   const handleDownload = async (video: VideoItem) => {
     const { status } = await MediaLibrary.requestPermissionsAsync();
     if (status !== "granted") {
-      Alert.alert(
-        "Dozvola potrebna",
-        "Dozvolite pristup medijima u postavkama",
-      );
+      Alert.alert(t("common.permissionRequired"), t("common.mediaPermission"));
       return;
     }
-    Alert.alert("Preuzimanje", "Video se preuzima...");
+    Alert.alert(t("videos.downloading"), t("videos.downloadingDesc"));
     try {
       const fileName = `cromap_${video.id}_${Date.now()}.mp4`;
       const downloadDest = FileSystem.documentDirectory + fileName;
@@ -1498,18 +1502,18 @@ export default function VideosScreen() {
         downloadDest,
       );
       await MediaLibrary.saveToLibraryAsync(result.uri);
-      Alert.alert("Uspjeh!", "Video je spremljen u galeriju");
+      Alert.alert(t("common.success"), t("videos.downloadSuccess"));
     } catch {
-      Alert.alert("Greška", "Preuzimanje nije uspjelo");
+      Alert.alert(t("common.error"), t("videos.downloadFailed"));
     }
   };
 
   // ── DELETE ──
   const handleDeleteVideo = async (videoId: number) => {
-    Alert.alert("Obriši video", "Jeste li sigurni?", [
-      { text: "Otkaži", style: "cancel" },
+    Alert.alert(t("videos.deleteConfirm"), t("videos.deleteConfirmQuestion"), [
+      { text: t("common.cancel"), style: "cancel" },
       {
-        text: "Obriši",
+        text: t("common.delete"),
         style: "destructive",
         onPress: async () => {
           const token = await AsyncStorage.getItem("token");

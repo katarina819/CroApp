@@ -7,6 +7,7 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as Location from "expo-location";
 import React, { useCallback, useEffect, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import {
   ActivityIndicator,
   Alert,
@@ -507,7 +508,6 @@ function PlaceMarker({
   );
 }
 
-// ══════════════════════════════════════════════════════════════════════════════
 // PLACE DETAIL MODAL
 // ══════════════════════════════════════════════════════════════════════════════
 
@@ -552,6 +552,7 @@ function PlaceDetailModal({
   notifPrefs: NotifPrefs;
   onToggleNotif: (catId: string) => void;
 }) {
+  const { t } = useTranslation();
   const [details, setDetails] = useState<PlaceDetails | null>(null);
   const [loading, setLoading] = useState(false);
   const [photoIdx, setPhotoIdx] = useState(0);
@@ -600,7 +601,7 @@ function PlaceDetailModal({
 
   const handleSave = async () => {
     if (stars === 0) {
-      Alert.alert("Ocjena", "Odaberite najmanje 1 zvjezdicu.");
+      Alert.alert(t("map.noReview"), t("map.ratingRequired"));
       return;
     }
     setSaving(true);
@@ -618,7 +619,7 @@ function PlaceDetailModal({
     await saveJSON(STORAGE_REVIEWS, reviews);
     setSaving(false);
     setSaved(true);
-    Alert.alert("Hvala!", "Recenzija je sačuvana.");
+    Alert.alert("✅", t("map.reviewSaved"));
   };
 
   return (
@@ -645,7 +646,7 @@ function PlaceDetailModal({
                   <View style={[dm.imgPh, { backgroundColor: color + "22" }]}>
                     <ActivityIndicator color={color} size="large" />
                     <Text style={{ color: "#999", marginTop: 8, fontSize: 13 }}>
-                      Dohvaćam detalje...
+                      {t("common.loading")}
                     </Text>
                   </View>
                 ) : photos[photoIdx] ? (
@@ -678,17 +679,21 @@ function PlaceDetailModal({
                 <TouchableOpacity
                   style={dm.hideBtn}
                   onPress={() =>
-                    Alert.alert("Ukloni s karte", `Sakriti "${place.name}"?`, [
-                      { text: "Odustani", style: "cancel" },
-                      {
-                        text: "Ukloni 🚫",
-                        style: "destructive",
-                        onPress: () => {
-                          onHidePlace(place.id);
-                          onClose();
+                    Alert.alert(
+                      t("map.hidePlace"),
+                      t("map.hidePlaceConfirm", { name: place.name }),
+                      [
+                        { text: t("common.cancel"), style: "cancel" },
+                        {
+                          text: "Ukloni 🚫",
+                          style: "destructive",
+                          onPress: () => {
+                            onHidePlace(place.id);
+                            onClose();
+                          },
                         },
-                      },
-                    ])
+                      ],
+                    )
                   }
                 >
                   <Text style={{ fontSize: 18 }}>🚫</Text>
@@ -720,21 +725,21 @@ function PlaceDetailModal({
                 ) : null}
 
                 <View style={dm.hoursBox}>
-                  <Text style={dm.hoursTitle}>🕐 Radno vrijeme</Text>
+                  <Text style={dm.hoursTitle}>🕐 {t("map.openingHours")}</Text>
                   {loading ? (
                     <ActivityIndicator size="small" color={color} />
                   ) : details?.openingHours ? (
                     <Text style={dm.hoursText}>{details.openingHours}</Text>
                   ) : (
                     <Text style={{ color: "#999", fontSize: 12 }}>
-                      Radno vrijeme nije dostupno
+                      {t("map.notAvailable")}
                     </Text>
                   )}
                 </View>
 
                 <View style={dm.notifRow}>
                   <Text style={dm.notifLabel}>
-                    🔔 Obavijesti za {cat?.name || "ovu kategoriju"}
+                    🔔 {t("map.notifications", { category: cat?.name || "" })}
                   </Text>
                   <Switch
                     value={isNotified}
@@ -745,7 +750,7 @@ function PlaceDetailModal({
                 </View>
 
                 <View style={dm.reviewBox}>
-                  <Text style={dm.reviewTitle}>✍️ Vaša ocjena & komentar</Text>
+                  <Text style={dm.reviewTitle}>✍️ {t("map.noReview")}</Text>
                   <StarRating value={stars} onChange={setStars} />
                   <TextInput
                     ref={commentInputRef}
@@ -768,9 +773,8 @@ function PlaceDetailModal({
                     onPress={() => setWantReturn((v) => !v)}
                   >
                     <Text style={dm.returnTxt}>
-                      {wantReturn
-                        ? "✅ Želim se vratiti"
-                        : "⬜ Želim se vratiti"}
+                      {wantReturn ? "✅ " : "⬜ "}
+                      {t("map.wantToReturn")}
                     </Text>
                   </TouchableOpacity>
                   <TouchableOpacity
@@ -782,7 +786,7 @@ function PlaceDetailModal({
                       <ActivityIndicator color="#fff" />
                     ) : (
                       <Text style={dm.reviewBtnTxt}>
-                        {saved ? "Ažuriraj recenziju" : "Spremi recenziju"}
+                        {saved ? t("map.updateReview") : t("map.saveReview")}
                       </Text>
                     )}
                   </TouchableOpacity>
@@ -796,7 +800,9 @@ function PlaceDetailModal({
                       onClose();
                     }}
                   >
-                    <Text style={dm.visitBtnTxt}>✅ Označi kao posjećeno</Text>
+                    <Text style={dm.visitBtnTxt}>
+                      ✅ {t("map.markVisited")}
+                    </Text>
                   </TouchableOpacity>
                 ) : (
                   <View style={dm.visitedBadge}>
@@ -967,6 +973,7 @@ function NotificationSettingsModal({
   onClose: () => void;
   onSave: (p: NotifPrefs) => void;
 }) {
+  const { t } = useTranslation();
   const [p, setP] = useState<NotifPrefs>(prefs);
   useEffect(() => {
     setP(prefs);
@@ -1168,6 +1175,7 @@ export function ActivityGroupsModal({
   onClose: () => void;
   userLocation: { latitude: number; longitude: number } | null;
 }) {
+  const { t } = useTranslation();
   const [groups, setGroups] = useState<ActivityGroup[]>([]);
   const [showCreate, setShowCreate] = useState(false);
   const [selectedGroup, setSelectedGroup] = useState<ActivityGroup | null>(
@@ -1285,7 +1293,7 @@ export function ActivityGroupsModal({
   // ============================================================
   const createGroup = async () => {
     if (!newGroup.activity.trim() || !newGroup.locationName.trim()) {
-      Alert.alert("Greška", "Unesite aktivnost i lokaciju.");
+      Alert.alert(t("common.error"), t("map.searchPlaceholder"));
       return;
     }
 
@@ -1392,7 +1400,7 @@ export function ActivityGroupsModal({
       if (res.ok) {
         // Osvježi grupe
         await loadGroups();
-        Alert.alert("Uspjeh", "Pridružili ste se grupi!");
+        Alert.alert(t("common.success"), t("common.ok"));
       } else {
         const error = await res.json();
         Alert.alert("Greška", error.error || "Nije moguće pridružiti se grupi");
@@ -2677,6 +2685,7 @@ async function fetchVenuesNearCity(
     interests.length > 0
       ? interests
       : ["restaurant", "cafe", "beach", "landmark", "park", "museum"];
+
   const places = await getPlacesInRadius(
     geocoded.latitude,
     geocoded.longitude,
@@ -2691,7 +2700,8 @@ async function fetchVenuesNearCity(
 
   for (const p of places) {
     if (!venues[p.type]) venues[p.type] = [];
-    if (venues[p.type].length < 5) {
+    // ✅ Povećano s 5 na 10 opcija po kategoriji
+    if (venues[p.type].length < 10) {
       venues[p.type].push({
         name: p.name,
         address: p.address,
@@ -2705,6 +2715,7 @@ async function fetchVenuesNearCity(
 }
 
 // ─── Template generator s pravim imenima ──────────────────────────────────────
+// ─── Template generator s pravim imenima (V2 - više opcija) ────────────────────
 function buildPlanWithVenues(
   destination: string,
   postalCode: string,
@@ -2732,11 +2743,24 @@ function buildPlanWithVenues(
   const dayBudget = Math.round(bdg / days);
   const perPerson = Math.round(dayBudget / ppl);
 
+  // Sve opcije za kategoriju (do 10) rotiraju po danima
   const get = (type: string, idx = 0): string => {
     const list = venues[type] || [];
     if (!list.length) return "";
     const item = list[idx % list.length];
     return item.address ? `${item.name} (${item.address})` : item.name;
+  };
+
+  // Prikaz svih opcija za kategoriju (za sekciju "ponuđene opcije")
+  const getAll = (type: string): string => {
+    const list = venues[type] || [];
+    if (!list.length) return "  Nema pronađenih mjesta u odabranom radijusu";
+    return list
+      .map(
+        (item, i) =>
+          `  ${i + 1}. ${item.name}${item.address ? ` — ${item.address}` : ""}`,
+      )
+      .join("\n");
   };
 
   const COMPANION_LABELS: Record<CompanionType, string> = {
@@ -2753,6 +2777,27 @@ function buildPlanWithVenues(
     bicikl: "biciklom",
   };
 
+  const catLabels: Record<string, string> = {
+    restaurant: "🍽️ Restorani",
+    cafe: "☕ Kafići",
+    club: "🎵 Noćni klubovi",
+    beach: "🏖️ Plaže",
+    landmark: "🏰 Znamenitosti",
+    opg: "🌾 OPG",
+    accommodation: "🏨 Smještaji",
+    market: "🛒 Tržnice",
+    paintball: "🎯 Paintball",
+    cinema: "🎬 Kina",
+    park: "🌳 Parkovi",
+    escapeRoom: "🔐 Escape Roomovi",
+    museum: "🏛️ Muzeji",
+    theater: "🎭 Kazališta",
+    mountain: "⛰️ Planine",
+    nationalPark: "🏞️ Nacionalni parkovi",
+    cave: "🕳️ Špilje",
+    spa: "💧 Toplice/Spa",
+  };
+
   let plan = `🗺️ PLAN PUTOVANJA — ${destination.toUpperCase()}`;
   if (postalCode) plan += ` ${postalCode}`;
   plan += `\n${"━".repeat(40)}\n`;
@@ -2763,6 +2808,21 @@ function buildPlanWithVenues(
   plan += `📏 Radijus aktivnosti: ${activityRadius} km od smještaja\n`;
   if (accommodationAddress) plan += `🏨 Smještaj: ${accommodationAddress}\n`;
   plan += `\n`;
+
+  // ✅ NOVA SEKCIJA: sve pronađene opcije po kategoriji
+  plan += `\n${"━".repeat(40)}\n`;
+  plan += `📋 PRONAĐENE OPCIJE PO KATEGORIJAMA (u radijusu ${activityRadius} km)\n`;
+  plan += `${"━".repeat(40)}\n`;
+
+  for (const [type, list] of Object.entries(venues)) {
+    if (!list.length) continue;
+    plan += `\n${catLabels[type] || type}:\n`;
+    plan += `${getAll(type)}\n`;
+  }
+
+  plan += `\n${"━".repeat(40)}\n`;
+  plan += `📆 DNEVNI RASPORED\n`;
+  plan += `${"━".repeat(40)}\n`;
 
   for (let d = 1; d <= Math.min(days, 7); d++) {
     plan += `\n${"─".repeat(36)}\n`;
@@ -2834,6 +2894,7 @@ function buildPlanWithVenues(
       else if (club) plan += `  🎵 Noćni klub: ${club}\n`;
     }
 
+    // OPG i tržnica
     const market = get("market", d - 1);
     const opg = get("opg", d - 1);
     if (market && d === Math.floor(days / 2))
@@ -2841,6 +2902,14 @@ function buildPlanWithVenues(
     if (opg && companions === "obitelj") plan += `  🌾 OPG: ${opg}\n`;
 
     plan += `\n💰 Procijenjeni troškovi dana: ~${dayBudget} EUR (~${perPerson} EUR/os.)\n`;
+  }
+
+  // Alternativne opcije za svaki dan
+  if (Object.keys(venues).length > 0) {
+    plan += `\n${"━".repeat(40)}\n`;
+    plan += `🔄 ALTERNATIVNE OPCIJE\n`;
+    plan += `${"━".repeat(40)}\n`;
+    plan += `Sva pronađena mjesta dostupna su na karti - kliknite marker za detalje, ocjene i mogućnost označavanja posjete.\n`;
   }
 
   // Savjeti
@@ -2859,11 +2928,10 @@ function buildPlanWithVenues(
   if (companions === "obitelj")
     plan += `• Provjerite ulaznice za djecu — često su besplatne do 7 god.\n`;
   plan += `\n✨ Ugodan boravak u ${destination}!\n`;
-  plan += `\n📌 Napomena: konkretni prijedlozi mjesta generirani su iz OpenStreetMap podataka — preporučujemo provjeru radnog vremena pred polazak.`;
+  plan += `\n📌 Napomena: konkretni prijedlozi mjesta generirani su iz OpenStreetMap podataka. Preporučujemo provjeru radnog vremena pred polazak. Kliknite marker na karti za Google Photos, radno vrijeme i mogućnost ocjenjivanja.`;
 
   return plan;
 }
-
 // PlaceDetailInPlan komponenta - dodajte prije PlanMyDayModal
 function PlaceDetailInPlan({
   place,
@@ -3393,16 +3461,41 @@ const pr = StyleSheet.create({
   },
 });
 
+function venueToPlace(
+  venue: {
+    name: string;
+    address?: string;
+    latitude: number;
+    longitude: number;
+  },
+  type: string,
+): Place {
+  return {
+    id: `plan_${type}_${venue.name.replace(/\s+/g, "_").toLowerCase()}`,
+    name: venue.name,
+    latitude: venue.latitude,
+    longitude: venue.longitude,
+    type: type as Place["type"],
+    address: venue.address,
+    distance: 0,
+  };
+}
+
 // PLAN MY DAY MODAL
 export function PlanMyDayModal({
   visible,
   userLocation,
   onClose,
+  onMarkVisited,
+  visits = [],
 }: {
   visible: boolean;
   userLocation: { latitude: number; longitude: number } | null;
   onClose: () => void;
+  onMarkVisited?: (place: Place) => Promise<void>;
+  visits?: VisitRecord[];
 }) {
+  const { t } = useTranslation();
   const [step, setStep] = useState<PlanStep>("form");
   const [destination, setDestination] = useState("");
   const [postalCode, setPostalCode] = useState("");
@@ -3417,6 +3510,10 @@ export function PlanMyDayModal({
   const [interests, setInterests] = useState<string[]>([]);
   const [result, setResult] = useState("");
   const [loadingStep, setLoadingStep] = useState(0);
+  const [selectedPlaceForDetail, setSelectedPlaceForDetail] =
+    useState<Place | null>(null);
+  const [showDetailModal, setShowDetailModal] = useState(false);
+  const mapRef = useRef<MapView>(null);
   const loadingInterval = useRef<ReturnType<typeof setInterval> | null>(null);
   const [selectedVenues, setSelectedVenues] = useState<Record<string, number>>(
     {},
@@ -3680,6 +3777,96 @@ Plan napiši po danima s vremenima, KONKRETNIM imenima mjesta (npr. "Restoran Ad
           <ScrollView
             contentContainerStyle={{ padding: 20, paddingBottom: 40 }}
           >
+            {/* 🔥 Gumb za brzo označavanje posjeta - DODATI NA VRH */}
+            {onMarkVisited && visits && (
+              <View style={{ marginBottom: 16 }}>
+                <Text
+                  style={{ fontSize: 14, fontWeight: "600", marginBottom: 8 }}
+                >
+                  ✨ Brza akcija
+                </Text>
+                <TouchableOpacity
+                  style={{
+                    backgroundColor: "#34c759",
+                    borderRadius: 14,
+                    paddingVertical: 12,
+                    alignItems: "center",
+                    flexDirection: "row",
+                    justifyContent: "center",
+                    gap: 8,
+                  }}
+                  onPress={async () => {
+                    // Ekstrahiraj prvo mjesto iz plana (jednostavna heuristika)
+                    const lines = result.split("\n");
+                    let firstPlaceName = "";
+                    for (const line of lines) {
+                      if (line.match(/[🍽️☕🏖️🏰]/) && line.includes(":")) {
+                        const match = line.match(/:\s*(.+?)(?:\s*\(|$)/);
+                        if (match) {
+                          firstPlaceName = match[1].trim();
+                          break;
+                        }
+                      }
+                    }
+                    if (firstPlaceName) {
+                      // Pokušaj pronaći mjesto u allVenues
+                      let foundPlace: Place | null = null;
+                      for (const typeVenues of Object.values(allVenues)) {
+                        for (const v of typeVenues) {
+                          if (
+                            v.name
+                              .toLowerCase()
+                              .includes(firstPlaceName.toLowerCase()) ||
+                            firstPlaceName
+                              .toLowerCase()
+                              .includes(v.name.toLowerCase())
+                          ) {
+                            foundPlace = {
+                              id: `plan_${Date.now()}`,
+                              name: v.name,
+                              latitude: v.latitude,
+                              longitude: v.longitude,
+                              type:
+                                (Object.keys(placeCategories).find((t) =>
+                                  allVenues[t]?.some((x) => x.name === v.name),
+                                ) as Place["type"]) || "restaurant",
+                              address: v.address,
+                            };
+                            break;
+                          }
+                        }
+                        if (foundPlace) break;
+                      }
+                      if (foundPlace && onMarkVisited) {
+                        await onMarkVisited(foundPlace);
+                        Alert.alert(
+                          "✅ Posjećeno!",
+                          `${foundPlace.name} dodano u arhivu.`,
+                        );
+                      } else {
+                        Alert.alert(
+                          "⚠️ Nije pronađeno",
+                          "Kliknite na marker na karti za ručno označavanje.",
+                        );
+                      }
+                    } else {
+                      Alert.alert(
+                        "ℹ️ Savjet",
+                        "Kliknite na bilo koji marker na karti da označite posjet.",
+                      );
+                    }
+                  }}
+                >
+                  <Text style={{ fontSize: 16 }}>✅</Text>
+                  <Text
+                    style={{ color: "#fff", fontWeight: "700", fontSize: 15 }}
+                  >
+                    Označi prvo mjesto kao posjećeno
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            )}
+
             <View style={mapLegend.header}>
               <View>
                 <Text style={mapLegend.headerTitle}>📍 Karta destinacije</Text>
@@ -3693,8 +3880,17 @@ Plan napiši po danima s vremenima, KONKRETNIM imenima mjesta (npr. "Restoran Ad
                 <TouchableOpacity
                   style={mapLegend.recenterBtn}
                   onPress={() => {
-                    // Ako imate ref na MapView u result dijelu, dodajte:
-                    // resultMapRef.current?.animateToRegion({ ...accommodationCoords, latitudeDelta: 0.05, longitudeDelta: 0.05 }, 800);
+                    if (mapRef.current) {
+                      mapRef.current.animateToRegion(
+                        {
+                          latitude: accommodationCoords.latitude,
+                          longitude: accommodationCoords.longitude,
+                          latitudeDelta: 0.05,
+                          longitudeDelta: 0.05,
+                        },
+                        800,
+                      );
+                    }
                   }}
                 >
                   <Text style={{ fontSize: 18 }}>🎯</Text>
@@ -3702,8 +3898,8 @@ Plan napiši po danima s vremenima, KONKRETNIM imenima mjesta (npr. "Restoran Ad
               )}
             </View>
 
-            {/* Karta */}
             <MapView
+              ref={mapRef}
               style={{ height: 380, borderRadius: 16, marginBottom: 8 }}
               initialRegion={{
                 latitude: accommodationCoords?.latitude || 45.815,
@@ -3712,7 +3908,7 @@ Plan napiši po danima s vremenima, KONKRETNIM imenima mjesta (npr. "Restoran Ad
                 longitudeDelta: 0.06,
               }}
             >
-              {/* Smještaj marker — posebna boja */}
+              {/* Smještaj marker */}
               {accommodationCoords && (
                 <Marker
                   coordinate={accommodationCoords}
@@ -3721,27 +3917,31 @@ Plan napiši po danima s vremenima, KONKRETNIM imenima mjesta (npr. "Restoran Ad
                   pinColor="#667eea"
                 />
               )}
-              {/* Markeri pronađenih mjesta */}
-              {Object.entries(allVenues).map(([type, options]) => {
-                const idx = selectedVenues[type] ?? 0;
-                const venue = options[idx];
-                if (!venue) return null;
-                const cat =
-                  placeCategories[type as keyof typeof placeCategories];
-                return (
-                  <Marker
-                    key={type}
-                    coordinate={{
-                      latitude: venue.latitude,
-                      longitude: venue.longitude,
-                    }}
-                    title={`${EMOJIS[type] || "📍"} ${venue.name}`}
-                    description={venue.address || cat?.name || type}
-                    pinColor={cat?.color || "#ff0000"}
-                    onPress={() => setSelectedMapPlace({ ...venue, type })}
-                  />
-                );
-              })}
+
+              {/* Markeri svih mjesta po kategorijama - SVE OPCIJE (ne samo odabrane) */}
+              {Object.entries(allVenues).map(([type, options]) =>
+                options.map((venue, idx) => {
+                  const cat =
+                    placeCategories[type as keyof typeof placeCategories];
+                  return (
+                    <PlaceMarker
+                      key={`plan_marker_${type}_${idx}`}
+                      place={venueToPlace(venue, type)}
+                      isVisited={
+                        visits?.some(
+                          (v) =>
+                            v.placeName === venue.name && v.placeType === type,
+                        ) ?? false
+                      }
+                      onPress={() => {
+                        const placeObj = venueToPlace(venue, type);
+                        setSelectedPlaceForDetail(placeObj);
+                        setShowDetailModal(true);
+                      }}
+                    />
+                  );
+                }),
+              )}
             </MapView>
 
             {/* Vizualna legenda */}
@@ -3749,13 +3949,12 @@ Plan napiši po danima s vremenima, KONKRETNIM imenima mjesta (npr. "Restoran Ad
               <Text style={mapLegend.legendTitle}>Legenda markera</Text>
               <ScrollView horizontal showsHorizontalScrollIndicator={false}>
                 <View style={mapLegend.legendRow}>
-                  {/* Smještaj chip */}
                   {accommodationCoords && (
                     <View
                       style={[
                         mapLegend.chip,
                         {
-                          backgroundColor: "#667eea" + "22",
+                          backgroundColor: "#667eea22",
                           borderColor: "#667eea",
                         },
                       ]}
@@ -3766,31 +3965,36 @@ Plan napiši po danima s vremenima, KONKRETNIM imenima mjesta (npr. "Restoran Ad
                       <Text style={mapLegend.chipText}>🏨 Smještaj</Text>
                     </View>
                   )}
-                  {/* Kategorije chip-ovi */}
                   {Object.entries(allVenues).map(([type, options]) => {
                     const cat =
                       placeCategories[type as keyof typeof placeCategories];
                     if (!cat || !options.length) return null;
                     const hex = cat.color;
+                    const isSelected = selectedVenues[type] !== undefined;
                     return (
                       <View
                         key={type}
                         style={[
                           mapLegend.chip,
                           { backgroundColor: hex + "22", borderColor: hex },
+                          isSelected && { borderWidth: 2.5 },
                         ]}
                       >
                         <View
                           style={[mapLegend.dot, { backgroundColor: hex }]}
                         />
                         <Text style={mapLegend.chipText}>
-                          {EMOJIS[type]} {cat.name}
+                          {EMOJIS[type]} {cat.name} ({options.length})
                         </Text>
                       </View>
                     );
                   })}
                 </View>
               </ScrollView>
+              <Text style={{ fontSize: 11, color: "#999", marginTop: 6 }}>
+                💡 Kliknite marker na karti za detalje, ocjenu i označavanje
+                posjete
+              </Text>
             </View>
 
             {/* Distance chips od smještaja */}
@@ -3866,6 +4070,9 @@ Plan napiši po danima s vremenima, KONKRETNIM imenima mjesta (npr. "Restoran Ad
                       ).toFixed(1) + " km"
                     : "";
                   const isSelected = (selectedVenues[type] ?? 0) === idx;
+                  const alreadyVisited = visits?.some(
+                    (v) => v.placeName === venue.name,
+                  );
                   return (
                     <TouchableOpacity
                       key={idx}
@@ -3878,13 +4085,28 @@ Plan napiši po danima s vremenima, KONKRETNIM imenima mjesta (npr. "Restoran Ad
                         borderWidth: 1.5,
                         borderColor: isSelected ? "#667eea" : "#eee",
                         marginBottom: 6,
+                        opacity: alreadyVisited ? 0.6 : 1,
                       }}
                       onPress={() =>
                         setSelectedVenues((prev) => ({ ...prev, [type]: idx }))
                       }
                     >
                       <View style={{ flex: 1 }}>
-                        <Text style={{ fontWeight: "600" }}>{venue.name}</Text>
+                        <Text style={{ fontWeight: "600" }}>
+                          {venue.name}
+                          {alreadyVisited && (
+                            <Text
+                              style={{
+                                color: "#34c759",
+                                fontSize: 12,
+                                marginLeft: 6,
+                              }}
+                            >
+                              {" "}
+                              ✓ posjećeno
+                            </Text>
+                          )}
+                        </Text>
                         {venue.address && (
                           <Text style={{ fontSize: 12, color: "#999" }}>
                             {venue.address}
@@ -3919,6 +4141,47 @@ Plan napiši po danima s vremenima, KONKRETNIM imenima mjesta (npr. "Restoran Ad
                 <Text style={pm.btnSecondaryText}>← Generiraj novi plan</Text>
               </TouchableOpacity>
             </View>
+            {/* PlaceDetailModal za detalje mjesta */}
+            <PlaceDetailModal
+              place={selectedPlaceForDetail}
+              visible={showDetailModal}
+              onClose={() => {
+                setShowDetailModal(false);
+                setSelectedPlaceForDetail(null);
+              }}
+              onMarkVisited={async (p) => {
+                if (onMarkVisited) {
+                  await onMarkVisited(p);
+                }
+                setShowDetailModal(false);
+                setSelectedPlaceForDetail(null);
+                // Automatski označi u planu ako nije već odabrano
+                const idx =
+                  allVenues[p.type]?.findIndex((v) => v.name === p.name) ?? -1;
+                if (idx >= 0) {
+                  setSelectedVenues((prev) => ({ ...prev, [p.type]: idx }));
+                }
+              }}
+              onHidePlace={() => {
+                setShowDetailModal(false);
+              }}
+              isVisited={
+                selectedPlaceForDetail
+                  ? (visits?.some(
+                      (v) =>
+                        v.placeName === selectedPlaceForDetail.name &&
+                        v.placeType === selectedPlaceForDetail.type,
+                    ) ?? false)
+                  : false
+              }
+              notifPrefs={{
+                appEnabled: false,
+                emailEnabled: false,
+                email: "",
+                categories: [],
+              }}
+              onToggleNotif={() => {}}
+            />
           </ScrollView>
         )}
 
@@ -4363,6 +4626,7 @@ function VisitArchiveModal({
   onSelectVisit: (v: VisitRecord) => void;
   onDeleteVisit: (id: string) => void;
 }) {
+  const { t } = useTranslation();
   const [filter, setFilter] = useState<string | null>(null);
   const filtered = filter
     ? visits.filter((v) => v.placeType === filter)
@@ -4442,7 +4706,7 @@ function VisitArchiveModal({
                     color: !filter ? "#fff" : "#555",
                   }}
                 >
-                  Sve
+                  {t("common.all")}
                 </Text>
               </TouchableOpacity>
               {usedTypes.map((type) => {
@@ -4481,8 +4745,8 @@ function VisitArchiveModal({
               <Text style={{ fontSize: 48 }}>🗺️</Text>
               <Text style={{ fontSize: 15, color: "#999" }}>
                 {visits.length === 0
-                  ? "Još nema posjeta."
-                  : "Nema posjeta za filter."}
+                  ? t("map.noPlaces")
+                  : t("common.noResults")}
               </Text>
             </View>
           ) : (
@@ -4565,12 +4829,12 @@ function VisitArchiveModal({
                       }}
                       onPress={() =>
                         Alert.alert(
-                          "Ukloni posjet",
-                          `Ukloniti "${item.placeName}"?`,
+                          t("map.hidePlace"),
+                          `${t("map.hidePlaceConfirm", { name: item.placeName })}`,
                           [
-                            { text: "Odustani", style: "cancel" },
+                            { text: t("common.cancel"), style: "cancel" },
                             {
-                              text: "Ukloni",
+                              text: t("common.remove"),
                               style: "destructive",
                               onPress: () => onDeleteVisit(item.id),
                             },
@@ -4601,6 +4865,7 @@ function BadgesModal({
   onClose: () => void;
   visits: VisitRecord[];
 }) {
+  const { t } = useTranslation();
   const [badges, setBadges] = useState<Badge[]>([]);
   useEffect(() => {
     if (visible) loadJSON<Badge[]>(STORAGE_BADGES, []).then(setBadges);
@@ -4831,6 +5096,7 @@ const AGE_GROUPS = [
 
 export default function DashboardScreen() {
   const mapRef = useRef<MapView>(null);
+  const { t } = useTranslation();
 
   const [userLocation, setUserLocation] = useState<{
     latitude: number;
@@ -4943,7 +5209,7 @@ export default function DashboardScreen() {
   const requestLocationPermission = async () => {
     const { status } = await Location.requestForegroundPermissionsAsync();
     if (status !== "granted") {
-      Alert.alert("Lokacija", "Dozvolite pristup lokaciji za prikaz na karti.");
+      Alert.alert(t("map.locationError"), t("map.locationDenied"));
       return;
     }
     setLocationPermission(true);
@@ -4967,7 +5233,7 @@ export default function DashboardScreen() {
           // Ignorira — već imamo Balanced lokaciju
         });
     } catch {
-      Alert.alert("Greška", "Nije moguće dohvatiti lokaciju.");
+      Alert.alert(t("common.error"), t("map.locationError"));
     }
   };
 
@@ -5000,7 +5266,10 @@ export default function DashboardScreen() {
     try {
       const result = await geocodeCity(cityQuery.trim());
       if (!result) {
-        Alert.alert("Nije pronađeno", `Grad "${cityQuery}" nije pronađen.`);
+        Alert.alert(
+          t("common.noResults"),
+          `${t("common.noResults")}: "${cityQuery}"`,
+        );
         return;
       }
       setSearchLocation({
@@ -5018,11 +5287,11 @@ export default function DashboardScreen() {
       setMapRegion(region);
       mapRef.current?.animateToRegion(region, 1000);
       Alert.alert(
-        "📍 Lokacija promijenjena",
-        `Pretraživanje oko: ${result.displayName}`,
+        t("map.locationChanged"),
+        t("map.searchingAround", { name: result.displayName }),
       );
     } catch {
-      Alert.alert("Greška", "Nije moguće dohvatiti lokaciju grada.");
+      Alert.alert(t("common.error"), t("map.locationError"));
     } finally {
       setCitySearching(false);
     }
@@ -5112,7 +5381,7 @@ export default function DashboardScreen() {
       setSearchResults(results);
       setShowSearchResults(true);
     } catch {
-      Alert.alert("Greška", "Pretraga nije uspjela.");
+      Alert.alert(t("common.error"), t("common.tryAgain"));
     } finally {
       setIsSearching(false);
     }
@@ -5153,7 +5422,10 @@ export default function DashboardScreen() {
 
   const handleMarkVisited = async (place: Place) => {
     if (visits.find((v) => v.placeId === place.id)) {
-      Alert.alert("Već posjećeno", `${place.name} je već u arhivi.`);
+      Alert.alert(
+        t("map.markedVisited"),
+        t("map.alreadyVisited", { name: place.name }),
+      );
       return;
     }
     const nv: VisitRecord = {
@@ -5176,7 +5448,11 @@ export default function DashboardScreen() {
           "🏆 Nova značka!",
           `Zaradili ste:\n"${BADGE_NAMES[b.category]?.[b.level] || `Značka ${b.level}`}"`,
         );
-    } else Alert.alert("✅ Posjećeno!", `${place.name} dodano u arhivu.`);
+    } else
+      Alert.alert(
+        t("map.markedVisited"),
+        t("map.addedToArchive", { name: place.name }),
+      );
   };
 
   const handleDeleteVisit = async (id: string) => {
@@ -5339,7 +5615,7 @@ export default function DashboardScreen() {
             onPress={() => setShowFilterPanel(true)}
           >
             <Text style={s.topBtnText}>
-              🔍 Filtri
+              {t("map.filters")}
               {selectedTypes.length > 0 ? ` (${selectedTypes.length})` : ""}
             </Text>
           </TouchableOpacity>
@@ -5415,12 +5691,15 @@ export default function DashboardScreen() {
       {isLoadingPlaces && (
         <View style={s.loadingBar}>
           <ActivityIndicator color="#fff" size="small" />
-          <Text style={s.loadingTxt}>Učitavam mjesta...</Text>
+          <Text style={s.loadingTxt}>{t("map.loading")}</Text>
         </View>
       )}
       {!isLoadingPlaces && (allPlaces.length > 0 || showOnlyVisited) && (
         <View style={s.bottomBar}>
           <Text style={s.countTxt}>
+            {showOnlyVisited
+              ? `✓ ${visits.length} ${t("map.visitedOnly")}`
+              : `📍 ${t("map.shown", { shown: Math.min(displayLimit, allPlaces.length), total: allPlaces.length })}`}
             {showOnlyVisited
               ? `✓ ${visits.length} posjećenih mjesta`
               : `📍 Prikazano ${Math.min(displayLimit, allPlaces.length)} od ${allPlaces.length} mjesta`}
@@ -5459,7 +5738,9 @@ export default function DashboardScreen() {
                 }
               }}
             >
-              <Text style={s.showMoreTxt}>+ Prikaži još {showMoreCount}</Text>
+              <Text style={s.showMoreTxt}>
+                {t("map.showMore", { count: showMoreCount })}
+              </Text>
             </TouchableOpacity>
           )}
         </View>
@@ -6103,6 +6384,8 @@ export default function DashboardScreen() {
         visible={showPlanMyDay}
         userLocation={userLocation}
         onClose={() => setShowPlanMyDay(false)}
+        onMarkVisited={handleMarkVisited}
+        visits={visits}
       />
       <NotificationSettingsModal
         visible={showNotifSettings}

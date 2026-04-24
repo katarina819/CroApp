@@ -3,6 +3,7 @@ import { Ionicons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { router } from "expo-router";
 import { useEffect, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import {
   ActivityIndicator,
   Alert,
@@ -20,6 +21,7 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { StoryBadge } from "../../app/StoryBadge";
+import UserAvatar from "../../components/UserAvatar";
 import { API_BASE_URL, API_ENDPOINTS } from "../config/api";
 
 interface User {
@@ -45,6 +47,7 @@ function ComposeMessageModal({
   recipient: User | null;
   onClose: () => void;
 }) {
+  const { t } = useTranslation();
   const [message, setMessage] = useState("");
   const [sending, setSending] = useState(false);
 
@@ -66,17 +69,18 @@ function ComposeMessageModal({
       });
       if (res.ok) {
         Alert.alert(
-          "Poslano! ✅",
-          `Poruka je poslana korisniku @${recipient.username}`,
+          t("common.success"),
+          t("search.messageSent", { username: recipient.username }),
         );
         setMessage("");
         onClose();
       } else {
         const err = await res.text();
-        Alert.alert("Greška", err || "Poruka nije poslana");
+
+        Alert.alert(t("common.error"), err || t("search.messageFailed"));
       }
     } catch {
-      Alert.alert("Greška", "Nije moguće poslati poruku. Provjeri vezu.");
+      Alert.alert(t("common.error"), t("search.messageFailedCheckConnection"));
     } finally {
       setSending(false);
     }
@@ -115,7 +119,7 @@ function ComposeMessageModal({
             <TouchableOpacity onPress={handleClose}>
               <Ionicons name="close" size={28} color="#333" />
             </TouchableOpacity>
-            <Text style={cs.title}>Nova poruka</Text>
+            <Text style={cs.title}>{t("search.sendMessage")}</Text>
             <TouchableOpacity
               style={[
                 cs.sendHeaderBtn,
@@ -127,14 +131,14 @@ function ComposeMessageModal({
               {sending ? (
                 <ActivityIndicator size="small" color="#fff" />
               ) : (
-                <Text style={cs.sendHeaderBtnText}>Pošalji</Text>
+                <Text style={cs.sendHeaderBtnText}>{t("search.sendBtn")}</Text>
               )}
             </TouchableOpacity>
           </View>
 
           {/* Recipient */}
           <View style={cs.recipientRow}>
-            <Text style={cs.toLabel}>Za:</Text>
+            <Text style={cs.toLabel}>{t("search.messageTo")}</Text>
             <View style={cs.recipientChip}>
               {recipient.avatar ? (
                 <Image
@@ -154,7 +158,7 @@ function ComposeMessageModal({
           <View style={cs.inputArea}>
             <TextInput
               style={cs.input}
-              placeholder={`Napiši poruku za ${firstName}...`}
+              placeholder={t("search.messagePlaceholder", { name: firstName })}
               placeholderTextColor="#bbb"
               value={message}
               onChangeText={setMessage}
@@ -168,7 +172,7 @@ function ComposeMessageModal({
 
           {/* Quick suggestions */}
           <View style={cs.suggestions}>
-            <Text style={cs.suggestionsLabel}>Brze poruke:</Text>
+            <Text style={cs.suggestionsLabel}>{t("search.quickMessages")}</Text>
             <View style={cs.suggestionsList}>
               {["Hej! 👋", "Kako si?", "Vidimo se uskoro!", "Odlično! 🔥"].map(
                 (s) => (
@@ -252,6 +256,7 @@ const cs = StyleSheet.create({
 
 // ── Main Search Screen ─────────────────────────────────────────────────────────
 export default function SearchScreen() {
+  const { t } = useTranslation();
   const [query, setQuery] = useState("");
   const [users, setUsers] = useState<User[]>([]);
   const [filtered, setFiltered] = useState<User[]>([]);
@@ -305,7 +310,7 @@ export default function SearchScreen() {
         console.error("Error loading following list:", error);
       }
     } catch (e) {
-      if (!silent) Alert.alert("Greška", "Nije moguće učitati korisnike");
+      if (!silent) Alert.alert(t("common.error"), t("search.loadFailed"));
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -371,10 +376,7 @@ export default function SearchScreen() {
     } catch (e) {
       console.error("Follow/unfollow failed:", e);
       setFollowingMap((p) => ({ ...p, [userId]: isFollowing }));
-      Alert.alert(
-        "Greška",
-        "Nije moguće pratiti korisnika. Provjerite server.",
-      );
+      Alert.alert(t("common.error"), t("search.followFailed"));
     } finally {
       setLoadingFollow((p) => ({ ...p, [userId]: false }));
     }
@@ -394,20 +396,8 @@ export default function SearchScreen() {
   };
 
   const renderUser = ({ item }: { item: User }) => {
-    // API vraća firstname i lastname (mala slova), ne firstName i lastName
     const firstName = item.firstname || item.firstName || "";
     const lastName = item.lastname || item.lastName || "";
-
-    const initials =
-      `${firstName?.[0] || ""}${lastName?.[0] || ""}`.toUpperCase();
-
-    // Isto za avatar URL
-    let avatarUrl = null;
-    if (item.avatar) {
-      avatarUrl = item.avatar.startsWith("http")
-        ? item.avatar
-        : `${API_BASE_URL}${item.avatar}`;
-    }
 
     const isFollowing = followingMap[item.id] || false;
     const isLoadingThis = loadingFollow[item.id] || false;
@@ -419,13 +409,12 @@ export default function SearchScreen() {
           onPress={() => handleViewProfile(item)}
         >
           <StoryBadge userId={item.id} size={54}>
-            {avatarUrl ? (
-              <Image source={{ uri: avatarUrl }} style={styles.avatar} />
-            ) : (
-              <View style={[styles.avatar, styles.avatarPlaceholder]}>
-                <Text style={styles.avatarText}>{initials || "?"}</Text>
-              </View>
-            )}
+            <UserAvatar
+              avatar={item.avatar}
+              firstName={firstName}
+              lastName={lastName}
+              size={54}
+            />
           </StoryBadge>
         </TouchableOpacity>
 
@@ -439,7 +428,7 @@ export default function SearchScreen() {
           <Text style={styles.userUsername}>@{item.username}</Text>
           {item.followersCount !== undefined && (
             <Text style={styles.followersCount}>
-              {item.followersCount} pratitelja
+              {t("search.followers", { count: item.followersCount })}
             </Text>
           )}
         </TouchableOpacity>
@@ -462,7 +451,7 @@ export default function SearchScreen() {
                   isFollowing && styles.followingBtnText,
                 ]}
               >
-                {isFollowing ? "Praćenje" : "Prati"}
+                {isFollowing ? t("search.following") : t("search.follow")}
               </Text>
             )}
           </TouchableOpacity>
@@ -482,7 +471,7 @@ export default function SearchScreen() {
     <SafeAreaView style={styles.safeArea} edges={["top"]}>
       <View style={styles.container}>
         <View style={styles.header}>
-          <Text style={styles.headerTitle}>Pretraga</Text>
+          <Text style={styles.headerTitle}>{t("search.title")}</Text>
         </View>
 
         <View style={styles.searchBar}>
@@ -494,7 +483,7 @@ export default function SearchScreen() {
           />
           <TextInput
             style={styles.searchInput}
-            placeholder="Pretraži korisnike..."
+            placeholder={t("search.placeholder")}
             placeholderTextColor="#999"
             value={query}
             onChangeText={setQuery}
@@ -511,14 +500,14 @@ export default function SearchScreen() {
 
         {!loading && query.length > 0 && (
           <Text style={styles.resultsInfo}>
-            {filtered.length} {filtered.length === 1 ? "korisnik" : "korisnika"}
+            {t("search.results", { count: filtered.length })}
           </Text>
         )}
 
         {loading ? (
           <View style={styles.center}>
             <ActivityIndicator size="large" color="#2D6418" />
-            <Text style={styles.loadingText}>Učitavanje korisnika...</Text>
+            <Text style={styles.loadingText}>{t("search.loading")}</Text>
           </View>
         ) : (
           <FlatList
@@ -543,12 +532,12 @@ export default function SearchScreen() {
               <View style={styles.emptyContainer}>
                 <Ionicons name="people-outline" size={64} color="#d0d0d0" />
                 <Text style={styles.emptyTitle}>
-                  {query ? "Nema rezultata" : "Nema korisnika"}
+                  {query ? t("search.noResults") : t("search.noUsers")}
                 </Text>
                 <Text style={styles.emptySubtitle}>
                   {query
-                    ? `Nema korisnika koji odgovaraju "${query}"`
-                    : "Biti ćete prvi!"}
+                    ? t("search.noResultsDesc", { query })
+                    : t("search.noUsersDesc")}
                 </Text>
               </View>
             }

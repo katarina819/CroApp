@@ -5,6 +5,7 @@ import * as ImagePicker from "expo-image-picker";
 import { router, useFocusEffect } from "expo-router";
 import { VideoView, useVideoPlayer } from "expo-video";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import {
   ActivityIndicator,
   Alert,
@@ -23,6 +24,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import Svg, { Defs, LinearGradient, Path, Stop } from "react-native-svg";
 import { StoryBadge } from "../../app/StoryBadge";
+import UserAvatar from "../../components/UserAvatar";
 import { API_BASE_URL } from "../config/api";
 import { useUser } from "./../contexts/UserContext";
 
@@ -291,12 +293,44 @@ function AvatarSection({ onUpdate }: { onUpdate: () => void }) {
   const [showAvatarModal, setShowAvatarModal] = useState(false);
 
   const pickAndUpload = async () => {
-    Alert.alert("Profilna slika", "Odaberi izvor", [
-      { text: "Galerija", onPress: () => pickImage("gallery") },
-      { text: "Odaberi avatar", onPress: () => setShowAvatarModal(true) },
-      { text: "Kamera", onPress: () => pickImage("camera") },
-      { text: "Ukloni sliku", style: "destructive", onPress: removeAvatar },
-      { text: "Odustani", style: "cancel" },
+    const { t } = useTranslation(); // dodaj useTranslation na vrh AvatarSection
+
+    Alert.alert(t("profile.profilePicture"), t("profile.selectSource"), [
+      { text: t("profile.gallery"), onPress: () => pickImage("gallery") },
+      {
+        text: t("profile.selectAvatar"),
+        onPress: () => setShowAvatarModal(true),
+      },
+      { text: t("profile.camera"), onPress: () => pickImage("camera") },
+      {
+        // NOVA OPCIJA: bez slike - samo inicijali
+        text: t("profile.noPhoto"),
+        onPress: async () => {
+          setLoading(true);
+          try {
+            const token = await AsyncStorage.getItem("token");
+            const res = await fetch(`${API_BASE_URL}/api/auth/profile-photo`, {
+              method: "DELETE",
+              headers: { Authorization: `Bearer ${token}` },
+            });
+            if (res.ok) {
+              updateAvatar(""); // prazan string = inicijali
+              await refreshProfile();
+              onUpdate();
+            }
+          } catch {
+            Alert.alert(t("common.error"), t("profile.photoError"));
+          } finally {
+            setLoading(false);
+          }
+        },
+      },
+      {
+        text: t("profile.removePhoto"),
+        style: "destructive",
+        onPress: removeAvatar,
+      },
+      { text: t("common.cancel"), style: "cancel" },
     ]);
   };
 
@@ -898,15 +932,13 @@ function FollowListModal({
                       } as any);
                     }}
                   >
-                    {item.avatar ? (
-                      <Image source={{ uri: item.avatar }} style={fl.avatar} />
-                    ) : (
-                      <View style={[fl.avatar, fl.avatarPlaceholder]}>
-                        <Text style={fl.avatarText}>{initials}</Text>
-                      </View>
-                    )}
+                    <UserAvatar
+                      avatar={item.avatar}
+                      firstName={item.firstName}
+                      lastName={item.lastName}
+                      size={50}
+                    />
                   </TouchableOpacity>
-
                   <TouchableOpacity
                     style={fl.userInfo}
                     onPress={() => {
@@ -2331,7 +2363,7 @@ function GoldenFriendsTab() {
 
         return (
           <View style={tab.listItem}>
-            {/* Avatar - prikaži profilnu sliku ako postoji */}
+            {/* Avatar - koristi UserAvatar komponentu */}
             <TouchableOpacity
               onPress={() =>
                 router.push({
@@ -2340,21 +2372,12 @@ function GoldenFriendsTab() {
                 } as any)
               }
             >
-              {item.avatar ? (
-                <Image
-                  source={{ uri: item.avatar }}
-                  style={{ width: 50, height: 50, borderRadius: 25 }}
-                />
-              ) : (
-                <View
-                  style={[
-                    styles.goldenAvatar,
-                    { width: 50, height: 50, borderRadius: 25 },
-                  ]}
-                >
-                  <Text style={styles.goldenAvatarText}>{initials || "?"}</Text>
-                </View>
-              )}
+              <UserAvatar
+                avatar={item.avatar}
+                firstName={item.firstName}
+                lastName={item.lastName}
+                size={50}
+              />
             </TouchableOpacity>
 
             <TouchableOpacity
@@ -2430,6 +2453,8 @@ function SettingsModal({
   const [showBlocked, setShowBlocked] = useState(false);
   const [showActivityArchive, setShowActivityArchive] = useState(false);
   const [saving, setSaving] = useState(false);
+  const { i18n } = useTranslation();
+  const [currentLang, setCurrentLang] = useState(i18n.language || "hr");
 
   useEffect(() => {
     if (profile) {
@@ -2438,6 +2463,20 @@ function SettingsModal({
       setScreenLimit(profile.screenTimeLimitMinutes ?? 0);
     }
   }, [profile]);
+
+  const LANGUAGES = [
+    { code: "hr", label: "Hrvatski", flag: "🇭🇷" },
+    { code: "en", label: "English", flag: "🇬🇧" },
+    { code: "de", label: "Deutsch", flag: "🇩🇪" },
+    { code: "it", label: "Italiano", flag: "🇮🇹" },
+    { code: "fr", label: "Français", flag: "🇫🇷" },
+  ];
+
+  const changeLanguage = async (langCode: string) => {
+    await i18n.changeLanguage(langCode);
+    setCurrentLang(langCode);
+    await AsyncStorage.setItem("appLanguage", langCode);
+  };
 
   const saveSettings = async () => {
     setSaving(true);
@@ -2576,6 +2615,48 @@ function SettingsModal({
         </View>
 
         <ScrollView contentContainerStyle={{ paddingBottom: 80 }}>
+          {/* ─── JEZIK ─────────────────────────────────────── */}
+          <View style={sm.section}>
+            <Text style={sm.sectionTitle}>Jezik aplikacije</Text>
+            <View style={langStyles.currentLang}>
+              <Text style={langStyles.currentLangLabel}>Trenutni jezik:</Text>
+              <Text style={langStyles.currentLangValue}>
+                {LANGUAGES.find((l) => l.code === currentLang)?.flag}{" "}
+                {LANGUAGES.find((l) => l.code === currentLang)?.label}
+              </Text>
+            </View>
+            <View style={langStyles.langGrid}>
+              {LANGUAGES.map((lang) => (
+                <TouchableOpacity
+                  key={lang.code}
+                  style={[
+                    langStyles.langBtn,
+                    currentLang === lang.code && langStyles.langBtnActive,
+                  ]}
+                  onPress={() => changeLanguage(lang.code)}
+                >
+                  <Text style={langStyles.langFlag}>{lang.flag}</Text>
+                  <Text
+                    style={[
+                      langStyles.langLabel,
+                      currentLang === lang.code && langStyles.langLabelActive,
+                    ]}
+                  >
+                    {lang.label}
+                  </Text>
+                  {currentLang === lang.code && (
+                    <Ionicons
+                      name="checkmark-circle"
+                      size={16}
+                      color="#2D6418"
+                      style={{ position: "absolute", top: 6, right: 6 }}
+                    />
+                  )}
+                </TouchableOpacity>
+              ))}
+            </View>
+          </View>
+
           {/* Privacy */}
           <View style={sm.section}>
             <Text style={sm.sectionTitle}>Privatnost</Text>
@@ -2717,6 +2798,60 @@ function SettingsModal({
     </Modal>
   );
 }
+
+const langStyles = StyleSheet.create({
+  currentLang: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    backgroundColor: "#f0f7ee",
+    padding: 12,
+    borderRadius: 10,
+    marginBottom: 12,
+  },
+  currentLangLabel: {
+    fontSize: 14,
+    color: "#666",
+  },
+  currentLangValue: {
+    fontSize: 14,
+    fontWeight: "700",
+    color: "#2D6418",
+  },
+  langGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 8,
+  },
+  langBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderRadius: 20,
+    backgroundColor: "#f0f0f0",
+    borderWidth: 1.5,
+    borderColor: "transparent",
+    position: "relative",
+    paddingRight: 28,
+  },
+  langBtnActive: {
+    backgroundColor: "#f0f7ee",
+    borderColor: "#2D6418",
+  },
+  langFlag: {
+    fontSize: 18,
+  },
+  langLabel: {
+    fontSize: 13,
+    fontWeight: "600",
+    color: "#555",
+  },
+  langLabelActive: {
+    color: "#2D6418",
+  },
+});
 
 const sm = StyleSheet.create({
   header: {

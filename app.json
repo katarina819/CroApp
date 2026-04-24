@@ -10,9 +10,16 @@
     "newArchEnabled": true,
     "ios": {
       "supportsTablet": true,
+      "bundleIdentifier": "com.anonymous.cromapmobile",
       "infoPlist": {
         "NSLocationWhenInUseUsageDescription": "VARA koristi tvoju lokaciju za prikaz restorana, kafića, plaža i drugih zanimljivih mjesta u tvojoj blizini.",
-        "NSLocationAlwaysAndWhenInUseUsageDescription": "VARA koristi tvoju lokaciju za prikaz restorana, kafića, plaža i drugih zanimljivih mjesta u tvojoj blizini, čak i kada aplikacija radi u pozadini."
+        "NSLocationAlwaysAndWhenInUseUsageDescription": "VARA koristi tvoju lokaciju za prikaz restorana, kafića, plaža i drugih zanimljivih mjesta u tvojoj blizini, čak i kada aplikacija radi u pozadini.",
+        "CFBundleURLTypes": [
+          // ← dodaj ovo za iOS deep links
+          {
+            "CFBundleURLSchemes": ["vara"]
+          }
+        ]
       }
     },
     "android": {
@@ -54,7 +61,8 @@
           "autoVerify": true,
           "data": [
             {
-              "scheme": "vara"
+              "scheme": "vara",
+              "host": "*"
             }
           ],
           "category": ["BROWSABLE", "DEFAULT"]

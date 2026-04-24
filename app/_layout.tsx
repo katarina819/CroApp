@@ -13,14 +13,25 @@ export default function RootLayout() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const handleDeepLink = (event: { url: string }) => {
+    // Handle deep link kada je app zatvorena (cold start)
+    Linking.getInitialURL().then((url) => {
+      if (url) {
+        const { path } = Linking.parse(url);
+        // Ne navigiraj odmah - checkAuth će se pobrinuti za routing
+        // Samo logiraj za debug
+        console.log("🔗 Initial deep link:", url, "path:", path);
+      }
+    });
+
+    // Handle deep link kada je app u pozadini (warm start)
+    const subscription = Linking.addEventListener("url", (event) => {
       const { path } = Linking.parse(event.url);
+      console.log("🔗 Deep link received:", event.url, "path:", path);
       if (path === "login") {
         router.replace("/login");
       }
-    };
+    });
 
-    const subscription = Linking.addEventListener("url", handleDeepLink);
     return () => subscription.remove();
   }, []);
 
