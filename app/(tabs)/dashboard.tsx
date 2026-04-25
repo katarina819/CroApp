@@ -1099,7 +1099,7 @@ function NotificationSettingsModal({
                   color: "#333",
                   marginBottom: 16,
                 }}
-                placeholder="Unesite email adresu"
+                placeholder={t("auth.emailPlaceholder")}
                 placeholderTextColor="#bbb"
                 value={p.email}
                 onChangeText={(v) => setP((x) => ({ ...x, email: v }))}
@@ -1402,7 +1402,7 @@ export function ActivityGroupsModal({
     try {
       const token = await AsyncStorage.getItem("token");
       if (!token) {
-        Alert.alert("Greška", "Niste prijavljeni");
+        Alert.alert(t("common.error"), t("auth.notLoggedIn"));
         return;
       }
 
@@ -1630,7 +1630,7 @@ export function ActivityGroupsModal({
         setShowDMCompose(true);
       }
     } catch {
-      Alert.alert("Greška", "Nije moguće pronaći korisnika.");
+      Alert.alert(t("common.error"), t("userProfile.messageFailed"));
     }
   };
 
@@ -3708,42 +3708,46 @@ Plan napiši po danima s vremenima, KONKRETNIM imenima mjesta (npr. "Restoran Ad
 
   const copyPlan = () => {
     Share.share({ message: result }).catch(() =>
-      Alert.alert("Greška", "Nije moguće dijeliti plan."),
+      Alert.alert(t("common.error"), t("plan.shareFailed")),
     );
   };
 
-  const PERIOD_OPTIONS: { key: PlanPeriod; label: string }[] = [
-    { key: "dan", label: "1 dan" },
-    { key: "vikend", label: "Vikend" },
-    { key: "tjedan", label: "Tjedan" },
-    { key: "2tjedna", label: "2 tjedna" },
-    { key: "godisnji", label: "Godišnji" },
+  const PERIOD_OPTIONS: { key: PlanPeriod; labelKey: string }[] = [
+    { key: "dan", labelKey: "plan.day1" },
+    { key: "vikend", labelKey: "plan.weekend" },
+    { key: "tjedan", labelKey: "plan.week" },
+    { key: "2tjedna", labelKey: "plan.twoWeeks" },
+    { key: "godisnji", labelKey: "plan.vacation" },
   ];
   const COMPANION_OPTIONS: {
     key: CompanionType;
-    label: string;
+    labelKey: string;
     icon: string;
   }[] = [
-    { key: "solo", label: "Sam/a", icon: "🧑" },
-    { key: "partner", label: "Partner", icon: "💑" },
-    { key: "prijatelji", label: "Prijatelji", icon: "👫" },
-    { key: "obitelj", label: "Obitelj", icon: "👨‍👩‍👧" },
-    { key: "misovito", label: "Mješovito", icon: "🎉" },
+    { key: "solo", labelKey: "plan.solo", icon: "🧑" },
+    { key: "partner", labelKey: "plan.partner", icon: "💑" },
+    { key: "prijatelji", labelKey: "plan.friends", icon: "👫" },
+    { key: "obitelj", labelKey: "plan.family", icon: "👨‍👩‍👧" },
+    { key: "misovito", labelKey: "plan.mixed", icon: "🎉" },
   ];
   const TRANSPORT_OPTIONS: {
     key: TransportType;
-    label: string;
+    labelKey: string;
     icon: string;
   }[] = [
-    { key: "auto", label: "Auto", icon: "🚗" },
-    { key: "javni", label: "Javni pr.", icon: "🚌" },
-    { key: "pjesice", label: "Pješice", icon: "🚶" },
-    { key: "bicikl", label: "Bicikl", icon: "🚲" },
+    { key: "auto", labelKey: "plan.car", icon: "🚗" },
+    { key: "javni", labelKey: "plan.public", icon: "🚌" },
+    { key: "pjesice", labelKey: "plan.walking", icon: "🚶" },
+    { key: "bicikl", labelKey: "plan.bicycle", icon: "🚲" },
   ];
-  const PREF_OPTIONS: { key: PreferenceType; label: string; icon: string }[] = [
-    { key: "otvoreno", label: "Otvoreno", icon: "🌞" },
-    { key: "zatvoreno", label: "Zatvoreno", icon: "🏠" },
-    { key: "kombinirano", label: "Kombinirano", icon: "🌤️" },
+  const PREF_OPTIONS: {
+    key: PreferenceType;
+    labelKey: string;
+    icon: string;
+  }[] = [
+    { key: "otvoreno", labelKey: "plan.outdoors", icon: "🌞" },
+    { key: "zatvoreno", labelKey: "plan.indoors", icon: "🏠" },
+    { key: "kombinirano", labelKey: "plan.combined", icon: "🌤️" },
   ];
 
   return (
@@ -3764,7 +3768,7 @@ Plan napiši po danima s vremenima, KONKRETNIM imenima mjesta (npr. "Restoran Ad
             <View style={{ width: 60 }} />
           ) : (
             <TouchableOpacity onPress={handleClose}>
-              <Text style={pm.headerLink}>✕ Zatvori</Text>
+              <Text style={pm.headerLink}>✕ {t("common.close")}</Text>
             </TouchableOpacity>
           )}
           <Text style={pm.headerTitle}>
@@ -3976,7 +3980,7 @@ Plan napiši po danima s vremenima, KONKRETNIM imenima mjesta (npr. "Restoran Ad
 
             {/* Vizualna legenda */}
             <View style={mapLegend.legendContainer}>
-              <Text style={mapLegend.legendTitle}>Legenda markera</Text>
+              <Text style={mapLegend.legendTitle}>{t("plan.mapLegend")}</Text>
               <ScrollView horizontal showsHorizontalScrollIndicator={false}>
                 <View style={mapLegend.legendRow}>
                   {accommodationCoords && (
@@ -4033,7 +4037,7 @@ Plan napiši po danima s vremenima, KONKRETNIM imenima mjesta (npr. "Restoran Ad
             {accommodationCoords && Object.entries(allVenues).length > 0 && (
               <View style={mapLegend.distanceSection}>
                 <Text style={mapLegend.distanceTitle}>
-                  📏 Udaljenost od smještaja
+                  {t("plan.distanceFromAccommodation")}
                 </Text>
                 <View style={mapLegend.distanceGrid}>
                   {Object.entries(allVenues).map(([type, options]) => {
@@ -4270,7 +4274,7 @@ Plan napiši po danima s vremenima, KONKRETNIM imenima mjesta (npr. "Restoran Ad
                         period === o.key && pm.chipTextActive,
                       ]}
                     >
-                      {o.label}
+                      {t(o.labelKey)}
                     </Text>
                   </TouchableOpacity>
                 ))}
@@ -4280,7 +4284,7 @@ Plan napiši po danima s vremenima, KONKRETNIM imenima mjesta (npr. "Restoran Ad
               <Text style={pm.sectionTitle}>{t("map.travelers")}</Text>
               <View style={pm.row}>
                 <View style={{ flex: 1 }}>
-                  <Text style={pm.label}>Broj osoba</Text>
+                  <Text style={pm.label}>{t("plan.numberOfPeople")}</Text>
                   <View style={pm.chipRow}>
                     {["1", "2", "3", "4", "5+"].map((n) => (
                       <TouchableOpacity
@@ -4302,7 +4306,7 @@ Plan napiši po danima s vremenima, KONKRETNIM imenima mjesta (npr. "Restoran Ad
                   </View>
                 </View>
               </View>
-              <Text style={pm.label}>S kim putuješ?</Text>
+              <Text style={pm.label}>{t("plan.travelWith")}</Text>
               <View style={pm.chipRow}>
                 {COMPANION_OPTIONS.map((o) => (
                   <TouchableOpacity
@@ -4317,7 +4321,7 @@ Plan napiši po danima s vremenima, KONKRETNIM imenima mjesta (npr. "Restoran Ad
                         companions === o.key && pm.chipTextActive,
                       ]}
                     >
-                      {o.label}
+                      {t(o.labelKey)}
                     </Text>
                   </TouchableOpacity>
                 ))}
@@ -4386,7 +4390,7 @@ Plan napiši po danima s vremenima, KONKRETNIM imenima mjesta (npr. "Restoran Ad
                         transport === o.key && pm.chipTextActive,
                       ]}
                     >
-                      {o.label}
+                      {t(o.labelKey)}
                     </Text>
                   </TouchableOpacity>
                 ))}
@@ -4408,7 +4412,7 @@ Plan napiši po danima s vremenima, KONKRETNIM imenima mjesta (npr. "Restoran Ad
                         preference === o.key && pm.chipTextActive,
                       ]}
                     >
-                      {o.label}
+                      {t(o.labelKey)}
                     </Text>
                   </TouchableOpacity>
                 ))}
@@ -4478,8 +4482,9 @@ Plan napiši po danima s vremenima, KONKRETNIM imenima mjesta (npr. "Restoran Ad
                 <Text style={pm.generateBtnText}>{t("map.generatePlan")}</Text>
               </TouchableOpacity>
               <Text style={pm.generateHint}>
-                AI će pronaći stvarna mjesta u {destination || "destinaciji"} i
-                izraditi konkretan plan
+                {t("plan.generateHint", {
+                  destination: destination || t("plan.destination"),
+                })}
               </Text>
             </ScrollView>
           </KeyboardAvoidingView>
@@ -5825,7 +5830,7 @@ export default function DashboardScreen() {
             }}
           >
             <Text style={{ fontSize: 22, fontWeight: "800", color: "#1a1a1a" }}>
-              🔍 Filteri
+              🔍 {t("map.filters")}
             </Text>
             <TouchableOpacity onPress={() => setShowFilterPanel(false)}>
               <Text
@@ -6281,8 +6286,7 @@ export default function DashboardScreen() {
                 })}
               </Text>
               <Text style={{ fontSize: 12, color: "#999", marginBottom: 12 }}>
-                Početno se prikazuje 10 rezultata. Koristite "Prikaži više" za
-                dodatne.
+                {t("map.displayLimitHint")}
               </Text>
               {allPlaces.length > 0 && (
                 <View
