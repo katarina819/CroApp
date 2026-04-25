@@ -6,7 +6,13 @@
 //   4. Strogi filteri dolaze iz locationService.ts (v5)
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as Location from "expo-location";
-import React, { useCallback, useEffect, useRef, useState } from "react";
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { useTranslation } from "react-i18next";
 import {
   ActivityIndicator,
@@ -142,12 +148,7 @@ const EMOJIS: Record<string, string> = {
   cave: "🕳️",
   spa: "💧",
 };
-const ALL_CATS = Object.entries(placeCategories).map(([id, c]) => ({
-  id,
-  name: c.name,
-  icon: EMOJIS[id] || "📍",
-  color: c.color,
-}));
+
 const BADGE_T = [10, 20, 30, 40, 50];
 const BADGE_NAMES: Record<string, Record<number, string>> = {
   restaurant: {
@@ -703,7 +704,10 @@ function PlaceDetailModal({
               <View style={dm.body}>
                 <View style={[dm.badge, { backgroundColor: color }]}>
                   <Text style={dm.badgeTxt}>
-                    {emoji} {cat?.name || place.type}
+                    {emoji}{" "}
+                    {t(`categories.${place.type}`, {
+                      defaultValue: place.type,
+                    })}
                   </Text>
                 </View>
                 <Text style={dm.name}>{place.name}</Text>
@@ -739,7 +743,12 @@ function PlaceDetailModal({
 
                 <View style={dm.notifRow}>
                   <Text style={dm.notifLabel}>
-                    🔔 {t("map.notifications", { category: cat?.name || "" })}
+                    🔔{" "}
+                    {t("map.notifications", {
+                      category: t(`categories.${place.type}`, {
+                        defaultValue: place.type,
+                      }),
+                    })}
                   </Text>
                   <Switch
                     value={isNotified}
@@ -813,7 +822,7 @@ function PlaceDetailModal({
                         fontSize: 15,
                       }}
                     >
-                      ✓ Posjećeno
+                      ✓ {t("map.visited")}
                     </Text>
                   </View>
                 )}
@@ -972,8 +981,22 @@ function NotificationSettingsModal({
   prefs: NotifPrefs;
   onClose: () => void;
   onSave: (p: NotifPrefs) => void;
+  getAllCategories: () => {
+    id: string;
+    name: string;
+    icon: string;
+    color: string;
+  }[];
 }) {
   const { t } = useTranslation();
+  const getAllCategories = useCallback(() => {
+    return Object.entries(placeCategories).map(([id, c]) => ({
+      id,
+      name: t(`categories.${id}`, { defaultValue: id }),
+      icon: EMOJIS[id] || "📍",
+      color: c.color,
+    }));
+  }, [t]);
   const [p, setP] = useState<NotifPrefs>(prefs);
   useEffect(() => {
     setP(prefs);
@@ -1017,14 +1040,14 @@ function NotificationSettingsModal({
               borderBottomColor: "#eee",
             }}
           >
-            <Text style={{ fontSize: 19, fontWeight: "800", color: "#1a1a1a" }}>
-              🔔 Postavke obavijesti
+            <Text style={{ fontSize: 19, fontWeight: "800" }}>
+              🔔 {t("map.notifSettings")}
             </Text>
             <TouchableOpacity onPress={onClose}>
               <Text
                 style={{ fontSize: 16, color: "#667eea", fontWeight: "600" }}
               >
-                Zatvori
+                {t("common.close")}
               </Text>
             </TouchableOpacity>
           </View>
@@ -1038,7 +1061,7 @@ function NotificationSettingsModal({
               }}
             >
               <Text style={{ fontSize: 15, fontWeight: "700" }}>
-                📱 App obavijesti
+                {t("map.appNotifications")}
               </Text>
               <Switch
                 value={p.appEnabled}
@@ -1056,7 +1079,7 @@ function NotificationSettingsModal({
               }}
             >
               <Text style={{ fontSize: 15, fontWeight: "700" }}>
-                📧 Email obavijesti
+                {t("map.emailNotifications")}
               </Text>
               <Switch
                 value={p.emailEnabled}
@@ -1092,10 +1115,10 @@ function NotificationSettingsModal({
                 marginTop: 8,
               }}
             >
-              Kategorije za praćenje
+              {t("profile.notifications")}
             </Text>
             <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
-              {ALL_CATS.map((cat) => {
+              {getAllCategories().map((cat) => {
                 const on = p.categories.includes(cat.id);
                 return (
                   <TouchableOpacity
@@ -1119,7 +1142,8 @@ function NotificationSettingsModal({
                         color: on ? "#fff" : "#555",
                       }}
                     >
-                      {cat.name}
+                      {cat.name}{" "}
+                      {/* cat.name ovdje postoji jer getAllCategories vraća object s name property */}
                     </Text>
                   </TouchableOpacity>
                 );
@@ -1137,13 +1161,13 @@ function NotificationSettingsModal({
                 onSave(p);
                 onClose();
                 Alert.alert(
-                  "Spremljeno ✅",
-                  "Postavke obavijesti su ažurirane.",
+                  t("profile.savedSuccess"),
+                  t("profile.updateSettingsSuccess"),
                 );
               }}
             >
               <Text style={{ color: "#fff", fontSize: 16, fontWeight: "700" }}>
-                Spremi postavke
+                {t("common.save")}
               </Text>
             </TouchableOpacity>
           </ScrollView>
@@ -1300,7 +1324,7 @@ export function ActivityGroupsModal({
     try {
       const token = await AsyncStorage.getItem("token");
       if (!token) {
-        Alert.alert("Greška", "Niste prijavljeni");
+        Alert.alert(t("common.error"), t("auth.notLoggedIn"));
         return;
       }
 
@@ -1363,14 +1387,11 @@ export function ActivityGroupsModal({
         });
       } else {
         const error = await res.text();
-        Alert.alert("Greška", `Nije moguće kreirati grupu: ${error}`);
+        Alert.alert(t("common.error"), t("groups.createFailed"));
       }
     } catch (error) {
       console.error("Error creating group:", error);
-      Alert.alert(
-        "Greška",
-        "Nije moguće kreirati grupu. Provjerite internet vezu.",
-      );
+      Alert.alert(t("common.error"), t("groups.createFailed"));
     }
   };
 
@@ -1407,11 +1428,10 @@ export function ActivityGroupsModal({
       }
     } catch (error) {
       console.error("Error joining group:", error);
-      Alert.alert("Greška", "Nije moguće pridružiti se grupi");
+      Alert.alert(t("common.error"), t("map.locationError"));
     }
   };
 
-  // ============================================================
   // 4. leaveGroup - napuštanje grupe na serveru
   // ============================================================
   const leaveGroup = async (groupId: string) => {
@@ -1435,7 +1455,7 @@ export function ActivityGroupsModal({
       if (res.ok) {
         await loadGroups();
         setSelectedGroup(null);
-        Alert.alert("Uspjeh", "Napustili ste grupu");
+        Alert.alert(t("common.success"), t("groups.leaveSuccess"));
       } else {
         const error = await res.json();
         Alert.alert("Greška", error.error || "Nije moguće napustiti grupu");
@@ -1526,14 +1546,14 @@ export function ActivityGroupsModal({
   const deleteGroup = async (groupId: string) => {
     const g = groups.find((x) => x.id === groupId);
     if (g?.creatorName !== myName) {
-      Alert.alert("Možete obrisati samo vlastitu grupu.");
+      Alert.alert(t("groups.deleteOwnOnly"), t("groups.deleteConfirm"));
       return;
     }
 
-    Alert.alert("Obriši grupu", "Jeste li sigurni?", [
-      { text: "Odustani", style: "cancel" },
+    Alert.alert(t("groups.deleteConfirm"), t("groups.deleteConfirmQuestion"), [
+      { text: t("common.cancel"), style: "cancel" },
       {
-        text: "Obriši",
+        text: t("common.delete"),
         style: "destructive",
         onPress: async () => {
           try {
@@ -1551,7 +1571,7 @@ export function ActivityGroupsModal({
             if (res.ok) {
               setGroups((prev) => prev.filter((x) => x.id !== groupId));
               setSelectedGroup(null);
-              Alert.alert("Uspjeh", "Grupa je obrisana");
+              Alert.alert(t("common.success"), t("groups.deleteSuccess"));
             } else {
               Alert.alert("Greška", "Nije moguće obrisati grupu");
             }
@@ -1587,7 +1607,10 @@ export function ActivityGroupsModal({
 
   const handleMemberPress = async (memberName: string) => {
     if (memberName === myName) {
-      Alert.alert("To si ti!", "Ne možeš poslati poruku samom sebi.");
+      Alert.alert(
+        t("profile.cannotMessageSelf"),
+        t("profile.cannotMessageSelfDesc"),
+      );
       return;
     }
     try {
@@ -1639,8 +1662,8 @@ export function ActivityGroupsModal({
         setShowDMCompose(false);
         setDmMessage("");
         Alert.alert(
-          "Poslano ✅",
-          `Direktna poruka je poslana korisniku ${dmTarget.name}.`,
+          t("messages.messageSent"),
+          t("messages.messageSentTo", { name: dmTarget.name }),
         );
       } else {
         Alert.alert("Greška", "Poruka nije poslana. Pokušajte ponovo.");
@@ -1692,7 +1715,9 @@ export function ActivityGroupsModal({
               </TouchableOpacity>
             ) : selectedGroup.members.includes(myName) ? (
               <TouchableOpacity onPress={() => leaveGroup(selectedGroup.id)}>
-                <Text style={{ color: "#fff", fontSize: 13 }}>Napusti</Text>
+                <Text style={{ color: "#fff", fontSize: 13 }}>
+                  {t("groups.leave")}
+                </Text>
               </TouchableOpacity>
             ) : null}
           </View>
@@ -1753,7 +1778,7 @@ export function ActivityGroupsModal({
                   <Text style={{ color: "#ccc", fontSize: 18 }}>+</Text>
                 </View>
                 <Text style={{ fontSize: 10, color: "#ccc", marginTop: 2 }}>
-                  Slobodno
+                  {t("groups.freeSpots")}
                 </Text>
               </View>
             ))}
@@ -1842,7 +1867,7 @@ export function ActivityGroupsModal({
             <View style={ag.inputRow}>
               <TextInput
                 style={ag.input}
-                placeholder="Napiši poruku grupi..."
+                placeholder={t("groups.sendMessage")}
                 placeholderTextColor="#aaa"
                 value={chatMsg}
                 onChangeText={setChatMsg}
@@ -1868,7 +1893,7 @@ export function ActivityGroupsModal({
                 style={ag.joinBtn}
                 onPress={() => joinGroup(selectedGroup.id)}
               >
-                <Text style={ag.joinBtnText}>🤝 Pridruži se grupi</Text>
+                <Text style={ag.joinBtnText}>{t("groups.joinGroup")}</Text>
               </TouchableOpacity>
             </View>
           )}
@@ -1895,7 +1920,7 @@ export function ActivityGroupsModal({
                     </Text>
                   </View>
                   <View style={{ flex: 1 }}>
-                    <Text style={ag.dmTitle}>Privatna poruka</Text>
+                    <Text style={ag.dmTitle}>{t("groups.privateMessage")}</Text>
                     <Text style={ag.dmSubtitle}>→ {dmTarget.name}</Text>
                   </View>
                   {!dmTarget.userId && (
@@ -1956,7 +1981,7 @@ export function ActivityGroupsModal({
                       setDmMessage("");
                     }}
                   >
-                    <Text style={ag.dmCancelText}>Odustani</Text>
+                    <Text style={ag.dmCancelText}>{t("common.cancel")}</Text>
                   </TouchableOpacity>
                   <TouchableOpacity
                     style={[
@@ -1972,7 +1997,7 @@ export function ActivityGroupsModal({
                     {sendingDM ? (
                       <ActivityIndicator size="small" color="#fff" />
                     ) : (
-                      <Text style={ag.dmSendText}>Pošalji DM 💬</Text>
+                      <Text style={ag.dmSendText}>{t("groups.sendDM")} 💬</Text>
                     )}
                   </TouchableOpacity>
                 </View>
@@ -1988,7 +2013,7 @@ export function ActivityGroupsModal({
         >
           <View style={ag.navHeader}>
             <TouchableOpacity onPress={() => setShowCreate(false)}>
-              <Text style={ag.navHeaderLink}>← Natrag</Text>
+              <Text style={ag.navHeaderLink}>← {t("common.back")}</Text>
             </TouchableOpacity>
             <Text style={ag.navHeaderTitle}>Nova aktivnost</Text>
             <View style={{ width: 60 }} />
@@ -1997,7 +2022,7 @@ export function ActivityGroupsModal({
             contentContainerStyle={{ padding: 20, paddingBottom: 40 }}
             keyboardShouldPersistTaps="handled"
           >
-            <Text style={ag.formLabel}>Vrsta aktivnosti</Text>
+            <Text style={ag.formLabel}>{t("groups.activityType")}</Text>
             <View
               style={{
                 flexDirection: "row",
@@ -2032,28 +2057,28 @@ export function ActivityGroupsModal({
                 </TouchableOpacity>
               ))}
             </View>
-            <Text style={ag.formLabel}>Opis aktivnosti *</Text>
+            <Text style={ag.formLabel}>{t("groups.activityDesc")}</Text>
             <TextInput
               style={ag.formInput}
-              placeholder="npr. Idemo na kavu u Starbucks!"
+              placeholder={t("groups.activityPlaceholder")}
               value={newGroup.activity}
               onChangeText={(v) => setNewGroup((p) => ({ ...p, activity: v }))}
               maxLength={80}
             />
-            <Text style={ag.formLabel}>Lokacija *</Text>
+            <Text style={ag.formLabel}>{t("groups.location")}</Text>
             <TextInput
               style={ag.formInput}
-              placeholder="npr. Caffe bar Bruno, Zagreb centar"
+              placeholder={t("groups.locationPlaceholder")}
               value={newGroup.locationName}
               onChangeText={(v) =>
                 setNewGroup((p) => ({ ...p, locationName: v }))
               }
               maxLength={100}
             />
-            <Text style={ag.formLabel}>Kratki opis (opcionalno)</Text>
+            <Text style={ag.formLabel}>{t("groups.shortDescription")}</Text>
             <TextInput
               style={[ag.formInput, { minHeight: 70 }]}
-              placeholder="Zašto bi se netko trebao pridružiti?"
+              placeholder={t("groups.descriptionPlaceholder")}
               value={newGroup.description}
               onChangeText={(v) =>
                 setNewGroup((p) => ({ ...p, description: v }))
@@ -2061,7 +2086,7 @@ export function ActivityGroupsModal({
               multiline
               maxLength={200}
             />
-            <Text style={ag.formLabel}>Maksimalan broj osoba</Text>
+            <Text style={ag.formLabel}>{t("groups.maxPeople")}</Text>
             <View style={{ flexDirection: "row", gap: 8, marginBottom: 24 }}>
               {[2, 3, 4, 5, 8, 10].map((n) => (
                 <TouchableOpacity
@@ -2086,7 +2111,7 @@ export function ActivityGroupsModal({
               ))}
             </View>
             <TouchableOpacity style={ag.joinBtn} onPress={createGroup}>
-              <Text style={ag.joinBtnText}>🤝 Objavi aktivnost</Text>
+              <Text style={ag.joinBtnText}>{t("groups.postActivity")}</Text>
             </TouchableOpacity>
           </ScrollView>
         </KeyboardAvoidingView>
@@ -2097,13 +2122,13 @@ export function ActivityGroupsModal({
             <TouchableOpacity onPress={onClose}>
               <Text style={{ color: "#fff", fontSize: 16 }}>✕</Text>
             </TouchableOpacity>
-            <Text style={ag.listHeaderTitle}>🤝 Zajedničke aktivnosti</Text>
+            <Text style={ag.listHeaderTitle}>{t("groups.title")}</Text>
             <TouchableOpacity
               style={ag.newBtn}
               onPress={() => setShowCreate(true)}
             >
               <Text style={{ color: "#fff", fontSize: 13, fontWeight: "700" }}>
-                + Nova
+                + {t("groups.createNew")}
               </Text>
             </TouchableOpacity>
           </View>
@@ -2119,7 +2144,7 @@ export function ActivityGroupsModal({
             >
               <Text style={{ fontSize: 64 }}>🤝</Text>
               <Text style={{ fontSize: 18, fontWeight: "700", color: "#333" }}>
-                Nema aktivnih aktivnosti
+                {t("groups.noActivities")}
               </Text>
               <Text
                 style={{
@@ -2129,14 +2154,13 @@ export function ActivityGroupsModal({
                   paddingHorizontal: 40,
                 }}
               >
-                Budi prvi! Objavi aktivnost i pronađi ljude za zajednički
-                izlazak.
+                {t("groups.beFirst")}
               </Text>
               <TouchableOpacity
                 style={ag.joinBtn}
                 onPress={() => setShowCreate(true)}
               >
-                <Text style={ag.joinBtnText}>🤝 Objavi aktivnost</Text>
+                <Text style={ag.joinBtnText}>{t("groups.create")}</Text>
               </TouchableOpacity>
             </View>
           ) : (
@@ -2265,16 +2289,20 @@ export function ActivityGroupsModal({
                         </Text>
                         {isCreator ? (
                           <View style={ag.badgeOwn}>
-                            <Text style={ag.badgeOwnText}>Tvoja</Text>
+                            <Text style={ag.badgeOwnText}>
+                              {t("groups.yourGroup")}
+                            </Text>
                           </View>
                         ) : isMember ? (
                           <View style={ag.badgeMember}>
-                            <Text style={ag.badgeMemberText}>✓ Član</Text>
+                            <Text style={ag.badgeMemberText}>
+                              ✓ {t("groups.joined")}
+                            </Text>
                           </View>
                         ) : isFull ? (
                           <View style={ag.badgeFull}>
                             <Text style={{ fontSize: 11, color: "#999" }}>
-                              Popunjeno
+                              {t("groups.full")}
                             </Text>
                           </View>
                         ) : (
@@ -2289,7 +2317,7 @@ export function ActivityGroupsModal({
                                 fontWeight: "700",
                               }}
                             >
-                              Pridruži se
+                              {t("groups.join")}
                             </Text>
                           </TouchableOpacity>
                         )}
@@ -2618,15 +2646,6 @@ type CompanionType = "solo" | "partner" | "prijatelji" | "obitelj" | "misovito";
 type TransportType = "auto" | "javni" | "pjesice" | "bicikl";
 type PreferenceType = "otvoreno" | "zatvoreno" | "kombinirano";
 type PlanStep = "form" | "loading" | "result";
-
-const LOADING_MESSAGES = [
-  { icon: "🌍", text: "Tražim lokaciju destinacije..." },
-  { icon: "📍", text: "Dohvaćam mjesta u blizini..." },
-  { icon: "🍽️", text: "Analiziram restorane i kafiće..." },
-  { icon: "🏖️", text: "Tražim plaže i atrakcije..." },
-  { icon: "🗺️", text: "Planiram aktivnosti po danima..." },
-  { icon: "✨", text: "Još malo, plan je gotov..." },
-];
 
 // ─── Animated Progress Bar ────────────────────────────────────────────────────
 function ProgressBar({ step, total }: { step: number; total: number }) {
@@ -3496,6 +3515,22 @@ export function PlanMyDayModal({
   visits?: VisitRecord[];
 }) {
   const { t } = useTranslation();
+  const getAllCategories = useCallback(() => {
+    return Object.entries(placeCategories).map(([id, c]) => ({
+      id,
+      name: t(`categories.${id}`, { defaultValue: id }),
+      icon: EMOJIS[id] || "📍",
+      color: c.color,
+    }));
+  }, [t]);
+  const LOADING_MESSAGES = [
+    { icon: "🌍", text: t("plan.loading1") },
+    { icon: "📍", text: t("plan.loading2") },
+    { icon: "🍽️", text: t("plan.loading3") },
+    { icon: "🏖️", text: t("plan.loading4") },
+    { icon: "🗺️", text: t("plan.loading5") },
+    { icon: "✨", text: t("plan.loading6") },
+  ];
   const [step, setStep] = useState<PlanStep>("form");
   const [destination, setDestination] = useState("");
   const [postalCode, setPostalCode] = useState("");
@@ -3553,10 +3588,7 @@ export function PlanMyDayModal({
 
   const generate = async () => {
     if (!destination.trim()) {
-      Alert.alert(
-        "Destinacija",
-        "Unesite grad, mjesto ili adresu destinacije.",
-      );
+      Alert.alert(t("plan.destination"), t("plan.destinationRequired"));
       return;
     }
     setLoadingStep(0);
@@ -3612,8 +3644,7 @@ export function PlanMyDayModal({
 
       const venueStr = Object.entries(venues)
         .map(([type, items]) => {
-          const cat = placeCategories[type];
-          return `${cat?.name || type}: ${items.map((i) => i.name + (i.address ? ` (${i.address})` : "")).join(", ")}`;
+          return `${t(`categories.${type}`, { defaultValue: type })}: ${items.map((i) => i.name + (i.address ? ` (${i.address})` : "")).join(", ")}`;
         })
         .join("\n");
 
@@ -3670,10 +3701,7 @@ Plan napiši po danima s vremenima, KONKRETNIM imenima mjesta (npr. "Restoran Ad
       setStep("result");
     } catch (e) {
       if (loadingInterval.current) clearInterval(loadingInterval.current);
-      Alert.alert(
-        "Greška",
-        "Nije moguće generirati plan. Provjeri internetsku vezu.",
-      );
+      Alert.alert(t("common.error"), t("plan.planError"));
       setStep("form");
     }
   };
@@ -3741,14 +3769,14 @@ Plan napiši po danima s vremenima, KONKRETNIM imenima mjesta (npr. "Restoran Ad
           )}
           <Text style={pm.headerTitle}>
             {step === "form"
-              ? "🗺️ Planiraj putovanje"
+              ? t("map.planTrip")
               : step === "loading"
-                ? "Generiranje plana..."
-                : "📋 Plan putovanja"}
+                ? t("map.generatingPlan")
+                : t("map.tripPlan")}
           </Text>
           {step === "result" ? (
             <TouchableOpacity onPress={copyPlan}>
-              <Text style={pm.headerLink}>📋 Kopiraj</Text>
+              <Text style={pm.headerLink}>📋 {t("common.copy")}</Text>
             </TouchableOpacity>
           ) : (
             <View style={{ width: 60 }} />
@@ -3767,7 +3795,7 @@ Plan napiši po danima s vremenima, KONKRETNIM imenima mjesta (npr. "Restoran Ad
             </Text>
             <ProgressBar step={loadingStep} total={LOADING_MESSAGES.length} />
             <Text style={pm.loadingHint}>
-              Dohvaćam stvarna mjesta iz {destination}...
+              {t("plan.fetchingPlacesFrom", { destination })}
             </Text>
           </View>
         )}
@@ -3861,7 +3889,7 @@ Plan napiši po danima s vremenima, KONKRETNIM imenima mjesta (npr. "Restoran Ad
                   <Text
                     style={{ color: "#fff", fontWeight: "700", fontSize: 15 }}
                   >
-                    Označi prvo mjesto kao posjećeno
+                    {t("map.quickMarkVisited")}
                   </Text>
                 </TouchableOpacity>
               </View>
@@ -3869,7 +3897,9 @@ Plan napiši po danima s vremenima, KONKRETNIM imenima mjesta (npr. "Restoran Ad
 
             <View style={mapLegend.header}>
               <View>
-                <Text style={mapLegend.headerTitle}>📍 Karta destinacije</Text>
+                <Text style={mapLegend.headerTitle}>
+                  {t("map.destinationMap")}
+                </Text>
                 <Text style={mapLegend.headerSub}>
                   {accommodationAddress
                     ? `Smještaj: ${accommodationAddress}`
@@ -3984,7 +4014,9 @@ Plan napiši po danima s vremenima, KONKRETNIM imenima mjesta (npr. "Restoran Ad
                           style={[mapLegend.dot, { backgroundColor: hex }]}
                         />
                         <Text style={mapLegend.chipText}>
-                          {EMOJIS[type]} {cat.name} ({options.length})
+                          {EMOJIS[type]}{" "}
+                          {t(`categories.${type}`, { defaultValue: type })} (
+                          {options.length})
                         </Text>
                       </View>
                     );
@@ -4058,7 +4090,8 @@ Plan napiši po danima s vremenima, KONKRETNIM imenima mjesta (npr. "Restoran Ad
             {Object.entries(allVenues).map(([type, options]) => (
               <View key={type} style={{ marginBottom: 16 }}>
                 <Text style={{ fontWeight: "700", marginBottom: 8 }}>
-                  {EMOJIS[type]} {placeCategories[type]?.name}
+                  {EMOJIS[type]}{" "}
+                  {t(`categories.${type}`, { defaultValue: type })}
                 </Text>
                 {options.map((venue, idx) => {
                   const dist = accommodationCoords
@@ -4196,18 +4229,18 @@ Plan napiši po danima s vremenima, KONKRETNIM imenima mjesta (npr. "Restoran Ad
               keyboardShouldPersistTaps="handled"
             >
               {/* Destinacija */}
-              <Text style={pm.sectionTitle}>📍 Destinacija</Text>
+              <Text style={pm.sectionTitle}>{t("map.destination")}</Text>
               <View style={pm.row}>
                 <TextInput
                   style={[pm.input, { flex: 2 }]}
-                  placeholder="Grad ili mjesto (npr. Split)"
+                  placeholder={t("plan.destinationPlaceholder")}
                   placeholderTextColor="#bbb"
                   value={destination}
                   onChangeText={setDestination}
                 />
                 <TextInput
                   style={[pm.input, { flex: 1, marginLeft: 8 }]}
-                  placeholder="Poštanski br."
+                  placeholder={t("plan.postalCode")}
                   placeholderTextColor="#bbb"
                   value={postalCode}
                   onChangeText={setPostalCode}
@@ -4216,14 +4249,14 @@ Plan napiši po danima s vremenima, KONKRETNIM imenima mjesta (npr. "Restoran Ad
               </View>
               <TextInput
                 style={pm.input}
-                placeholder="Adresa smještaja (npr. Kopilica ul. 8A, Split)"
+                placeholder={t("plan.accommodation")}
                 placeholderTextColor="#bbb"
                 value={accommodationAddress}
                 onChangeText={setAccommodationAddress}
               />
 
               {/* Trajanje */}
-              <Text style={pm.sectionTitle}>📅 Trajanje</Text>
+              <Text style={pm.sectionTitle}>{t("map.duration")}</Text>
               <View style={pm.chipRow}>
                 {PERIOD_OPTIONS.map((o) => (
                   <TouchableOpacity
@@ -4244,7 +4277,7 @@ Plan napiši po danima s vremenima, KONKRETNIM imenima mjesta (npr. "Restoran Ad
               </View>
 
               {/* Putnici */}
-              <Text style={pm.sectionTitle}>👥 Putnici</Text>
+              <Text style={pm.sectionTitle}>{t("map.travelers")}</Text>
               <View style={pm.row}>
                 <View style={{ flex: 1 }}>
                   <Text style={pm.label}>Broj osoba</Text>
@@ -4291,7 +4324,7 @@ Plan napiši po danima s vremenima, KONKRETNIM imenima mjesta (npr. "Restoran Ad
               </View>
 
               {/* Budžet */}
-              <Text style={pm.sectionTitle}>💰 Budžet (EUR)</Text>
+              <Text style={pm.sectionTitle}>💰 {t("map.budgetTitle")}</Text>
               <View style={pm.chipRow}>
                 {["200", "500", "1000", "2000", "5000"].map((b) => (
                   <TouchableOpacity
@@ -4309,7 +4342,7 @@ Plan napiši po danima s vremenima, KONKRETNIM imenima mjesta (npr. "Restoran Ad
               </View>
               <TextInput
                 style={[pm.input, { marginTop: 8 }]}
-                placeholder="Ili upiši vlastiti iznos (EUR)"
+                placeholder={t("plan.budget")}
                 placeholderTextColor="#bbb"
                 value={budget}
                 onChangeText={setBudget}
@@ -4317,9 +4350,7 @@ Plan napiši po danima s vremenima, KONKRETNIM imenima mjesta (npr. "Restoran Ad
               />
 
               {/* Radijus */}
-              <Text style={pm.sectionTitle}>
-                📏 Radijus aktivnosti od smještaja
-              </Text>
+              <Text style={pm.sectionTitle}>{t("map.activityRadius")}</Text>
               <View style={pm.chipRow}>
                 {[1, 2, 3, 5, 10, 20].map((r) => (
                   <TouchableOpacity
@@ -4362,7 +4393,7 @@ Plan napiši po danima s vremenima, KONKRETNIM imenima mjesta (npr. "Restoran Ad
               </View>
 
               {/* Preferencija */}
-              <Text style={pm.sectionTitle}>🌤️ Aktivnosti</Text>
+              <Text style={pm.sectionTitle}>{t("map.activities")}</Text>
               <View style={pm.chipRow}>
                 {PREF_OPTIONS.map((o) => (
                   <TouchableOpacity
@@ -4392,11 +4423,13 @@ Plan napiši po danima s vremenima, KONKRETNIM imenima mjesta (npr. "Restoran Ad
                   marginBottom: 10,
                 }}
               >
-                <Text style={pm.sectionTitle}>🎯 Interesi (opcionalno)</Text>
+                <Text style={pm.sectionTitle}>
+                  {t("map.interestsOptional")}
+                </Text>
                 {interests.length > 0 && (
                   <TouchableOpacity onPress={() => setInterests([])}>
                     <Text style={{ fontSize: 13, color: "#667eea" }}>
-                      Očisti
+                      {t("plan.clearInterests")}
                     </Text>
                   </TouchableOpacity>
                 )}
@@ -4409,7 +4442,7 @@ Plan napiši po danima s vremenima, KONKRETNIM imenima mjesta (npr. "Restoran Ad
                   marginBottom: 24,
                 }}
               >
-                {ALL_CATS.map((cat) => {
+                {getAllCategories().map((cat) => {
                   const on = interests.includes(cat.id);
                   return (
                     <TouchableOpacity
@@ -4442,9 +4475,7 @@ Plan napiši po danima s vremenima, KONKRETNIM imenima mjesta (npr. "Restoran Ad
 
               {/* Gumb */}
               <TouchableOpacity style={pm.generateBtn} onPress={generate}>
-                <Text style={pm.generateBtnText}>
-                  ✨ Generiraj plan s pravim mjestima
-                </Text>
+                <Text style={pm.generateBtnText}>{t("map.generatePlan")}</Text>
               </TouchableOpacity>
               <Text style={pm.generateHint}>
                 AI će pronaći stvarna mjesta u {destination || "destinaciji"} i
@@ -4522,7 +4553,7 @@ Plan napiši po danima s vremenima, KONKRETNIM imenima mjesta (npr. "Restoran Ad
                   }}
                 >
                   <Text style={{ color: "#fff", fontWeight: "700" }}>
-                    ✓ Odaberi ovo mjesto
+                    {t("plan.selectBtn")}
                   </Text>
                 </TouchableOpacity>
               </View>
@@ -4664,14 +4695,14 @@ function VisitArchiveModal({
               borderBottomColor: "#eee",
             }}
           >
-            <Text style={{ fontSize: 18, fontWeight: "800", color: "#1a1a1a" }}>
-              📋 Arhiva posjeta ({visits.length})
+            <Text style={{ fontSize: 18, fontWeight: "800" }}>
+              📋 {t("map.visitArchive", { count: visits.length })}
             </Text>
             <TouchableOpacity onPress={onClose}>
               <Text
                 style={{ color: "#667eea", fontSize: 15, fontWeight: "600" }}
               >
-                Zatvori
+                {t("common.close")}
               </Text>
             </TouchableOpacity>
           </View>
@@ -4733,7 +4764,8 @@ function VisitArchiveModal({
                         color: active ? "#fff" : "#555",
                       }}
                     >
-                      {EMOJIS[type]} {cat?.name || type}
+                      {EMOJIS[type]}{" "}
+                      {t(`categories.${type}`, { defaultValue: type })}
                     </Text>
                   </TouchableOpacity>
                 );
@@ -4860,12 +4892,20 @@ function BadgesModal({
   visible,
   onClose,
   visits,
+  getAllCategories,
 }: {
   visible: boolean;
   onClose: () => void;
   visits: VisitRecord[];
+  getAllCategories: () => {
+    id: string;
+    name: string;
+    icon: string;
+    color: string;
+  }[];
 }) {
   const { t } = useTranslation();
+
   const [badges, setBadges] = useState<Badge[]>([]);
   useEffect(() => {
     if (visible) loadJSON<Badge[]>(STORAGE_BADGES, []).then(setBadges);
@@ -4907,18 +4947,18 @@ function BadgesModal({
             }}
           >
             <Text style={{ fontSize: 20, fontWeight: "800", color: "#1a1a1a" }}>
-              🏆 Moje značke
+              🏆 {t("map.badges")}
             </Text>
             <TouchableOpacity onPress={onClose}>
               <Text
                 style={{ color: "#667eea", fontSize: 15, fontWeight: "600" }}
               >
-                Zatvori
+                {t("map.badgesClose")}
               </Text>
             </TouchableOpacity>
           </View>
           <ScrollView contentContainerStyle={{ padding: 16 }}>
-            {ALL_CATS.map((cat) => {
+            {getAllCategories().map((cat) => {
               const count = counts[cat.id] || 0;
               const earned = BADGE_T.filter((t) =>
                 badges.find((b) => b.category === cat.id && b.level === t),
@@ -4953,13 +4993,13 @@ function BadgesModal({
                     <Text
                       style={{ fontSize: 13, color: "#667eea", marginTop: 2 }}
                     >
-                      {count} posjeta
+                      {t("map.visitCount", { count })}
                     </Text>
                     {next && (
                       <Text
                         style={{ fontSize: 12, color: "#999", marginTop: 2 }}
                       >
-                        Sljedeća za {next - count} više
+                        {t("map.nextBadgeIn", { count: next - count })}
                       </Text>
                     )}
                     <View
@@ -5025,78 +5065,17 @@ const TIME_CATS: Record<string, string[]> = {
   vecer: ["club", "theater", "restaurant", "spa"],
 };
 
-// Dobne skupine s kategorijama koje su primjerene
-const AGE_GROUPS = [
-  {
-    id: "minors",
-    label: "Maloljetnici",
-    emoji: "👦",
-    desc: "< 18 god",
-    cats: ["park", "cinema", "beach", "museum", "escapeRoom"],
-    color: "#3498DB",
-  },
-  {
-    id: "youth",
-    label: "Mladi",
-    emoji: "🧑",
-    desc: "18–25",
-    cats: [
-      "club",
-      "cinema",
-      "beach",
-      "escapeRoom",
-      "paintball",
-      "park",
-      "cafe",
-    ],
-    color: "#9B59B6",
-  },
-  {
-    id: "students",
-    label: "Studenti",
-    emoji: "🎓",
-    desc: "Student",
-    cats: [
-      "cafe",
-      "cinema",
-      "museum",
-      "theater",
-      "park",
-      "escapeRoom",
-      "restaurant",
-    ],
-    color: "#667eea",
-  },
-  {
-    id: "adults",
-    label: "Odrasli",
-    emoji: "👔",
-    desc: "26–60",
-    cats: [
-      "restaurant",
-      "cafe",
-      "spa",
-      "theater",
-      "museum",
-      "landmark",
-      "market",
-      "accommodation",
-    ],
-    color: "#E67E22",
-  },
-  {
-    id: "retired",
-    label: "Umirovljenici",
-    emoji: "👴",
-    desc: "60+",
-    cats: ["restaurant", "cafe", "spa", "museum", "landmark", "park", "market"],
-    color: "#27AE60",
-  },
-];
-
 export default function DashboardScreen() {
-  const mapRef = useRef<MapView>(null);
   const { t } = useTranslation();
+  const getAllCategories = useCallback(() => {
+    return Object.entries(placeCategories).map(([id, c]) => ({
+      id,
+      name: t(`categories.${id}`, { defaultValue: id }),
+      icon: EMOJIS[id] || "📍",
+      color: c.color,
+    }));
+  }, [t]);
+  const mapRef = useRef<MapView>(null);
 
   const [userLocation, setUserLocation] = useState<{
     latitude: number;
@@ -5145,17 +5124,97 @@ export default function DashboardScreen() {
 
   const [selectedAgeGroups, setSelectedAgeGroups] = useState<string[]>([]);
 
+  // Izbrišite gornju konstantu i dodajte OVO unutar DashboardScreen komponente:
+  const getAgeGroups = useCallback(() => {
+    return [
+      {
+        id: "minors",
+        label: t("ageGroups.minors"),
+        emoji: "👦",
+        desc: "< 18",
+        cats: ["park", "cinema", "beach", "museum", "escapeRoom"],
+        color: "#3498DB",
+      },
+      {
+        id: "youth",
+        label: t("ageGroups.youth"),
+        emoji: "🧑",
+        desc: "18–25",
+        cats: [
+          "club",
+          "cinema",
+          "beach",
+          "escapeRoom",
+          "paintball",
+          "park",
+          "cafe",
+        ],
+        color: "#9B59B6",
+      },
+      {
+        id: "students",
+        label: t("ageGroups.students"),
+        emoji: "🎓",
+        desc: t("ageGroups.studentDesc"),
+        cats: [
+          "cafe",
+          "cinema",
+          "museum",
+          "theater",
+          "park",
+          "escapeRoom",
+          "restaurant",
+        ],
+        color: "#667eea",
+      },
+      {
+        id: "adults",
+        label: t("ageGroups.adults"),
+        emoji: "👔",
+        desc: "26–60",
+        cats: [
+          "restaurant",
+          "cafe",
+          "spa",
+          "theater",
+          "museum",
+          "landmark",
+          "market",
+          "accommodation",
+        ],
+        color: "#E67E22",
+      },
+      {
+        id: "retired",
+        label: t("ageGroups.retired"),
+        emoji: "👴",
+        desc: "60+",
+        cats: [
+          "restaurant",
+          "cafe",
+          "spa",
+          "museum",
+          "landmark",
+          "park",
+          "market",
+        ],
+        color: "#27AE60",
+      },
+    ];
+  }, [t]);
+
   // Logika filtriranja po dobi (dodaj ISPOD deklaracije `places`):
-  const ageAllowedCats =
-    selectedAgeGroups.length > 0
-      ? [
-          ...new Set(
-            selectedAgeGroups.flatMap(
-              (gId) => AGE_GROUPS.find((g) => g.id === gId)?.cats ?? [],
-            ),
-          ),
-        ]
-      : null;
+  // Promijenite ovisnosti za ageAllowedCats:
+  const ageAllowedCats = useMemo(() => {
+    if (selectedAgeGroups.length === 0) return null;
+    return [
+      ...new Set(
+        selectedAgeGroups.flatMap(
+          (gId) => getAgeGroups().find((g) => g.id === gId)?.cats ?? [],
+        ),
+      ),
+    ];
+  }, [selectedAgeGroups, getAgeGroups]);
 
   const [notifPrefs, setNotifPrefs] = useState<NotifPrefs>({
     appEnabled: true,
@@ -5256,7 +5315,7 @@ export default function DashboardScreen() {
       });
       applyLocation(loc.coords.latitude, loc.coords.longitude);
     } catch {
-      Alert.alert("Greška", "Nije moguće dohvatiti lokaciju.");
+      Alert.alert(t("common.error"), t("map.locationError"));
     }
   };
 
@@ -5569,7 +5628,7 @@ export default function DashboardScreen() {
         <View style={s.citySearchRow}>
           <TextInput
             style={s.cityInput}
-            placeholder="🌍 Pretraži drugi grad..."
+            placeholder={t("map.searchCityPlaceholder")}
             placeholderTextColor="#999"
             value={cityQuery}
             onChangeText={setCityQuery}
@@ -5588,7 +5647,7 @@ export default function DashboardScreen() {
               onPress={handleCitySearch}
             >
               <Text style={{ color: "#fff", fontWeight: "700", fontSize: 13 }}>
-                Idi
+                {t("common.go")}
               </Text>
             </TouchableOpacity>
           )}
@@ -5597,7 +5656,7 @@ export default function DashboardScreen() {
               <Text
                 style={{ color: "#ff4757", fontSize: 12, fontWeight: "700" }}
               >
-                ✕ Moja lok.
+                ✕ {t("map.myLocationShort")}
               </Text>
             </TouchableOpacity>
           )}
@@ -5699,10 +5758,10 @@ export default function DashboardScreen() {
           <Text style={s.countTxt}>
             {showOnlyVisited
               ? `✓ ${visits.length} ${t("map.visitedOnly")}`
-              : `📍 ${t("map.shown", { shown: Math.min(displayLimit, allPlaces.length), total: allPlaces.length })}`}
-            {showOnlyVisited
-              ? `✓ ${visits.length} posjećenih mjesta`
-              : `📍 Prikazano ${Math.min(displayLimit, allPlaces.length)} od ${allPlaces.length} mjesta`}
+              : t("map.shown", {
+                  shown: Math.min(displayLimit, allPlaces.length),
+                  total: allPlaces.length,
+                })}
           </Text>
           {/* Prikaži više gumb */}
           {!showOnlyVisited && hasMore && (
@@ -5772,7 +5831,7 @@ export default function DashboardScreen() {
               <Text
                 style={{ fontSize: 15, color: "#667eea", fontWeight: "600" }}
               >
-                ✕ Zatvori
+                ✕ {t("common.close")}
               </Text>
             </TouchableOpacity>
           </View>
@@ -5793,7 +5852,7 @@ export default function DashboardScreen() {
                   marginBottom: 12,
                 }}
               >
-                Pretraga mjesta
+                {t("map.searchPlaceholder")}
               </Text>
               <View style={{ flexDirection: "row", gap: 8 }}>
                 <TextInput
@@ -5806,7 +5865,7 @@ export default function DashboardScreen() {
                     fontSize: 15,
                     color: "#333",
                   }}
-                  placeholder="Unesite naziv mjesta..."
+                  placeholder={t("common.placeNamePlaceholder")}
                   placeholderTextColor="#999"
                   value={searchQuery}
                   onChangeText={setSearchQuery}
@@ -5827,7 +5886,7 @@ export default function DashboardScreen() {
                     <ActivityIndicator color="#fff" size="small" />
                   ) : (
                     <Text style={{ color: "#fff", fontWeight: "600" }}>
-                      Traži
+                      {t("common.searchBtnShort")}
                     </Text>
                   )}
                 </TouchableOpacity>
@@ -5872,11 +5931,7 @@ export default function DashboardScreen() {
                           {r.name}
                         </Text>
                         <Text style={{ fontSize: 12, color: "#999" }}>
-                          {
-                            placeCategories[
-                              r.type as keyof typeof placeCategories
-                            ]?.name
-                          }
+                          {t(`categories.${r.type}`, { defaultValue: r.type })}
                         </Text>
                       </View>
                     </TouchableOpacity>
@@ -5901,24 +5956,24 @@ export default function DashboardScreen() {
                   marginBottom: 12,
                 }}
               >
-                Doba dana
+                {t("map.timeOfDay")}
               </Text>
               <View style={{ gap: 8 }}>
                 {[
                   {
                     key: "jutro",
-                    label: "🌅 Jutro",
-                    sub: "Kafić, park, muzej...",
+                    label: `🌅 ${t("map.morning")}`,
+                    sub: t("map.morningDesc"),
                   },
                   {
                     key: "poslijepodne",
-                    label: "☀️ Poslijepodne",
-                    sub: "Restoran, plaža, kino...",
+                    label: `☀️ ${t("map.afternoon")}`,
+                    sub: t("map.afternoonDesc"),
                   },
                   {
                     key: "vecer",
-                    label: "🌙 Večer",
-                    sub: "Klub, kazalište, spa...",
+                    label: `🌙 ${t("map.evening")}`,
+                    sub: t("map.eveningDesc"),
                   },
                 ].map((tod) => (
                   <TouchableOpacity
@@ -5988,7 +6043,7 @@ export default function DashboardScreen() {
                 <Text
                   style={{ fontSize: 15, fontWeight: "700", color: "#333" }}
                 >
-                  Kategorije
+                  {t("map.categories")}
                 </Text>
                 {selectedTypes.length > 0 && (
                   <TouchableOpacity
@@ -6004,13 +6059,13 @@ export default function DashboardScreen() {
                         fontWeight: "600",
                       }}
                     >
-                      Očisti sve
+                      {t("map.clearAll")}
                     </Text>
                   </TouchableOpacity>
                 )}
               </View>
               <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
-                {ALL_CATS.map((cat) => {
+                {getAllCategories().map((cat) => {
                   const active = selectedTypes.includes(cat.id);
                   return (
                     <TouchableOpacity
@@ -6064,7 +6119,7 @@ export default function DashboardScreen() {
                   marginBottom: 12,
                 }}
               >
-                📏 Radijus: {radius} km
+                {t("map.radius")}
               </Text>
               <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
                 {[1, 5, 10, 20, 50, 100].map((r) => (
@@ -6111,7 +6166,7 @@ export default function DashboardScreen() {
                 <Text
                   style={{ fontSize: 15, fontWeight: "700", color: "#333" }}
                 >
-                  👥 Primjereno za
+                  {t("map.forAgeGroup")}
                 </Text>
                 {selectedAgeGroups.length > 0 && (
                   <TouchableOpacity onPress={() => setSelectedAgeGroups([])}>
@@ -6128,7 +6183,7 @@ export default function DashboardScreen() {
                 )}
               </View>
               <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
-                {AGE_GROUPS.map((grp) => {
+                {getAgeGroups().map((grp) => {
                   const active = selectedAgeGroups.includes(grp.id);
                   return (
                     <TouchableOpacity
@@ -6192,9 +6247,11 @@ export default function DashboardScreen() {
                       fontWeight: "600",
                     }}
                   >
-                    🔍 Prikazuju se kategorije primjerene za:{" "}
+                    🔍 {t("map.displayLimit")}
                     {selectedAgeGroups
-                      .map((id) => AGE_GROUPS.find((g) => g.id === id)?.label)
+                      .map(
+                        (id) => getAgeGroups().find((g) => g.id === id)?.label,
+                      )
                       .join(", ")}
                   </Text>
                 </View>
@@ -6217,8 +6274,11 @@ export default function DashboardScreen() {
                   marginBottom: 4,
                 }}
               >
-                📊 Prikaz na karti: {Math.min(displayLimit, allPlaces.length)}{" "}
-                od {allPlaces.length}
+                📊{" "}
+                {t("map.displayOnMap", {
+                  shown: Math.min(displayLimit, allPlaces.length),
+                  total: allPlaces.length,
+                })}
               </Text>
               <Text style={{ fontSize: 12, color: "#999", marginBottom: 12 }}>
                 Početno se prikazuje 10 rezultata. Koristite "Prikaži više" za
@@ -6333,7 +6393,7 @@ export default function DashboardScreen() {
               onPress={() => setShowFilterPanel(false)}
             >
               <Text style={{ color: "#fff", fontSize: 16, fontWeight: "700" }}>
-                Primijeni
+                {t("map.apply")}
                 {selectedTypes.length > 0
                   ? ` (${selectedTypes.length} kategorija)`
                   : ""}
@@ -6379,6 +6439,7 @@ export default function DashboardScreen() {
         visible={showBadges}
         onClose={() => setShowBadges(false)}
         visits={visits}
+        getAllCategories={getAllCategories}
       />
       <PlanMyDayModal
         visible={showPlanMyDay}
@@ -6395,6 +6456,7 @@ export default function DashboardScreen() {
           setNotifPrefs(p);
           saveJSON(STORAGE_NOTIFS, p);
         }}
+        getAllCategories={getAllCategories}
       />
       <ActivityGroupsModal
         visible={showGroups}

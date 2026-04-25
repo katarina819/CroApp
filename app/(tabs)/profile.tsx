@@ -288,6 +288,7 @@ function AvatarFemale({ size = 96 }: { size?: number }) {
 }
 
 function AvatarSection({ onUpdate }: { onUpdate: () => void }) {
+  const { t } = useTranslation();
   const { profile, updateAvatar, refreshProfile } = useUser();
   const [loading, setLoading] = useState(false);
   const [showAvatarModal, setShowAvatarModal] = useState(false);
@@ -354,7 +355,7 @@ function AvatarSection({ onUpdate }: { onUpdate: () => void }) {
         onUpdate();
       }
     } catch {
-      Alert.alert("Greška", "Nije moguće postaviti avatar");
+      Alert.alert(t("common.error"), t("profile.avatarError"));
     } finally {
       setLoading(false);
     }
@@ -409,10 +410,10 @@ function AvatarSection({ onUpdate }: { onUpdate: () => void }) {
         await refreshProfile();
         onUpdate();
       } else {
-        Alert.alert("Greška", "Nije moguće uploadati sliku");
+        Alert.alert(t("common.error"), t("profile.photoError"));
       }
     } catch {
-      Alert.alert("Greška", "Nije moguće uploadati sliku");
+      Alert.alert(t("common.error"), t("profile.photoError"));
     } finally {
       setLoading(false);
     }
@@ -431,10 +432,10 @@ function AvatarSection({ onUpdate }: { onUpdate: () => void }) {
         await refreshProfile();
         onUpdate();
       } else {
-        Alert.alert("Greška", "Nije moguće ukloniti sliku");
+        Alert.alert(t("common.error"), t("profile.photoRemoveError"));
       }
     } catch {
-      Alert.alert("Greška", "Nije moguće ukloniti sliku");
+      Alert.alert(t("common.error"), t("profile.photoRemoveError"));
     } finally {
       setLoading(false);
     }
@@ -497,8 +498,8 @@ function AvatarSection({ onUpdate }: { onUpdate: () => void }) {
           onPress={() => setShowAvatarModal(false)}
         >
           <View style={avModal.container}>
-            <Text style={avModal.title}>Odaberi avatar</Text>
-            <Text style={avModal.subtitle}>Prilagođeno dizajnu VARA</Text>
+            <Text style={avModal.title}>{t("profile.avatarTitle")}</Text>
+            <Text style={avModal.subtitle}>{t("profile.avatarSubtitle")}</Text>
             <View style={avModal.avatarRow}>
               <TouchableOpacity
                 style={[avModal.option, isMaleAvatar && avModal.optionActive]}
@@ -513,7 +514,9 @@ function AvatarSection({ onUpdate }: { onUpdate: () => void }) {
                     </View>
                   )}
                 </View>
-                <Text style={avModal.optionLabel}>Muški</Text>
+                <Text style={avModal.optionLabel}>
+                  {t("profile.maleAvatar")}
+                </Text>
               </TouchableOpacity>
 
               <TouchableOpacity
@@ -529,7 +532,9 @@ function AvatarSection({ onUpdate }: { onUpdate: () => void }) {
                     </View>
                   )}
                 </View>
-                <Text style={avModal.optionLabel}>Ženski</Text>
+                <Text style={avModal.optionLabel}>
+                  {t("profile.femaleAvatar")}
+                </Text>
               </TouchableOpacity>
             </View>
 
@@ -537,7 +542,7 @@ function AvatarSection({ onUpdate }: { onUpdate: () => void }) {
               style={avModal.cancelBtn}
               onPress={() => setShowAvatarModal(false)}
             >
-              <Text style={avModal.cancelText}>Odustani</Text>
+              <Text style={avModal.cancelText}>{t("common.cancel")}</Text>
             </TouchableOpacity>
           </View>
         </TouchableOpacity>
@@ -661,6 +666,7 @@ function FollowListModal({
   onClose: () => void;
   onUpdate?: () => void;
 }) {
+  const { t } = useTranslation();
   const [list, setList] = useState<FollowUser[]>([]);
   const [loading, setLoading] = useState(false);
   const [processingId, setProcessingId] = useState<number | null>(null);
@@ -769,8 +775,8 @@ function FollowListModal({
         // To će se dogoditi kada se tab ponovno učita
 
         Alert.alert(
-          "Uspjeh",
-          currentStatus ? "Golden Friend uklonjen" : "Golden Friend dodan",
+          t("common.success"),
+          currentStatus ? t("profile.goldenRemoved") : t("profile.goldenAdded"),
         );
       } else {
         const errorText = await res.text();
@@ -838,10 +844,7 @@ function FollowListModal({
           // Ukloni iz UI liste
           setList((prev) => prev.filter((user) => user.id !== targetUserId));
 
-          Alert.alert(
-            "Blokirano",
-            "Korisnik je blokiran i uklonjen iz popisa praćenih",
-          );
+          Alert.alert(t("profile.blocked"), t("profile.blockedDesc"));
 
           // Osvježi profile podatke (smanji broj praćenih)
           if (onUpdate) onUpdate();
@@ -869,7 +872,7 @@ function FollowListModal({
               user.id === targetUserId ? { ...user, isBlocked: false } : user,
             ),
           );
-          Alert.alert("Odblokirano", "Korisnik je odblokiran");
+          Alert.alert(t("profile.unblocked"), t("profile.unblockedDesc"));
         } else {
           Alert.alert("Greška", "Nije moguće odblokirati korisnika");
         }
@@ -897,7 +900,9 @@ function FollowListModal({
             <Ionicons name="close" size={28} color="#333" />
           </TouchableOpacity>
           <Text style={fl.title}>
-            {type === "followers" ? "Pratitelji" : "Praćeni"}
+            {type === "followers"
+              ? t("profile.followersList")
+              : t("profile.followingList")}
           </Text>
           <View style={{ width: 28 }} />
         </View>
@@ -907,7 +912,9 @@ function FollowListModal({
           <View style={fl.empty}>
             <Ionicons name="people-outline" size={56} color="#ddd" />
             <Text style={fl.emptyText}>
-              {type === "followers" ? "Nema pratitelja" : "Ne pratiš nikog"}
+              {type === "followers"
+                ? t("profile.noFollowers")
+                : t("profile.noFollowing")}
             </Text>
           </View>
         ) : (
@@ -1072,6 +1079,7 @@ const fl = StyleSheet.create({
 // Zamijenite postojeću ActivityArchive funkciju s ovom:
 
 function ActivityArchive({ userId }: { userId: number | null }) {
+  const { t } = useTranslation();
   const [data, setData] = useState<DailyActivity[]>([]);
   const [period, setPeriod] = useState<"daily" | "weekly" | "monthly">("daily");
   const [loading, setLoading] = useState(true);
@@ -1144,10 +1152,10 @@ function ActivityArchive({ userId }: { userId: number | null }) {
               style={[ac.periodBtnText, period === p && ac.periodBtnTextActive]}
             >
               {p === "daily"
-                ? "Dnevno"
+                ? t("activity.dailyPeriod")
                 : p === "weekly"
-                  ? "Tjedno"
-                  : "Mjesečno"}
+                  ? t("activity.weeklyPeriod")
+                  : t("activity.monthlyPeriod")}
             </Text>
           </TouchableOpacity>
         ))}
@@ -1160,28 +1168,28 @@ function ActivityArchive({ userId }: { userId: number | null }) {
           <Text style={[ac.summaryNum, { color: "#ff3b30" }]}>
             {totalLikes}
           </Text>
-          <Text style={ac.summaryLabel}>Lajkovi</Text>
+          <Text style={ac.summaryLabel}>{t("activity.likes")}</Text>
         </View>
         <View style={[ac.summaryCard, { borderTopColor: "#2D6418" }]}>
           <Ionicons name="chatbubble" size={20} color="#2D6418" />
           <Text style={[ac.summaryNum, { color: "#2D6418" }]}>
             {totalComments}
           </Text>
-          <Text style={ac.summaryLabel}>Komentari</Text>
+          <Text style={ac.summaryLabel}>{t("activity.comments")}</Text>
         </View>
         <View style={[ac.summaryCard, { borderTopColor: "#34c759" }]}>
           <Ionicons name="images" size={20} color="#34c759" />
           <Text style={[ac.summaryNum, { color: "#34c759" }]}>
             {totalPosts}
           </Text>
-          <Text style={ac.summaryLabel}>Objave</Text>
+          <Text style={ac.summaryLabel}>{t("activity.posts")}</Text>
         </View>
         <View style={[ac.summaryCard, { borderTopColor: "#ff9500" }]}>
           <Ionicons name="time" size={20} color="#ff9500" />
           <Text style={[ac.summaryNum, { color: "#ff9500" }]}>
             {totalMinutes}
           </Text>
-          <Text style={ac.summaryLabel}>Minuta</Text>
+          <Text style={ac.summaryLabel}>{t("activity.minutes")}</Text>
         </View>
       </View>
 
@@ -1190,43 +1198,45 @@ function ActivityArchive({ userId }: { userId: number | null }) {
         <Ionicons name="people" size={24} color="#2D6418" />
         <View>
           <Text style={ac.followersNum}>{currentFollowers}</Text>
-          <Text style={ac.followersLabel}>Trenutno pratitelja</Text>
+          <Text style={ac.followersLabel}>
+            {t("activity.currentFollowers")}
+          </Text>
         </View>
       </View>
 
       {/* Charts */}
       <Text style={ac.sectionTitle}>
         {period === "daily"
-          ? "Zadnjih 7 dana"
+          ? t("activity.last7days")
           : period === "weekly"
-            ? "Zadnjih 6 tjedana"
-            : "Zadnjih 6 mjeseci"}
+            ? t("activity.last6weeks")
+            : t("activity.last6months")}
       </Text>
 
       {renderBarChart(
         data.map((d) => d.sessionMinutes),
-        "⏱ Minuta",
+        t("activity.minutesChart"),
         "#ff9500",
         maxMinutes,
         BAR_HEIGHT,
       )}
       {renderBarChart(
         data.map((d) => d.likes),
-        "❤️ Lajkovi",
+        t("activity.likesChart"),
         "#ff3b30",
         maxLikes,
         BAR_HEIGHT,
       )}
       {renderBarChart(
         data.map((d) => d.comments),
-        "💬 Komentari",
+        t("activity.commentsChart"),
         "#2D6418",
         maxComments,
         BAR_HEIGHT,
       )}
       {renderBarChart(
         data.map((d) => d.posts),
-        "📤 Objave",
+        t("activity.postsChart"),
         "#34c759",
         maxPosts,
         BAR_HEIGHT,
@@ -1471,6 +1481,7 @@ const vpModal = StyleSheet.create({
 
 // ─── Screen Time Countdown ────────────────────────────────────────────────────
 function ScreenTimeCountdown() {
+  const { t } = useTranslation();
   const [remaining, setRemaining] = useState<number | null>(null);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
@@ -1526,8 +1537,8 @@ function ScreenTimeCountdown() {
       new Date().toDateString(),
     );
     Alert.alert(
-      "Dnevno ograničenje dosegnuto",
-      "Koristili ste aplikaciju za dopušteno dnevno vrijeme. Možete se prijaviti sutra.",
+      t("profile.screenTimeLimitReached"),
+      t("profile.screenTimeLimitReachedDesc"),
       [
         {
           text: "OK",
@@ -1586,6 +1597,7 @@ const getThumbnail = (item: any): string | null => {
 
 // ─── Me Tab ───────────────────────────────────────────────────────────────────
 function MeTab({ userId }: { userId: number | null }) {
+  const { t } = useTranslation();
   const [items, setItems] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
@@ -1676,12 +1688,14 @@ function MeTab({ userId }: { userId: number | null }) {
   // BRISANJE S POTVRDOM
   const confirmDelete = (item: any) => {
     Alert.alert(
-      "Obriši medij",
-      `Jeste li sigurni da želite obrisati "${item.title || "medij"}"?`,
+      t("common.delete"),
+      t("profile.deleteMediaConfirm", {
+        name: item.title || t("profile.media"),
+      }),
       [
-        { text: "Odustani", style: "cancel" },
+        { text: t("common.cancel"), style: "cancel" },
         {
-          text: "Obriši",
+          text: t("common.delete"),
           style: "destructive",
           onPress: () => deleteItem(item.id),
         },
@@ -1707,21 +1721,24 @@ function MeTab({ userId }: { userId: number | null }) {
 
       if (res.ok) {
         setItems((prev) => prev.filter((i) => i.id !== id));
-        Alert.alert("Uspjeh", "Medij je uspješno obrisan");
+        Alert.alert(t("common.success"), t("profile.mediaDeleted"));
       } else {
-        Alert.alert("Greška", "Nije moguće obrisati medij");
+        Alert.alert(t("common.error"), t("profile.deleteMediaError"));
       }
     } catch (error) {
       console.error("Delete error:", error);
-      Alert.alert("Greška", "Nije moguće obrisati medij");
+      Alert.alert(t("common.error"), t("profile.deleteMediaError"));
     }
   };
 
   const addMedia = async () => {
-    Alert.alert("Dodaj medij", "Odaberi izvor", [
-      { text: "Galerija", onPress: () => pickMedia("gallery") },
-      { text: "Kamera", onPress: () => pickMedia("camera") },
-      { text: "Odustani", style: "cancel" },
+    Alert.alert(t("profile.addMedia"), t("profile.selectSource"), [
+      {
+        text: t("profile.selectFromGallery"),
+        onPress: () => pickMedia("gallery"),
+      },
+      { text: t("profile.takePhoto"), onPress: () => pickMedia("camera") },
+      { text: t("common.cancel"), style: "cancel" },
     ]);
   };
 
@@ -1806,11 +1823,11 @@ function MeTab({ userId }: { userId: number | null }) {
       >
         <Ionicons name="add" size={20} color="#fff" />
         <Text style={tab.addBtnText}>
-          {uploading ? "Uploadam..." : "Dodaj sliku/video"}
+          {uploading ? t("profile.uploading") : t("profile.addMedia")}
         </Text>
       </TouchableOpacity>
       {items.length === 0 ? (
-        <EmptyTab icon="images-outline" text="Nema objavljenog sadržaja" />
+        <EmptyTab icon="images-outline" text={t("profile.noMedia")} />
       ) : (
         <FlatList
           data={items}
@@ -1922,6 +1939,7 @@ function MeTab({ userId }: { userId: number | null }) {
 // ─── Box Tab ──────────────────────────────────────────────────────────────────
 // ─── Box Tab ──────────────────────────────────────────────────────────────────
 function BoxTab() {
+  const { t } = useTranslation();
   const [items, setItems] = useState<BoxItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedVideo, setSelectedVideo] = useState<BoxItem | null>(null);
@@ -1959,17 +1977,17 @@ function BoxTab() {
       );
       if (res.ok) {
         setItems((p) => p.filter((i) => i.videoId !== videoId));
-        Alert.alert("Uspjeh", "Video je uklonjen iz Boxa");
+        Alert.alert(t("common.success"), t("profile.removedFromBox"));
       }
     } catch (error) {
-      Alert.alert("Greška", "Nije moguće ukloniti video");
+      Alert.alert(t("common.error"), t("profile.removeVideoError"));
     }
   };
 
   const handleRemove = (videoId: number, title: string) => {
     Alert.alert(
-      "Ukloni iz Boxa",
-      `Jeste li sigurni da želite ukloniti "${title}" iz Boxa?`,
+      t("profile.removeFromBox"),
+      t("profile.removeFromBoxConfirm", { title }),
       [
         { text: "Odustani", style: "cancel" },
         {
@@ -1988,7 +2006,7 @@ function BoxTab() {
   if (loading)
     return <ActivityIndicator style={{ marginTop: 40 }} color="#2D6418" />;
   if (items.length === 0)
-    return <EmptyTab icon="bookmark-outline" text="Box je prazan" />;
+    return <EmptyTab icon="bookmark-outline" text={t("profile.boxEmpty")} />;
 
   return (
     <>
@@ -2064,6 +2082,7 @@ function BoxTab() {
 // ─── Wishlist Tab ─────────────────────────────────────────────────────────────
 // ─── Wishlist Tab ─────────────────────────────────────────────────────────────
 function WishlistTab() {
+  const { t } = useTranslation();
   const [items, setItems] = useState<WishlistItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<"all" | "yes" | "no">("all");
@@ -2112,19 +2131,19 @@ function WishlistTab() {
       );
       if (res.ok) {
         setItems((p) => p.filter((i) => i.videoId !== videoId));
-        Alert.alert("Uspjeh", "Video je uklonjen iz Wishlist-a");
+        Alert.alert(t("common.success"), t("profile.removedFromWishlist"));
       } else {
-        Alert.alert("Greška", "Nije moguće ukloniti video");
+        Alert.alert(t("common.error"), t("profile.removeVideoError"));
       }
     } catch (error) {
-      Alert.alert("Greška", "Nije moguće ukloniti video");
+      Alert.alert(t("common.error"), t("profile.removeVideoError"));
     }
   };
 
   const handleRemove = (videoId: number, title: string) => {
     Alert.alert(
-      "Obriši iz Wishlist-a",
-      `Jeste li sigurni da želite obrisati "${title}" iz Wishlist-a?`,
+      t("profile.removeFromWishlist"),
+      t("profile.removeFromWishlistConfirm", { title }),
       [
         { text: "Odustani", style: "cancel" },
         {
@@ -2189,16 +2208,16 @@ function WishlistTab() {
                 ]}
               >
                 {f === "all"
-                  ? "Svi"
+                  ? t("common.all")
                   : f === "yes"
-                    ? "✅ Bio sam"
-                    : "❌ Nisam bio"}
+                    ? "✅ " + t("profile.visited")
+                    : "❌ " + t("profile.notVisited")}
               </Text>
             </TouchableOpacity>
           ))}
         </View>
         {filtered.length === 0 ? (
-          <EmptyTab icon="star-outline" text="Wishlist je prazan" />
+          <EmptyTab icon="star-outline" text={t("profile.wishlistEmpty")} />
         ) : (
           <FlatList
             data={filtered}
@@ -2244,10 +2263,10 @@ function WishlistTab() {
                     <TouchableOpacity onPress={() => toggleGoing(item)}>
                       <Text style={tab.goingBadge}>
                         {item.isGoing === true
-                          ? "✅ Bio/la sam"
+                          ? "✅ " + t("profile.visited")
                           : item.isGoing === false
-                            ? "❌ Nisam bio/la"
-                            : "⭕ Neodlučeno"}
+                            ? "❌ " + t("profile.notVisited")
+                            : "⭕ " + t("profile.undecided")}
                       </Text>
                     </TouchableOpacity>
                   </View>
@@ -2280,8 +2299,9 @@ function WishlistTab() {
 }
 
 // ─── Golden Friends Tab ───────────────────────────────────────────────────────
-// ─── Golden Friends Tab ───────────────────────────────────────────────────────
+
 function GoldenFriendsTab() {
+  const { t } = useTranslation();
   const [friends, setFriends] = useState<GoldenFriend[]>([]);
   const [loading, setLoading] = useState(true);
   const [currentUserId, setCurrentUserId] = useState<number | null>(null);
@@ -2323,10 +2343,10 @@ function GoldenFriendsTab() {
   }, []);
 
   const remove = async (userId: number) => {
-    Alert.alert("Ukloni", "Ukloniti ovog Golden Frienda?", [
-      { text: "Odustani", style: "cancel" },
+    Alert.alert(t("profile.removeGolden"), t("profile.removeGoldenConfirm"), [
+      { text: t("common.cancel"), style: "cancel" },
       {
-        text: "Ukloni",
+        text: t("common.remove"),
         style: "destructive",
         onPress: async () => {
           const token = await AsyncStorage.getItem("token");
@@ -2343,12 +2363,7 @@ function GoldenFriendsTab() {
   if (loading)
     return <ActivityIndicator style={{ marginTop: 40 }} color="#2D6418" />;
   if (friends.length === 0)
-    return (
-      <EmptyTab
-        icon="star-outline"
-        text="Nema Golden Friendova. Dodaj ih kod pregleda korisnika!"
-      />
-    );
+    return <EmptyTab icon="star-outline" text={t("profile.noGoldenFriends")} />;
 
   return (
     <FlatList
@@ -2430,6 +2445,62 @@ function GoldenFriendsTab() {
     />
   );
 }
+
+// Dodajte ovo PRIJE SettingsModal funkcije (negdje oko linije 2500)
+const langStyles = StyleSheet.create({
+  currentLang: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    backgroundColor: "#f0f7ee",
+    padding: 12,
+    borderRadius: 10,
+    marginBottom: 12,
+  },
+  currentLangLabel: {
+    fontSize: 14,
+    color: "#666",
+  },
+  currentLangValue: {
+    fontSize: 14,
+    fontWeight: "700",
+    color: "#2D6418",
+  },
+  langGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 8,
+  },
+  langBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderRadius: 20,
+    backgroundColor: "#f0f0f0",
+    borderWidth: 1.5,
+    borderColor: "transparent",
+    position: "relative",
+    paddingRight: 28,
+  },
+  langBtnActive: {
+    backgroundColor: "#f0f7ee",
+    borderColor: "#2D6418",
+  },
+  langFlag: {
+    fontSize: 18,
+  },
+  langLabel: {
+    fontSize: 13,
+    fontWeight: "600",
+    color: "#555",
+  },
+  langLabelActive: {
+    color: "#2D6418",
+  },
+});
+
 // ─── Settings Modal ───────────────────────────────────────────────────────────
 function SettingsModal({
   visible,
@@ -2442,6 +2513,7 @@ function SettingsModal({
   onClose: () => void;
   onSaved: () => void;
 }) {
+  const { t } = useTranslation();
   const [isPublic, setIsPublic] = useState(profile?.isPublic ?? true);
   const [showUsernameOnProfile, setShowUsernameOnProfile] = useState(
     profile?.showUsername ?? true,
@@ -2501,14 +2573,14 @@ function SettingsModal({
           "profileShowUsername",
           String(showUsernameOnProfile),
         );
-        Alert.alert("Spremljeno ✅", "Postavke su uspješno ažurirane");
+        Alert.alert(t("common.success"), t("profile.settingsSaved"));
         onSaved();
       } else {
         const err = await res.text();
-        Alert.alert("Greška", err || "Nije moguće pohraniti postavke");
+        Alert.alert(t("common.error"), t("profile.settingsError"));
       }
     } catch {
-      Alert.alert("Greška", "Nije moguće pohraniti postavke");
+      Alert.alert(t("common.error"), t("profile.settingsError"));
     } finally {
       setSaving(false);
     }
@@ -2523,12 +2595,12 @@ function SettingsModal({
       return;
     }
     Alert.alert(
-      "Postavi ograničenje",
-      `Koristit ćete aplikaciju još ${mins} minuta. Nakon toga ćete biti automatski odjavljeni i moći ćete se prijaviti tek sutra.\n\nJeste li sigurni?`,
+      t("profile.setLimit"),
+      t("profile.screenTimeLimitConfirm", { minutes: mins }),
       [
-        { text: "Odustani", style: "cancel" },
+        { text: t("common.cancel"), style: "cancel" },
         {
-          text: "Postavi",
+          text: t("profile.set"),
           onPress: async () => {
             setScreenLimit(mins);
             await AsyncStorage.setItem("screenTimeLimit", String(mins));
@@ -2557,11 +2629,11 @@ function SettingsModal({
       method: "DELETE",
       headers: { Authorization: `Bearer ${token}` },
     });
-    setBlockedUsers((p) => p.filter((u) => u.id !== userId));
+    setBlockedUsers((p: any[]) => p.filter((u: any) => u.id !== userId));
   };
 
   const handleLogout = () => {
-    Alert.alert("Odjava", "Jeste li sigurni?", [
+    Alert.alert(t("profile.logout"), t("profile.logoutConfirm"), [
       { text: "Odustani", style: "cancel" },
       {
         text: "Odjavi se",
@@ -2575,26 +2647,22 @@ function SettingsModal({
   };
 
   const handleDeleteAccount = () => {
-    Alert.alert(
-      "Brisanje računa",
-      "Ovo će trajno obrisati vaš račun i sve podatke. Jeste li sigurni?",
-      [
-        { text: "Odustani", style: "cancel" },
-        {
-          text: "Obriši",
-          style: "destructive",
-          onPress: async () => {
-            const token = await AsyncStorage.getItem("token");
-            await fetch(`${API_BASE_URL}/api/auth/delete-account`, {
-              method: "DELETE",
-              headers: { Authorization: `Bearer ${token}` },
-            });
-            await AsyncStorage.clear();
-            router.replace("/login");
-          },
+    Alert.alert(t("profile.deleteAccount"), t("profile.deleteAccountWarning"), [
+      { text: "Odustani", style: "cancel" },
+      {
+        text: "Obriši",
+        style: "destructive",
+        onPress: async () => {
+          const token = await AsyncStorage.getItem("token");
+          await fetch(`${API_BASE_URL}/api/auth/delete-account`, {
+            method: "DELETE",
+            headers: { Authorization: `Bearer ${token}` },
+          });
+          await AsyncStorage.clear();
+          router.replace("/login");
         },
-      ],
-    );
+      },
+    ]);
   };
 
   return (
@@ -2604,12 +2672,12 @@ function SettingsModal({
           <TouchableOpacity onPress={onClose}>
             <Ionicons name="close" size={28} color="#333" />
           </TouchableOpacity>
-          <Text style={sm.title}>Postavke</Text>
+          <Text style={sm.title}>{t("profile.settings")}</Text>
           <TouchableOpacity onPress={saveSettings} disabled={saving}>
             {saving ? (
               <ActivityIndicator size="small" color="#2D6418" />
             ) : (
-              <Text style={sm.saveBtn}>Spremi</Text>
+              <Text style={sm.saveBtn}>{t("common.save")}</Text>
             )}
           </TouchableOpacity>
         </View>
@@ -2617,9 +2685,11 @@ function SettingsModal({
         <ScrollView contentContainerStyle={{ paddingBottom: 80 }}>
           {/* ─── JEZIK ─────────────────────────────────────── */}
           <View style={sm.section}>
-            <Text style={sm.sectionTitle}>Jezik aplikacije</Text>
+            <Text style={sm.sectionTitle}>{t("profile.language")}</Text>
             <View style={langStyles.currentLang}>
-              <Text style={langStyles.currentLangLabel}>Trenutni jezik:</Text>
+              <Text style={langStyles.currentLangLabel}>
+                {t("profile.currentLanguageLabel")}:
+              </Text>
               <Text style={langStyles.currentLangValue}>
                 {LANGUAGES.find((l) => l.code === currentLang)?.flag}{" "}
                 {LANGUAGES.find((l) => l.code === currentLang)?.label}
@@ -2659,12 +2729,12 @@ function SettingsModal({
 
           {/* Privacy */}
           <View style={sm.section}>
-            <Text style={sm.sectionTitle}>Privatnost</Text>
+            <Text style={sm.sectionTitle}>{t("profile.privacy")}</Text>
 
             <View style={sm.row}>
               <View style={{ flex: 1 }}>
-                <Text style={sm.rowLabel}>Javni profil</Text>
-                <Text style={sm.rowSub}>Svi mogu vidjeti vaš profil</Text>
+                <Text style={sm.rowLabel}>{t("profile.publicProfile")}</Text>
+                <Text style={sm.rowSub}>{t("profile.publicProfileDesc")}</Text>
               </View>
               <Switch
                 value={isPublic}
@@ -2674,13 +2744,16 @@ function SettingsModal({
               />
             </View>
             <Text style={sm.currentValue}>
-              Trenutno: {isPublic ? "🌐 Javan" : "🔒 Privatan"}
+              {t("profile.currently")}:{" "}
+              {isPublic
+                ? t("profile.currentlyPublic")
+                : t("profile.currentlyPrivate")}
             </Text>
 
             <View style={sm.row}>
               <View style={{ flex: 1 }}>
-                <Text style={sm.rowLabel}>Prikaži korisničko ime</Text>
-                <Text style={sm.rowSub}>Vidljivo na vašem profilu</Text>
+                <Text style={sm.rowLabel}>{t("profile.showUsername")}</Text>
+                <Text style={sm.rowSub}>{t("profile.showUsernameDesc")}</Text>
               </View>
               <Switch
                 value={showUsernameOnProfile}
@@ -2690,19 +2763,22 @@ function SettingsModal({
               />
             </View>
             <Text style={sm.currentValue}>
-              Trenutno: {showUsernameOnProfile ? "👁 Vidljivo" : "🙈 Skriveno"}
+              {t("profile.currently")}:{" "}
+              {showUsernameOnProfile
+                ? t("profile.visible")
+                : t("profile.hidden")}
             </Text>
           </View>
 
           {/* Screen Time */}
           <View style={sm.section}>
-            <Text style={sm.sectionTitle}>Upravljanje vremenom</Text>
-            <Text style={sm.rowSub}>Dnevno ograničenje korištenja</Text>
+            <Text style={sm.sectionTitle}>{t("profile.timeManagement")}</Text>
+            <Text style={sm.rowSub}>{t("profile.screenTimeLimit")}</Text>
             {screenLimit > 0 && (
               <View style={sm.activeLimit}>
                 <Ionicons name="time-outline" size={16} color="#2D6418" />
                 <Text style={sm.activeLimitText}>
-                  Aktivno ograničenje: {screenLimit} min
+                  {t("profile.activeLimit", { minutes: screenLimit })}
                 </Text>
               </View>
             )}
@@ -2719,7 +2795,7 @@ function SettingsModal({
                       screenLimit === mins && sm.timeBtnTextActive,
                     ]}
                   >
-                    {mins === 0 ? "Bez ogr." : `${mins}min`}
+                    {mins === 0 ? t("profile.noLimitShort") : `${mins}min`}
                   </Text>
                 </TouchableOpacity>
               ))}
@@ -2728,15 +2804,15 @@ function SettingsModal({
 
           {/* Blocked Users */}
           <View style={sm.section}>
-            <Text style={sm.sectionTitle}>Blokirani korisnici</Text>
+            <Text style={sm.sectionTitle}>{t("profile.blockedUsers")}</Text>
             <TouchableOpacity style={sm.row} onPress={loadBlocked}>
-              <Text style={sm.rowLabel}>Popis blokiranih</Text>
+              <Text style={sm.rowLabel}>{t("profile.blockedUsersList")}</Text>
               <Ionicons name="chevron-forward" size={20} color="#ccc" />
             </TouchableOpacity>
             {showBlocked && (
               <View style={{ marginTop: 8 }}>
                 {blockedUsers.length === 0 ? (
-                  <Text style={sm.rowSub}>Nema blokiranih korisnika</Text>
+                  <Text style={sm.rowSub}>{t("profile.noBlockedUsers")}</Text>
                 ) : (
                   blockedUsers.map((u) => (
                     <View key={u.id} style={sm.blockedUser}>
@@ -2745,7 +2821,7 @@ function SettingsModal({
                       </Text>
                       <TouchableOpacity onPress={() => unblockUser(u.id)}>
                         <Text style={{ color: "#2D6418", fontSize: 13 }}>
-                          Odblokiraj
+                          {t("profile.unblock")}
                         </Text>
                       </TouchableOpacity>
                     </View>
@@ -2757,12 +2833,14 @@ function SettingsModal({
 
           {/* Activity Archive */}
           <View style={sm.section}>
-            <Text style={sm.sectionTitle}>Aktivnosti</Text>
+            <Text style={sm.sectionTitle}>{t("profile.activitiesTitle")}</Text>
             <TouchableOpacity
               style={sm.row}
               onPress={() => setShowActivityArchive(!showActivityArchive)}
             >
-              <Text style={sm.rowLabel}>Arhiva aktivnosti</Text>
+              <Text style={sm.rowLabel}>
+                {t("profile.activityArchiveLabel")}
+              </Text>
               <Ionicons
                 name={showActivityArchive ? "chevron-up" : "chevron-down"}
                 size={20}
@@ -2779,18 +2857,20 @@ function SettingsModal({
           {/* Danger Zone */}
           <View style={sm.section}>
             <Text style={[sm.sectionTitle, { color: "#ff4757" }]}>
-              Opasna zona
+              {t("profile.dangerZone")}
             </Text>
             <TouchableOpacity style={sm.dangerBtn} onPress={handleLogout}>
               <Ionicons name="log-out-outline" size={20} color="#ff4757" />
-              <Text style={sm.dangerBtnText}>Odjavi se</Text>
+              <Text style={sm.dangerBtnText}>{t("profile.logoutBtn")}</Text>
             </TouchableOpacity>
             <TouchableOpacity
               style={[sm.dangerBtn, { marginTop: 8 }]}
               onPress={handleDeleteAccount}
             >
               <Ionicons name="trash-outline" size={20} color="#ff4757" />
-              <Text style={sm.dangerBtnText}>Obriši račun</Text>
+              <Text style={sm.dangerBtnText}>
+                {t("profile.deleteAccountBtn")}
+              </Text>
             </TouchableOpacity>
           </View>
         </ScrollView>
@@ -2798,60 +2878,6 @@ function SettingsModal({
     </Modal>
   );
 }
-
-const langStyles = StyleSheet.create({
-  currentLang: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    backgroundColor: "#f0f7ee",
-    padding: 12,
-    borderRadius: 10,
-    marginBottom: 12,
-  },
-  currentLangLabel: {
-    fontSize: 14,
-    color: "#666",
-  },
-  currentLangValue: {
-    fontSize: 14,
-    fontWeight: "700",
-    color: "#2D6418",
-  },
-  langGrid: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 8,
-  },
-  langBtn: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-    borderRadius: 20,
-    backgroundColor: "#f0f0f0",
-    borderWidth: 1.5,
-    borderColor: "transparent",
-    position: "relative",
-    paddingRight: 28,
-  },
-  langBtnActive: {
-    backgroundColor: "#f0f7ee",
-    borderColor: "#2D6418",
-  },
-  langFlag: {
-    fontSize: 18,
-  },
-  langLabel: {
-    fontSize: 13,
-    fontWeight: "600",
-    color: "#555",
-  },
-  langLabelActive: {
-    color: "#2D6418",
-  },
-});
 
 const sm = StyleSheet.create({
   header: {
@@ -3198,8 +3224,8 @@ export default function ProfileScreen() {
       const logoutDate = await AsyncStorage.getItem("screenTimeLogoutDate");
       if (logoutDate === new Date().toDateString()) {
         Alert.alert(
-          "Dnevno ograničenje",
-          "Dosegli ste dnevno ograničenje korištenja aplikacije. Pokušajte sutra.",
+          t("profile.screenTimeLimitReached"),
+          t("profile.screenTimeLimitReachedDesc"),
           [
             {
               text: "OK",
@@ -3214,11 +3240,12 @@ export default function ProfileScreen() {
     })();
   }, []);
 
-  const TABS: { key: Tab; label: string; icon: any }[] = [
-    { key: "me", label: "Moje", icon: "person-outline" },
-    { key: "box", label: "Box", icon: "bookmark-outline" },
-    { key: "wishlist", label: "Wishlist", icon: "star-outline" },
-    { key: "golden", label: "Golden", icon: "star" },
+  const { t } = useTranslation();
+  const TABS = [
+    { key: "me", label: t("profile.my"), icon: "person-outline" },
+    { key: "box", label: t("profile.box"), icon: "bookmark-outline" },
+    { key: "wishlist", label: t("profile.wishlist"), icon: "star-outline" },
+    { key: "golden", label: t("profile.golden"), icon: "star" },
   ];
 
   if (loading)
@@ -3237,7 +3264,7 @@ export default function ProfileScreen() {
       <View style={styles.container}>
         {/* Header */}
         <View style={styles.header}>
-          <Text style={styles.headerTitle}>Profil</Text>
+          <Text style={styles.headerTitle}>{t("profile.profileHeader")}</Text>
           <TouchableOpacity onPress={() => setShowSettings(true)}>
             <Ionicons name="settings-outline" size={24} color="#333" />
           </TouchableOpacity>
@@ -3265,7 +3292,9 @@ export default function ProfileScreen() {
               color="#2D6418"
             />
             <Text style={styles.privacyText}>
-              {profile?.isPublic ? "Javni profil" : "Privatni profil"}
+              {profile?.isPublic
+                ? t("profile.publicProfileLabel")
+                : t("profile.privateProfileLabel")}
             </Text>
           </View>
 
@@ -3276,7 +3305,7 @@ export default function ProfileScreen() {
               onPress={() => setShowFollowers(true)}
             >
               <Text style={styles.statNum}>{profile?.followersCount ?? 0}</Text>
-              <Text style={styles.statLabel}>Pratitelji</Text>
+              <Text style={styles.statLabel}>{t("profile.followers")}</Text>
             </TouchableOpacity>
             <View style={styles.statDivider} />
             <TouchableOpacity
@@ -3284,34 +3313,34 @@ export default function ProfileScreen() {
               onPress={() => setShowFollowing(true)}
             >
               <Text style={styles.statNum}>{profile?.followingCount ?? 0}</Text>
-              <Text style={styles.statLabel}>Praćeni</Text>
+              <Text style={styles.statLabel}>{t("profile.following")}</Text>
             </TouchableOpacity>
           </View>
         </View>
 
         {/* Tabs */}
         <View style={styles.tabBar}>
-          {TABS.map((t) => (
+          {TABS.map((tab) => (
             <TouchableOpacity
-              key={t.key}
+              key={tab.key}
               style={[
                 styles.tabBtn,
-                activeTab === t.key && styles.tabBtnActive,
+                activeTab === tab.key && styles.tabBtnActive,
               ]}
-              onPress={() => setActiveTab(t.key)}
+              onPress={() => setActiveTab(tab.key as Tab)}
             >
               <Ionicons
-                name={t.icon}
+                name={tab.icon as any}
                 size={18}
-                color={activeTab === t.key ? "#2D6418" : "#999"}
+                color={activeTab === tab.key ? "#2D6418" : "#999"}
               />
               <Text
                 style={[
                   styles.tabBtnText,
-                  activeTab === t.key && styles.tabBtnTextActive,
+                  activeTab === tab.key && styles.tabBtnTextActive,
                 ]}
               >
-                {t.label}
+                {tab.label}
               </Text>
             </TouchableOpacity>
           ))}

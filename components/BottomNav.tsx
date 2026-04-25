@@ -2,6 +2,7 @@
 // Logika navigacije nepromijenjena, samo stilovi
 import { Ionicons } from "@expo/vector-icons";
 import { router, usePathname } from "expo-router";
+import { useTranslation } from "react-i18next";
 import {
   Platform,
   StyleSheet,
@@ -15,36 +16,43 @@ const GREEN_DARK = "#1B3F0E";
 const SILVER = "#9AA9A7";
 const SILVER_LIGHT = "#D1DADB";
 
-const TABS = [
-  { route: "/(tabs)", label: "Karta", icon: "map-outline", iconActive: "map" },
-  {
-    route: "/(tabs)/videos",
-    label: "Videi",
-    icon: "play-circle-outline",
-    iconActive: "play-circle",
-  },
-  {
-    route: "/(tabs)/messages",
-    label: "Poruke",
-    icon: "chatbubble-outline",
-    iconActive: "chatbubble",
-  },
-  {
-    route: "/(tabs)/search",
-    label: "Pretraga",
-    icon: "search-outline",
-    iconActive: "search",
-  },
-  {
-    route: "/(tabs)/profile",
-    label: "Profil",
-    icon: "person-outline",
-    iconActive: "person",
-  },
-] as const;
-
 export default function BottomNav() {
+  const { t } = useTranslation();
   const pathname = usePathname();
+
+  // ✅ TABS niz MORA biti UGNIJEŽĐEN unutar komponente (nakon useTranslation)
+  const TABS = [
+    {
+      route: "/(tabs)",
+      label: t("nav.map"),
+      icon: "map-outline",
+      iconActive: "map",
+    },
+    {
+      route: "/(tabs)/videos",
+      label: t("nav.videos"),
+      icon: "play-circle-outline",
+      iconActive: "play-circle",
+    },
+    {
+      route: "/(tabs)/messages",
+      label: t("nav.messages"),
+      icon: "chatbubble-outline",
+      iconActive: "chatbubble",
+    },
+    {
+      route: "/(tabs)/search",
+      label: t("nav.search"),
+      icon: "search-outline",
+      iconActive: "search",
+    },
+    {
+      route: "/(tabs)/profile",
+      label: t("nav.profile"),
+      icon: "person-outline",
+      iconActive: "person",
+    },
+  ] as const;
 
   const isActive = (route: string) => {
     if (route === "/(tabs)")

@@ -166,7 +166,7 @@ function VideoItemComponent({
           onPress={() => onOpenMessenger(item)}
         >
           <Ionicons name="paper-plane-outline" size={28} color="white" />
-          <Text style={styles.actionText}>{t("profile.message")}</Text>
+          <Text style={styles.actionText}>{t("videos.sendMessage")}</Text>
         </TouchableOpacity>
         <TouchableOpacity
           style={styles.actionButton}
@@ -643,17 +643,20 @@ function MessengerModal({
 
           {/* Brze poruke */}
           <View style={mm.quickRow}>
-            {["Super video! 🔥", "Odlično! 👏", "Hej! 👋", "Gdje je ovo?"].map(
-              (q) => (
-                <TouchableOpacity
-                  key={q}
-                  style={mm.quickChip}
-                  onPress={() => setMessage(q)}
-                >
-                  <Text style={mm.quickText}>{q}</Text>
-                </TouchableOpacity>
-              ),
-            )}
+            {[
+              t("videos.quickMessage1"),
+              t("videos.quickMessage2"),
+              t("videos.quickMessage3"),
+              t("videos.quickMessage4"),
+            ].map((q) => (
+              <TouchableOpacity
+                key={q}
+                style={mm.quickChip}
+                onPress={() => setMessage(q)}
+              >
+                <Text style={mm.quickText}>{q}</Text>
+              </TouchableOpacity>
+            ))}
           </View>
 
           <View style={mm.inputRow}>
