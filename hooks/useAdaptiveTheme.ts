@@ -52,7 +52,7 @@ const TIME_ZONES: Record<TimeZone, ZoneConfig> = {
     colorScheme: "light",
     brightnessLevel: 0.45,
     overlayColor: "#FF8C42",
-    overlayOpacity: 0.06,
+    overlayOpacity: 0.18,
   },
   morning: {
     // 07:00–10:59 — jutro, svježe
@@ -60,7 +60,7 @@ const TIME_ZONES: Record<TimeZone, ZoneConfig> = {
     colorScheme: "light",
     brightnessLevel: 0.75,
     overlayColor: "#FFD580",
-    overlayOpacity: 0.03,
+    overlayOpacity: 0.1,
   },
   day: {
     // 11:00–16:59 — dan, maksimalna svjetlina
@@ -76,7 +76,7 @@ const TIME_ZONES: Record<TimeZone, ZoneConfig> = {
     colorScheme: "light",
     brightnessLevel: 0.65,
     overlayColor: "#FF6B35",
-    overlayOpacity: 0.07,
+    overlayOpacity: 0.2,
   },
   night: {
     // 20:00–22:59 — noć, tamna tema
@@ -84,7 +84,7 @@ const TIME_ZONES: Record<TimeZone, ZoneConfig> = {
     colorScheme: "dark",
     brightnessLevel: 0.35,
     overlayColor: "#1A0A2E",
-    overlayOpacity: 0.12,
+    overlayOpacity: 0.3,
   },
   deep_night: {
     // 23:00–04:59 — duboka noć, minimalna svjetlina
@@ -92,7 +92,7 @@ const TIME_ZONES: Record<TimeZone, ZoneConfig> = {
     colorScheme: "dark",
     brightnessLevel: 0.18,
     overlayColor: "#0D0320",
-    overlayOpacity: 0.2,
+    overlayOpacity: 0.45,
   },
 };
 

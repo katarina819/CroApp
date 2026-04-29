@@ -26,7 +26,6 @@ import {
   Platform,
   ScrollView,
   Share,
-  StyleSheet,
   Switch,
   Text,
   TextInput,
@@ -34,6 +33,17 @@ import {
   View,
 } from "react-native";
 import MapView, { Circle, Marker, Region } from "react-native-maps";
+import {
+  ag,
+  dm,
+  mapLegend,
+  ms,
+  pb,
+  planStyles,
+  pm,
+  pr,
+  s,
+} from "../../styles/varaTheme";
 import { API_BASE_URL } from "../config/api";
 import {
   clearPlacesCache,
@@ -43,6 +53,20 @@ import {
   placeCategories,
   searchPlaces,
 } from "../services/locationService";
+
+const visitedIcon = require("../../assets/images/posmjesta.png");
+const planIcon = require("../../assets/images/put.png");
+const groupsIcon = require("../../assets/images/grupe.png");
+const badgesIcon = require("../../assets/images/uspjeh.png");
+const notificationsIcon = require("../../assets/images/obav.png");
+const archiveIcon = require("../../assets/images/arhiva.png");
+const locationPinIcon = require("../../assets/images/igla.png");
+const radiusIcon = require("../../assets/images/radijus.png");
+const zoomInIcon = require("../../assets/images/zoomin.png");
+const zoomOutIcon = require("../../assets/images/zoomout.png");
+const morningIcon = require("../../assets/images/jutro.png");
+const afternoonIcon = require("../../assets/images/popodne.png");
+const eveningIcon = require("../../assets/images/vecer.png");
 
 // ─── helpers ─────────────────────────────────────────────────────────────────
 async function fetchWithTimeout(
@@ -328,7 +352,6 @@ async function checkBadges(
   return newB;
 }
 
-// ══════════════════════════════════════════════════════════════════════════════
 // MARKER COMPONENTS
 // ══════════════════════════════════════════════════════════════════════════════
 
@@ -369,53 +392,42 @@ function UserLocationMarker() {
           transform: [{ scale: pulse }],
         }}
       />
-      <View
+      <Image
+        source={locationPinIcon}
         style={{
           width: 40,
           height: 40,
-          borderRadius: 20,
-          backgroundColor: "#667eea",
-          justifyContent: "center",
-          alignItems: "center",
-          borderWidth: 3,
-          borderColor: "#fff",
-          shadowColor: "#000",
-          shadowOffset: { width: 0, height: 2 },
-          shadowOpacity: 0.35,
-          shadowRadius: 4,
-          elevation: 6,
+          resizeMode: "contain",
         }}
-      >
-        <Text style={{ fontSize: 20 }}>🧑</Text>
-      </View>
+      />
     </View>
   );
 }
 
-const ms = StyleSheet.create({
-  circle: {
-    width: 46,
-    height: 46,
-    borderRadius: 23,
-    justifyContent: "center",
-    alignItems: "center",
-    borderWidth: 3,
-    borderColor: "#fff",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.4,
-    shadowRadius: 4,
-    elevation: 7,
-  },
-  emoji: { fontSize: 22 },
-  pin: {
-    width: 5,
-    height: 12,
-    borderBottomLeftRadius: 5,
-    borderBottomRightRadius: 5,
-    marginTop: -2,
-  },
-});
+// const ms = StyleSheet.create({
+//   circle: {
+//     width: 46,
+//     height: 46,
+//     borderRadius: 23,
+//     justifyContent: "center",
+//     alignItems: "center",
+//     borderWidth: 3,
+//     borderColor: "#fff",
+//     shadowColor: "#000",
+//     shadowOffset: { width: 0, height: 3 },
+//     shadowOpacity: 0.4,
+//     shadowRadius: 4,
+//     elevation: 7,
+//   },
+//   emoji: { fontSize: 22 },
+//   pin: {
+//     width: 5,
+//     height: 12,
+//     borderBottomLeftRadius: 5,
+//     borderBottomRightRadius: 5,
+//     marginTop: -2,
+//   },
+// });
 
 function PlaceMarker({
   place,
@@ -835,140 +847,140 @@ function PlaceDetailModal({
   );
 }
 
-const dm = StyleSheet.create({
-  overlay: {
-    flex: 1,
-    backgroundColor: "rgba(0,0,0,0.55)",
-    justifyContent: "flex-end",
-  },
-  sheet: {
-    backgroundColor: "#fff",
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
-    maxHeight: SH * 0.92,
-  },
-  imageBox: { position: "relative" },
-  imgPh: {
-    width: "100%",
-    height: 200,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  img: { width: "100%", height: 220 },
-  dots: {
-    position: "absolute",
-    bottom: 10,
-    left: 0,
-    right: 0,
-    flexDirection: "row",
-    justifyContent: "center",
-    gap: 6,
-  },
-  dot: {
-    width: 7,
-    height: 7,
-    borderRadius: 4,
-    backgroundColor: "rgba(255,255,255,0.5)",
-  },
-  dotA: { backgroundColor: "#fff" },
-  closeBtn: {
-    position: "absolute",
-    top: 12,
-    right: 12,
-    backgroundColor: "rgba(0,0,0,0.5)",
-    width: 34,
-    height: 34,
-    borderRadius: 17,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  hideBtn: {
-    position: "absolute",
-    top: 12,
-    left: 12,
-    backgroundColor: "rgba(0,0,0,0.5)",
-    width: 34,
-    height: 34,
-    borderRadius: 17,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  body: { padding: 20, paddingBottom: 36 },
-  badge: {
-    alignSelf: "flex-start",
-    paddingHorizontal: 12,
-    paddingVertical: 5,
-    borderRadius: 20,
-    marginBottom: 10,
-  },
-  badgeTxt: { color: "#fff", fontSize: 13, fontWeight: "700" },
-  name: { fontSize: 22, fontWeight: "800", color: "#1a1a1a", marginBottom: 6 },
-  meta: { fontSize: 14, color: "#666", marginBottom: 4 },
-  rating: { fontSize: 15, color: "#ff9500", marginBottom: 8 },
-  hoursBox: {
-    backgroundColor: "#f5f5f5",
-    borderRadius: 12,
-    padding: 14,
-    marginVertical: 12,
-  },
-  hoursTitle: {
-    fontSize: 14,
-    fontWeight: "700",
-    color: "#333",
-    marginBottom: 6,
-  },
-  hoursText: { fontSize: 13, color: "#555", lineHeight: 20 },
-  notifRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    backgroundColor: "#f0f0ff",
-    borderRadius: 12,
-    padding: 14,
-    marginBottom: 12,
-  },
-  notifLabel: { fontSize: 14, color: "#333", fontWeight: "600", flex: 1 },
-  reviewBox: {
-    backgroundColor: "#fafafa",
-    borderRadius: 14,
-    padding: 16,
-    marginBottom: 16,
-    gap: 12,
-  },
-  reviewTitle: { fontSize: 15, fontWeight: "700", color: "#333" },
-  commentInput: {
-    backgroundColor: "#fff",
-    borderWidth: 1,
-    borderColor: "#e0e0e0",
-    borderRadius: 10,
-    padding: 12,
-    fontSize: 14,
-    color: "#333",
-    minHeight: 80,
-    textAlignVertical: "top",
-  },
-  returnToggle: {
-    borderRadius: 10,
-    paddingVertical: 10,
-    paddingHorizontal: 14,
-    backgroundColor: "#f0f0f0",
-    alignSelf: "flex-start",
-  },
-  returnA: { backgroundColor: "#e8f5e9" },
-  returnTxt: { fontSize: 14, color: "#333", fontWeight: "600" },
-  reviewBtn: { borderRadius: 12, paddingVertical: 12, alignItems: "center" },
-  reviewBtnTxt: { color: "#fff", fontWeight: "700", fontSize: 15 },
-  visitBtn: { borderRadius: 14, paddingVertical: 14, alignItems: "center" },
-  visitBtnTxt: { color: "#fff", fontSize: 16, fontWeight: "700" },
-  visitedBadge: {
-    backgroundColor: "#e8f5e9",
-    borderRadius: 14,
-    paddingVertical: 12,
-    alignItems: "center",
-    borderWidth: 1.5,
-    borderColor: "#34c759",
-  },
-});
+// const dm = StyleSheet.create({
+//   overlay: {
+//     flex: 1,
+//     backgroundColor: "rgba(0,0,0,0.55)",
+//     justifyContent: "flex-end",
+//   },
+//   sheet: {
+//     backgroundColor: "#fff",
+//     borderTopLeftRadius: 24,
+//     borderTopRightRadius: 24,
+//     maxHeight: SH * 0.92,
+//   },
+//   imageBox: { position: "relative" },
+//   imgPh: {
+//     width: "100%",
+//     height: 200,
+//     justifyContent: "center",
+//     alignItems: "center",
+//   },
+//   img: { width: "100%", height: 220 },
+//   dots: {
+//     position: "absolute",
+//     bottom: 10,
+//     left: 0,
+//     right: 0,
+//     flexDirection: "row",
+//     justifyContent: "center",
+//     gap: 6,
+//   },
+//   dot: {
+//     width: 7,
+//     height: 7,
+//     borderRadius: 4,
+//     backgroundColor: "rgba(255,255,255,0.5)",
+//   },
+//   dotA: { backgroundColor: "#fff" },
+//   closeBtn: {
+//     position: "absolute",
+//     top: 12,
+//     right: 12,
+//     backgroundColor: "rgba(0,0,0,0.5)",
+//     width: 34,
+//     height: 34,
+//     borderRadius: 17,
+//     justifyContent: "center",
+//     alignItems: "center",
+//   },
+//   hideBtn: {
+//     position: "absolute",
+//     top: 12,
+//     left: 12,
+//     backgroundColor: "rgba(0,0,0,0.5)",
+//     width: 34,
+//     height: 34,
+//     borderRadius: 17,
+//     justifyContent: "center",
+//     alignItems: "center",
+//   },
+//   body: { padding: 20, paddingBottom: 36 },
+//   badge: {
+//     alignSelf: "flex-start",
+//     paddingHorizontal: 12,
+//     paddingVertical: 5,
+//     borderRadius: 20,
+//     marginBottom: 10,
+//   },
+//   badgeTxt: { color: "#fff", fontSize: 13, fontWeight: "700" },
+//   name: { fontSize: 22, fontWeight: "800", color: "#1a1a1a", marginBottom: 6 },
+//   meta: { fontSize: 14, color: "#666", marginBottom: 4 },
+//   rating: { fontSize: 15, color: "#ff9500", marginBottom: 8 },
+//   hoursBox: {
+//     backgroundColor: "#f5f5f5",
+//     borderRadius: 12,
+//     padding: 14,
+//     marginVertical: 12,
+//   },
+//   hoursTitle: {
+//     fontSize: 14,
+//     fontWeight: "700",
+//     color: "#333",
+//     marginBottom: 6,
+//   },
+//   hoursText: { fontSize: 13, color: "#555", lineHeight: 20 },
+//   notifRow: {
+//     flexDirection: "row",
+//     alignItems: "center",
+//     justifyContent: "space-between",
+//     backgroundColor: "#f0f0ff",
+//     borderRadius: 12,
+//     padding: 14,
+//     marginBottom: 12,
+//   },
+//   notifLabel: { fontSize: 14, color: "#333", fontWeight: "600", flex: 1 },
+//   reviewBox: {
+//     backgroundColor: "#fafafa",
+//     borderRadius: 14,
+//     padding: 16,
+//     marginBottom: 16,
+//     gap: 12,
+//   },
+//   reviewTitle: { fontSize: 15, fontWeight: "700", color: "#333" },
+//   commentInput: {
+//     backgroundColor: "#fff",
+//     borderWidth: 1,
+//     borderColor: "#e0e0e0",
+//     borderRadius: 10,
+//     padding: 12,
+//     fontSize: 14,
+//     color: "#333",
+//     minHeight: 80,
+//     textAlignVertical: "top",
+//   },
+//   returnToggle: {
+//     borderRadius: 10,
+//     paddingVertical: 10,
+//     paddingHorizontal: 14,
+//     backgroundColor: "#f0f0f0",
+//     alignSelf: "flex-start",
+//   },
+//   returnA: { backgroundColor: "#e8f5e9" },
+//   returnTxt: { fontSize: 14, color: "#333", fontWeight: "600" },
+//   reviewBtn: { borderRadius: 12, paddingVertical: 12, alignItems: "center" },
+//   reviewBtnTxt: { color: "#fff", fontWeight: "700", fontSize: 15 },
+//   visitBtn: { borderRadius: 14, paddingVertical: 14, alignItems: "center" },
+//   visitBtnTxt: { color: "#fff", fontSize: 16, fontWeight: "700" },
+//   visitedBadge: {
+//     backgroundColor: "#e8f5e9",
+//     borderRadius: 14,
+//     paddingVertical: 12,
+//     alignItems: "center",
+//     borderWidth: 1.5,
+//     borderColor: "#34c759",
+//   },
+// });
 
 // ─── Notification Settings Modal ──────────────────────────────────────────────
 function NotificationSettingsModal({
@@ -2335,310 +2347,310 @@ export function ActivityGroupsModal({
 }
 
 // ─── Stilovi za ActivityGroupsModal ──────────────────────────────────────────
-const ag = StyleSheet.create({
-  // Chat
-  chatHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    padding: 16,
-    paddingTop: Platform.OS === "ios" ? 54 : 36,
-    backgroundColor: "#667eea",
-    gap: 12,
-  },
-  dmOverlay: {
-    position: "absolute" as const,
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: "rgba(0,0,0,0.55)",
-    justifyContent: "flex-end" as const,
-    zIndex: 999,
-  },
-  dmSheet: {
-    backgroundColor: "#fff",
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
-    padding: 20,
-    paddingBottom: Platform.OS === "ios" ? 34 : 20,
-    maxHeight: "70%",
-  },
-  dmHandle: {
-    width: 40,
-    height: 4,
-    borderRadius: 2,
-    backgroundColor: "#e0e0e0",
-    alignSelf: "center" as const,
-    marginBottom: 16,
-  },
-  dmHeader: {
-    flexDirection: "row" as const,
-    alignItems: "center" as const,
-    gap: 12,
-    marginBottom: 14,
-    paddingBottom: 14,
-    borderBottomWidth: 1,
-    borderBottomColor: "#f0f0f0",
-  },
-  dmAvatar: {
-    width: 46,
-    height: 46,
-    borderRadius: 23,
-    backgroundColor: "#667eea",
-    justifyContent: "center" as const,
-    alignItems: "center" as const,
-  },
-  dmTitle: { fontSize: 16, fontWeight: "700" as const, color: "#1a1a1a" },
-  dmSubtitle: { fontSize: 14, color: "#667eea", marginTop: 2 },
-  dmWarnBadge: {
-    backgroundColor: "#fff8e6",
-    borderRadius: 8,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-  },
-  dmInput: {
-    backgroundColor: "#f5f5f5",
-    borderRadius: 14,
-    padding: 14,
-    fontSize: 15,
-    minHeight: 90,
-    color: "#333",
-    marginBottom: 12,
-  },
-  dmQuickBtn: {
-    backgroundColor: "#f0f0ff",
-    borderRadius: 18,
-    paddingHorizontal: 12,
-    paddingVertical: 7,
-  },
-  dmQuickText: { fontSize: 13, color: "#667eea", fontWeight: "600" },
-  dmActions: {
-    flexDirection: "row" as const,
-    gap: 10,
-    marginTop: 4,
-  },
-  dmCancelBtn: {
-    paddingVertical: 13,
-    paddingHorizontal: 20,
-    borderRadius: 12,
-    backgroundColor: "#f0f0f0",
-    alignItems: "center" as const,
-  },
-  dmCancelText: { color: "#666", fontSize: 14, fontWeight: "600" },
-  dmSendBtn: {
-    flex: 1,
-    paddingVertical: 13,
-    borderRadius: 12,
-    backgroundColor: "#667eea",
-    alignItems: "center" as const,
-    justifyContent: "center" as const,
-    shadowColor: "#667eea",
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.3,
-    shadowRadius: 6,
-    elevation: 4,
-  },
-  dmSendBtnDisabled: {
-    backgroundColor: "#ccc",
-    shadowOpacity: 0,
-    elevation: 0,
-  },
-  dmSendText: { color: "#fff", fontSize: 15, fontWeight: "700" },
+// const ag = StyleSheet.create({
+//   // Chat
+//   chatHeader: {
+//     flexDirection: "row",
+//     alignItems: "center",
+//     padding: 16,
+//     paddingTop: Platform.OS === "ios" ? 54 : 36,
+//     backgroundColor: "#667eea",
+//     gap: 12,
+//   },
+//   dmOverlay: {
+//     position: "absolute" as const,
+//     top: 0,
+//     left: 0,
+//     right: 0,
+//     bottom: 0,
+//     backgroundColor: "rgba(0,0,0,0.55)",
+//     justifyContent: "flex-end" as const,
+//     zIndex: 999,
+//   },
+//   dmSheet: {
+//     backgroundColor: "#fff",
+//     borderTopLeftRadius: 24,
+//     borderTopRightRadius: 24,
+//     padding: 20,
+//     paddingBottom: Platform.OS === "ios" ? 34 : 20,
+//     maxHeight: "70%",
+//   },
+//   dmHandle: {
+//     width: 40,
+//     height: 4,
+//     borderRadius: 2,
+//     backgroundColor: "#e0e0e0",
+//     alignSelf: "center" as const,
+//     marginBottom: 16,
+//   },
+//   dmHeader: {
+//     flexDirection: "row" as const,
+//     alignItems: "center" as const,
+//     gap: 12,
+//     marginBottom: 14,
+//     paddingBottom: 14,
+//     borderBottomWidth: 1,
+//     borderBottomColor: "#f0f0f0",
+//   },
+//   dmAvatar: {
+//     width: 46,
+//     height: 46,
+//     borderRadius: 23,
+//     backgroundColor: "#667eea",
+//     justifyContent: "center" as const,
+//     alignItems: "center" as const,
+//   },
+//   dmTitle: { fontSize: 16, fontWeight: "700" as const, color: "#1a1a1a" },
+//   dmSubtitle: { fontSize: 14, color: "#667eea", marginTop: 2 },
+//   dmWarnBadge: {
+//     backgroundColor: "#fff8e6",
+//     borderRadius: 8,
+//     paddingHorizontal: 8,
+//     paddingVertical: 4,
+//   },
+//   dmInput: {
+//     backgroundColor: "#f5f5f5",
+//     borderRadius: 14,
+//     padding: 14,
+//     fontSize: 15,
+//     minHeight: 90,
+//     color: "#333",
+//     marginBottom: 12,
+//   },
+//   dmQuickBtn: {
+//     backgroundColor: "#f0f0ff",
+//     borderRadius: 18,
+//     paddingHorizontal: 12,
+//     paddingVertical: 7,
+//   },
+//   dmQuickText: { fontSize: 13, color: "#667eea", fontWeight: "600" },
+//   dmActions: {
+//     flexDirection: "row" as const,
+//     gap: 10,
+//     marginTop: 4,
+//   },
+//   dmCancelBtn: {
+//     paddingVertical: 13,
+//     paddingHorizontal: 20,
+//     borderRadius: 12,
+//     backgroundColor: "#f0f0f0",
+//     alignItems: "center" as const,
+//   },
+//   dmCancelText: { color: "#666", fontSize: 14, fontWeight: "600" },
+//   dmSendBtn: {
+//     flex: 1,
+//     paddingVertical: 13,
+//     borderRadius: 12,
+//     backgroundColor: "#667eea",
+//     alignItems: "center" as const,
+//     justifyContent: "center" as const,
+//     shadowColor: "#667eea",
+//     shadowOffset: { width: 0, height: 3 },
+//     shadowOpacity: 0.3,
+//     shadowRadius: 6,
+//     elevation: 4,
+//   },
+//   dmSendBtnDisabled: {
+//     backgroundColor: "#ccc",
+//     shadowOpacity: 0,
+//     elevation: 0,
+//   },
+//   dmSendText: { color: "#fff", fontSize: 15, fontWeight: "700" },
 
-  chatHeaderBack: { color: "#fff", fontSize: 22 },
-  chatHeaderTitle: { color: "#fff", fontSize: 16, fontWeight: "800" },
-  chatHeaderSub: { color: "rgba(255,255,255,0.8)", fontSize: 12 },
-  membersRow: {
-    maxHeight: 72,
-    borderBottomWidth: 1,
-    borderBottomColor: "#eee",
-    backgroundColor: "#f8f8ff",
-  },
-  memberAvatar: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: "#667eea",
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  memberAvatarEmpty: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: "#f0f0f0",
-    justifyContent: "center",
-    alignItems: "center",
-    borderWidth: 2,
-    borderColor: "#ddd",
-    borderStyle: "dashed",
-  },
-  memberName: { fontSize: 10, color: "#555", marginTop: 2 },
-  msgRow: { flexDirection: "row", marginVertical: 4, gap: 8 },
-  msgAvatar: {
-    width: 30,
-    height: 30,
-    borderRadius: 15,
-    backgroundColor: "#667eea",
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  msgSender: { fontSize: 11, color: "#999", marginBottom: 2 },
-  bubble: { borderRadius: 16, paddingHorizontal: 12, paddingVertical: 8 },
-  bubbleMine: { backgroundColor: "#667eea", borderBottomRightRadius: 4 },
-  bubbleOther: { backgroundColor: "#f2f2f7", borderBottomLeftRadius: 4 },
-  msgTime: { fontSize: 10, color: "#bbb", marginTop: 2 },
-  inputRow: {
-    flexDirection: "row",
-    padding: 12,
-    borderTopWidth: 1,
-    borderTopColor: "#eee",
-    gap: 8,
-    backgroundColor: "#fff",
-  },
-  input: {
-    flex: 1,
-    backgroundColor: "#f2f2f7",
-    borderRadius: 22,
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    fontSize: 15,
-    color: "#333",
-  },
-  sendBtn: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: "#667eea",
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  joinBtn: {
-    backgroundColor: "#667eea",
-    borderRadius: 14,
-    paddingVertical: 14,
-    alignItems: "center",
-  },
-  joinBtnText: { color: "#fff", fontSize: 16, fontWeight: "700" },
-  // Nav header (forma za kreiranje)
-  navHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    padding: 20,
-    paddingTop: Platform.OS === "ios" ? 54 : 36,
-    borderBottomWidth: 1,
-    borderBottomColor: "#eee",
-  },
-  navHeaderLink: { fontSize: 16, color: "#667eea" },
-  navHeaderTitle: { fontSize: 17, fontWeight: "800" },
-  formLabel: {
-    fontSize: 14,
-    fontWeight: "700",
-    color: "#333",
-    marginBottom: 8,
-  },
-  formInput: {
-    backgroundColor: "#f5f5f5",
-    borderRadius: 12,
-    padding: 14,
-    fontSize: 15,
-    color: "#333",
-    marginBottom: 16,
-    borderWidth: 1,
-    borderColor: "#e0e0e0",
-  },
-  templateChip: {
-    paddingHorizontal: 14,
-    paddingVertical: 9,
-    borderRadius: 22,
-    backgroundColor: "#f0f0f0",
-  },
-  templateChipActive: { backgroundColor: "#667eea" },
-  templateChipText: { fontSize: 13, fontWeight: "600", color: "#444" },
-  // Lista grupa
-  listHeader: {
-    backgroundColor: "#667eea",
-    padding: 20,
-    paddingTop: Platform.OS === "ios" ? 54 : 36,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-  },
-  listHeaderTitle: { color: "#fff", fontSize: 18, fontWeight: "800" },
-  newBtn: {
-    backgroundColor: "rgba(255,255,255,0.25)",
-    borderRadius: 20,
-    paddingHorizontal: 14,
-    paddingVertical: 7,
-  },
-  groupCard: {
-    backgroundColor: "#fff",
-    borderRadius: 16,
-    padding: 16,
-    marginBottom: 12,
-    borderLeftWidth: 4,
-    elevation: 2,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.08,
-    shadowRadius: 4,
-  },
-  groupTitle: { fontSize: 16, fontWeight: "800", color: "#1a1a1a" },
-  groupLocation: { fontSize: 13, color: "#667eea", marginTop: 2 },
-  groupDesc: { fontSize: 13, color: "#666", marginTop: 4 },
-  groupIcon: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    justifyContent: "center",
-    alignItems: "center",
-    marginLeft: 12,
-  },
-  groupFooter: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    marginTop: 12,
-  },
-  footerAvatar: {
-    width: 26,
-    height: 26,
-    borderRadius: 13,
-    backgroundColor: "#667eea",
-    justifyContent: "center",
-    alignItems: "center",
-    borderWidth: 2,
-    borderColor: "#fff",
-  },
-  groupCount: { fontSize: 12, color: "#666", fontWeight: "600", marginLeft: 4 },
-  badgeOwn: {
-    backgroundColor: "#f0f0ff",
-    borderRadius: 12,
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-  },
-  badgeOwnText: { fontSize: 11, color: "#667eea", fontWeight: "700" },
-  badgeMember: {
-    backgroundColor: "#e8f5e9",
-    borderRadius: 12,
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-  },
-  badgeMemberText: { fontSize: 11, color: "#34c759", fontWeight: "700" },
-  badgeFull: {
-    backgroundColor: "#f9f9f9",
-    borderRadius: 12,
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-  },
-  joinSmallBtn: {
-    backgroundColor: "#667eea",
-    borderRadius: 12,
-    paddingHorizontal: 12,
-    paddingVertical: 5,
-  },
-});
+//   chatHeaderBack: { color: "#fff", fontSize: 22 },
+//   chatHeaderTitle: { color: "#fff", fontSize: 16, fontWeight: "800" },
+//   chatHeaderSub: { color: "rgba(255,255,255,0.8)", fontSize: 12 },
+//   membersRow: {
+//     maxHeight: 72,
+//     borderBottomWidth: 1,
+//     borderBottomColor: "#eee",
+//     backgroundColor: "#f8f8ff",
+//   },
+//   memberAvatar: {
+//     width: 36,
+//     height: 36,
+//     borderRadius: 18,
+//     backgroundColor: "#667eea",
+//     justifyContent: "center",
+//     alignItems: "center",
+//   },
+//   memberAvatarEmpty: {
+//     width: 36,
+//     height: 36,
+//     borderRadius: 18,
+//     backgroundColor: "#f0f0f0",
+//     justifyContent: "center",
+//     alignItems: "center",
+//     borderWidth: 2,
+//     borderColor: "#ddd",
+//     borderStyle: "dashed",
+//   },
+//   memberName: { fontSize: 10, color: "#555", marginTop: 2 },
+//   msgRow: { flexDirection: "row", marginVertical: 4, gap: 8 },
+//   msgAvatar: {
+//     width: 30,
+//     height: 30,
+//     borderRadius: 15,
+//     backgroundColor: "#667eea",
+//     justifyContent: "center",
+//     alignItems: "center",
+//   },
+//   msgSender: { fontSize: 11, color: "#999", marginBottom: 2 },
+//   bubble: { borderRadius: 16, paddingHorizontal: 12, paddingVertical: 8 },
+//   bubbleMine: { backgroundColor: "#667eea", borderBottomRightRadius: 4 },
+//   bubbleOther: { backgroundColor: "#f2f2f7", borderBottomLeftRadius: 4 },
+//   msgTime: { fontSize: 10, color: "#bbb", marginTop: 2 },
+//   inputRow: {
+//     flexDirection: "row",
+//     padding: 12,
+//     borderTopWidth: 1,
+//     borderTopColor: "#eee",
+//     gap: 8,
+//     backgroundColor: "#fff",
+//   },
+//   input: {
+//     flex: 1,
+//     backgroundColor: "#f2f2f7",
+//     borderRadius: 22,
+//     paddingHorizontal: 16,
+//     paddingVertical: 10,
+//     fontSize: 15,
+//     color: "#333",
+//   },
+//   sendBtn: {
+//     width: 44,
+//     height: 44,
+//     borderRadius: 22,
+//     backgroundColor: "#667eea",
+//     justifyContent: "center",
+//     alignItems: "center",
+//   },
+//   joinBtn: {
+//     backgroundColor: "#667eea",
+//     borderRadius: 14,
+//     paddingVertical: 14,
+//     alignItems: "center",
+//   },
+//   joinBtnText: { color: "#fff", fontSize: 16, fontWeight: "700" },
+//   // Nav header (forma za kreiranje)
+//   navHeader: {
+//     flexDirection: "row",
+//     justifyContent: "space-between",
+//     alignItems: "center",
+//     padding: 20,
+//     paddingTop: Platform.OS === "ios" ? 54 : 36,
+//     borderBottomWidth: 1,
+//     borderBottomColor: "#eee",
+//   },
+//   navHeaderLink: { fontSize: 16, color: "#667eea" },
+//   navHeaderTitle: { fontSize: 17, fontWeight: "800" },
+//   formLabel: {
+//     fontSize: 14,
+//     fontWeight: "700",
+//     color: "#333",
+//     marginBottom: 8,
+//   },
+//   formInput: {
+//     backgroundColor: "#f5f5f5",
+//     borderRadius: 12,
+//     padding: 14,
+//     fontSize: 15,
+//     color: "#333",
+//     marginBottom: 16,
+//     borderWidth: 1,
+//     borderColor: "#e0e0e0",
+//   },
+//   templateChip: {
+//     paddingHorizontal: 14,
+//     paddingVertical: 9,
+//     borderRadius: 22,
+//     backgroundColor: "#f0f0f0",
+//   },
+//   templateChipActive: { backgroundColor: "#667eea" },
+//   templateChipText: { fontSize: 13, fontWeight: "600", color: "#444" },
+//   // Lista grupa
+//   listHeader: {
+//     backgroundColor: "#667eea",
+//     padding: 20,
+//     paddingTop: Platform.OS === "ios" ? 54 : 36,
+//     flexDirection: "row",
+//     alignItems: "center",
+//     justifyContent: "space-between",
+//   },
+//   listHeaderTitle: { color: "#fff", fontSize: 18, fontWeight: "800" },
+//   newBtn: {
+//     backgroundColor: "rgba(255,255,255,0.25)",
+//     borderRadius: 20,
+//     paddingHorizontal: 14,
+//     paddingVertical: 7,
+//   },
+//   groupCard: {
+//     backgroundColor: "#fff",
+//     borderRadius: 16,
+//     padding: 16,
+//     marginBottom: 12,
+//     borderLeftWidth: 4,
+//     elevation: 2,
+//     shadowColor: "#000",
+//     shadowOffset: { width: 0, height: 1 },
+//     shadowOpacity: 0.08,
+//     shadowRadius: 4,
+//   },
+//   groupTitle: { fontSize: 16, fontWeight: "800", color: "#1a1a1a" },
+//   groupLocation: { fontSize: 13, color: "#667eea", marginTop: 2 },
+//   groupDesc: { fontSize: 13, color: "#666", marginTop: 4 },
+//   groupIcon: {
+//     width: 44,
+//     height: 44,
+//     borderRadius: 22,
+//     justifyContent: "center",
+//     alignItems: "center",
+//     marginLeft: 12,
+//   },
+//   groupFooter: {
+//     flexDirection: "row",
+//     alignItems: "center",
+//     justifyContent: "space-between",
+//     marginTop: 12,
+//   },
+//   footerAvatar: {
+//     width: 26,
+//     height: 26,
+//     borderRadius: 13,
+//     backgroundColor: "#667eea",
+//     justifyContent: "center",
+//     alignItems: "center",
+//     borderWidth: 2,
+//     borderColor: "#fff",
+//   },
+//   groupCount: { fontSize: 12, color: "#666", fontWeight: "600", marginLeft: 4 },
+//   badgeOwn: {
+//     backgroundColor: "#f0f0ff",
+//     borderRadius: 12,
+//     paddingHorizontal: 10,
+//     paddingVertical: 4,
+//   },
+//   badgeOwnText: { fontSize: 11, color: "#667eea", fontWeight: "700" },
+//   badgeMember: {
+//     backgroundColor: "#e8f5e9",
+//     borderRadius: 12,
+//     paddingHorizontal: 10,
+//     paddingVertical: 4,
+//   },
+//   badgeMemberText: { fontSize: 11, color: "#34c759", fontWeight: "700" },
+//   badgeFull: {
+//     backgroundColor: "#f9f9f9",
+//     borderRadius: 12,
+//     paddingHorizontal: 10,
+//     paddingVertical: 4,
+//   },
+//   joinSmallBtn: {
+//     backgroundColor: "#667eea",
+//     borderRadius: 12,
+//     paddingHorizontal: 12,
+//     paddingVertical: 5,
+//   },
+// });
 
 // ─── Plan My Day Modal ────────────────────────────────────────────────────────
 type PlanPeriod = "dan" | "vikend" | "tjedan" | "2tjedna" | "godisnji";
@@ -2673,16 +2685,16 @@ function ProgressBar({ step, total }: { step: number; total: number }) {
     </View>
   );
 }
-const pb = StyleSheet.create({
-  track: {
-    height: 4,
-    backgroundColor: "rgba(102,126,234,0.2)",
-    borderRadius: 2,
-    overflow: "hidden",
-    marginTop: 12,
-  },
-  fill: { height: "100%", backgroundColor: "#667eea", borderRadius: 2 },
-});
+// const pb = StyleSheet.create({
+//   track: {
+//     height: 4,
+//     backgroundColor: "rgba(102,126,234,0.2)",
+//     borderRadius: 2,
+//     overflow: "hidden",
+//     marginTop: 12,
+//   },
+//   fill: { height: "100%", backgroundColor: "#667eea", borderRadius: 2 },
+// });
 
 // ─── Helper: dohvati stvarna mjesta iz OSM ─────────────────────────────────────
 async function fetchVenuesNearCity(
@@ -2700,10 +2712,29 @@ async function fetchVenuesNearCity(
   if (!geocoded) return { geocoded: null, venues: {} };
 
   clearPlacesCache();
-  const cats =
-    interests.length > 0
-      ? interests
-      : ["restaurant", "cafe", "beach", "landmark", "park", "museum"];
+
+  // UVIJEK traži sve relevantne kategorije, interests samo određuju prioritet
+  const allCats = [
+    "restaurant",
+    "cafe",
+    "beach",
+    "landmark",
+    "park",
+    "museum",
+    "accommodation",
+    "club",
+    "cinema",
+    "theater",
+    "spa",
+    "market",
+    "mountain",
+    "nationalPark",
+    "cave",
+    "escapeRoom",
+    "paintball",
+  ];
+
+  const cats = interests.length > 0 ? interests : allCats;
 
   const places = await getPlacesInRadius(
     geocoded.latitude,
@@ -2719,8 +2750,8 @@ async function fetchVenuesNearCity(
 
   for (const p of places) {
     if (!venues[p.type]) venues[p.type] = [];
-    // ✅ Povećano s 5 na 10 opcija po kategoriji
-    if (venues[p.type].length < 10) {
+    // Min 5, max 15 opcija po kategoriji
+    if (venues[p.type].length < 15) {
       venues[p.type].push({
         name: p.name,
         address: p.address,
@@ -3016,131 +3047,131 @@ function PlaceDetailInPlan({
   );
 }
 
-const pm = StyleSheet.create({
-  header: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    padding: 16,
-    paddingTop: Platform.OS === "ios" ? 54 : 36,
-    borderBottomWidth: 1,
-    borderBottomColor: "#eee",
-    backgroundColor: "#fff",
-  },
-  headerTitle: { fontSize: 16, fontWeight: "700", color: "#1a1a1a" },
-  headerLink: {
-    fontSize: 14,
-    color: "#667eea",
-    fontWeight: "600",
-    minWidth: 60,
-  },
-  sectionTitle: {
-    fontSize: 15,
-    fontWeight: "700",
-    color: "#1a1a1a",
-    marginBottom: 10,
-    marginTop: 20,
-  },
-  label: { fontSize: 13, color: "#666", marginBottom: 8 },
-  input: {
-    backgroundColor: "#f5f5f5",
-    borderRadius: 12,
-    padding: 12,
-    fontSize: 15,
-    color: "#333",
-    marginBottom: 10,
-    borderWidth: 1,
-    borderColor: "#e8e8e8",
-  },
-  row: { flexDirection: "row", marginBottom: 0 },
-  chipRow: { flexDirection: "row", flexWrap: "wrap", gap: 8, marginBottom: 4 },
-  chip: {
-    paddingHorizontal: 14,
-    paddingVertical: 9,
-    borderRadius: 20,
-    backgroundColor: "#f0f0f0",
-  },
-  chipSmall: {
-    paddingHorizontal: 12,
-    paddingVertical: 7,
-    borderRadius: 18,
-    backgroundColor: "#f0f0f0",
-  },
-  chipMd: {
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    borderRadius: 14,
-    backgroundColor: "#f0f0f0",
-    alignItems: "center",
-    minWidth: 64,
-  },
-  chipActive: { backgroundColor: "#667eea" },
-  chipText: { fontSize: 13, fontWeight: "600", color: "#555" },
-  chipTextActive: { color: "#fff" },
-  generateBtn: {
-    backgroundColor: "#667eea",
-    borderRadius: 16,
-    paddingVertical: 18,
-    alignItems: "center",
-    marginTop: 8,
-  },
-  generateBtnText: { color: "#fff", fontSize: 16, fontWeight: "700" },
-  generateHint: {
-    textAlign: "center",
-    fontSize: 12,
-    color: "#999",
-    marginTop: 10,
-  },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    padding: 40,
-  },
-  loadingIcon: { fontSize: 64, marginTop: 24, marginBottom: 8 },
-  loadingText: {
-    fontSize: 18,
-    fontWeight: "700",
-    color: "#1a1a1a",
-    textAlign: "center",
-  },
-  loadingHint: {
-    fontSize: 13,
-    color: "#999",
-    marginTop: 8,
-    textAlign: "center",
-  },
-  resultBadge: {
-    backgroundColor: "#f0f0ff",
-    borderRadius: 10,
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    marginBottom: 16,
-    alignSelf: "flex-start",
-  },
-  resultBadgeText: { fontSize: 13, color: "#667eea", fontWeight: "600" },
-  resultText: {
-    fontSize: 13,
-    color: "#333",
-    lineHeight: 22,
-    fontFamily: Platform.OS === "ios" ? "Courier" : "monospace",
-  },
-  btnPrimary: {
-    backgroundColor: "#667eea",
-    borderRadius: 14,
-    paddingVertical: 14,
-    alignItems: "center",
-  },
-  btnPrimaryText: { color: "#fff", fontSize: 15, fontWeight: "700" },
-  btnSecondary: {
-    borderRadius: 14,
-    paddingVertical: 14,
-    alignItems: "center",
-    borderWidth: 1.5,
-    borderColor: "#667eea",
-  },
-  btnSecondaryText: { color: "#667eea", fontSize: 15, fontWeight: "600" },
-});
+// const pm = StyleSheet.create({
+//   header: {
+//     flexDirection: "row",
+//     justifyContent: "space-between",
+//     alignItems: "center",
+//     padding: 16,
+//     paddingTop: Platform.OS === "ios" ? 54 : 36,
+//     borderBottomWidth: 1,
+//     borderBottomColor: "#eee",
+//     backgroundColor: "#fff",
+//   },
+//   headerTitle: { fontSize: 16, fontWeight: "700", color: "#1a1a1a" },
+//   headerLink: {
+//     fontSize: 14,
+//     color: "#667eea",
+//     fontWeight: "600",
+//     minWidth: 60,
+//   },
+//   sectionTitle: {
+//     fontSize: 15,
+//     fontWeight: "700",
+//     color: "#1a1a1a",
+//     marginBottom: 10,
+//     marginTop: 20,
+//   },
+//   label: { fontSize: 13, color: "#666", marginBottom: 8 },
+//   input: {
+//     backgroundColor: "#f5f5f5",
+//     borderRadius: 12,
+//     padding: 12,
+//     fontSize: 15,
+//     color: "#333",
+//     marginBottom: 10,
+//     borderWidth: 1,
+//     borderColor: "#e8e8e8",
+//   },
+//   row: { flexDirection: "row", marginBottom: 0 },
+//   chipRow: { flexDirection: "row", flexWrap: "wrap", gap: 8, marginBottom: 4 },
+//   chip: {
+//     paddingHorizontal: 14,
+//     paddingVertical: 9,
+//     borderRadius: 20,
+//     backgroundColor: "#f0f0f0",
+//   },
+//   chipSmall: {
+//     paddingHorizontal: 12,
+//     paddingVertical: 7,
+//     borderRadius: 18,
+//     backgroundColor: "#f0f0f0",
+//   },
+//   chipMd: {
+//     paddingHorizontal: 14,
+//     paddingVertical: 8,
+//     borderRadius: 14,
+//     backgroundColor: "#f0f0f0",
+//     alignItems: "center",
+//     minWidth: 64,
+//   },
+//   chipActive: { backgroundColor: "#667eea" },
+//   chipText: { fontSize: 13, fontWeight: "600", color: "#555" },
+//   chipTextActive: { color: "#fff" },
+//   generateBtn: {
+//     backgroundColor: "#667eea",
+//     borderRadius: 16,
+//     paddingVertical: 18,
+//     alignItems: "center",
+//     marginTop: 8,
+//   },
+//   generateBtnText: { color: "#fff", fontSize: 16, fontWeight: "700" },
+//   generateHint: {
+//     textAlign: "center",
+//     fontSize: 12,
+//     color: "#999",
+//     marginTop: 10,
+//   },
+//   loadingContainer: {
+//     flex: 1,
+//     justifyContent: "center",
+//     alignItems: "center",
+//     padding: 40,
+//   },
+//   loadingIcon: { fontSize: 64, marginTop: 24, marginBottom: 8 },
+//   loadingText: {
+//     fontSize: 18,
+//     fontWeight: "700",
+//     color: "#1a1a1a",
+//     textAlign: "center",
+//   },
+//   loadingHint: {
+//     fontSize: 13,
+//     color: "#999",
+//     marginTop: 8,
+//     textAlign: "center",
+//   },
+//   resultBadge: {
+//     backgroundColor: "#f0f0ff",
+//     borderRadius: 10,
+//     paddingHorizontal: 14,
+//     paddingVertical: 8,
+//     marginBottom: 16,
+//     alignSelf: "flex-start",
+//   },
+//   resultBadgeText: { fontSize: 13, color: "#667eea", fontWeight: "600" },
+//   resultText: {
+//     fontSize: 13,
+//     color: "#333",
+//     lineHeight: 22,
+//     fontFamily: Platform.OS === "ios" ? "Courier" : "monospace",
+//   },
+//   btnPrimary: {
+//     backgroundColor: "#667eea",
+//     borderRadius: 14,
+//     paddingVertical: 14,
+//     alignItems: "center",
+//   },
+//   btnPrimaryText: { color: "#fff", fontSize: 15, fontWeight: "700" },
+//   btnSecondary: {
+//     borderRadius: 14,
+//     paddingVertical: 14,
+//     alignItems: "center",
+//     borderWidth: 1.5,
+//     borderColor: "#667eea",
+//   },
+//   btnSecondaryText: { color: "#667eea", fontSize: 15, fontWeight: "600" },
+// });
 
 function PlanRenderer({ text }: { text: string }) {
   const lines = text.split("\n");
@@ -3331,154 +3362,154 @@ function PlanRenderer({ text }: { text: string }) {
   return <View style={pr.container}>{rendered}</View>;
 }
 
-const pr = StyleSheet.create({
-  container: { gap: 3, paddingBottom: 8 },
+// const pr = StyleSheet.create({
+//   container: { gap: 3, paddingBottom: 8 },
 
-  // Title card — gradient purple
-  titleBox: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 14,
-    backgroundColor: "#667eea",
-    borderRadius: 18,
-    padding: 18,
-    marginBottom: 10,
-    shadowColor: "#667eea",
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.35,
-    shadowRadius: 10,
-    elevation: 7,
-  },
-  titleEmoji: { fontSize: 34 },
-  titleSub: {
-    color: "rgba(255,255,255,0.7)",
-    fontSize: 10,
-    fontWeight: "700",
-    letterSpacing: 1.8,
-    marginBottom: 2,
-  },
-  titleMain: { color: "#fff", fontSize: 20, fontWeight: "900", lineHeight: 26 },
+//   // Title card — gradient purple
+//   titleBox: {
+//     flexDirection: "row",
+//     alignItems: "center",
+//     gap: 14,
+//     backgroundColor: "#667eea",
+//     borderRadius: 18,
+//     padding: 18,
+//     marginBottom: 10,
+//     shadowColor: "#667eea",
+//     shadowOffset: { width: 0, height: 6 },
+//     shadowOpacity: 0.35,
+//     shadowRadius: 10,
+//     elevation: 7,
+//   },
+//   titleEmoji: { fontSize: 34 },
+//   titleSub: {
+//     color: "rgba(255,255,255,0.7)",
+//     fontSize: 10,
+//     fontWeight: "700",
+//     letterSpacing: 1.8,
+//     marginBottom: 2,
+//   },
+//   titleMain: { color: "#fff", fontSize: 20, fontWeight: "900", lineHeight: 26 },
 
-  // Meta info card
-  metaCard: {
-    backgroundColor: "#f7f8ff",
-    borderRadius: 14,
-    padding: 14,
-    marginBottom: 4,
-    borderWidth: 1,
-    borderColor: "#eaedff",
-    gap: 6,
-  },
-  metaRow: { flexDirection: "row" },
-  metaText: { fontSize: 13, color: "#444", lineHeight: 21, flex: 1 },
+//   // Meta info card
+//   metaCard: {
+//     backgroundColor: "#f7f8ff",
+//     borderRadius: 14,
+//     padding: 14,
+//     marginBottom: 4,
+//     borderWidth: 1,
+//     borderColor: "#eaedff",
+//     gap: 6,
+//   },
+//   metaRow: { flexDirection: "row" },
+//   metaText: { fontSize: 13, color: "#444", lineHeight: 21, flex: 1 },
 
-  // Day card — blue-left border
-  dayCard: {
-    backgroundColor: "#eef1ff",
-    borderRadius: 14,
-    paddingVertical: 13,
-    paddingHorizontal: 16,
-    marginTop: 20,
-    marginBottom: 8,
-    borderLeftWidth: 5,
-    borderLeftColor: "#667eea",
-    shadowColor: "#667eea",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.12,
-    shadowRadius: 6,
-    elevation: 3,
-  },
-  dayText: { fontSize: 17, fontWeight: "900", color: "#222" },
+//   // Day card — blue-left border
+//   dayCard: {
+//     backgroundColor: "#eef1ff",
+//     borderRadius: 14,
+//     paddingVertical: 13,
+//     paddingHorizontal: 16,
+//     marginTop: 20,
+//     marginBottom: 8,
+//     borderLeftWidth: 5,
+//     borderLeftColor: "#667eea",
+//     shadowColor: "#667eea",
+//     shadowOffset: { width: 0, height: 2 },
+//     shadowOpacity: 0.12,
+//     shadowRadius: 6,
+//     elevation: 3,
+//   },
+//   dayText: { fontSize: 17, fontWeight: "900", color: "#222" },
 
-  // Time blocks
-  timeBlock: {
-    borderRadius: 10,
-    borderLeftWidth: 4,
-    paddingVertical: 10,
-    paddingHorizontal: 14,
-    marginTop: 12,
-    marginBottom: 4,
-  },
-  timeText: { fontSize: 14, fontWeight: "700" },
+//   // Time blocks
+//   timeBlock: {
+//     borderRadius: 10,
+//     borderLeftWidth: 4,
+//     paddingVertical: 10,
+//     paddingHorizontal: 14,
+//     marginTop: 12,
+//     marginBottom: 4,
+//   },
+//   timeText: { fontSize: 14, fontWeight: "700" },
 
-  // Activity items
-  activityCard: {
-    backgroundColor: "#fff",
-    borderRadius: 10,
-    paddingVertical: 9,
-    paddingHorizontal: 14,
-    marginLeft: 12,
-    marginVertical: 2,
-    borderWidth: 1,
-    borderColor: "#f0f2f5",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.04,
-    shadowRadius: 3,
-    elevation: 1,
-  },
-  activityText: { fontSize: 13, color: "#333", lineHeight: 20 },
+//   // Activity items
+//   activityCard: {
+//     backgroundColor: "#fff",
+//     borderRadius: 10,
+//     paddingVertical: 9,
+//     paddingHorizontal: 14,
+//     marginLeft: 12,
+//     marginVertical: 2,
+//     borderWidth: 1,
+//     borderColor: "#f0f2f5",
+//     shadowColor: "#000",
+//     shadowOffset: { width: 0, height: 1 },
+//     shadowOpacity: 0.04,
+//     shadowRadius: 3,
+//     elevation: 1,
+//   },
+//   activityText: { fontSize: 13, color: "#333", lineHeight: 20 },
 
-  // Cost estimate
-  costBox: {
-    backgroundColor: "#fff8e6",
-    borderRadius: 10,
-    padding: 12,
-    marginTop: 10,
-    marginLeft: 12,
-    borderLeftWidth: 4,
-    borderLeftColor: "#ff9500",
-  },
-  costText: { fontSize: 13, color: "#8a5c00", fontWeight: "700" },
+//   // Cost estimate
+//   costBox: {
+//     backgroundColor: "#fff8e6",
+//     borderRadius: 10,
+//     padding: 12,
+//     marginTop: 10,
+//     marginLeft: 12,
+//     borderLeftWidth: 4,
+//     borderLeftColor: "#ff9500",
+//   },
+//   costText: { fontSize: 13, color: "#8a5c00", fontWeight: "700" },
 
-  // Tips section
-  tipsHeader: {
-    backgroundColor: "#e8f5e9",
-    borderRadius: 14,
-    padding: 16,
-    marginTop: 24,
-    borderLeftWidth: 5,
-    borderLeftColor: "#34c759",
-  },
-  tipsTitle: { fontSize: 16, fontWeight: "800", color: "#1b5e20" },
-  tipRow: {
-    flexDirection: "row",
-    paddingVertical: 6,
-    paddingLeft: 14,
-    gap: 8,
-    alignItems: "flex-start",
-  },
-  tipDot: { fontSize: 18, color: "#34c759", fontWeight: "800", lineHeight: 22 },
-  tipText: { fontSize: 13, color: "#333", lineHeight: 22, flex: 1 },
+//   // Tips section
+//   tipsHeader: {
+//     backgroundColor: "#e8f5e9",
+//     borderRadius: 14,
+//     padding: 16,
+//     marginTop: 24,
+//     borderLeftWidth: 5,
+//     borderLeftColor: "#34c759",
+//   },
+//   tipsTitle: { fontSize: 16, fontWeight: "800", color: "#1b5e20" },
+//   tipRow: {
+//     flexDirection: "row",
+//     paddingVertical: 6,
+//     paddingLeft: 14,
+//     gap: 8,
+//     alignItems: "flex-start",
+//   },
+//   tipDot: { fontSize: 18, color: "#34c759", fontWeight: "800", lineHeight: 22 },
+//   tipText: { fontSize: 13, color: "#333", lineHeight: 22, flex: 1 },
 
-  // Note
-  noteBox: {
-    backgroundColor: "#e8f4fd",
-    borderRadius: 12,
-    padding: 14,
-    marginTop: 18,
-    borderLeftWidth: 4,
-    borderLeftColor: "#2196f3",
-  },
-  noteText: { fontSize: 12, color: "#0d47a1", lineHeight: 18 },
+//   // Note
+//   noteBox: {
+//     backgroundColor: "#e8f4fd",
+//     borderRadius: 12,
+//     padding: 14,
+//     marginTop: 18,
+//     borderLeftWidth: 4,
+//     borderLeftColor: "#2196f3",
+//   },
+//   noteText: { fontSize: 12, color: "#0d47a1", lineHeight: 18 },
 
-  // Closing
-  closingBox: {
-    backgroundColor: "#f0f9f4",
-    borderRadius: 12,
-    padding: 14,
-    marginTop: 12,
-    alignItems: "center",
-    borderWidth: 1,
-    borderColor: "#c8e6c9",
-  },
-  closingText: {
-    fontSize: 14,
-    color: "#2D6418",
-    fontWeight: "700",
-    textAlign: "center",
-  },
-});
+//   // Closing
+//   closingBox: {
+//     backgroundColor: "#f0f9f4",
+//     borderRadius: 12,
+//     padding: 14,
+//     marginTop: 12,
+//     alignItems: "center",
+//     borderWidth: 1,
+//     borderColor: "#c8e6c9",
+//   },
+//   closingText: {
+//     fontSize: 14,
+//     color: "#2D6418",
+//     fontWeight: "700",
+//     textAlign: "center",
+//   },
+// });
 
 function venueToPlace(
   venue: {
@@ -3501,6 +3532,7 @@ function venueToPlace(
 }
 
 // PLAN MY DAY MODAL
+
 export function PlanMyDayModal({
   visible,
   userLocation,
@@ -3523,6 +3555,7 @@ export function PlanMyDayModal({
       color: c.color,
     }));
   }, [t]);
+
   const LOADING_MESSAGES = [
     { icon: "🌍", text: t("plan.loading1") },
     { icon: "📍", text: t("plan.loading2") },
@@ -3531,6 +3564,7 @@ export function PlanMyDayModal({
     { icon: "🗺️", text: t("plan.loading5") },
     { icon: "✨", text: t("plan.loading6") },
   ];
+
   const [step, setStep] = useState<PlanStep>("form");
   const [destination, setDestination] = useState("");
   const [postalCode, setPostalCode] = useState("");
@@ -3545,9 +3579,18 @@ export function PlanMyDayModal({
   const [interests, setInterests] = useState<string[]>([]);
   const [result, setResult] = useState("");
   const [loadingStep, setLoadingStep] = useState(0);
+
+  // ── Modal za detalje mjesta (klik na marker ili na karticu) ──────────────
   const [selectedPlaceForDetail, setSelectedPlaceForDetail] =
     useState<Place | null>(null);
   const [showDetailModal, setShowDetailModal] = useState(false);
+
+  // ── Lokalni popis posjeta unutar plana ──────────────────────────────────
+  // (sinkronizira se s parent visits propsima + lokalnim optimističnim updateom)
+  const [localVisitedIds, setLocalVisitedIds] = useState<Set<string>>(
+    new Set(),
+  );
+
   const mapRef = useRef<MapView>(null);
   const loadingInterval = useRef<ReturnType<typeof setInterval> | null>(null);
   const [selectedVenues, setSelectedVenues] = useState<Record<string, number>>(
@@ -3563,8 +3606,12 @@ export function PlanMyDayModal({
     latitude: number;
     longitude: number;
   } | null>(null);
-  const [showMap, setShowMap] = useState(false);
-  const [selectedMapPlace, setSelectedMapPlace] = useState<any>(null);
+
+  // Sinkroniziraj parent visits u lokalni set
+  useEffect(() => {
+    const ids = new Set<string>(visits.map((v) => v.placeId));
+    setLocalVisitedIds(ids);
+  }, [visits]);
 
   const reset = () => {
     setStep("form");
@@ -3573,6 +3620,9 @@ export function PlanMyDayModal({
     setPostalCode("");
     setAccommodationAddress("");
     setInterests([]);
+    setAllVenues({});
+    setSelectedVenues({});
+    setAccommodationCoords(null);
     if (loadingInterval.current) clearInterval(loadingInterval.current);
   };
 
@@ -3585,6 +3635,55 @@ export function PlanMyDayModal({
     setInterests((p) =>
       p.includes(id) ? p.filter((x) => x !== id) : [...p, id],
     );
+
+  // ── Označi posjet iz plana ────────────────────────────────────────────────
+  const handleMarkVisitedFromPlan = async (
+    venue: {
+      name: string;
+      address?: string;
+      latitude: number;
+      longitude: number;
+    },
+    type: string,
+  ) => {
+    const placeId = `plan_${type}_${venue.name.replace(/\s+/g, "_").toLowerCase()}`;
+    const place: Place = {
+      id: placeId,
+      name: venue.name,
+      latitude: venue.latitude,
+      longitude: venue.longitude,
+      type: type as Place["type"],
+      address: venue.address,
+    };
+
+    if (localVisitedIds.has(placeId)) {
+      Alert.alert("ℹ️ Već posjećeno", `"${venue.name}" je već u vašoj arhivi.`);
+      return;
+    }
+
+    // Optimistički update
+    setLocalVisitedIds((prev) => new Set([...prev, placeId]));
+
+    if (onMarkVisited) {
+      await onMarkVisited(place);
+    }
+  };
+
+  const isVenueVisited = (
+    venue: { name: string; latitude: number; longitude: number },
+    type: string,
+  ) => {
+    const placeId = `plan_${type}_${venue.name.replace(/\s+/g, "_").toLowerCase()}`;
+    // Provjeri i po ID-u i po imenu (za mjesta dodana s glavne karte)
+    return (
+      localVisitedIds.has(placeId) ||
+      visits.some(
+        (v) =>
+          v.placeName.toLowerCase() === venue.name.toLowerCase() &&
+          v.placeType === type,
+      )
+    );
+  };
 
   const generate = async () => {
     if (!destination.trim()) {
@@ -3611,23 +3710,18 @@ export function PlanMyDayModal({
 
       setAllVenues(venues);
 
-      // Geocodiraj adresu smještaja
       if (accommodationAddress.trim() && geocoded) {
         const accommodationResult = await geocodeCity(
           `${accommodationAddress}, ${destination}`,
         );
-        if (accommodationResult) {
-          setAccommodationCoords({
-            latitude: accommodationResult.latitude,
-            longitude: accommodationResult.longitude,
-          });
-        } else {
-          // Fallback — koristi centar destinacije
-          setAccommodationCoords({
-            latitude: geocoded.latitude,
-            longitude: geocoded.longitude,
-          });
-        }
+        setAccommodationCoords(
+          accommodationResult
+            ? {
+                latitude: accommodationResult.latitude,
+                longitude: accommodationResult.longitude,
+              }
+            : { latitude: geocoded.latitude, longitude: geocoded.longitude },
+        );
       } else if (geocoded) {
         setAccommodationCoords({
           latitude: geocoded.latitude,
@@ -3638,13 +3732,18 @@ export function PlanMyDayModal({
       if (loadingInterval.current) clearInterval(loadingInterval.current);
       setLoadingStep(5);
 
-      // Pokušaj AI backend, fallback na template
       const token = await AsyncStorage.getItem("token");
       let text = "";
 
       const venueStr = Object.entries(venues)
         .map(([type, items]) => {
-          return `${t(`categories.${type}`, { defaultValue: type })}: ${items.map((i) => i.name + (i.address ? ` (${i.address})` : "")).join(", ")}`;
+          const label = type;
+          return `${label} (${items.length} opcija): ${items
+            .map(
+              (i, idx) =>
+                `${idx + 1}. ${i.name}${i.address ? ` (${i.address})` : ""}`,
+            )
+            .join(", ")}`;
         })
         .join("\n");
 
@@ -3658,10 +3757,10 @@ export function PlanMyDayModal({
 🌿 Preferencija: ${preference}
 📏 Radijus od smještaja: ${activityRadius} km
 
-Pronađena stvarna mjesta u destinaciji — OBAVEZNO koristi konkretna imena:
+Pronađena stvarna mjesta — za svaku kategoriju odaberi MIN 5 konkretnih:
 ${venueStr || "Nema pronađenih mjesta, koristi opće prijedloge"}
 
-Plan napiši po danima s vremenima, KONKRETNIM imenima mjesta (npr. "Restoran Adriatic" ne samo "restoran"), adresama gdje dostupno, procjenama troška. Piši na hrvatskom.`;
+Plan napiši po danima, OBAVEZNO koristi konkretna imena mjesta, adrese, procjene troška. Piši na hrvatskom.`;
 
       try {
         const resp = await fetch(`${API_BASE_URL}/api/ai/plan`, {
@@ -3750,6 +3849,18 @@ Plan napiši po danima s vremenima, KONKRETNIM imenima mjesta (npr. "Restoran Ad
     { key: "kombinirano", labelKey: "plan.combined", icon: "🌤️" },
   ];
 
+  // Statistike za header u result viewu
+  const totalVenues = Object.values(allVenues).reduce(
+    (sum, arr) => sum + arr.length,
+    0,
+  );
+  const visitedCount = Object.entries(allVenues).reduce(
+    (sum, [type, venues]) => {
+      return sum + venues.filter((v) => isVenueVisited(v, type)).length;
+    },
+    0,
+  );
+
   return (
     <Modal
       visible={visible}
@@ -3758,7 +3869,7 @@ Plan napiši po danima s vremenima, KONKRETNIM imenima mjesta (npr. "Restoran Ad
       onRequestClose={handleClose}
     >
       <View style={{ flex: 1, backgroundColor: "#fff" }}>
-        {/* Header */}
+        {/* ── Header ────────────────────────────────────────────────── */}
         <View style={pm.header}>
           {step === "result" ? (
             <TouchableOpacity onPress={() => setStep("form")}>
@@ -3787,7 +3898,7 @@ Plan napiši po danima s vremenima, KONKRETNIM imenima mjesta (npr. "Restoran Ad
           )}
         </View>
 
-        {/* LOADING VIEW */}
+        {/* ── LOADING ───────────────────────────────────────────────── */}
         {step === "loading" && (
           <View style={pm.loadingContainer}>
             <ActivityIndicator size="large" color="#667eea" />
@@ -3804,128 +3915,67 @@ Plan napiši po danima s vremenima, KONKRETNIM imenima mjesta (npr. "Restoran Ad
           </View>
         )}
 
-        {/* RESULT VIEW */}
+        {/* ── RESULT ───────────────────────────────────────────────── */}
         {step === "result" && (
           <ScrollView
-            contentContainerStyle={{ padding: 20, paddingBottom: 40 }}
+            contentContainerStyle={{ padding: 20, paddingBottom: 60 }}
           >
-            {/* 🔥 Gumb za brzo označavanje posjeta - DODATI NA VRH */}
-            {onMarkVisited && visits && (
-              <View style={{ marginBottom: 16 }}>
-                <Text
-                  style={{ fontSize: 14, fontWeight: "600", marginBottom: 8 }}
-                >
-                  ✨ Brza akcija
+            {/* Progress bar: posjećena/ukupna */}
+            <View style={planStyles.progressCard}>
+              <View style={planStyles.progressHeader}>
+                <Text style={planStyles.progressTitle}>
+                  📊 Napredak putovanja
                 </Text>
-                <TouchableOpacity
-                  style={{
-                    backgroundColor: "#34c759",
-                    borderRadius: 14,
-                    paddingVertical: 12,
-                    alignItems: "center",
-                    flexDirection: "row",
-                    justifyContent: "center",
-                    gap: 8,
-                  }}
-                  onPress={async () => {
-                    // Ekstrahiraj prvo mjesto iz plana (jednostavna heuristika)
-                    const lines = result.split("\n");
-                    let firstPlaceName = "";
-                    for (const line of lines) {
-                      if (line.match(/[🍽️☕🏖️🏰]/) && line.includes(":")) {
-                        const match = line.match(/:\s*(.+?)(?:\s*\(|$)/);
-                        if (match) {
-                          firstPlaceName = match[1].trim();
-                          break;
-                        }
-                      }
-                    }
-                    if (firstPlaceName) {
-                      // Pokušaj pronaći mjesto u allVenues
-                      let foundPlace: Place | null = null;
-                      for (const typeVenues of Object.values(allVenues)) {
-                        for (const v of typeVenues) {
-                          if (
-                            v.name
-                              .toLowerCase()
-                              .includes(firstPlaceName.toLowerCase()) ||
-                            firstPlaceName
-                              .toLowerCase()
-                              .includes(v.name.toLowerCase())
-                          ) {
-                            foundPlace = {
-                              id: `plan_${Date.now()}`,
-                              name: v.name,
-                              latitude: v.latitude,
-                              longitude: v.longitude,
-                              type:
-                                (Object.keys(placeCategories).find((t) =>
-                                  allVenues[t]?.some((x) => x.name === v.name),
-                                ) as Place["type"]) || "restaurant",
-                              address: v.address,
-                            };
-                            break;
-                          }
-                        }
-                        if (foundPlace) break;
-                      }
-                      if (foundPlace && onMarkVisited) {
-                        await onMarkVisited(foundPlace);
-                        Alert.alert(
-                          "✅ Posjećeno!",
-                          `${foundPlace.name} dodano u arhivu.`,
-                        );
-                      } else {
-                        Alert.alert(
-                          "⚠️ Nije pronađeno",
-                          "Kliknite na marker na karti za ručno označavanje.",
-                        );
-                      }
-                    } else {
-                      Alert.alert(
-                        "ℹ️ Savjet",
-                        "Kliknite na bilo koji marker na karti da označite posjet.",
-                      );
-                    }
-                  }}
-                >
-                  <Text style={{ fontSize: 16 }}>✅</Text>
-                  <Text
-                    style={{ color: "#fff", fontWeight: "700", fontSize: 15 }}
-                  >
-                    {t("map.quickMarkVisited")}
-                  </Text>
-                </TouchableOpacity>
+                <Text style={planStyles.progressCount}>
+                  {visitedCount} / {totalVenues} posjećeno
+                </Text>
               </View>
-            )}
+              <View style={planStyles.progressTrack}>
+                <View
+                  style={[
+                    planStyles.progressFill,
+                    {
+                      width:
+                        totalVenues > 0
+                          ? `${Math.round((visitedCount / totalVenues) * 100)}%`
+                          : "0%",
+                    },
+                  ]}
+                />
+              </View>
+              {visitedCount > 0 && (
+                <Text style={planStyles.progressHint}>
+                  🏆 Odlično! Posjetili ste {visitedCount} preporučenih mjesta.
+                </Text>
+              )}
+            </View>
 
+            {/* Mapa */}
             <View style={mapLegend.header}>
-              <View>
+              <View style={{ flex: 1 }}>
                 <Text style={mapLegend.headerTitle}>
                   {t("map.destinationMap")}
                 </Text>
                 <Text style={mapLegend.headerSub}>
                   {accommodationAddress
-                    ? `Smještaj: ${accommodationAddress}`
-                    : "Odaberite adresu smještaja za precizniji prikaz"}
+                    ? `🏨 Smještaj: ${accommodationAddress}`
+                    : "Kliknite marker za detalje i označavanje posjete"}
                 </Text>
               </View>
               {accommodationCoords && (
                 <TouchableOpacity
                   style={mapLegend.recenterBtn}
-                  onPress={() => {
-                    if (mapRef.current) {
-                      mapRef.current.animateToRegion(
-                        {
-                          latitude: accommodationCoords.latitude,
-                          longitude: accommodationCoords.longitude,
-                          latitudeDelta: 0.05,
-                          longitudeDelta: 0.05,
-                        },
-                        800,
-                      );
-                    }
-                  }}
+                  onPress={() =>
+                    mapRef.current?.animateToRegion(
+                      {
+                        latitude: accommodationCoords.latitude,
+                        longitude: accommodationCoords.longitude,
+                        latitudeDelta: 0.05,
+                        longitudeDelta: 0.05,
+                      },
+                      800,
+                    )
+                  }
                 >
                   <Text style={{ fontSize: 18 }}>🎯</Text>
                 </TouchableOpacity>
@@ -3934,7 +3984,7 @@ Plan napiši po danima s vremenima, KONKRETNIM imenima mjesta (npr. "Restoran Ad
 
             <MapView
               ref={mapRef}
-              style={{ height: 380, borderRadius: 16, marginBottom: 8 }}
+              style={{ height: 360, borderRadius: 16, marginBottom: 8 }}
               initialRegion={{
                 latitude: accommodationCoords?.latitude || 45.815,
                 longitude: accommodationCoords?.longitude || 15.9819,
@@ -3952,23 +4002,18 @@ Plan napiši po danima s vremenima, KONKRETNIM imenima mjesta (npr. "Restoran Ad
                 />
               )}
 
-              {/* Markeri svih mjesta po kategorijama - SVE OPCIJE (ne samo odabrane) */}
+              {/* Markeri SVIH pronađenih mjesta */}
               {Object.entries(allVenues).map(([type, options]) =>
                 options.map((venue, idx) => {
-                  const cat =
-                    placeCategories[type as keyof typeof placeCategories];
+                  const placeObj = venueToPlace(venue, type);
+                  const visited = isVenueVisited(venue, type);
                   return (
                     <PlaceMarker
                       key={`plan_marker_${type}_${idx}`}
-                      place={venueToPlace(venue, type)}
-                      isVisited={
-                        visits?.some(
-                          (v) =>
-                            v.placeName === venue.name && v.placeType === type,
-                        ) ?? false
-                      }
+                      place={placeObj}
+                      isVisited={visited}
                       onPress={() => {
-                        const placeObj = venueToPlace(venue, type);
+                        // Otvori PlaceDetailModal s punim detaljima
                         setSelectedPlaceForDetail(placeObj);
                         setShowDetailModal(true);
                       }}
@@ -3978,9 +4023,9 @@ Plan napiši po danima s vremenima, KONKRETNIM imenima mjesta (npr. "Restoran Ad
               )}
             </MapView>
 
-            {/* Vizualna legenda */}
+            {/* Legenda kategorija */}
             <View style={mapLegend.legendContainer}>
-              <Text style={mapLegend.legendTitle}>{t("plan.mapLegend")}</Text>
+              <Text style={mapLegend.legendTitle}>KATEGORIJE NA KARTI</Text>
               <ScrollView horizontal showsHorizontalScrollIndicator={false}>
                 <View style={mapLegend.legendRow}>
                   {accommodationCoords && (
@@ -4003,24 +4048,31 @@ Plan napiši po danima s vremenima, KONKRETNIM imenima mjesta (npr. "Restoran Ad
                     const cat =
                       placeCategories[type as keyof typeof placeCategories];
                     if (!cat || !options.length) return null;
-                    const hex = cat.color;
-                    const isSelected = selectedVenues[type] !== undefined;
+                    const visitedInCat = options.filter((v) =>
+                      isVenueVisited(v, type),
+                    ).length;
                     return (
                       <View
                         key={type}
                         style={[
                           mapLegend.chip,
-                          { backgroundColor: hex + "22", borderColor: hex },
-                          isSelected && { borderWidth: 2.5 },
+                          {
+                            backgroundColor: cat.color + "22",
+                            borderColor: cat.color,
+                          },
                         ]}
                       >
                         <View
-                          style={[mapLegend.dot, { backgroundColor: hex }]}
+                          style={[
+                            mapLegend.dot,
+                            { backgroundColor: cat.color },
+                          ]}
                         />
                         <Text style={mapLegend.chipText}>
                           {EMOJIS[type]}{" "}
                           {t(`categories.${type}`, { defaultValue: type })} (
                           {options.length})
+                          {visitedInCat > 0 ? ` ✓${visitedInCat}` : ""}
                         </Text>
                       </View>
                     );
@@ -4028,143 +4080,198 @@ Plan napiši po danima s vremenima, KONKRETNIM imenima mjesta (npr. "Restoran Ad
                 </View>
               </ScrollView>
               <Text style={{ fontSize: 11, color: "#999", marginTop: 6 }}>
-                💡 Kliknite marker na karti za detalje, ocjenu i označavanje
-                posjete
+                💡 Tapnite marker → detalji, slike, recenzija + označite posjet
               </Text>
             </View>
 
-            {/* Distance chips od smještaja */}
-            {accommodationCoords && Object.entries(allVenues).length > 0 && (
-              <View style={mapLegend.distanceSection}>
-                <Text style={mapLegend.distanceTitle}>
-                  {t("plan.distanceFromAccommodation")}
-                </Text>
-                <View style={mapLegend.distanceGrid}>
-                  {Object.entries(allVenues).map(([type, options]) => {
-                    const idx = selectedVenues[type] ?? 0;
-                    const venue = options[idx];
-                    if (!venue) return null;
-                    const cat =
-                      placeCategories[type as keyof typeof placeCategories];
-                    const dist = haversineKm(
-                      accommodationCoords.latitude,
-                      accommodationCoords.longitude,
-                      venue.latitude,
-                      venue.longitude,
-                    );
-                    const isClose = dist < 1;
-                    return (
+            {/* ── PO KATEGORIJAMA: sve ponuđene lokacije ─────────────────── */}
+            <View style={{ marginTop: 8, marginBottom: 8 }}>
+              <Text style={planStyles.sectionHeader}>
+                🗂️ Sve preporučene lokacije — označite posjete
+              </Text>
+              <Text style={planStyles.sectionSub}>
+                Svaku posjet možete označiti odmah — sprema se u arhivu i
+                dodjeljuje značku
+              </Text>
+            </View>
+
+            {Object.entries(allVenues).map(([type, options]) => {
+              const cat = placeCategories[type as keyof typeof placeCategories];
+              const color = cat?.color || "#667eea";
+              const visitedInCat = options.filter((v) =>
+                isVenueVisited(v, type),
+              ).length;
+
+              return (
+                <View
+                  key={type}
+                  style={[
+                    planStyles.categorySection,
+                    { borderTopColor: color },
+                  ]}
+                >
+                  {/* Naslov kategorije */}
+                  <View style={planStyles.categoryHeader}>
+                    <View
+                      style={[
+                        planStyles.categoryDot,
+                        { backgroundColor: color },
+                      ]}
+                    >
+                      <Text style={{ fontSize: 16 }}>
+                        {EMOJIS[type] || "📍"}
+                      </Text>
+                    </View>
+                    <View style={{ flex: 1 }}>
+                      <Text style={planStyles.categoryTitle}>
+                        {t(`categories.${type}`, { defaultValue: type })}
+                      </Text>
+                      <Text style={planStyles.categorySub}>
+                        {options.length} prijedloga
+                        {visitedInCat > 0
+                          ? ` · ✓ ${visitedInCat} posjećeno`
+                          : ""}
+                      </Text>
+                    </View>
+                    {/* Mini progress */}
+                    {visitedInCat > 0 && (
                       <View
-                        key={type}
                         style={[
-                          mapLegend.distanceChip,
-                          { borderLeftColor: cat?.color || "#999" },
+                          planStyles.catBadge,
+                          { backgroundColor: color + "22", borderColor: color },
                         ]}
                       >
-                        <Text style={mapLegend.distanceEmoji}>
-                          {EMOJIS[type] || "📍"}
+                        <Text style={[planStyles.catBadgeText, { color }]}>
+                          {visitedInCat}/{options.length}
                         </Text>
-                        <View style={{ flex: 1 }}>
-                          <Text
-                            style={mapLegend.distanceName}
-                            numberOfLines={1}
+                      </View>
+                    )}
+                  </View>
+
+                  {/* Venue kartice */}
+                  {options.map((venue, idx) => {
+                    const visited = isVenueVisited(venue, type);
+                    const dist = accommodationCoords
+                      ? haversineKm(
+                          accommodationCoords.latitude,
+                          accommodationCoords.longitude,
+                          venue.latitude,
+                          venue.longitude,
+                        )
+                      : null;
+                    const placeObj = venueToPlace(venue, type);
+
+                    return (
+                      <View
+                        key={idx}
+                        style={[
+                          planStyles.venueCard,
+                          visited && planStyles.venueCardVisited,
+                        ]}
+                      >
+                        {/* Lijeva strana: info */}
+                        <TouchableOpacity
+                          style={{ flex: 1 }}
+                          onPress={() => {
+                            setSelectedPlaceForDetail(placeObj);
+                            setShowDetailModal(true);
+                          }}
+                          activeOpacity={0.75}
+                        >
+                          <View
+                            style={{
+                              flexDirection: "row",
+                              alignItems: "flex-start",
+                              gap: 8,
+                            }}
                           >
-                            {venue.name}
-                          </Text>
-                          <Text
-                            style={[
-                              mapLegend.distanceKm,
-                              { color: isClose ? "#34c759" : "#667eea" },
-                            ]}
-                          >
-                            {isClose
-                              ? `${Math.round(dist * 1000)} m`
-                              : `${dist.toFixed(1)} km`}{" "}
-                            {isClose ? "🟢" : "🔵"}
-                          </Text>
-                        </View>
+                            <Text style={{ fontSize: 20, marginTop: 1 }}>
+                              {EMOJIS[type] || "📍"}
+                            </Text>
+                            <View style={{ flex: 1 }}>
+                              <Text
+                                style={[
+                                  planStyles.venueName,
+                                  visited && { color: "#34c759" },
+                                ]}
+                                numberOfLines={1}
+                              >
+                                {visited && "✓ "}
+                                {venue.name}
+                              </Text>
+                              {venue.address ? (
+                                <Text
+                                  style={planStyles.venueAddress}
+                                  numberOfLines={1}
+                                >
+                                  📍 {venue.address}
+                                </Text>
+                              ) : null}
+                              <View
+                                style={{
+                                  flexDirection: "row",
+                                  gap: 8,
+                                  marginTop: 3,
+                                }}
+                              >
+                                {dist !== null && (
+                                  <Text
+                                    style={[
+                                      planStyles.venueDist,
+                                      {
+                                        color: dist < 1 ? "#34c759" : "#667eea",
+                                      },
+                                    ]}
+                                  >
+                                    {dist < 1
+                                      ? `${Math.round(dist * 1000)} m`
+                                      : `${dist.toFixed(1)} km`}
+                                  </Text>
+                                )}
+                                <Text style={planStyles.venueDetailHint}>
+                                  Tapni za detalje →
+                                </Text>
+                              </View>
+                            </View>
+                          </View>
+                        </TouchableOpacity>
+
+                        {/* Desna strana: Mark visited gumb */}
+                        <TouchableOpacity
+                          style={[
+                            planStyles.visitToggleBtn,
+                            visited
+                              ? planStyles.visitToggleBtnVisited
+                              : { borderColor: color },
+                          ]}
+                          onPress={() => handleMarkVisitedFromPlan(venue, type)}
+                          disabled={visited}
+                        >
+                          {visited ? (
+                            <Text style={planStyles.visitToggleTextVisited}>
+                              ✓ Posjet.
+                            </Text>
+                          ) : (
+                            <Text
+                              style={[planStyles.visitToggleText, { color }]}
+                            >
+                              Označi{"\n"}posjet
+                            </Text>
+                          )}
+                        </TouchableOpacity>
                       </View>
                     );
                   })}
                 </View>
-              </View>
-            )}
-
-            {/* Izbor mjesta po kategoriji */}
-            {Object.entries(allVenues).map(([type, options]) => (
-              <View key={type} style={{ marginBottom: 16 }}>
-                <Text style={{ fontWeight: "700", marginBottom: 8 }}>
-                  {EMOJIS[type]}{" "}
-                  {t(`categories.${type}`, { defaultValue: type })}
-                </Text>
-                {options.map((venue, idx) => {
-                  const dist = accommodationCoords
-                    ? haversineKm(
-                        accommodationCoords.latitude,
-                        accommodationCoords.longitude,
-                        venue.latitude,
-                        venue.longitude,
-                      ).toFixed(1) + " km"
-                    : "";
-                  const isSelected = (selectedVenues[type] ?? 0) === idx;
-                  const alreadyVisited = visits?.some(
-                    (v) => v.placeName === venue.name,
-                  );
-                  return (
-                    <TouchableOpacity
-                      key={idx}
-                      style={{
-                        flexDirection: "row",
-                        alignItems: "center",
-                        padding: 12,
-                        borderRadius: 10,
-                        backgroundColor: isSelected ? "#f0f0ff" : "#fafafa",
-                        borderWidth: 1.5,
-                        borderColor: isSelected ? "#667eea" : "#eee",
-                        marginBottom: 6,
-                        opacity: alreadyVisited ? 0.6 : 1,
-                      }}
-                      onPress={() =>
-                        setSelectedVenues((prev) => ({ ...prev, [type]: idx }))
-                      }
-                    >
-                      <View style={{ flex: 1 }}>
-                        <Text style={{ fontWeight: "600" }}>
-                          {venue.name}
-                          {alreadyVisited && (
-                            <Text
-                              style={{
-                                color: "#34c759",
-                                fontSize: 12,
-                                marginLeft: 6,
-                              }}
-                            >
-                              {" "}
-                              ✓ posjećeno
-                            </Text>
-                          )}
-                        </Text>
-                        {venue.address && (
-                          <Text style={{ fontSize: 12, color: "#999" }}>
-                            {venue.address}
-                          </Text>
-                        )}
-                        <Text style={{ fontSize: 12, color: "#667eea" }}>
-                          📏 {dist}
-                        </Text>
-                      </View>
-                      {isSelected && (
-                        <Text style={{ color: "#667eea", fontWeight: "800" }}>
-                          ✓
-                        </Text>
-                      )}
-                    </TouchableOpacity>
-                  );
-                })}
-              </View>
-            ))}
+              );
+            })}
 
             {/* Generirani tekst plana */}
+            <View style={{ marginTop: 20 }}>
+              <Text style={planStyles.sectionHeader}>
+                📋 Generirani plan putovanja
+              </Text>
+            </View>
             <PlanRenderer text={result} />
 
             <View style={{ gap: 10, marginTop: 20 }}>
@@ -4178,51 +4285,10 @@ Plan napiši po danima s vremenima, KONKRETNIM imenima mjesta (npr. "Restoran Ad
                 <Text style={pm.btnSecondaryText}>← Generiraj novi plan</Text>
               </TouchableOpacity>
             </View>
-            {/* PlaceDetailModal za detalje mjesta */}
-            <PlaceDetailModal
-              place={selectedPlaceForDetail}
-              visible={showDetailModal}
-              onClose={() => {
-                setShowDetailModal(false);
-                setSelectedPlaceForDetail(null);
-              }}
-              onMarkVisited={async (p) => {
-                if (onMarkVisited) {
-                  await onMarkVisited(p);
-                }
-                setShowDetailModal(false);
-                setSelectedPlaceForDetail(null);
-                // Automatski označi u planu ako nije već odabrano
-                const idx =
-                  allVenues[p.type]?.findIndex((v) => v.name === p.name) ?? -1;
-                if (idx >= 0) {
-                  setSelectedVenues((prev) => ({ ...prev, [p.type]: idx }));
-                }
-              }}
-              onHidePlace={() => {
-                setShowDetailModal(false);
-              }}
-              isVisited={
-                selectedPlaceForDetail
-                  ? (visits?.some(
-                      (v) =>
-                        v.placeName === selectedPlaceForDetail.name &&
-                        v.placeType === selectedPlaceForDetail.type,
-                    ) ?? false)
-                  : false
-              }
-              notifPrefs={{
-                appEnabled: false,
-                emailEnabled: false,
-                email: "",
-                categories: [],
-              }}
-              onToggleNotif={() => {}}
-            />
           </ScrollView>
         )}
 
-        {/* FORM VIEW */}
+        {/* ── FORM ─────────────────────────────────────────────────── */}
         {step === "form" && (
           <KeyboardAvoidingView
             style={{ flex: 1 }}
@@ -4232,7 +4298,6 @@ Plan napiši po danima s vremenima, KONKRETNIM imenima mjesta (npr. "Restoran Ad
               contentContainerStyle={{ padding: 20, paddingBottom: 40 }}
               keyboardShouldPersistTaps="handled"
             >
-              {/* Destinacija */}
               <Text style={pm.sectionTitle}>{t("map.destination")}</Text>
               <View style={pm.row}>
                 <TextInput
@@ -4259,7 +4324,6 @@ Plan napiši po danima s vremenima, KONKRETNIM imenima mjesta (npr. "Restoran Ad
                 onChangeText={setAccommodationAddress}
               />
 
-              {/* Trajanje */}
               <Text style={pm.sectionTitle}>{t("map.duration")}</Text>
               <View style={pm.chipRow}>
                 {PERIOD_OPTIONS.map((o) => (
@@ -4280,7 +4344,6 @@ Plan napiši po danima s vremenima, KONKRETNIM imenima mjesta (npr. "Restoran Ad
                 ))}
               </View>
 
-              {/* Putnici */}
               <Text style={pm.sectionTitle}>{t("map.travelers")}</Text>
               <View style={pm.row}>
                 <View style={{ flex: 1 }}>
@@ -4289,7 +4352,10 @@ Plan napiši po danima s vremenima, KONKRETNIM imenima mjesta (npr. "Restoran Ad
                     {["1", "2", "3", "4", "5+"].map((n) => (
                       <TouchableOpacity
                         key={n}
-                        style={[pm.chipSmall, people === n && pm.chipActive]}
+                        style={[
+                          pm.chipSmall,
+                          people === (n === "5+" ? "6" : n) && pm.chipActive,
+                        ]}
                         onPress={() => setPeople(n === "5+" ? "6" : n)}
                       >
                         <Text
@@ -4327,7 +4393,6 @@ Plan napiši po danima s vremenima, KONKRETNIM imenima mjesta (npr. "Restoran Ad
                 ))}
               </View>
 
-              {/* Budžet */}
               <Text style={pm.sectionTitle}>💰 {t("map.budgetTitle")}</Text>
               <View style={pm.chipRow}>
                 {["200", "500", "1000", "2000", "5000"].map((b) => (
@@ -4353,7 +4418,6 @@ Plan napiši po danima s vremenima, KONKRETNIM imenima mjesta (npr. "Restoran Ad
                 keyboardType="numeric"
               />
 
-              {/* Radijus */}
               <Text style={pm.sectionTitle}>{t("map.activityRadius")}</Text>
               <View style={pm.chipRow}>
                 {[1, 2, 3, 5, 10, 20].map((r) => (
@@ -4374,7 +4438,6 @@ Plan napiši po danima s vremenima, KONKRETNIM imenima mjesta (npr. "Restoran Ad
                 ))}
               </View>
 
-              {/* Prijevoz */}
               <Text style={pm.sectionTitle}>🚗 Prijevoz</Text>
               <View style={pm.chipRow}>
                 {TRANSPORT_OPTIONS.map((o) => (
@@ -4396,7 +4459,6 @@ Plan napiši po danima s vremenima, KONKRETNIM imenima mjesta (npr. "Restoran Ad
                 ))}
               </View>
 
-              {/* Preferencija */}
               <Text style={pm.sectionTitle}>{t("map.activities")}</Text>
               <View style={pm.chipRow}>
                 {PREF_OPTIONS.map((o) => (
@@ -4418,7 +4480,6 @@ Plan napiši po danima s vremenima, KONKRETNIM imenima mjesta (npr. "Restoran Ad
                 ))}
               </View>
 
-              {/* Interesi */}
               <View
                 style={{
                   flexDirection: "row",
@@ -4477,7 +4538,6 @@ Plan napiši po danima s vremenima, KONKRETNIM imenima mjesta (npr. "Restoran Ad
                 })}
               </View>
 
-              {/* Gumb */}
               <TouchableOpacity style={pm.generateBtn} onPress={generate}>
                 <Text style={pm.generateBtnText}>{t("map.generatePlan")}</Text>
               </TouchableOpacity>
@@ -4490,163 +4550,281 @@ Plan napiši po danima s vremenima, KONKRETNIM imenima mjesta (npr. "Restoran Ad
           </KeyboardAvoidingView>
         )}
 
-        {/* 🔥 MODAL ZA DETALJE MJESTA - NA KRAJU, PRIJE ZATVARANJA */}
-        {selectedMapPlace && (
-          <Modal
-            visible={true}
-            transparent
-            animationType="slide"
-            onRequestClose={() => setSelectedMapPlace(null)}
-          >
-            <View
-              style={{
-                flex: 1,
-                backgroundColor: "rgba(0,0,0,0.5)",
-                justifyContent: "flex-end",
-              }}
-            >
-              <View
-                style={{
-                  backgroundColor: "#fff",
-                  borderTopLeftRadius: 24,
-                  borderTopRightRadius: 24,
-                  padding: 20,
-                  maxHeight: "70%",
-                }}
-              >
-                <TouchableOpacity
-                  style={{
-                    position: "absolute",
-                    top: 12,
-                    right: 12,
-                    zIndex: 1,
-                  }}
-                  onPress={() => setSelectedMapPlace(null)}
-                >
-                  <Text style={{ fontSize: 18 }}>✕</Text>
-                </TouchableOpacity>
-
-                <Text
-                  style={{
-                    fontSize: 20,
-                    fontWeight: "800",
-                    marginBottom: 8,
-                  }}
-                >
-                  {EMOJIS[selectedMapPlace.type]} {selectedMapPlace.name}
-                </Text>
-
-                <PlaceDetailInPlan place={selectedMapPlace} />
-
-                <TouchableOpacity
-                  style={{
-                    backgroundColor: "#667eea",
-                    borderRadius: 12,
-                    paddingVertical: 12,
-                    alignItems: "center",
-                    marginTop: 16,
-                  }}
-                  onPress={() => {
-                    setSelectedVenues((prev) => ({
-                      ...prev,
-                      [selectedMapPlace.type]:
-                        allVenues[selectedMapPlace.type]?.findIndex(
-                          (v) => v.name === selectedMapPlace.name,
-                        ) ?? 0,
-                    }));
-                    setSelectedMapPlace(null);
-                  }}
-                >
-                  <Text style={{ color: "#fff", fontWeight: "700" }}>
-                    {t("plan.selectBtn")}
-                  </Text>
-                </TouchableOpacity>
-              </View>
-            </View>
-          </Modal>
-        )}
+        {/* ══════════════════════════════════════════════════════════════
+            PlaceDetailModal — MORA BITI IZVAN ScrollViewa, na root razini!
+            Otvara se i kad kliknete marker na karti i kad kliknete karticu.
+            Ima iste mogućnosti kao na glavnoj karti:
+              • Google slike
+              • Radno vrijeme
+              • Ocjena (zvjezdice + komentar)
+              • Označi posjet → arhiva + značka
+        ════════════════════════════════════════════════════════════════ */}
+        <PlaceDetailModal
+          place={selectedPlaceForDetail}
+          visible={showDetailModal}
+          onClose={() => {
+            setShowDetailModal(false);
+            setSelectedPlaceForDetail(null);
+          }}
+          onMarkVisited={async (p) => {
+            // 1. Spremi u parent (arhiva + značka)
+            if (onMarkVisited) await onMarkVisited(p);
+            // 2. Ažuriraj lokalni set odmah
+            setLocalVisitedIds((prev) => new Set([...prev, p.id]));
+            setShowDetailModal(false);
+            setSelectedPlaceForDetail(null);
+          }}
+          onHidePlace={() => {
+            setShowDetailModal(false);
+            setSelectedPlaceForDetail(null);
+          }}
+          isVisited={
+            selectedPlaceForDetail
+              ? localVisitedIds.has(selectedPlaceForDetail.id) ||
+                visits.some(
+                  (v) =>
+                    v.placeName.toLowerCase() ===
+                      (selectedPlaceForDetail.name || "").toLowerCase() &&
+                    v.placeType === selectedPlaceForDetail.type,
+                )
+              : false
+          }
+          notifPrefs={{
+            appEnabled: false,
+            emailEnabled: false,
+            email: "",
+            categories: [],
+          }}
+          onToggleNotif={() => {}}
+        />
       </View>
     </Modal>
   );
 }
+// const mapLegend = StyleSheet.create({
+//   header: {
+//     flexDirection: "row",
+//     justifyContent: "space-between",
+//     alignItems: "flex-start",
+//     marginBottom: 10,
+//     paddingHorizontal: 2,
+//   },
+//   headerTitle: { fontSize: 16, fontWeight: "800", color: "#1a1a1a" },
+//   headerSub: { fontSize: 12, color: "#888", marginTop: 2, maxWidth: "90%" },
+//   recenterBtn: {
+//     width: 38,
+//     height: 38,
+//     borderRadius: 19,
+//     backgroundColor: "#f0f0ff",
+//     justifyContent: "center",
+//     alignItems: "center",
+//   },
+//   legendContainer: {
+//     backgroundColor: "#fff",
+//     borderRadius: 12,
+//     padding: 12,
+//     marginBottom: 8,
+//     borderWidth: 1,
+//     borderColor: "#f0f0f0",
+//   },
+//   legendTitle: {
+//     fontSize: 12,
+//     fontWeight: "700",
+//     color: "#888",
+//     marginBottom: 8,
+//     textTransform: "uppercase",
+//     letterSpacing: 0.8,
+//   },
+//   legendRow: { flexDirection: "row", gap: 8, paddingBottom: 2 },
+//   chip: {
+//     flexDirection: "row",
+//     alignItems: "center",
+//     gap: 5,
+//     paddingHorizontal: 10,
+//     paddingVertical: 6,
+//     borderRadius: 20,
+//     borderWidth: 1.5,
+//   },
+//   dot: { width: 8, height: 8, borderRadius: 4 },
+//   chipText: { fontSize: 11, fontWeight: "600", color: "#333" },
+//   distanceSection: {
+//     backgroundColor: "#f8f9ff",
+//     borderRadius: 14,
+//     padding: 14,
+//     marginBottom: 16,
+//   },
+//   distanceTitle: {
+//     fontSize: 13,
+//     fontWeight: "700",
+//     color: "#333",
+//     marginBottom: 10,
+//   },
+//   distanceGrid: { gap: 8 },
+//   distanceChip: {
+//     flexDirection: "row",
+//     alignItems: "center",
+//     backgroundColor: "#fff",
+//     borderRadius: 10,
+//     padding: 10,
+//     borderLeftWidth: 4,
+//     gap: 10,
+//     shadowColor: "#000",
+//     shadowOffset: { width: 0, height: 1 },
+//     shadowOpacity: 0.05,
+//     shadowRadius: 3,
+//     elevation: 1,
+//   },
+//   distanceEmoji: { fontSize: 22 },
+//   distanceName: { fontSize: 13, fontWeight: "600", color: "#333" },
+//   distanceKm: { fontSize: 12, fontWeight: "700", marginTop: 2 },
+// });
 
-const mapLegend = StyleSheet.create({
-  header: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "flex-start",
-    marginBottom: 10,
-    paddingHorizontal: 2,
-  },
-  headerTitle: { fontSize: 16, fontWeight: "800", color: "#1a1a1a" },
-  headerSub: { fontSize: 12, color: "#888", marginTop: 2, maxWidth: "90%" },
-  recenterBtn: {
-    width: 38,
-    height: 38,
-    borderRadius: 19,
-    backgroundColor: "#f0f0ff",
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  legendContainer: {
-    backgroundColor: "#fff",
-    borderRadius: 12,
-    padding: 12,
-    marginBottom: 8,
-    borderWidth: 1,
-    borderColor: "#f0f0f0",
-  },
-  legendTitle: {
-    fontSize: 12,
-    fontWeight: "700",
-    color: "#888",
-    marginBottom: 8,
-    textTransform: "uppercase",
-    letterSpacing: 0.8,
-  },
-  legendRow: { flexDirection: "row", gap: 8, paddingBottom: 2 },
-  chip: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 5,
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 20,
-    borderWidth: 1.5,
-  },
-  dot: { width: 8, height: 8, borderRadius: 4 },
-  chipText: { fontSize: 11, fontWeight: "600", color: "#333" },
-  distanceSection: {
-    backgroundColor: "#f8f9ff",
-    borderRadius: 14,
-    padding: 14,
-    marginBottom: 16,
-  },
-  distanceTitle: {
-    fontSize: 13,
-    fontWeight: "700",
-    color: "#333",
-    marginBottom: 10,
-  },
-  distanceGrid: { gap: 8 },
-  distanceChip: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "#fff",
-    borderRadius: 10,
-    padding: 10,
-    borderLeftWidth: 4,
-    gap: 10,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 3,
-    elevation: 1,
-  },
-  distanceEmoji: { fontSize: 22 },
-  distanceName: { fontSize: 13, fontWeight: "600", color: "#333" },
-  distanceKm: { fontSize: 12, fontWeight: "700", marginTop: 2 },
-});
+// const planStyles = StyleSheet.create({
+//   // Progress card
+//   progressCard: {
+//     backgroundColor: "#f0f0ff",
+//     borderRadius: 16,
+//     padding: 16,
+//     marginBottom: 16,
+//     borderWidth: 1,
+//     borderColor: "#e0e4ff",
+//   },
+//   progressHeader: {
+//     flexDirection: "row",
+//     justifyContent: "space-between",
+//     alignItems: "center",
+//     marginBottom: 10,
+//   },
+//   progressTitle: { fontSize: 14, fontWeight: "700", color: "#333" },
+//   progressCount: { fontSize: 14, fontWeight: "800", color: "#667eea" },
+//   progressTrack: {
+//     height: 8,
+//     backgroundColor: "rgba(102,126,234,0.15)",
+//     borderRadius: 4,
+//     overflow: "hidden",
+//   },
+//   progressFill: {
+//     height: "100%",
+//     backgroundColor: "#667eea",
+//     borderRadius: 4,
+//   },
+//   progressHint: {
+//     fontSize: 12,
+//     color: "#667eea",
+//     marginTop: 8,
+//     fontWeight: "600",
+//   },
+
+//   // Section headers
+//   sectionHeader: {
+//     fontSize: 16,
+//     fontWeight: "800",
+//     color: "#1a1a1a",
+//     marginBottom: 4,
+//   },
+//   sectionSub: { fontSize: 12, color: "#999", marginBottom: 12 },
+
+//   // Category section
+//   categorySection: {
+//     backgroundColor: "#fff",
+//     borderRadius: 16,
+//     marginBottom: 16,
+//     borderTopWidth: 4,
+//     shadowColor: "#000",
+//     shadowOffset: { width: 0, height: 2 },
+//     shadowOpacity: 0.06,
+//     shadowRadius: 6,
+//     elevation: 2,
+//     overflow: "hidden",
+//   },
+//   categoryHeader: {
+//     flexDirection: "row",
+//     alignItems: "center",
+//     padding: 14,
+//     gap: 10,
+//     backgroundColor: "#fafafa",
+//     borderBottomWidth: 1,
+//     borderBottomColor: "#f0f0f0",
+//   },
+//   categoryDot: {
+//     width: 40,
+//     height: 40,
+//     borderRadius: 20,
+//     justifyContent: "center",
+//     alignItems: "center",
+//   },
+//   categoryTitle: { fontSize: 15, fontWeight: "800", color: "#1a1a1a" },
+//   categorySub: { fontSize: 12, color: "#888", marginTop: 2 },
+//   catBadge: {
+//     borderRadius: 12,
+//     paddingHorizontal: 10,
+//     paddingVertical: 4,
+//     borderWidth: 1.5,
+//   },
+//   catBadgeText: { fontSize: 12, fontWeight: "800" },
+
+//   // Venue card
+//   venueCard: {
+//     flexDirection: "row",
+//     alignItems: "center",
+//     paddingHorizontal: 14,
+//     paddingVertical: 12,
+//     borderBottomWidth: 1,
+//     borderBottomColor: "#f5f5f5",
+//     gap: 10,
+//     backgroundColor: "#fff",
+//   },
+//   venueCardVisited: {
+//     backgroundColor: "#f0fff4",
+//   },
+//   venueName: {
+//     fontSize: 14,
+//     fontWeight: "700",
+//     color: "#1a1a1a",
+//   },
+//   venueAddress: {
+//     fontSize: 11,
+//     color: "#999",
+//     marginTop: 2,
+//   },
+//   venueDist: {
+//     fontSize: 11,
+//     fontWeight: "700",
+//     marginTop: 2,
+//   },
+//   venueDetailHint: {
+//     fontSize: 11,
+//     color: "#bbb",
+//     marginTop: 2,
+//   },
+
+//   // Mark visited button
+//   visitToggleBtn: {
+//     minWidth: 64,
+//     paddingHorizontal: 10,
+//     paddingVertical: 8,
+//     borderRadius: 12,
+//     borderWidth: 1.5,
+//     alignItems: "center",
+//     justifyContent: "center",
+//   },
+//   visitToggleBtnVisited: {
+//     backgroundColor: "#e8f5e9",
+//     borderColor: "#34c759",
+//   },
+//   visitToggleText: {
+//     fontSize: 11,
+//     fontWeight: "700",
+//     textAlign: "center",
+//     lineHeight: 14,
+//   },
+//   visitToggleTextVisited: {
+//     fontSize: 11,
+//     fontWeight: "800",
+//     color: "#34c759",
+//     textAlign: "center",
+//   },
+// });
 
 // ─── Visit Archive Modal ──────────────────────────────────────────────────────
 function VisitArchiveModal({
@@ -5069,6 +5247,15 @@ const TIME_CATS: Record<string, string[]> = {
   poslijepodne: ["restaurant", "museum", "beach", "cinema", "opg", "market"],
   vecer: ["club", "theater", "restaurant", "spa"],
 };
+
+// const visitedIcon = require("../../assets/images/posmjesta.png");
+// const planIcon = require("../../assets/images/put.png");
+// const groupsIcon = require("../../assets/images/grupe.png");
+// const badgesIcon = require("../../assets/images/uspjeh.png");
+// const notificationsIcon = require("../../assets/images/obav.png");
+// const archiveIcon = require("../../assets/images/arhiva.png"); // Za arhivu posjeta
+// const locationPinIcon = require("../../assets/images/igla.png"); // Za crvenu iglu (trenutna lokacija)
+// const radiusIcon = require("../../assets/images/radijus.png"); // Za radijus na karti
 
 export default function DashboardScreen() {
   const { t } = useTranslation();
@@ -5560,6 +5747,34 @@ export default function DashboardScreen() {
   const hasMore = allPlaces.length > displayLimit;
   const showMoreCount = Math.min(allPlaces.length - displayLimit, 10);
 
+  const handleZoomIn = () => {
+    if (mapRef.current) {
+      const region = mapRegion || initialRegion;
+      mapRef.current.animateToRegion(
+        {
+          ...region,
+          latitudeDelta: Math.max(region.latitudeDelta / 2, 0.01),
+          longitudeDelta: Math.max(region.longitudeDelta / 2, 0.01),
+        },
+        500,
+      );
+    }
+  };
+
+  const handleZoomOut = () => {
+    if (mapRef.current) {
+      const region = mapRegion || initialRegion;
+      mapRef.current.animateToRegion(
+        {
+          ...region,
+          latitudeDelta: Math.min(region.latitudeDelta * 2, 180),
+          longitudeDelta: Math.min(region.longitudeDelta * 2, 180),
+        },
+        500,
+      );
+    }
+  };
+
   return (
     <View style={s.container}>
       <MapView
@@ -5571,7 +5786,7 @@ export default function DashboardScreen() {
         showsMyLocationButton={false}
         loadingEnabled
         loadingIndicatorColor="#667eea"
-        zoomControlEnabled={Platform.OS === "android"}
+        zoomControlEnabled={false}
       >
         {showRadiusCircle && activeSearchLoc && (
           <Circle
@@ -5674,6 +5889,7 @@ export default function DashboardScreen() {
           </View>
         )}
         <View style={{ flexDirection: "row", gap: 8, alignItems: "center" }}>
+          {/* Filter gumb */}
           <TouchableOpacity
             style={s.topBtn}
             onPress={() => setShowFilterPanel(true)}
@@ -5683,64 +5899,125 @@ export default function DashboardScreen() {
               {selectedTypes.length > 0 ? ` (${selectedTypes.length})` : ""}
             </Text>
           </TouchableOpacity>
-          {(["jutro", "poslijepodne", "vecer"] as const).map((tod) => (
-            <TouchableOpacity
-              key={tod}
-              style={[s.todBtn, activeTimeOfDay === tod && s.todBtnA]}
-              onPress={() => applyTimeOfDay(tod)}
-            >
-              <Text
-                style={[s.todTxt, activeTimeOfDay === tod && { color: "#fff" }]}
-              >
-                {tod === "jutro" ? "🌅" : tod === "poslijepodne" ? "☀️" : "🌙"}
-              </Text>
-            </TouchableOpacity>
-          ))}
+
+          {/* Jutro - slika umjesto emojija */}
+          <TouchableOpacity
+            style={[s.todBtn, activeTimeOfDay === "jutro" && s.todBtnA]}
+            onPress={() => applyTimeOfDay("jutro")}
+          >
+            <Image
+              source={morningIcon}
+              style={{ width: 24, height: 24 }}
+              resizeMode="contain"
+            />
+          </TouchableOpacity>
+
+          {/* Poslijepodne - slika umjesto emojija */}
+          <TouchableOpacity
+            style={[s.todBtn, activeTimeOfDay === "poslijepodne" && s.todBtnA]}
+            onPress={() => applyTimeOfDay("poslijepodne")}
+          >
+            <Image
+              source={afternoonIcon}
+              style={{ width: 24, height: 24 }}
+              resizeMode="contain"
+            />
+          </TouchableOpacity>
+
+          {/* Večer - slika umjesto emojija */}
+          <TouchableOpacity
+            style={[s.todBtn, activeTimeOfDay === "vecer" && s.todBtnA]}
+            onPress={() => applyTimeOfDay("vecer")}
+          >
+            <Image
+              source={eveningIcon}
+              style={{ width: 24, height: 24 }}
+              resizeMode="contain"
+            />
+          </TouchableOpacity>
         </View>
       </View>
 
-      {/* Side panel */}
+      {/* Side panel - zamijenjene ikone */}
       <View style={s.sidePanel}>
-        <TouchableOpacity style={s.sideBtn} onPress={getCurrentLocation}>
-          <Text style={s.sideBtnTxt}>📍</Text>
+        {/* ZOOM IN - NOVA IKONA */}
+        <TouchableOpacity style={s.sideBtn} onPress={handleZoomIn}>
+          <Image source={zoomInIcon} style={s.sideIcon} resizeMode="contain" />
         </TouchableOpacity>
+
+        {/* ZOOM OUT - NOVA IKONA */}
+        <TouchableOpacity style={s.sideBtn} onPress={handleZoomOut}>
+          <Image source={zoomOutIcon} style={s.sideIcon} resizeMode="contain" />
+        </TouchableOpacity>
+        {/* My location - NOVA CRVENA IGLA */}
+        <TouchableOpacity style={s.sideBtn} onPress={getCurrentLocation}>
+          <Image
+            source={locationPinIcon}
+            style={s.sideIcon}
+            resizeMode="contain"
+          />
+        </TouchableOpacity>
+
+        {/* Toggle radius circle */}
         <TouchableOpacity
           style={s.sideBtn}
           onPress={() => setShowRadiusCircle((v) => !v)}
         >
-          <Text style={s.sideBtnTxt}>{showRadiusCircle ? "🔘" : "⚪"}</Text>
+          <Image
+            source={radiusIcon}
+            style={s.sideIcon} // Samo style, bez tintColor
+            resizeMode="contain"
+          />
         </TouchableOpacity>
+
+        {/* Visited places */}
         <TouchableOpacity
-          style={[s.sideBtn, showOnlyVisited && s.sideBtnA]}
+          style={[s.sideBtn, showOnlyVisited && s.sideBtnActive]}
           onPress={() => setShowOnlyVisited((v) => !v)}
         >
-          <Text style={[s.sideBtnTxt, showOnlyVisited && { color: "#fff" }]}>
-            ✓
-          </Text>
+          <Image
+            source={visitedIcon}
+            style={[s.sideIcon, showOnlyVisited && s.sideIconActive]}
+            resizeMode="contain"
+          />
         </TouchableOpacity>
+
+        {/* Plan my day */}
         <TouchableOpacity
           style={s.sideBtn}
           onPress={() => setShowPlanMyDay(true)}
         >
-          <Text style={s.sideBtnTxt}>🗺️</Text>
+          <Image source={planIcon} style={s.sideIcon} resizeMode="contain" />
         </TouchableOpacity>
+
+        {/* Activity groups */}
         <TouchableOpacity style={s.sideBtn} onPress={() => setShowGroups(true)}>
-          <Text style={s.sideBtnTxt}>🤝</Text>
+          <Image source={groupsIcon} style={s.sideIcon} resizeMode="contain" />
         </TouchableOpacity>
+
+        {/* Archive */}
         <TouchableOpacity
           style={s.sideBtn}
           onPress={() => setShowArchive(true)}
         >
-          <Text style={s.sideBtnTxt}>📋</Text>
+          <Image source={archiveIcon} style={s.sideIcon} resizeMode="contain" />
         </TouchableOpacity>
+
+        {/* Badges */}
         <TouchableOpacity style={s.sideBtn} onPress={() => setShowBadges(true)}>
-          <Text style={s.sideBtnTxt}>🏆</Text>
+          <Image source={badgesIcon} style={s.sideIcon} resizeMode="contain" />
         </TouchableOpacity>
+
+        {/* Notifications */}
         <TouchableOpacity
           style={s.sideBtn}
           onPress={() => setShowNotifSettings(true)}
         >
-          <Text style={s.sideBtnTxt}>🔔</Text>
+          <Image
+            source={notificationsIcon}
+            style={s.sideIcon}
+            resizeMode="contain"
+          />
           {realNotificationCount > 0 && (
             <View style={s.notifDot}>
               <Text style={{ color: "#fff", fontSize: 9, fontWeight: "800" }}>
@@ -6471,145 +6748,145 @@ export default function DashboardScreen() {
   );
 }
 
-const s = StyleSheet.create({
-  container: { flex: 1 },
-  map: { flex: 1 },
-  topBar: {
-    position: "absolute",
-    top: Platform.OS === "ios" ? 54 : 36,
-    left: 12,
-    right: 12,
-    gap: 8,
-  },
-  citySearchRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "#fff",
-    borderRadius: 24,
-    paddingLeft: 14,
-    paddingRight: 6,
-    paddingVertical: 4,
-    gap: 6,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 4,
-    elevation: 5,
-  },
-  cityInput: { flex: 1, fontSize: 14, color: "#333", paddingVertical: 8 },
-  citySearchBtn: {
-    backgroundColor: "#667eea",
-    borderRadius: 18,
-    paddingHorizontal: 14,
-    paddingVertical: 7,
-  },
-  clearCityBtn: {
-    backgroundColor: "#fff0f0",
-    borderRadius: 16,
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-  },
-  remoteBadge: {
-    backgroundColor: "#667eea",
-    borderRadius: 18,
-    paddingHorizontal: 14,
-    paddingVertical: 6,
-    alignSelf: "flex-start",
-  },
-  topBtn: {
-    backgroundColor: "#fff",
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    borderRadius: 24,
-    alignSelf: "flex-start",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 4,
-    elevation: 4,
-  },
-  topBtnText: { fontSize: 14, fontWeight: "600", color: "#333" },
-  todBtn: {
-    backgroundColor: "rgba(255,255,255,0.92)",
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    justifyContent: "center",
-    alignItems: "center",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.15,
-    shadowRadius: 3,
-    elevation: 3,
-  },
-  todBtnA: { backgroundColor: "#667eea" },
-  todTxt: { fontSize: 18 },
-  sidePanel: { position: "absolute", right: 12, bottom: 110, gap: 8 },
-  sideBtn: {
-    backgroundColor: "#fff",
-    width: 46,
-    height: 46,
-    borderRadius: 23,
-    justifyContent: "center",
-    alignItems: "center",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 4,
-    elevation: 5,
-  },
-  sideBtnA: { backgroundColor: "#667eea" },
-  sideBtnNotif: { backgroundColor: "#fff3cd" },
-  sideBtnTxt: { fontSize: 20 },
-  notifDot: {
-    position: "absolute",
-    top: 0,
-    right: 0,
-    width: 16,
-    height: 16,
-    borderRadius: 8,
-    backgroundColor: "#ff3b30",
-    justifyContent: "center",
-    alignItems: "center",
-    borderWidth: 1.5,
-    borderColor: "#fff",
-  },
-  loadingBar: {
-    position: "absolute",
-    bottom: 90,
-    left: 20,
-    right: 20,
-    flexDirection: "row",
-    backgroundColor: "rgba(102,126,234,0.9)",
-    borderRadius: 24,
-    paddingVertical: 10,
-    paddingHorizontal: 20,
-    alignItems: "center",
-    gap: 10,
-    justifyContent: "center",
-  },
-  loadingTxt: { color: "#fff", fontSize: 14, fontWeight: "600" },
-  // Bottom bar: count + "Prikaži više" gumb
-  bottomBar: {
-    position: "absolute",
-    bottom: 90,
-    left: 20,
-    right: 20,
-    backgroundColor: "rgba(0,0,0,0.75)",
-    borderRadius: 24,
-    paddingVertical: 8,
-    paddingHorizontal: 16,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-  },
-  countTxt: { color: "#fff", fontSize: 13, fontWeight: "600", flex: 1 },
-  showMoreBtn: {
-    backgroundColor: "#667eea",
-    borderRadius: 16,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    marginLeft: 8,
-  },
-  showMoreTxt: { color: "#fff", fontSize: 12, fontWeight: "700" },
-});
+// const s = StyleSheet.create({
+//   container: { flex: 1 },
+//   map: { flex: 1 },
+//   topBar: {
+//     position: "absolute",
+//     top: Platform.OS === "ios" ? 54 : 36,
+//     left: 12,
+//     right: 12,
+//     gap: 8,
+//   },
+//   citySearchRow: {
+//     flexDirection: "row",
+//     alignItems: "center",
+//     backgroundColor: "#fff",
+//     borderRadius: 24,
+//     paddingLeft: 14,
+//     paddingRight: 6,
+//     paddingVertical: 4,
+//     gap: 6,
+//     shadowColor: "#000",
+//     shadowOffset: { width: 0, height: 2 },
+//     shadowOpacity: 0.2,
+//     shadowRadius: 4,
+//     elevation: 5,
+//   },
+//   cityInput: { flex: 1, fontSize: 14, color: "#333", paddingVertical: 8 },
+//   citySearchBtn: {
+//     backgroundColor: "#667eea",
+//     borderRadius: 18,
+//     paddingHorizontal: 14,
+//     paddingVertical: 7,
+//   },
+//   clearCityBtn: {
+//     backgroundColor: "#fff0f0",
+//     borderRadius: 16,
+//     paddingHorizontal: 10,
+//     paddingVertical: 6,
+//   },
+//   remoteBadge: {
+//     backgroundColor: "#667eea",
+//     borderRadius: 18,
+//     paddingHorizontal: 14,
+//     paddingVertical: 6,
+//     alignSelf: "flex-start",
+//   },
+//   topBtn: {
+//     backgroundColor: "#fff",
+//     paddingHorizontal: 16,
+//     paddingVertical: 10,
+//     borderRadius: 24,
+//     alignSelf: "flex-start",
+//     shadowColor: "#000",
+//     shadowOffset: { width: 0, height: 2 },
+//     shadowOpacity: 0.2,
+//     shadowRadius: 4,
+//     elevation: 4,
+//   },
+//   topBtnText: { fontSize: 14, fontWeight: "600", color: "#333" },
+//   todBtn: {
+//     backgroundColor: "rgba(255,255,255,0.92)",
+//     width: 40,
+//     height: 40,
+//     borderRadius: 20,
+//     justifyContent: "center",
+//     alignItems: "center",
+//     shadowColor: "#000",
+//     shadowOffset: { width: 0, height: 1 },
+//     shadowOpacity: 0.15,
+//     shadowRadius: 3,
+//     elevation: 3,
+//   },
+//   todBtnA: { backgroundColor: "#667eea" },
+//   todTxt: { fontSize: 18 },
+//   sidePanel: { position: "absolute", right: 12, bottom: 110, gap: 8 },
+//   sideBtn: {
+//     backgroundColor: "#fff",
+//     width: 46,
+//     height: 46,
+//     borderRadius: 23,
+//     justifyContent: "center",
+//     alignItems: "center",
+//     shadowColor: "#000",
+//     shadowOffset: { width: 0, height: 2 },
+//     shadowOpacity: 0.2,
+//     shadowRadius: 4,
+//     elevation: 5,
+//   },
+//   sideBtnA: { backgroundColor: "#667eea" },
+//   sideBtnNotif: { backgroundColor: "#fff3cd" },
+//   sideBtnTxt: { fontSize: 20 },
+//   notifDot: {
+//     position: "absolute",
+//     top: 0,
+//     right: 0,
+//     width: 16,
+//     height: 16,
+//     borderRadius: 8,
+//     backgroundColor: "#ff3b30",
+//     justifyContent: "center",
+//     alignItems: "center",
+//     borderWidth: 1.5,
+//     borderColor: "#fff",
+//   },
+//   loadingBar: {
+//     position: "absolute",
+//     bottom: 90,
+//     left: 20,
+//     right: 20,
+//     flexDirection: "row",
+//     backgroundColor: "rgba(102,126,234,0.9)",
+//     borderRadius: 24,
+//     paddingVertical: 10,
+//     paddingHorizontal: 20,
+//     alignItems: "center",
+//     gap: 10,
+//     justifyContent: "center",
+//   },
+//   loadingTxt: { color: "#fff", fontSize: 14, fontWeight: "600" },
+//   // Bottom bar: count + "Prikaži više" gumb
+//   bottomBar: {
+//     position: "absolute",
+//     bottom: 90,
+//     left: 20,
+//     right: 20,
+//     backgroundColor: "rgba(0,0,0,0.75)",
+//     borderRadius: 24,
+//     paddingVertical: 8,
+//     paddingHorizontal: 16,
+//     flexDirection: "row",
+//     alignItems: "center",
+//     justifyContent: "space-between",
+//   },
+//   countTxt: { color: "#fff", fontSize: 13, fontWeight: "600", flex: 1 },
+//   showMoreBtn: {
+//     backgroundColor: "#667eea",
+//     borderRadius: 16,
+//     paddingHorizontal: 12,
+//     paddingVertical: 6,
+//     marginLeft: 8,
+//   },
+//   showMoreTxt: { color: "#fff", fontSize: 12, fontWeight: "700" },
+// });

@@ -799,6 +799,7 @@ out body;`;
 }
 
 // ─── Glavna izvozna funkcija ──────────────────────────────────────────────────
+// ─── Glavna izvozna funkcija ──────────────────────────────────────────────────
 export const getPlacesInRadius = async (
   latitude: number,
   longitude: number,
@@ -815,27 +816,133 @@ export const getPlacesInRadius = async (
     return cached.places;
   }
 
-  // Dohvati svaki tip paralelno
-  const promises = types.map((type) =>
-    fetchFromOverpass(latitude, longitude, radiusM, type),
-  );
+  // Dohvati svaki tip paralelno, s Nominatim fallbackom ako < 5 rezultata
+  const promises = types.map(async (type): Promise<Place[]> => {
+    const overpassResults = await fetchFromOverpass(
+      latitude,
+      longitude,
+      radiusM,
+      type,
+    );
+    if (overpassResults.length < 5) {
+      const nominatimResults = await fetchFromNominatim(
+        latitude,
+        longitude,
+        radiusKm,
+        type,
+      );
+      const existingIds = new Set<string>(
+        overpassResults.map((p: Place) => p.id),
+      );
+      const extra = nominatimResults.filter(
+        (p: Place) => !existingIds.has(p.id),
+      );
+      return [...overpassResults, ...extra];
+    }
+    return overpassResults;
+  });
+
+  // ← ovo je bio problem: results nije bio definiran
   const results = await Promise.all(promises);
   const allPlaces = results.flat();
 
   // Deduplikacija po ID-u
   const seen = new Set<string>();
-  const deduped = allPlaces.filter((p) => {
+  const deduped = allPlaces.filter((p: Place) => {
     if (seen.has(p.id)) return false;
     seen.add(p.id);
     return true;
   });
 
   // Sortiraj po udaljenosti
-  deduped.sort((a, b) => (a.distance ?? 0) - (b.distance ?? 0));
+  deduped.sort((a: Place, b: Place) => (a.distance ?? 0) - (b.distance ?? 0));
 
   placesCache.set(cacheKey, { places: deduped, timestamp: Date.now() });
   return deduped;
 };
+
+// ─── Nominatim fallback po kategoriji ────────────────────────────────────────
+const NOMINATIM_CATEGORY_QUERIES: Record<string, string> = {
+  restaurant: "restaurant",
+  cafe: "cafe",
+  club: "nightclub",
+  beach: "beach",
+  landmark: "tourist attraction",
+  accommodation: "hotel",
+  market: "market",
+  cinema: "cinema",
+  park: "park",
+  museum: "museum",
+  theater: "theatre",
+  mountain: "peak",
+  spa: "spa",
+  escapeRoom: "escape room",
+  paintball: "paintball",
+  cave: "cave",
+  nationalPark: "national park",
+  opg: "OPG",
+};
+
+async function fetchFromNominatim(
+  latitude: number,
+  longitude: number,
+  radiusKm: number,
+  type: string,
+): Promise<Place[]> {
+  const query = NOMINATIM_CATEGORY_QUERIES[type];
+  if (!query) return [];
+
+  try {
+    // Nominatim structured search s bounding boxom
+    const delta = radiusKm / 111; // ~1 stupanj = 111 km
+    const bbox = `${longitude - delta},${latitude - delta},${longitude + delta},${latitude + delta}`;
+
+    const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&viewbox=${bbox}&bounded=1&limit=15&addressdetails=1`;
+
+    const ctrl = new AbortController();
+    const tid = setTimeout(() => ctrl.abort(), 10000);
+    const res = await fetch(url, {
+      headers: { "User-Agent": "CroMapApp/1.0" },
+      signal: ctrl.signal,
+    });
+    clearTimeout(tid);
+
+    if (!res.ok) return [];
+    const data = await res.json();
+    if (!Array.isArray(data)) return [];
+
+    const results: Place[] = [];
+    for (const item of data) {
+      const lat = parseFloat(item.lat);
+      const lon = parseFloat(item.lon);
+      const dist = haversineKm(latitude, longitude, lat, lon);
+      if (dist > radiusKm) continue;
+
+      const name = item.name || item.display_name?.split(",")[0];
+      if (!name || name.length < 2) continue;
+
+      // Provjeri globalnu crnu listu
+      const nameLower = name.toLowerCase();
+      const denied = GLOBAL_NAME_DENYLIST.some((d) =>
+        nameLower.includes(d.toLowerCase()),
+      );
+      if (denied) continue;
+
+      results.push({
+        id: `nom_${type}_${item.place_id}`,
+        name,
+        latitude: lat,
+        longitude: lon,
+        type: type as Place["type"],
+        distance: dist,
+        address: item.display_name?.split(",").slice(1, 3).join(",").trim(),
+      });
+    }
+    return results;
+  } catch {
+    return [];
+  }
+}
 
 export default {
   searchPlaces,

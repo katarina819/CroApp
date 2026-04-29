@@ -24,6 +24,8 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import Svg, { Defs, LinearGradient, Path, Stop } from "react-native-svg";
 import { StoryBadge } from "../../app/StoryBadge";
+import { useTheme } from "../../components/AdaptiveThemeProvider";
+import { ThemeToggle } from "../../components/ThemeToggle";
 import UserAvatar from "../../components/UserAvatar";
 import { API_BASE_URL } from "../config/api";
 import { useUser } from "./../contexts/UserContext";
@@ -294,17 +296,14 @@ function AvatarSection({ onUpdate }: { onUpdate: () => void }) {
   const [showAvatarModal, setShowAvatarModal] = useState(false);
 
   const pickAndUpload = async () => {
-    const { t } = useTranslation(); // dodaj useTranslation na vrh AvatarSection
-
     Alert.alert(t("profile.profilePicture"), t("profile.selectSource"), [
       { text: t("profile.gallery"), onPress: () => pickImage("gallery") },
+      { text: t("profile.camera"), onPress: () => pickImage("camera") },
       {
         text: t("profile.selectAvatar"),
         onPress: () => setShowAvatarModal(true),
       },
-      { text: t("profile.camera"), onPress: () => pickImage("camera") },
       {
-        // NOVA OPCIJA: bez slike - samo inicijali
         text: t("profile.noPhoto"),
         onPress: async () => {
           setLoading(true);
@@ -318,21 +317,42 @@ function AvatarSection({ onUpdate }: { onUpdate: () => void }) {
               updateAvatar(""); // prazan string = inicijali
               await refreshProfile();
               onUpdate();
+              Alert.alert(t("common.success"), t("profile.photoRemoved"));
+            } else {
+              Alert.alert(t("common.error"), t("profile.photoRemoveError"));
             }
           } catch {
-            Alert.alert(t("common.error"), t("profile.photoError"));
+            Alert.alert(t("common.error"), t("profile.photoRemoveError"));
           } finally {
             setLoading(false);
           }
         },
       },
-      {
-        text: t("profile.removePhoto"),
-        style: "destructive",
-        onPress: removeAvatar,
-      },
       { text: t("common.cancel"), style: "cancel" },
     ]);
+  };
+
+  const selectInitials = async () => {
+    setShowAvatarModal(false);
+    setLoading(true);
+    try {
+      const token = await AsyncStorage.getItem("token");
+      const res = await fetch(`${API_BASE_URL}/api/auth/profile-photo`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (res.ok) {
+        updateAvatar("");
+        await refreshProfile();
+        onUpdate();
+      } else {
+        Alert.alert(t("common.error"), t("profile.photoRemoveError"));
+      }
+    } catch {
+      Alert.alert(t("common.error"), t("profile.photoRemoveError"));
+    } finally {
+      setLoading(false);
+    }
   };
 
   const selectAvatar = async (type: "male" | "female") => {
@@ -536,6 +556,30 @@ function AvatarSection({ onUpdate }: { onUpdate: () => void }) {
                   {t("profile.femaleAvatar")}
                 </Text>
               </TouchableOpacity>
+
+              <TouchableOpacity
+                style={[
+                  avModal.option,
+                  !avatarUrl &&
+                    !isMaleAvatar &&
+                    !isFemaleAvatar &&
+                    avModal.optionActive,
+                ]}
+                onPress={selectInitials}
+                activeOpacity={0.8}
+              >
+                <View style={[avModal.avatarWrapper, avModal.initialsWrapper]}>
+                  <Text style={avModal.initialsText}>{initials}</Text>
+                  {!avatarUrl && !isMaleAvatar && !isFemaleAvatar && (
+                    <View style={avModal.checkBadge}>
+                      <Ionicons name="checkmark" size={14} color="#fff" />
+                    </View>
+                  )}
+                </View>
+                <Text style={avModal.optionLabel}>
+                  {t("profile.initialsAvatar")}
+                </Text>
+              </TouchableOpacity>
             </View>
 
             <TouchableOpacity
@@ -559,6 +603,16 @@ const av = StyleSheet.create({
     height: 104,
     justifyContent: "center",
     alignItems: "center",
+  },
+  initialsWrapper: {
+    backgroundColor: "#2D6418",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  initialsText: {
+    color: "#fff",
+    fontSize: 30,
+    fontWeight: "700",
   },
   img: { width: 96, height: 96, borderRadius: 48 },
   placeholder: {
@@ -603,6 +657,16 @@ const avModal = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
   },
+  initialsWrapper: {
+    backgroundColor: "#2D6418",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  initialsText: {
+    color: "#fff",
+    fontSize: 30,
+    fontWeight: "700",
+  },
   container: {
     backgroundColor: "#fff",
     borderRadius: 20,
@@ -616,7 +680,12 @@ const avModal = StyleSheet.create({
   },
   title: { fontSize: 18, fontWeight: "700", color: "#1a1a1a", marginBottom: 4 },
   subtitle: { fontSize: 13, color: "#999", marginBottom: 24 },
-  avatarRow: { flexDirection: "row", gap: 20, marginBottom: 20 },
+  avatarRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 20,
+    marginBottom: 20,
+  },
   option: {
     alignItems: "center",
     padding: 12,
@@ -667,6 +736,7 @@ function FollowListModal({
   onUpdate?: () => void;
 }) {
   const { t } = useTranslation();
+  const { colors } = useTheme();
   const [list, setList] = useState<FollowUser[]>([]);
   const [loading, setLoading] = useState(false);
   const [processingId, setProcessingId] = useState<number | null>(null);
@@ -892,14 +962,14 @@ function FollowListModal({
       onRequestClose={onClose}
     >
       <SafeAreaView
-        style={{ flex: 1, backgroundColor: "#fff" }}
+        style={{ flex: 1, backgroundColor: colors.background }}
         edges={["top"]}
       >
-        <View style={fl.header}>
+        <View style={[fl.header, { borderBottomColor: colors.border }]}>
           <TouchableOpacity onPress={onClose}>
-            <Ionicons name="close" size={28} color="#333" />
+            <Ionicons name="close" size={28} color={colors.text} />
           </TouchableOpacity>
-          <Text style={fl.title}>
+          <Text style={[fl.title, { color: colors.text }]}>
             {type === "followers"
               ? t("profile.followersList")
               : t("profile.followingList")}
@@ -956,10 +1026,12 @@ function FollowListModal({
                       } as any);
                     }}
                   >
-                    <Text style={fl.name}>
+                    <Text style={[fl.name, { color: colors.text }]}>
                       {item.firstName} {item.lastName}
                     </Text>
-                    <Text style={fl.username}>@{item.username}</Text>
+                    <Text style={[fl.username, { color: colors.primary }]}>
+                      @{item.username}
+                    </Text>
                   </TouchableOpacity>
 
                   <View style={fl.actionButtons}>
@@ -1482,6 +1554,7 @@ const vpModal = StyleSheet.create({
 // ─── Screen Time Countdown ────────────────────────────────────────────────────
 function ScreenTimeCountdown() {
   const { t } = useTranslation();
+  const { colors } = useTheme();
   const [remaining, setRemaining] = useState<number | null>(null);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
@@ -1558,13 +1631,25 @@ function ScreenTimeCountdown() {
   const isWarning = remaining < 300; // manje od 5 min
 
   return (
-    <View style={[sct.container, isWarning && sct.warning]}>
+    <View
+      style={[
+        sct.container,
+        { backgroundColor: colors.card },
+        isWarning && sct.warning,
+      ]}
+    >
       <Ionicons
         name="time-outline"
         size={16}
-        color={isWarning ? "#ff3b30" : "#2D6418"}
+        color={isWarning ? "#ff3b30" : colors.primary}
       />
-      <Text style={[sct.text, isWarning && sct.warningText]}>
+      <Text
+        style={[
+          sct.text,
+          { color: isWarning ? "#ff3b30" : colors.primary },
+          isWarning && sct.warningText,
+        ]}
+      >
         Preostalo: {mins}:{secs.toString().padStart(2, "0")}
       </Text>
     </View>
@@ -1598,6 +1683,7 @@ const getThumbnail = (item: any): string | null => {
 // ─── Me Tab ───────────────────────────────────────────────────────────────────
 function MeTab({ userId }: { userId: number | null }) {
   const { t } = useTranslation();
+  const { colors } = useTheme();
   const [items, setItems] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
@@ -1937,9 +2023,9 @@ function MeTab({ userId }: { userId: number | null }) {
 }
 
 // ─── Box Tab ──────────────────────────────────────────────────────────────────
-// ─── Box Tab ──────────────────────────────────────────────────────────────────
 function BoxTab() {
   const { t } = useTranslation();
+  const { colors } = useTheme();
   const [items, setItems] = useState<BoxItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedVideo, setSelectedVideo] = useState<BoxItem | null>(null);
@@ -2044,11 +2130,16 @@ function BoxTab() {
                 </View>
               </View>
               <View style={{ flex: 1 }}>
-                <Text style={tab.itemTitle} numberOfLines={2}>
+                <Text
+                  style={[tab.itemTitle, { color: colors.text }]}
+                  numberOfLines={2}
+                >
                   {item.title}
                 </Text>
-                <Text style={tab.itemMeta}>@{item.userName}</Text>
-                <Text style={tab.itemDate}>
+                <Text style={[tab.itemMeta, { color: colors.primary }]}>
+                  @{item.userName}
+                </Text>
+                <Text style={[tab.itemDate, { color: colors.textSecondary }]}>
                   Pohranjeno:{" "}
                   {new Date(item.savedAt).toLocaleDateString("hr-HR")}
                 </Text>
@@ -2514,6 +2605,7 @@ function SettingsModal({
   onSaved: () => void;
 }) {
   const { t } = useTranslation();
+  const { isDark, colors } = useTheme();
   const [isPublic, setIsPublic] = useState(profile?.isPublic ?? true);
   const [showUsernameOnProfile, setShowUsernameOnProfile] = useState(
     profile?.showUsername ?? true,
@@ -2667,12 +2759,22 @@ function SettingsModal({
 
   return (
     <Modal visible={visible} animationType="slide" onRequestClose={onClose}>
-      <SafeAreaView style={{ flex: 1, backgroundColor: "#fff" }}>
-        <View style={sm.header}>
+      <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
+        <View
+          style={[
+            sm.header,
+            {
+              backgroundColor: colors.background,
+              borderBottomColor: colors.border,
+            },
+          ]}
+        >
           <TouchableOpacity onPress={onClose}>
-            <Ionicons name="close" size={28} color="#333" />
+            <Ionicons name="close" size={28} color={colors.text} />
           </TouchableOpacity>
-          <Text style={sm.title}>{t("profile.settings")}</Text>
+          <Text style={[sm.title, { color: colors.text }]}>
+            {t("profile.settings")}
+          </Text>
           <TouchableOpacity onPress={saveSettings} disabled={saving}>
             {saving ? (
               <ActivityIndicator size="small" color="#2D6418" />
@@ -2681,16 +2783,27 @@ function SettingsModal({
             )}
           </TouchableOpacity>
         </View>
-
         <ScrollView contentContainerStyle={{ paddingBottom: 80 }}>
           {/* ─── JEZIK ─────────────────────────────────────── */}
           <View style={sm.section}>
             <Text style={sm.sectionTitle}>{t("profile.language")}</Text>
-            <View style={langStyles.currentLang}>
-              <Text style={langStyles.currentLangLabel}>
+            <View
+              style={[
+                langStyles.currentLang,
+                { backgroundColor: colors.backgroundCard },
+              ]}
+            >
+              <Text
+                style={[
+                  langStyles.currentLangLabel,
+                  { color: colors.textSecondary },
+                ]}
+              >
                 {t("profile.currentLanguageLabel")}:
               </Text>
-              <Text style={langStyles.currentLangValue}>
+              <Text
+                style={[langStyles.currentLangValue, { color: colors.primary }]}
+              >
                 {LANGUAGES.find((l) => l.code === currentLang)?.flag}{" "}
                 {LANGUAGES.find((l) => l.code === currentLang)?.label}
               </Text>
@@ -2725,6 +2838,15 @@ function SettingsModal({
                 </TouchableOpacity>
               ))}
             </View>
+          </View>
+
+          {/* ─── TEMA ─────────────────────────────────────── */}
+          <View style={sm.section}>
+            <Text style={sm.sectionTitle}>{t("profile.theme")}</Text>
+            <Text style={[sm.rowSub, { marginBottom: 12 }]}>
+              {t("profile.themeDesc")}
+            </Text>
+            <ThemeToggle />
           </View>
 
           {/* Privacy */}
@@ -2957,10 +3079,13 @@ const sm = StyleSheet.create({
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 function EmptyTab({ icon, text }: { icon: any; text: string }) {
+  const { colors } = useTheme();
   return (
-    <View style={tab.empty}>
-      <Ionicons name={icon} size={56} color="#d0d0d0" />
-      <Text style={tab.emptyText}>{text}</Text>
+    <View style={[tab.empty, { backgroundColor: colors.background }]}>
+      <Ionicons name={icon} size={56} color={colors.textSecondary} />
+      <Text style={[tab.emptyText, { color: colors.textSecondary }]}>
+        {text}
+      </Text>
     </View>
   );
 }
@@ -3094,6 +3219,7 @@ const trackSessionTime = async (minutes: number) => {
 
 // ─── Main Profile Screen ──────────────────────────────────────────────────────
 export default function ProfileScreen() {
+  const { colors } = useTheme();
   const [profile, setProfile] = useState<ProfileData | null>(null);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<Tab>("me");
@@ -3260,13 +3386,17 @@ export default function ProfileScreen() {
     profile?.showUsername !== false ? `@${profile?.username}` : null;
 
   return (
-    <SafeAreaView style={styles.safeArea} edges={["top"]}>
-      <View style={styles.container}>
-        {/* Header */}
-        <View style={styles.header}>
-          <Text style={styles.headerTitle}>{t("profile.profileHeader")}</Text>
+    <SafeAreaView
+      style={[styles.safeArea, { backgroundColor: colors.background }]}
+      edges={["top"]}
+    >
+      <View style={[styles.container, { backgroundColor: colors.background }]}>
+        <View style={[styles.header, { borderBottomColor: colors.border }]}>
+          <Text style={[styles.headerTitle, { color: colors.text }]}>
+            {t("profile.profileHeader")}
+          </Text>
           <TouchableOpacity onPress={() => setShowSettings(true)}>
-            <Ionicons name="settings-outline" size={24} color="#333" />
+            <Ionicons name="settings-outline" size={24} color={colors.text} />
           </TouchableOpacity>
         </View>
 

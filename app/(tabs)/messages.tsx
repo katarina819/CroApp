@@ -31,6 +31,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { API_BASE_URL } from "../../app/config/api";
 import { StoryBadge } from "../../app/StoryBadge";
+import { useTheme } from "../../components/AdaptiveThemeProvider";
 import UserAvatar from "../../components/UserAvatar";
 import {
   Conversation,
@@ -169,6 +170,7 @@ function StoryViewer({
   currentUserId?: number | null;
 }) {
   const { t } = useTranslation();
+  const { colors, isDark } = useTheme();
   console.log("StoryViewer opened with story:", story?.id, story?.userName); // Debug
   const progress = useRef(new Animated.Value(0)).current;
   const animationRef = useRef<Animated.CompositeAnimation | null>(null);
@@ -621,7 +623,9 @@ function StoryViewer({
         }}
       >
         <View style={sv.viewersModal}>
-          <View style={sv.viewersContent}>
+          <View
+            style={[sv.viewersContent, { backgroundColor: colors.background }]}
+          >
             <View style={sv.viewersHeader}>
               <Text style={sv.viewersTitle}>
                 {t("story.viewedBy")} ({viewers.length})
@@ -691,7 +695,9 @@ function StoryViewer({
         }}
       >
         <View style={sv.viewersModal}>
-          <View style={sv.viewersContent}>
+          <View
+            style={[sv.viewersContent, { backgroundColor: colors.background }]}
+          >
             <View style={sv.viewersHeader}>
               <Text style={sv.viewersTitle}>
                 {t("story.likes")} ({likeCount})
@@ -752,8 +758,18 @@ function StoryViewer({
             activeOpacity={1}
             onPress={handleCloseComments}
           />
-          <View style={sv.commentsContent}>
-            <View style={sv.commentsHeader}>
+          <View
+            style={[sv.commentsContent, { backgroundColor: colors.background }]}
+          >
+            <View
+              style={[
+                sv.commentsHeader,
+                {
+                  backgroundColor: colors.background,
+                  borderBottomColor: colors.border,
+                },
+              ]}
+            >
               <Text style={sv.commentsTitle}>
                 {t("story.comments")} ({comments.length})
               </Text>
@@ -835,8 +851,21 @@ function StoryViewer({
             />
 
             {/* Input – uvijek vidljiv iznad tipkovnice */}
-            <View style={sv.commentInputContainer}>
-              <View style={sv.commentInputWrapper}>
+            <View
+              style={[
+                sv.commentInputContainer,
+                {
+                  backgroundColor: colors.background,
+                  borderTopColor: colors.border,
+                },
+              ]}
+            >
+              <View
+                style={[
+                  sv.commentInputWrapper,
+                  { backgroundColor: isDark ? "#1C2128" : "#f5f5f5" },
+                ]}
+              >
                 <TextInput
                   style={sv.commentInput}
                   placeholder={t("story.writeComment")}
@@ -967,15 +996,13 @@ const sv = StyleSheet.create({
     padding: 10,
     borderRadius: 22,
   },
-
-  // Viewers/Likes Modal
   viewersModal: {
     flex: 1,
     backgroundColor: "rgba(0,0,0,0.5)",
     justifyContent: "flex-end",
   },
   viewersContent: {
-    backgroundColor: "#fff",
+    backgroundColor: "#fff", // statička bijela (modal će dobiti dinamičku kroz inline style)
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
     padding: 20,
@@ -1008,27 +1035,22 @@ const sv = StyleSheet.create({
   viewerName: { fontSize: 15, color: "#333" },
   reactionType: { marginLeft: "auto", fontSize: 18 },
   noViewers: { color: "#999", textAlign: "center", marginTop: 20 },
-
-  // Comments Modal – KLJUČNI FIX
   commentsKAV: {
     flex: 1,
     justifyContent: "flex-end",
     backgroundColor: "rgba(0,0,0,0.5)",
   },
-  commentsOverlay: {
-    // Transparentni prostor iznad modala – klik zatvara
-    flex: 1,
-  },
+  commentsOverlay: { flex: 1 },
   commentsContent: {
-    backgroundColor: "#fff",
+    backgroundColor: "#fff", // statička bijela (modal će dobiti dinamičku kroz inline style)
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
     height: "90%",
   },
   commentsList: { flex: 1, paddingHorizontal: 16 },
   commentItem: {
-    paddingVertical: 16, // POVEĆANO sa 12 na 16
-    paddingHorizontal: 16, // DODANO
+    paddingVertical: 16,
+    paddingHorizontal: 16,
     borderBottomWidth: StyleSheet.hairlineWidth,
     borderBottomColor: "#eee",
     backgroundColor: "#fff",
@@ -1036,20 +1058,20 @@ const sv = StyleSheet.create({
   commentHeader: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 10, // POVEĆANO sa 8 na 10
-    marginBottom: 10, // POVEĆANO sa 8 na 10
+    gap: 10,
+    marginBottom: 10,
   },
   commentAvatar: { width: 32, height: 32, borderRadius: 16 },
   commentUserName: {
-    fontWeight: "700", // PROMIJENO sa 600 na 700
+    fontWeight: "700",
     color: "#333",
     fontSize: 15,
   },
   commentTime: { fontSize: 11, color: "#999", marginLeft: "auto" },
   commentText: {
-    fontSize: 15, // POVEĆANO sa 14 na 15
+    fontSize: 15,
     color: "#444",
-    lineHeight: 22, // POVEĆANO sa 20 na 22
+    lineHeight: 22,
     marginLeft: 42,
   },
   commentReactionsList: {
@@ -1084,21 +1106,20 @@ const sv = StyleSheet.create({
     transform: [{ scale: 1.05 }],
   },
   commentReactionEmoji: { fontSize: 16 },
-  // Input uvijek prilijepljen na dno sadržaja
   commentInputContainer: {
-    padding: 16, // POVEĆANO sa 12 na 16
+    padding: 16,
     borderTopWidth: 1,
     borderTopColor: "#eee",
     backgroundColor: "#fff",
-    paddingBottom: Platform.OS === "ios" ? 34 : 16, // Dodatni padding za iOS
+    paddingBottom: Platform.OS === "ios" ? 34 : 16,
   },
   commentInputWrapper: {
     flexDirection: "row",
     alignItems: "flex-end",
     backgroundColor: "#f5f5f5",
-    borderRadius: 28, // POVEĆANO sa 24 na 28
+    borderRadius: 28,
     paddingHorizontal: 16,
-    paddingVertical: 10, // POVEĆANO sa 6 na 10
+    paddingVertical: 10,
   },
   commentsHeader: {
     flexDirection: "row",
@@ -1118,14 +1139,14 @@ const sv = StyleSheet.create({
   },
   commentInput: {
     flex: 1,
-    fontSize: 16, // POVEĆANO sa 15 na 16
+    fontSize: 16,
     color: "#333",
-    maxHeight: 120, // POVEĆANO sa 100 na 120
+    maxHeight: 120,
     paddingVertical: 10,
-    minHeight: 44, // POVEĆANO sa 40 na 44
+    minHeight: 44,
   },
   commentSendBtn: {
-    padding: 10, // POVEĆANO sa 8 na 10
+    padding: 10,
     marginLeft: 8,
   },
 });
@@ -1139,6 +1160,8 @@ function StoriesRow({
   onAddStory: () => void;
 }) {
   const { t } = useTranslation();
+  const { colors, isDark } = useTheme();
+  const srs = getSrsStyles(colors);
   const [stories, setStories] = useState<Story[]>([]);
   const [viewing, setViewing] = useState<Story | null>(null);
 
@@ -1319,63 +1342,64 @@ function StoriesRow({
   );
 }
 
-const srs = StyleSheet.create({
-  container: {
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: "#ebebeb",
-    paddingVertical: 12,
-  },
-  list: { paddingHorizontal: 12, gap: 12 },
-  storyItem: { alignItems: "center", width: 72 },
-  // Bez bordera – StoryIndicator dodaje prsten sam
-  avatarWrap: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
-    overflow: "hidden",
-    justifyContent: "center",
-    alignItems: "center",
-    marginBottom: 4,
-  },
-  myHasStory: {
-    borderWidth: 2.5,
-    borderColor: "#2D6418",
-  },
-  noStory: {
-    borderWidth: 2,
-    borderColor: "#ddd",
-    borderStyle: "dashed",
-  },
-  viewedRing: {
-    borderRadius: 32,
-    borderWidth: 2,
-    borderColor: "#ccc",
-  },
-  img: { width: 64, height: 64, borderRadius: 32 },
-  addBg: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
-    backgroundColor: "#2D6418",
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  initials: { color: "#fff", fontSize: 22, fontWeight: "700" },
-  addIcon: {
-    position: "absolute",
-    bottom: -2,
-    right: -2,
-    width: 22,
-    height: 22,
-    borderRadius: 11,
-    backgroundColor: "#2D6418",
-    justifyContent: "center",
-    alignItems: "center",
-    borderWidth: 2,
-    borderColor: "#fff",
-  },
-  label: { fontSize: 12, color: "#555", textAlign: "center" },
-});
+// DODAJ OVU FUNKCIJU NEPOSREDNO ISPOD const srs = StyleSheet.create({ ... }) (ili prije StoriesRow komponente)
+const getSrsStyles = (colors: any) =>
+  StyleSheet.create({
+    container: {
+      borderBottomWidth: StyleSheet.hairlineWidth,
+      borderBottomColor: colors.border,
+      paddingVertical: 12,
+    },
+    list: { paddingHorizontal: 12, gap: 12 },
+    storyItem: { alignItems: "center", width: 72 },
+    avatarWrap: {
+      width: 64,
+      height: 64,
+      borderRadius: 32,
+      overflow: "hidden",
+      justifyContent: "center",
+      alignItems: "center",
+      marginBottom: 4,
+    },
+    myHasStory: {
+      borderWidth: 2.5,
+      borderColor: "#2D6418",
+    },
+    noStory: {
+      borderWidth: 2,
+      borderColor: "#ddd",
+      borderStyle: "dashed",
+    },
+    viewedRing: {
+      borderRadius: 32,
+      borderWidth: 2,
+      borderColor: "#ccc",
+    },
+    img: { width: 64, height: 64, borderRadius: 32 },
+    addBg: {
+      width: 64,
+      height: 64,
+      borderRadius: 32,
+      backgroundColor: "#2D6418",
+      justifyContent: "center",
+      alignItems: "center",
+    },
+    initials: { color: "#fff", fontSize: 22, fontWeight: "700" },
+    addIcon: {
+      position: "absolute",
+      bottom: -2,
+      right: -2,
+      width: 22,
+      height: 22,
+      borderRadius: 11,
+      backgroundColor: "#2D6418",
+      justifyContent: "center",
+      alignItems: "center",
+      borderWidth: 2,
+      borderColor: "#fff",
+    },
+    label: { fontSize: 12, color: colors.textSecondary, textAlign: "center" },
+  });
 
 // ─── Add Story Modal ──────────────────────────────────────────────────────────
 function AddStoryModal({
@@ -1388,6 +1412,8 @@ function AddStoryModal({
   onUploaded: () => void;
 }) {
   const { t } = useTranslation();
+  const { colors, isDark } = useTheme();
+  const asm = getAsmStyles(colors);
   const [preview, setPreview] = useState<{
     uri: string;
     type: "image" | "video";
@@ -1524,43 +1550,47 @@ function AddStoryModal({
   );
 }
 
-const asm = StyleSheet.create({
-  header: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    padding: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: "#eee",
-  },
-  title: { fontSize: 17, fontWeight: "600", color: "#333" },
-  pickContainer: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    gap: 24,
-  },
-  hint: { fontSize: 18, color: "#666", marginBottom: 8 },
-  pickBtn: {
-    width: 160,
-    alignItems: "center",
-    padding: 28,
-    borderRadius: 16,
-    borderWidth: 2,
-    borderColor: "#2D6418",
-    borderStyle: "dashed",
-    gap: 10,
-  },
-  pickLabel: { fontSize: 16, color: "#2D6418", fontWeight: "600" },
-  preview: { flex: 1 },
-  previewActions: { flexDirection: "row", gap: 12, padding: 16 },
-  btn: { flex: 1, padding: 16, borderRadius: 12, alignItems: "center" },
-  btnText: { color: "#fff", fontSize: 16, fontWeight: "600" },
-});
+const getAsmStyles = (colors: any) =>
+  StyleSheet.create({
+    header: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "center",
+      padding: 16,
+      borderBottomWidth: 1,
+      borderBottomColor: colors.border,
+    },
+    title: { fontSize: 17, fontWeight: "600", color: colors.text },
+    pickContainer: {
+      flex: 1,
+      justifyContent: "center",
+      alignItems: "center",
+      gap: 24,
+      backgroundColor: colors.background,
+    },
+    hint: { fontSize: 18, color: colors.textSecondary, marginBottom: 8 },
+    pickBtn: {
+      width: 160,
+      alignItems: "center",
+      padding: 28,
+      borderRadius: 16,
+      borderWidth: 2,
+      borderColor: "#2D6418",
+      borderStyle: "dashed",
+      gap: 10,
+    },
+    pickLabel: { fontSize: 16, color: "#2D6418", fontWeight: "600" },
+    preview: { flex: 1 },
+    previewActions: { flexDirection: "row", gap: 12, padding: 16 },
+    btn: { flex: 1, padding: 16, borderRadius: 12, alignItems: "center" },
+    btnText: { color: "#fff", fontSize: 16, fontWeight: "600" },
+  });
 
 // ─── Main Messages Screen ─────────────────────────────────────────────────────
 export default function MessagesScreen() {
   const { t } = useTranslation();
+  const { colors, isDark } = useTheme();
+  const styles = getStyles(colors, isDark);
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -1667,6 +1697,7 @@ export default function MessagesScreen() {
               }
               formatTime={formatTime}
               currentUserId={currentUserId}
+              styles={styles}
             />
           )}
           refreshControl={
@@ -1731,12 +1762,15 @@ function ConversationItem({
   onPress,
   formatTime,
   currentUserId,
+  styles,
 }: {
   item: Conversation;
   onPress: () => void;
   formatTime: (t: string) => string;
   currentUserId?: number | null;
+  styles: any;
 }) {
+  const { colors, isDark } = useTheme();
   const scaleAnim = useRef(new Animated.Value(1)).current;
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
 
@@ -1847,113 +1881,116 @@ function ConversationItem({
   );
 }
 
-const styles = StyleSheet.create({
-  safeArea: { flex: 1, backgroundColor: "#fff" },
-  container: { flex: 1, backgroundColor: "#fff" },
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: 20,
-    paddingVertical: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: "#f0f0f0",
-    gap: 10,
-  },
-  headerTitle: { fontSize: 28, fontWeight: "bold", color: "#1a1a1a" },
-  badge: {
-    backgroundColor: "#ff3b30",
-    borderRadius: 12,
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-    minWidth: 24,
-    alignItems: "center",
-  },
-  badgeText: { color: "#fff", fontSize: 13, fontWeight: "700" },
-  errorBanner: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-    backgroundColor: "#fff5f5",
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    borderBottomWidth: 1,
-    borderBottomColor: "#ffe0e0",
-  },
-  errorText: { fontSize: 13, color: "#ff3b30", flex: 1 },
-  listContent: { paddingBottom: 24 },
-  emptyContainer: { flex: 1 },
-  center: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: "#fff",
-  },
-  emptyState: {
-    flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
-    paddingHorizontal: 48,
-    paddingTop: 60,
-    gap: 12,
-  },
-  emptyTitle: { fontSize: 20, fontWeight: "700", color: "#333" },
-  emptySubtitle: {
-    fontSize: 14,
-    color: "#999",
-    textAlign: "center",
-    lineHeight: 20,
-  },
-  newMsgBtn: {
-    marginTop: 8,
-    backgroundColor: "#2D6418",
-    paddingHorizontal: 24,
-    paddingVertical: 12,
-    borderRadius: 24,
-  },
-  newMsgBtnText: { color: "#fff", fontWeight: "600", fontSize: 15 },
-  convItem: {
-    flexDirection: "row",
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    alignItems: "center",
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: "#f0f0f0",
-  },
-  convAvatar: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    backgroundColor: "#2D6418",
-    justifyContent: "center",
-    alignItems: "center",
-    marginRight: 12,
-  },
-  convAvatarText: { color: "#fff", fontSize: 18, fontWeight: "700" },
-  convInfo: { flex: 1, gap: 4 },
-  convNameRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-  },
-  convName: { fontSize: 15, fontWeight: "500", color: "#333", flex: 1 },
-  convNameBold: { fontWeight: "700", color: "#1a1a1a" },
-  convTime: { fontSize: 12, color: "#bbb", marginLeft: 8 },
-  convTimeUnread: { color: "#2D6418", fontWeight: "600" },
-  convMsgRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-  },
-  convLastMsg: { fontSize: 14, color: "#999", flex: 1 },
-  convLastMsgUnread: { color: "#333", fontWeight: "600" },
-  unreadBadge: {
-    backgroundColor: "#2D6418",
-    borderRadius: 12,
-    paddingHorizontal: 7,
-    paddingVertical: 2,
-    minWidth: 22,
-    alignItems: "center",
-    marginLeft: 8,
-  },
-  unreadBadgeText: { color: "#fff", fontSize: 11, fontWeight: "700" },
-});
+// Obriši postojeći const styles = StyleSheet.create({ ... }) i zamijeni s ovom funkcijom:
+
+const getStyles = (colors: any, isDark: boolean) =>
+  StyleSheet.create({
+    safeArea: { flex: 1, backgroundColor: colors.background },
+    container: { flex: 1, backgroundColor: colors.background },
+    header: {
+      flexDirection: "row",
+      alignItems: "center",
+      paddingHorizontal: 20,
+      paddingVertical: 16,
+      borderBottomWidth: 1,
+      borderBottomColor: colors.border,
+      gap: 10,
+    },
+    headerTitle: { fontSize: 28, fontWeight: "bold", color: colors.text },
+    badge: {
+      backgroundColor: "#ff3b30",
+      borderRadius: 12,
+      paddingHorizontal: 8,
+      paddingVertical: 2,
+      minWidth: 24,
+      alignItems: "center",
+    },
+    badgeText: { color: "#fff", fontSize: 13, fontWeight: "700" },
+    errorBanner: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 8,
+      backgroundColor: isDark ? "#3a1a1a" : "#fff5f5",
+      paddingHorizontal: 16,
+      paddingVertical: 10,
+      borderBottomWidth: 1,
+      borderBottomColor: isDark ? "#5a2a2a" : "#ffe0e0",
+    },
+    errorText: { fontSize: 13, color: "#ff3b30", flex: 1 },
+    listContent: { paddingBottom: 24 },
+    emptyContainer: { flex: 1 },
+    center: {
+      flex: 1,
+      justifyContent: "center",
+      alignItems: "center",
+      backgroundColor: colors.background,
+    },
+    emptyState: {
+      flex: 1,
+      alignItems: "center",
+      justifyContent: "center",
+      paddingHorizontal: 48,
+      paddingTop: 60,
+      gap: 12,
+    },
+    emptyTitle: { fontSize: 20, fontWeight: "700", color: colors.text },
+    emptySubtitle: {
+      fontSize: 14,
+      color: colors.textSecondary,
+      textAlign: "center",
+      lineHeight: 20,
+    },
+    newMsgBtn: {
+      marginTop: 8,
+      backgroundColor: colors.primary,
+      paddingHorizontal: 24,
+      paddingVertical: 12,
+      borderRadius: 24,
+    },
+    newMsgBtnText: { color: "#fff", fontWeight: "600", fontSize: 15 },
+    convItem: {
+      flexDirection: "row",
+      paddingHorizontal: 16,
+      paddingVertical: 12,
+      alignItems: "center",
+      borderBottomWidth: StyleSheet.hairlineWidth,
+      borderBottomColor: colors.border,
+    },
+    convAvatar: {
+      width: 56,
+      height: 56,
+      borderRadius: 28,
+      backgroundColor: colors.primary,
+      justifyContent: "center",
+      alignItems: "center",
+      marginRight: 12,
+    },
+    convAvatarText: { color: "#fff", fontSize: 18, fontWeight: "700" },
+    convInfo: { flex: 1, gap: 4 },
+    convNameRow: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "center",
+    },
+    convName: { fontSize: 15, fontWeight: "500", color: colors.text, flex: 1 },
+    convNameBold: { fontWeight: "700", color: colors.text },
+    convTime: { fontSize: 12, color: colors.textSecondary, marginLeft: 8 },
+    convTimeUnread: { color: colors.primary, fontWeight: "600" },
+    convMsgRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+    },
+    convLastMsg: { fontSize: 14, color: colors.textSecondary, flex: 1 },
+    convLastMsgUnread: { color: colors.text, fontWeight: "600" },
+    unreadBadge: {
+      backgroundColor: colors.primary,
+      borderRadius: 12,
+      paddingHorizontal: 7,
+      paddingVertical: 2,
+      minWidth: 22,
+      alignItems: "center",
+      marginLeft: 8,
+    },
+    unreadBadgeText: { color: "#fff", fontSize: 11, fontWeight: "700" },
+  });

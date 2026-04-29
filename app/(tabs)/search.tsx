@@ -21,15 +21,16 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { StoryBadge } from "../../app/StoryBadge";
+import { useTheme } from "../../components/AdaptiveThemeProvider";
 import UserAvatar from "../../components/UserAvatar";
 import { API_BASE_URL, API_ENDPOINTS } from "../config/api";
 
 interface User {
   id: number;
-  firstname?: string; // API vraća ovo (mala slova)
-  lastname?: string; // API vraća ovo (mala slova)
-  firstName?: string; // Za backward compatibility
-  lastName?: string; // Za backward compatibility
+  firstname?: string;
+  lastname?: string;
+  firstName?: string;
+  lastName?: string;
   username: string;
   avatar?: string | null;
   followersCount?: number;
@@ -37,7 +38,6 @@ interface User {
 }
 
 // ── Compose Message Modal ──────────────────────────────────────────────────────
-// Otvara se kada korisnik klikne dugme za poruku – umjesto redirecta na chat
 function ComposeMessageModal({
   visible,
   recipient,
@@ -48,6 +48,7 @@ function ComposeMessageModal({
   onClose: () => void;
 }) {
   const { t } = useTranslation();
+  const { colors, isDark } = useTheme();
   const [message, setMessage] = useState("");
   const [sending, setSending] = useState(false);
 
@@ -76,7 +77,6 @@ function ComposeMessageModal({
         onClose();
       } else {
         const err = await res.text();
-
         Alert.alert(t("common.error"), err || t("search.messageFailed"));
       }
     } catch {
@@ -93,7 +93,6 @@ function ComposeMessageModal({
 
   if (!recipient) return null;
 
-  // API vraća firstname i lastname (mala slova) - podržava oba formata
   const firstName = recipient.firstname || recipient.firstName || "";
   const lastName = recipient.lastname || recipient.lastName || "";
   const initials =
@@ -107,19 +106,28 @@ function ComposeMessageModal({
       onRequestClose={handleClose}
     >
       <KeyboardAvoidingView
-        style={{ flex: 1 }}
+        style={{ flex: 1, backgroundColor: colors.background }}
         behavior={Platform.OS === "ios" ? "padding" : "height"}
       >
         <SafeAreaView
-          style={{ flex: 1, backgroundColor: "#fff" }}
+          style={{ flex: 1, backgroundColor: colors.background }}
           edges={["top"]}
         >
-          {/* Header */}
-          <View style={cs.header}>
+          <View
+            style={[
+              cs.header,
+              {
+                backgroundColor: colors.background,
+                borderBottomColor: colors.border,
+              },
+            ]}
+          >
             <TouchableOpacity onPress={handleClose}>
-              <Ionicons name="close" size={28} color="#333" />
+              <Ionicons name="close" size={28} color={colors.text} />
             </TouchableOpacity>
-            <Text style={cs.title}>{t("search.sendMessage")}</Text>
+            <Text style={[cs.title, { color: colors.text }]}>
+              {t("search.sendMessage")}
+            </Text>
             <TouchableOpacity
               style={[
                 cs.sendHeaderBtn,
@@ -136,10 +144,16 @@ function ComposeMessageModal({
             </TouchableOpacity>
           </View>
 
-          {/* Recipient */}
-          <View style={cs.recipientRow}>
-            <Text style={cs.toLabel}>{t("search.messageTo")}</Text>
-            <View style={cs.recipientChip}>
+          <View style={[cs.recipientRow, { borderBottomColor: colors.border }]}>
+            <Text style={[cs.toLabel, { color: colors.textSecondary }]}>
+              {t("search.messageTo")}
+            </Text>
+            <View
+              style={[
+                cs.recipientChip,
+                { backgroundColor: isDark ? "#1C2128" : "#f0f0ff" },
+              ]}
+            >
               {recipient.avatar ? (
                 <Image
                   source={{ uri: recipient.avatar }}
@@ -150,16 +164,17 @@ function ComposeMessageModal({
                   <Text style={cs.chipInitials}>{initials || "?"}</Text>
                 </View>
               )}
-              <Text style={cs.chipName}>@{recipient.username}</Text>
+              <Text style={[cs.chipName, { color: colors.primary }]}>
+                @{recipient.username}
+              </Text>
             </View>
           </View>
 
-          {/* Message input */}
           <View style={cs.inputArea}>
             <TextInput
-              style={cs.input}
+              style={[cs.input, { color: colors.text }]}
               placeholder={t("search.messagePlaceholder", { name: firstName })}
-              placeholderTextColor="#bbb"
+              placeholderTextColor={colors.textSecondary}
               value={message}
               onChangeText={setMessage}
               multiline
@@ -167,21 +182,36 @@ function ComposeMessageModal({
               autoFocus
               textAlignVertical="top"
             />
-            <Text style={cs.counter}>{message.length}/1000</Text>
+            <Text style={[cs.counter, { color: colors.textSecondary }]}>
+              {message.length}/1000
+            </Text>
           </View>
 
-          {/* Quick suggestions */}
-          <View style={cs.suggestions}>
-            <Text style={cs.suggestionsLabel}>{t("search.quickMessages")}</Text>
+          <View style={[cs.suggestions, { borderTopColor: colors.border }]}>
+            <Text
+              style={[cs.suggestionsLabel, { color: colors.textSecondary }]}
+            >
+              {t("search.quickMessages")}
+            </Text>
             <View style={cs.suggestionsList}>
               {["Hej! 👋", "Kako si?", "Vidimo se uskoro!", "Odlično! 🔥"].map(
                 (s) => (
                   <TouchableOpacity
                     key={s}
-                    style={cs.suggestionChip}
+                    style={[
+                      cs.suggestionChip,
+                      { backgroundColor: isDark ? "#1C2128" : "#f5f5f5" },
+                    ]}
                     onPress={() => setMessage(s)}
                   >
-                    <Text style={cs.suggestionText}>{s}</Text>
+                    <Text
+                      style={[
+                        cs.suggestionText,
+                        { color: colors.textSecondary },
+                      ]}
+                    >
+                      {s}
+                    </Text>
                   </TouchableOpacity>
                 ),
               )}
@@ -200,9 +230,8 @@ const cs = StyleSheet.create({
     alignItems: "center",
     padding: 16,
     borderBottomWidth: 1,
-    borderBottomColor: "#eee",
   },
-  title: { fontSize: 17, fontWeight: "600", color: "#333" },
+  title: { fontSize: 17, fontWeight: "600" },
   sendHeaderBtn: {
     backgroundColor: "#2D6418",
     paddingHorizontal: 16,
@@ -218,14 +247,12 @@ const cs = StyleSheet.create({
     alignItems: "center",
     padding: 16,
     borderBottomWidth: 1,
-    borderBottomColor: "#f0f0f0",
     gap: 10,
   },
-  toLabel: { fontSize: 15, color: "#999", fontWeight: "600" },
+  toLabel: { fontSize: 15, fontWeight: "600" },
   recipientChip: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#f0f0ff",
     borderRadius: 20,
     paddingHorizontal: 10,
     paddingVertical: 6,
@@ -238,25 +265,25 @@ const cs = StyleSheet.create({
     alignItems: "center",
   },
   chipInitials: { color: "#fff", fontSize: 11, fontWeight: "700" },
-  chipName: { fontSize: 14, fontWeight: "600", color: "#2D6418" },
+  chipName: { fontSize: 14, fontWeight: "600" },
   inputArea: { flex: 1, padding: 16 },
-  input: { flex: 1, fontSize: 16, color: "#333", lineHeight: 24 },
-  counter: { fontSize: 12, color: "#ccc", textAlign: "right", marginTop: 4 },
-  suggestions: { padding: 16, borderTopWidth: 1, borderTopColor: "#f0f0f0" },
-  suggestionsLabel: { fontSize: 13, color: "#999", marginBottom: 10 },
+  input: { flex: 1, fontSize: 16, lineHeight: 24 },
+  counter: { fontSize: 12, textAlign: "right", marginTop: 4 },
+  suggestions: { padding: 16, borderTopWidth: 1 },
+  suggestionsLabel: { fontSize: 13, marginBottom: 10 },
   suggestionsList: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
   suggestionChip: {
-    backgroundColor: "#f5f5f5",
     borderRadius: 16,
     paddingHorizontal: 12,
     paddingVertical: 7,
   },
-  suggestionText: { fontSize: 13, color: "#555" },
+  suggestionText: { fontSize: 13 },
 });
 
 // ── Main Search Screen ─────────────────────────────────────────────────────────
 export default function SearchScreen() {
   const { t } = useTranslation();
+  const { colors, isDark } = useTheme();
   const [query, setQuery] = useState("");
   const [users, setUsers] = useState<User[]>([]);
   const [filtered, setFiltered] = useState<User[]>([]);
@@ -283,15 +310,12 @@ export default function SearchScreen() {
       });
       if (res.ok) {
         const data: User[] = await res.json();
-        console.log("Users data from API:", JSON.stringify(data[0], null, 2)); // DEBUG: vidi prvi user
         const others = data.filter((u) => u.id !== parsedId);
         setUsers(others);
         setFiltered(others);
       }
 
-      // Dohvati korisnike koje pratiš
       try {
-        // Umjesto /api/follow/my-following (koji ne postoji), koristite:
         const followRes = await fetch(
           `${API_BASE_URL}/api/follow/following/${parsedId}`,
           {
@@ -352,13 +376,11 @@ export default function SearchScreen() {
     try {
       let res: Response;
       if (isFollowing) {
-        // Unfollow - ISPRAVAN endpoint (bez /unfollow)
         res = await fetch(`${API_BASE_URL}/api/follow/${userId}`, {
           method: "DELETE",
           headers: { Authorization: `Bearer ${token}` },
         });
       } else {
-        // Follow - ISPRAVAN endpoint (bez /follow)
         res = await fetch(`${API_BASE_URL}/api/follow/${userId}`, {
           method: "POST",
           headers: {
@@ -382,7 +404,6 @@ export default function SearchScreen() {
     }
   };
 
-  // Otvori modal za pisanje poruke – NE otvara chat razgovor
   const handleOpenCompose = (user: User) => {
     setComposeTarget(user);
     setShowCompose(true);
@@ -403,7 +424,7 @@ export default function SearchScreen() {
     const isLoadingThis = loadingFollow[item.id] || false;
 
     return (
-      <View style={styles.userCard}>
+      <View style={[styles.userCard, { borderBottomColor: colors.border }]}>
         <TouchableOpacity
           style={styles.avatarContainer}
           onPress={() => handleViewProfile(item)}
@@ -422,12 +443,16 @@ export default function SearchScreen() {
           style={styles.userInfo}
           onPress={() => handleViewProfile(item)}
         >
-          <Text style={styles.userName}>
+          <Text style={[styles.userName, { color: colors.text }]}>
             {firstName} {lastName}
           </Text>
-          <Text style={styles.userUsername}>@{item.username}</Text>
+          <Text style={[styles.userUsername, { color: colors.primary }]}>
+            @{item.username}
+          </Text>
           {item.followersCount !== undefined && (
-            <Text style={styles.followersCount}>
+            <Text
+              style={[styles.followersCount, { color: colors.textSecondary }]}
+            >
               {t("search.followers", { count: item.followersCount })}
             </Text>
           )}
@@ -435,20 +460,27 @@ export default function SearchScreen() {
 
         <View style={styles.actions}>
           <TouchableOpacity
-            style={[styles.followBtn, isFollowing && styles.followingBtn]}
+            style={[
+              styles.followBtn,
+              isFollowing && styles.followingBtn,
+              isFollowing && { borderColor: colors.primary },
+            ]}
             onPress={() => handleFollow(item.id)}
             disabled={isLoadingThis}
           >
             {isLoadingThis ? (
               <ActivityIndicator
                 size="small"
-                color={isFollowing ? "#2D6418" : "#fff"}
+                color={isFollowing ? colors.primary : "#fff"}
               />
             ) : (
               <Text
                 style={[
                   styles.followBtnText,
-                  isFollowing && styles.followingBtnText,
+                  isFollowing && [
+                    styles.followingBtnText,
+                    { color: colors.primary },
+                  ],
                 ]}
               >
                 {isFollowing ? t("search.following") : t("search.follow")}
@@ -457,10 +489,17 @@ export default function SearchScreen() {
           </TouchableOpacity>
 
           <TouchableOpacity
-            style={styles.msgBtn}
+            style={[
+              styles.msgBtn,
+              { backgroundColor: isDark ? "#1C2128" : "#f0f0ff" },
+            ]}
             onPress={() => handleOpenCompose(item)}
           >
-            <Ionicons name="paper-plane-outline" size={18} color="#2D6418" />
+            <Ionicons
+              name="paper-plane-outline"
+              size={18}
+              color={colors.primary}
+            />
           </TouchableOpacity>
         </View>
       </View>
@@ -468,23 +507,32 @@ export default function SearchScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.safeArea} edges={["top"]}>
-      <View style={styles.container}>
-        <View style={styles.header}>
-          <Text style={styles.headerTitle}>{t("search.title")}</Text>
+    <SafeAreaView
+      style={[styles.safeArea, { backgroundColor: colors.background }]}
+      edges={["top"]}
+    >
+      <View style={[styles.container, { backgroundColor: colors.background }]}>
+        <View style={[styles.header, { borderBottomColor: colors.border }]}>
+          <Text style={[styles.headerTitle, { color: colors.text }]}>
+            {t("search.title")}
+          </Text>
         </View>
 
-        <View style={styles.searchBar}>
+        <View
+          style={[
+            styles.searchBar,
+            { backgroundColor: isDark ? "#1C2128" : "#f5f5f5" },
+          ]}
+        >
           <Ionicons
             name="search-outline"
             size={18}
-            color="#999"
-            style={{ marginRight: 8 }}
+            color={colors.textSecondary}
           />
           <TextInput
-            style={styles.searchInput}
+            style={[styles.searchInput, { color: colors.text }]}
             placeholder={t("search.placeholder")}
-            placeholderTextColor="#999"
+            placeholderTextColor={colors.textSecondary}
             value={query}
             onChangeText={setQuery}
             autoCapitalize="none"
@@ -493,21 +541,27 @@ export default function SearchScreen() {
           />
           {query.length > 0 && (
             <TouchableOpacity onPress={() => setQuery("")}>
-              <Ionicons name="close-circle" size={18} color="#bbb" />
+              <Ionicons
+                name="close-circle"
+                size={18}
+                color={colors.textSecondary}
+              />
             </TouchableOpacity>
           )}
         </View>
 
         {!loading && query.length > 0 && (
-          <Text style={styles.resultsInfo}>
+          <Text style={[styles.resultsInfo, { color: colors.textSecondary }]}>
             {t("search.results", { count: filtered.length })}
           </Text>
         )}
 
         {loading ? (
           <View style={styles.center}>
-            <ActivityIndicator size="large" color="#2D6418" />
-            <Text style={styles.loadingText}>{t("search.loading")}</Text>
+            <ActivityIndicator size="large" color={colors.primary} />
+            <Text style={[styles.loadingText, { color: colors.textSecondary }]}>
+              {t("search.loading")}
+            </Text>
           </View>
         ) : (
           <FlatList
@@ -525,16 +579,27 @@ export default function SearchScreen() {
                   setRefreshing(true);
                   loadData(true);
                 }}
-                tintColor="#2D6418"
+                tintColor={colors.primary}
               />
             }
             ListEmptyComponent={
               <View style={styles.emptyContainer}>
-                <Ionicons name="people-outline" size={64} color="#d0d0d0" />
-                <Text style={styles.emptyTitle}>
+                <Ionicons
+                  name="people-outline"
+                  size={64}
+                  color={colors.textSecondary}
+                />
+                <Text
+                  style={[styles.emptyTitle, { color: colors.textSecondary }]}
+                >
                   {query ? t("search.noResults") : t("search.noUsers")}
                 </Text>
-                <Text style={styles.emptySubtitle}>
+                <Text
+                  style={[
+                    styles.emptySubtitle,
+                    { color: colors.textSecondary },
+                  ]}
+                >
                   {query
                     ? t("search.noResultsDesc", { query })
                     : t("search.noUsersDesc")}
@@ -545,7 +610,6 @@ export default function SearchScreen() {
         )}
       </View>
 
-      {/* Compose message modal – pojavljuje se umjesto otvaranja chata */}
       <ComposeMessageModal
         visible={showCompose}
         recipient={composeTarget}
@@ -559,32 +623,25 @@ export default function SearchScreen() {
 }
 
 const styles = StyleSheet.create({
-  safeArea: { flex: 1, backgroundColor: "#fff" },
-  container: { flex: 1, backgroundColor: "#fff" },
+  safeArea: { flex: 1 },
+  container: { flex: 1 },
   header: {
     paddingHorizontal: 20,
     paddingVertical: 16,
     borderBottomWidth: 1,
-    borderBottomColor: "#f0f0f0",
   },
-  headerTitle: { fontSize: 28, fontWeight: "bold", color: "#1a1a1a" },
+  headerTitle: { fontSize: 28, fontWeight: "bold" },
   searchBar: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#f5f5f5",
     borderRadius: 12,
     marginHorizontal: 16,
     marginVertical: 12,
     paddingHorizontal: 14,
     paddingVertical: 10,
   },
-  searchInput: { flex: 1, fontSize: 16, color: "#333" },
-  resultsInfo: {
-    fontSize: 13,
-    color: "#999",
-    paddingHorizontal: 20,
-    marginBottom: 4,
-  },
+  searchInput: { flex: 1, fontSize: 16 },
+  resultsInfo: { fontSize: 13, paddingHorizontal: 20, marginBottom: 4 },
   listContent: { paddingHorizontal: 16, paddingBottom: 100 },
   emptyList: { flex: 1 },
   userCard: {
@@ -592,31 +649,12 @@ const styles = StyleSheet.create({
     alignItems: "center",
     paddingVertical: 12,
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: "#f0f0f0",
   },
   avatarContainer: { marginRight: 12 },
-  avatar: { width: 54, height: 54, borderRadius: 27 },
-  avatarPlaceholder: {
-    backgroundColor: "#2D6418",
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  avatarText: {
-    color: "#fff",
-    fontSize: 18,
-    fontWeight: "700",
-    textAlign: "center", // Dodaj ovo
-    includeFontPadding: false,
-  },
   userInfo: { flex: 1 },
-  userName: {
-    fontSize: 15,
-    fontWeight: "600",
-    color: "#1a1a1a",
-    marginBottom: 2,
-  },
-  userUsername: { fontSize: 13, color: "#2D6418", marginBottom: 2 },
-  followersCount: { fontSize: 12, color: "#999" },
+  userName: { fontSize: 15, fontWeight: "600", marginBottom: 2 },
+  userUsername: { fontSize: 13, marginBottom: 2 },
+  followersCount: { fontSize: 12 },
   actions: { flexDirection: "row", alignItems: "center", gap: 8 },
   followBtn: {
     backgroundColor: "#2D6418",
@@ -627,22 +665,20 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   followingBtn: {
-    backgroundColor: "#fff",
+    backgroundColor: "transparent",
     borderWidth: 1.5,
-    borderColor: "#2D6418",
   },
   followBtnText: { color: "#fff", fontSize: 13, fontWeight: "600" },
-  followingBtnText: { color: "#2D6418" },
+  followingBtnText: { fontWeight: "600" },
   msgBtn: {
     width: 38,
     height: 38,
     borderRadius: 19,
-    backgroundColor: "#f0f0ff",
     justifyContent: "center",
     alignItems: "center",
   },
   center: { flex: 1, justifyContent: "center", alignItems: "center", gap: 12 },
-  loadingText: { color: "#aaa", fontSize: 14 },
+  loadingText: { fontSize: 14 },
   emptyContainer: {
     flex: 1,
     alignItems: "center",
@@ -650,6 +686,6 @@ const styles = StyleSheet.create({
     paddingTop: 80,
     gap: 12,
   },
-  emptyTitle: { fontSize: 18, fontWeight: "700", color: "#aaa" },
-  emptySubtitle: { fontSize: 14, color: "#bbb", textAlign: "center" },
+  emptyTitle: { fontSize: 18, fontWeight: "700" },
+  emptySubtitle: { fontSize: 14, textAlign: "center" },
 });

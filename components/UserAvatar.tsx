@@ -112,6 +112,13 @@ export default function UserAvatar({
   const [resolvedUrl, setResolvedUrl] = useState<string | null>(() =>
     resolveAvatarUrl(propAvatar),
   );
+  const [fetchedFirstName, setFetchedFirstName] = useState("");
+  const [fetchedLastName, setFetchedLastName] = useState("");
+  // ── DODANO ──
+  const [fetchedAvatar, setFetchedAvatar] = useState<string | null | undefined>(
+    propAvatar,
+  );
+  // ────────────
   const mountedRef = useRef(true);
 
   useEffect(() => {
@@ -122,13 +129,13 @@ export default function UserAvatar({
   }, []);
 
   useEffect(() => {
-    const url = resolveAvatarUrl(propAvatar);
-    if (url) {
-      setResolvedUrl(url);
+    // Ako je prop avatar eksplicitno postavljen, koristi njega
+    if (propAvatar !== undefined && propAvatar !== null && propAvatar !== "") {
+      setFetchedAvatar(propAvatar);
+      setResolvedUrl(resolveAvatarUrl(propAvatar));
       return;
     }
-    // Ako nema propu avatar ali imamo userId, dohvati s API-ja
-    if (userId && !propAvatar) {
+    if (userId) {
       (async () => {
         try {
           const token = await AsyncStorage.getItem("token");
@@ -138,21 +145,28 @@ export default function UserAvatar({
           });
           if (res.ok && mountedRef.current) {
             const data = await res.json();
-            const url2 = resolveAvatarUrl(data.avatar);
-            if (mountedRef.current) setResolvedUrl(url2);
+            if (mountedRef.current) {
+              // ── DODANO: spremi cijeli avatar string ──
+              setFetchedAvatar(data.avatar ?? null);
+              setResolvedUrl(resolveAvatarUrl(data.avatar));
+              if (data.firstName) setFetchedFirstName(data.firstName);
+              if (data.lastName) setFetchedLastName(data.lastName);
+            }
           }
         } catch {}
       })();
     } else {
       setResolvedUrl(null);
+      setFetchedAvatar(null);
     }
   }, [userId, propAvatar]);
 
   const radius = size / 2;
-  const isMale = propAvatar === "avatar:male";
-  const isFemale = propAvatar === "avatar:female";
+  // ── PROMIJENJENO: koristi fetchedAvatar umjesto propAvatar ──
+  const isMale = fetchedAvatar === "avatar:male";
+  const isFemale = fetchedAvatar === "avatar:female";
+  // ───────────────────────────────────────────────────────────
 
-  // 1. Slika
   if (resolvedUrl && !isMale && !isFemale) {
     return (
       <Image
@@ -161,8 +175,6 @@ export default function UserAvatar({
       />
     );
   }
-
-  // 2. Muški avatar
   if (isMale) {
     return (
       <View
@@ -180,8 +192,6 @@ export default function UserAvatar({
       </View>
     );
   }
-
-  // 3. Ženski avatar
   if (isFemale) {
     return (
       <View
@@ -200,8 +210,9 @@ export default function UserAvatar({
     );
   }
 
-  // 4. Inicijali (fallback)
-  const initials = getInitials(firstName, lastName);
+  const displayFirstName = fetchedFirstName || firstName;
+  const displayLastName = fetchedLastName || lastName;
+  const initials = getInitials(displayFirstName, displayLastName);
   const fontSize = size * 0.38;
 
   return (
@@ -216,7 +227,6 @@ export default function UserAvatar({
     </View>
   );
 }
-
 const styles = StyleSheet.create({
   placeholder: {
     justifyContent: "center",

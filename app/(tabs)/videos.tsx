@@ -123,7 +123,12 @@ function VideoItemComponent({
   }, [isActive, player, item.mediaType]);
 
   // Provjeri je li slika
-  const isImage = item.mediaType === "image";
+  const imageExtensions = [".jpg", ".jpeg", ".png", ".gif", ".webp"];
+  const filePathLower = (item.filePath || "").toLowerCase();
+  const isImageByExtension = imageExtensions.some((ext) =>
+    filePathLower.includes(ext),
+  );
+  const isImage = item.mediaType === "image" || isImageByExtension;
 
   return (
     <View style={styles.videoContainer}>
@@ -209,11 +214,8 @@ function VideoItemComponent({
       <View style={styles.bottomInfo}>
         <View style={styles.userInfo}>
           <StoryBadge userId={item.userId} size={40}>
-            <UserAvatar
-              userId={item.userId}
-              firstName={item.userName}
-              size={40}
-            />
+            {/* ── PROMIJENJENO: samo userId, bez avatar i firstName propa ── */}
+            <UserAvatar userId={item.userId} size={40} />
           </StoryBadge>
           <Text style={styles.userName}>
             {item.userName || `User_${item.userId}`}

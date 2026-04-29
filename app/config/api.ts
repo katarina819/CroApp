@@ -2,7 +2,7 @@
 import { Platform } from "react-native";
 
 // 🔥 KORISTI OVU IP ADRESU (tvoja Wi-Fi IP)
-const YOUR_COMPUTER_IP = "10.223.227.205"; // 🔹 tvoj laptop IP
+const YOUR_COMPUTER_IP = "10.27.157.205"; // 🔹 tvoj laptop IP
 const BACKEND_PORT = "7089";
 
 const getBaseUrl = () => {

@@ -391,6 +391,7 @@
     "title": "Profile",
     "profileHeader": "Profile",
     "box": "Box",
+    "initialsAvatar": "Initials",
     "publicProfileLabel": "Public profile",
     "privateProfileLabel": "Private profile",
     "publicBadge": "🌐 Public",
