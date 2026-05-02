@@ -67,6 +67,67 @@ const zoomOutIcon = require("../../assets/images/zoomout.png");
 const morningIcon = require("../../assets/images/jutro.png");
 const afternoonIcon = require("../../assets/images/popodne.png");
 const eveningIcon = require("../../assets/images/vecer.png");
+const restaurantIcon = require("../../assets/images/restoran.png");
+const cafeIcon = require("../../assets/images/kafic.png");
+const clubIcon = require("../../assets/images/disco.png");
+const beachIcon = require("../../assets/images/plaza.png");
+const landmarkIcon = require("../../assets/images/znamenitost.png");
+const opgIcon = require("../../assets/images/opg.png");
+const accommodationIcon = require("../../assets/images/smjestaj.png");
+const marketIcon = require("../../assets/images/trznica.png");
+const paintballIcon = require("../../assets/images/paintball.png");
+const cinemaIcon = require("../../assets/images/kino.png");
+const parkIcon = require("../../assets/images/park.png");
+const escapeRoomIcon = require("../../assets/images/escape.png");
+const museumIcon = require("../../assets/images/muzej.png");
+const theaterIcon = require("../../assets/images/kazaliste.png");
+const mountainIcon = require("../../assets/images/planina.png");
+const nationalParkIcon = require("../../assets/images/nacpark.png");
+const caveIcon = require("../../assets/images/spilja.png");
+const spaIcon = require("../../assets/images/toplica.png");
+const putnikIcon = require("../../assets/images/putnik.png");
+const maloletnikIcon = require("../../assets/images/maloletnik.png");
+const mladiIcon = require("../../assets/images/mladi.png");
+const studentIcon = require("../../assets/images/student.png");
+const odrasliIcon = require("../../assets/images/odrasli.png");
+const umirovljenikIcon = require("../../assets/images/umirovljenik.png");
+const soloIcon = require("../../assets/images/sam.png");
+const partnerIcon = require("../../assets/images/partner.png");
+const prijateljIcon = require("../../assets/images/prijatelj.png");
+const obiteljIcon = require("../../assets/images/obitelj.png");
+const mjesovitIcon = require("../../assets/images/mjesovit.png");
+
+// Transport (prijevoz)
+const autoIcon = require("../../assets/images/auto.png");
+const javniIcon = require("../../assets/images/javni.png");
+const pjesiceIcon = require("../../assets/images/pjesice.png");
+const biciklIcon = require("../../assets/images/bicikl.png");
+
+// Preference (aktivnosti)
+const otvorenIcon = require("../../assets/images/otvoren.png");
+const zatvorenoIcon = require("../../assets/images/zatvoreno.png");
+const kombiniranoIcon = require("../../assets/images/kombinirano.png");
+
+const CATEGORY_ICONS: Record<string, any> = {
+  restaurant: restaurantIcon,
+  cafe: cafeIcon,
+  club: clubIcon,
+  beach: beachIcon,
+  landmark: landmarkIcon,
+  opg: opgIcon,
+  accommodation: accommodationIcon,
+  market: marketIcon,
+  paintball: paintballIcon,
+  cinema: cinemaIcon,
+  park: parkIcon,
+  escapeRoom: escapeRoomIcon,
+  museum: museumIcon,
+  theater: theaterIcon,
+  mountain: mountainIcon,
+  nationalPark: nationalParkIcon,
+  cave: caveIcon,
+  spa: spaIcon,
+};
 
 // ─── helpers ─────────────────────────────────────────────────────────────────
 async function fetchWithTimeout(
@@ -356,49 +417,24 @@ async function checkBadges(
 // ══════════════════════════════════════════════════════════════════════════════
 
 function UserLocationMarker() {
-  const pulse = useRef(new Animated.Value(1)).current;
-  useEffect(() => {
-    Animated.loop(
-      Animated.sequence([
-        Animated.timing(pulse, {
-          toValue: 1.4,
-          duration: 900,
-          useNativeDriver: true,
-        }),
-        Animated.timing(pulse, {
-          toValue: 1,
-          duration: 900,
-          useNativeDriver: true,
-        }),
-      ]),
-    ).start();
-  }, []);
   return (
     <View
       style={{
-        width: 56,
-        height: 56,
+        width: 96,
+        height: 96,
         alignItems: "center",
         justifyContent: "center",
+        backgroundColor: "transparent",
       }}
     >
-      <Animated.View
-        style={{
-          position: "absolute",
-          width: 52,
-          height: 52,
-          borderRadius: 26,
-          backgroundColor: "rgba(102,126,234,0.22)",
-          transform: [{ scale: pulse }],
-        }}
-      />
       <Image
-        source={locationPinIcon}
+        source={putnikIcon}
         style={{
-          width: 40,
-          height: 40,
+          width: 96,
+          height: 96,
           resizeMode: "contain",
         }}
+        fadeDuration={0}
       />
     </View>
   );
@@ -2764,7 +2800,6 @@ async function fetchVenuesNearCity(
   return { geocoded, venues };
 }
 
-// ─── Template generator s pravim imenima ──────────────────────────────────────
 // ─── Template generator s pravim imenima (V2 - više opcija) ────────────────────
 function buildPlanWithVenues(
   destination: string,
@@ -3822,31 +3857,69 @@ Plan napiši po danima, OBAVEZNO koristi konkretna imena mjesta, adrese, procjen
     key: CompanionType;
     labelKey: string;
     icon: string;
+    image: any;
   }[] = [
-    { key: "solo", labelKey: "plan.solo", icon: "🧑" },
-    { key: "partner", labelKey: "plan.partner", icon: "💑" },
-    { key: "prijatelji", labelKey: "plan.friends", icon: "👫" },
-    { key: "obitelj", labelKey: "plan.family", icon: "👨‍👩‍👧" },
-    { key: "misovito", labelKey: "plan.mixed", icon: "🎉" },
+    { key: "solo", labelKey: "plan.solo", icon: "🧑", image: soloIcon },
+    {
+      key: "partner",
+      labelKey: "plan.partner",
+      icon: "💑",
+      image: partnerIcon,
+    },
+    {
+      key: "prijatelji",
+      labelKey: "plan.friends",
+      icon: "👫",
+      image: prijateljIcon,
+    },
+    { key: "obitelj", labelKey: "plan.family", icon: "👨‍👩‍👧", image: obiteljIcon },
+    {
+      key: "misovito",
+      labelKey: "plan.mixed",
+      icon: "🎉",
+      image: mjesovitIcon,
+    },
   ];
   const TRANSPORT_OPTIONS: {
     key: TransportType;
     labelKey: string;
     icon: string;
+    image: any;
   }[] = [
-    { key: "auto", labelKey: "plan.car", icon: "🚗" },
-    { key: "javni", labelKey: "plan.public", icon: "🚌" },
-    { key: "pjesice", labelKey: "plan.walking", icon: "🚶" },
-    { key: "bicikl", labelKey: "plan.bicycle", icon: "🚲" },
+    { key: "auto", labelKey: "plan.car", icon: "🚗", image: autoIcon },
+    { key: "javni", labelKey: "plan.public", icon: "🚌", image: javniIcon },
+    {
+      key: "pjesice",
+      labelKey: "plan.walking",
+      icon: "🚶",
+      image: pjesiceIcon,
+    },
+    { key: "bicikl", labelKey: "plan.bicycle", icon: "🚲", image: biciklIcon },
   ];
   const PREF_OPTIONS: {
     key: PreferenceType;
     labelKey: string;
     icon: string;
+    image: any;
   }[] = [
-    { key: "otvoreno", labelKey: "plan.outdoors", icon: "🌞" },
-    { key: "zatvoreno", labelKey: "plan.indoors", icon: "🏠" },
-    { key: "kombinirano", labelKey: "plan.combined", icon: "🌤️" },
+    {
+      key: "otvoreno",
+      labelKey: "plan.outdoors",
+      icon: "🌞",
+      image: otvorenIcon,
+    },
+    {
+      key: "zatvoreno",
+      labelKey: "plan.indoors",
+      icon: "🏠",
+      image: zatvorenoIcon,
+    },
+    {
+      key: "kombinirano",
+      labelKey: "plan.combined",
+      icon: "🌤️",
+      image: kombiniranoIcon,
+    },
   ];
 
   // Statistike za header u result viewu
@@ -3868,39 +3941,65 @@ Plan napiši po danima, OBAVEZNO koristi konkretna imena mjesta, adrese, procjen
       transparent={false}
       onRequestClose={handleClose}
     >
-      <View style={{ flex: 1, backgroundColor: "#fff" }}>
+      <View style={{ flex: 1, backgroundColor: "#1a2e1a" }}>
         {/* ── Header ────────────────────────────────────────────────── */}
-        <View style={pm.header}>
+        {/* NOVO */}
+        <View
+          style={{
+            flexDirection: "row",
+            justifyContent: "space-between",
+            alignItems: "center",
+            padding: 20,
+            paddingTop: Platform.OS === "ios" ? 54 : 36,
+            borderBottomWidth: 1.5,
+            borderBottomColor: "#4a7040",
+            backgroundColor: "#1a2e1a",
+          }}
+        >
           {step === "result" ? (
             <TouchableOpacity onPress={() => setStep("form")}>
-              <Text style={pm.headerLink}>← Novi plan</Text>
+              <Text
+                style={{ fontSize: 16, color: "#5a8a48", fontWeight: "700" }}
+              >
+                ← Novi plan
+              </Text>
+            </TouchableOpacity>
+          ) : (
+            <Text style={{ fontSize: 20, fontWeight: "800", color: "#e8e8e8" }}>
+              {step === "loading" ? t("map.generatingPlan") : t("map.planTrip")}
+            </Text>
+          )}
+
+          {step === "result" && (
+            <Text style={{ fontSize: 18, fontWeight: "800", color: "#e8e8e8" }}>
+              {t("map.tripPlan")}
+            </Text>
+          )}
+
+          {step === "result" ? (
+            <TouchableOpacity onPress={copyPlan}>
+              <Text
+                style={{ fontSize: 14, color: "#b0b0b0", fontWeight: "600" }}
+              >
+                📋 {t("common.copy")}
+              </Text>
             </TouchableOpacity>
           ) : step === "loading" ? (
             <View style={{ width: 60 }} />
           ) : (
             <TouchableOpacity onPress={handleClose}>
-              <Text style={pm.headerLink}>✕ {t("common.close")}</Text>
+              <Text
+                style={{ fontSize: 14, color: "#b0b0b0", fontWeight: "600" }}
+              >
+                {t("common.close")}
+              </Text>
             </TouchableOpacity>
-          )}
-          <Text style={pm.headerTitle}>
-            {step === "form"
-              ? t("map.planTrip")
-              : step === "loading"
-                ? t("map.generatingPlan")
-                : t("map.tripPlan")}
-          </Text>
-          {step === "result" ? (
-            <TouchableOpacity onPress={copyPlan}>
-              <Text style={pm.headerLink}>📋 {t("common.copy")}</Text>
-            </TouchableOpacity>
-          ) : (
-            <View style={{ width: 60 }} />
           )}
         </View>
 
         {/* ── LOADING ───────────────────────────────────────────────── */}
         {step === "loading" && (
-          <View style={pm.loadingContainer}>
+          <View style={[pm.loadingContainer, { backgroundColor: "#1a2e1a" }]}>
             <ActivityIndicator size="large" color="#667eea" />
             <Text style={pm.loadingIcon}>
               {LOADING_MESSAGES[loadingStep].icon}
@@ -4295,253 +4394,609 @@ Plan napiši po danima, OBAVEZNO koristi konkretna imena mjesta, adrese, procjen
             behavior={Platform.OS === "ios" ? "padding" : "height"}
           >
             <ScrollView
-              contentContainerStyle={{ padding: 20, paddingBottom: 40 }}
+              contentContainerStyle={{ paddingBottom: 40 }}
               keyboardShouldPersistTaps="handled"
+              style={{ backgroundColor: "#1a2e1a" }}
             >
-              <Text style={pm.sectionTitle}>{t("map.destination")}</Text>
-              <View style={pm.row}>
+              {/* ── DESTINACIJA ── */}
+              <View
+                style={{
+                  padding: 16,
+                  borderBottomWidth: 1,
+                  borderBottomColor: "#3a5a30",
+                }}
+              >
+                <Text
+                  style={{
+                    fontSize: 14,
+                    fontWeight: "700",
+                    color: "#c0c0c0",
+                    marginBottom: 10,
+                  }}
+                >
+                  {t("map.destination")}
+                </Text>
+                <View style={{ flexDirection: "row", gap: 8 }}>
+                  <TextInput
+                    style={{
+                      flex: 2,
+                      backgroundColor: "#2a4230",
+                      borderRadius: 10,
+                      borderWidth: 1,
+                      borderColor: "#4a7040",
+                      paddingHorizontal: 14,
+                      paddingVertical: 10,
+                      fontSize: 15,
+                      color: "#e8e8e8",
+                    }}
+                    placeholder={t("plan.destinationPlaceholder")}
+                    placeholderTextColor="#8a8a8a"
+                    value={destination}
+                    onChangeText={setDestination}
+                  />
+                  <TextInput
+                    style={{
+                      flex: 1,
+                      backgroundColor: "#2a4230",
+                      borderRadius: 10,
+                      borderWidth: 1,
+                      borderColor: "#4a7040",
+                      paddingHorizontal: 14,
+                      paddingVertical: 10,
+                      fontSize: 15,
+                      color: "#e8e8e8",
+                    }}
+                    placeholder={t("plan.postalCode")}
+                    placeholderTextColor="#8a8a8a"
+                    value={postalCode}
+                    onChangeText={setPostalCode}
+                    keyboardType="numeric"
+                  />
+                </View>
                 <TextInput
-                  style={[pm.input, { flex: 2 }]}
-                  placeholder={t("plan.destinationPlaceholder")}
-                  placeholderTextColor="#bbb"
-                  value={destination}
-                  onChangeText={setDestination}
-                />
-                <TextInput
-                  style={[pm.input, { flex: 1, marginLeft: 8 }]}
-                  placeholder={t("plan.postalCode")}
-                  placeholderTextColor="#bbb"
-                  value={postalCode}
-                  onChangeText={setPostalCode}
-                  keyboardType="numeric"
+                  style={{
+                    marginTop: 8,
+                    backgroundColor: "#2a4230",
+                    borderRadius: 10,
+                    borderWidth: 1,
+                    borderColor: "#4a7040",
+                    paddingHorizontal: 14,
+                    paddingVertical: 10,
+                    fontSize: 15,
+                    color: "#e8e8e8",
+                  }}
+                  placeholder={t("plan.accommodation")}
+                  placeholderTextColor="#8a8a8a"
+                  value={accommodationAddress}
+                  onChangeText={setAccommodationAddress}
                 />
               </View>
-              <TextInput
-                style={pm.input}
-                placeholder={t("plan.accommodation")}
-                placeholderTextColor="#bbb"
-                value={accommodationAddress}
-                onChangeText={setAccommodationAddress}
-              />
 
-              <Text style={pm.sectionTitle}>{t("map.duration")}</Text>
-              <View style={pm.chipRow}>
-                {PERIOD_OPTIONS.map((o) => (
-                  <TouchableOpacity
-                    key={o.key}
-                    style={[pm.chip, period === o.key && pm.chipActive]}
-                    onPress={() => setPeriod(o.key)}
-                  >
-                    <Text
-                      style={[
-                        pm.chipText,
-                        period === o.key && pm.chipTextActive,
-                      ]}
-                    >
-                      {t(o.labelKey)}
-                    </Text>
-                  </TouchableOpacity>
-                ))}
-              </View>
-
-              <Text style={pm.sectionTitle}>{t("map.travelers")}</Text>
-              <View style={pm.row}>
-                <View style={{ flex: 1 }}>
-                  <Text style={pm.label}>{t("plan.numberOfPeople")}</Text>
-                  <View style={pm.chipRow}>
-                    {["1", "2", "3", "4", "5+"].map((n) => (
+              {/* ── TRAJANJE ── */}
+              <View
+                style={{
+                  padding: 16,
+                  borderBottomWidth: 1,
+                  borderBottomColor: "#3a5a30",
+                }}
+              >
+                <Text
+                  style={{
+                    fontSize: 14,
+                    fontWeight: "700",
+                    color: "#c0c0c0",
+                    marginBottom: 10,
+                  }}
+                >
+                  {t("map.duration")}
+                </Text>
+                <View
+                  style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}
+                >
+                  {PERIOD_OPTIONS.map((o) => {
+                    const active = period === o.key;
+                    return (
                       <TouchableOpacity
-                        key={n}
-                        style={[
-                          pm.chipSmall,
-                          people === (n === "5+" ? "6" : n) && pm.chipActive,
-                        ]}
-                        onPress={() => setPeople(n === "5+" ? "6" : n)}
+                        key={o.key}
+                        style={{
+                          paddingHorizontal: 16,
+                          paddingVertical: 9,
+                          backgroundColor: active ? "#3a5a30" : "#2a4230",
+                          borderRadius: 8,
+                          borderWidth: 1,
+                          borderColor: active ? "#5a8a48" : "#3a5a30",
+                        }}
+                        onPress={() => setPeriod(o.key)}
                       >
                         <Text
-                          style={[
-                            pm.chipText,
-                            people === (n === "5+" ? "6" : n) &&
-                              pm.chipTextActive,
-                          ]}
+                          style={{
+                            fontSize: 13,
+                            color: active ? "#e8e8e8" : "#b0b0b0",
+                            fontWeight: active ? "700" : "400",
+                          }}
+                        >
+                          {t(o.labelKey)}
+                        </Text>
+                      </TouchableOpacity>
+                    );
+                  })}
+                </View>
+              </View>
+
+              {/* ── PUTNICI ── */}
+              <View
+                style={{
+                  padding: 16,
+                  borderBottomWidth: 1,
+                  borderBottomColor: "#3a5a30",
+                }}
+              >
+                <Text
+                  style={{
+                    fontSize: 14,
+                    fontWeight: "700",
+                    color: "#c0c0c0",
+                    marginBottom: 10,
+                  }}
+                >
+                  {t("map.travelers")}
+                </Text>
+                <Text
+                  style={{ fontSize: 13, color: "#a0a0a0", marginBottom: 8 }}
+                >
+                  {t("plan.numberOfPeople")}
+                </Text>
+                <View
+                  style={{
+                    flexDirection: "row",
+                    flexWrap: "wrap",
+                    gap: 8,
+                    marginBottom: 14,
+                  }}
+                >
+                  {["1", "2", "3", "4", "5+"].map((n) => {
+                    const val = n === "5+" ? "6" : n;
+                    const active = people === val;
+                    return (
+                      <TouchableOpacity
+                        key={n}
+                        style={{
+                          paddingHorizontal: 16,
+                          paddingVertical: 9,
+                          backgroundColor: active ? "#3a5a30" : "#2a4230",
+                          borderRadius: 8,
+                          borderWidth: 1,
+                          borderColor: active ? "#5a8a48" : "#3a5a30",
+                        }}
+                        onPress={() => setPeople(val)}
+                      >
+                        <Text
+                          style={{
+                            fontSize: 13,
+                            color: active ? "#e8e8e8" : "#b0b0b0",
+                            fontWeight: active ? "700" : "400",
+                          }}
                         >
                           {n}
                         </Text>
                       </TouchableOpacity>
-                    ))}
-                  </View>
+                    );
+                  })}
+                </View>
+                <Text
+                  style={{ fontSize: 13, color: "#a0a0a0", marginBottom: 8 }}
+                >
+                  {t("plan.travelWith")}
+                </Text>
+                <View
+                  style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}
+                >
+                  {COMPANION_OPTIONS.map((o) => {
+                    const active = companions === o.key;
+                    return (
+                      <TouchableOpacity
+                        key={o.key}
+                        style={{
+                          paddingHorizontal: 10,
+                          paddingVertical: 10,
+                          backgroundColor: active ? "#3a5a30" : "#2a4230",
+                          borderRadius: 12,
+                          borderWidth: active ? 2 : 1,
+                          borderColor: active ? "#5a8a48" : "#3a5a30",
+                          alignItems: "center",
+                          width: CELL_W,
+                          height: 130,
+                          justifyContent: "center",
+                        }}
+                        onPress={() => setCompanions(o.key)}
+                      >
+                        <Image
+                          source={o.image}
+                          style={{ width: 96, height: 96, marginBottom: 4 }}
+                          resizeMode="contain"
+                        />
+                        <Text
+                          style={{
+                            fontSize: 11,
+                            fontWeight: "600",
+                            color: active ? "#fff" : "#c0c0c0",
+                            textAlign: "center",
+                          }}
+                          numberOfLines={2}
+                        >
+                          {t(o.labelKey)}
+                        </Text>
+                      </TouchableOpacity>
+                    );
+                  })}
                 </View>
               </View>
-              <Text style={pm.label}>{t("plan.travelWith")}</Text>
-              <View style={pm.chipRow}>
-                {COMPANION_OPTIONS.map((o) => (
-                  <TouchableOpacity
-                    key={o.key}
-                    style={[pm.chipMd, companions === o.key && pm.chipActive]}
-                    onPress={() => setCompanions(o.key)}
-                  >
-                    <Text style={{ fontSize: 16 }}>{o.icon}</Text>
-                    <Text
-                      style={[
-                        { fontSize: 12, marginTop: 3, color: "#555" },
-                        companions === o.key && pm.chipTextActive,
-                      ]}
-                    >
-                      {t(o.labelKey)}
-                    </Text>
-                  </TouchableOpacity>
-                ))}
-              </View>
 
-              <Text style={pm.sectionTitle}>💰 {t("map.budgetTitle")}</Text>
-              <View style={pm.chipRow}>
-                {["200", "500", "1000", "2000", "5000"].map((b) => (
-                  <TouchableOpacity
-                    key={b}
-                    style={[pm.chip, budget === b && pm.chipActive]}
-                    onPress={() => setBudget(b)}
-                  >
-                    <Text
-                      style={[pm.chipText, budget === b && pm.chipTextActive]}
-                    >
-                      {b} €
-                    </Text>
-                  </TouchableOpacity>
-                ))}
-              </View>
-              <TextInput
-                style={[pm.input, { marginTop: 8 }]}
-                placeholder={t("plan.budget")}
-                placeholderTextColor="#bbb"
-                value={budget}
-                onChangeText={setBudget}
-                keyboardType="numeric"
-              />
-
-              <Text style={pm.sectionTitle}>{t("map.activityRadius")}</Text>
-              <View style={pm.chipRow}>
-                {[1, 2, 3, 5, 10, 20].map((r) => (
-                  <TouchableOpacity
-                    key={r}
-                    style={[pm.chip, activityRadius === r && pm.chipActive]}
-                    onPress={() => setActivityRadius(r)}
-                  >
-                    <Text
-                      style={[
-                        pm.chipText,
-                        activityRadius === r && pm.chipTextActive,
-                      ]}
-                    >
-                      {r} km
-                    </Text>
-                  </TouchableOpacity>
-                ))}
-              </View>
-
-              <Text style={pm.sectionTitle}>🚗 Prijevoz</Text>
-              <View style={pm.chipRow}>
-                {TRANSPORT_OPTIONS.map((o) => (
-                  <TouchableOpacity
-                    key={o.key}
-                    style={[pm.chipMd, transport === o.key && pm.chipActive]}
-                    onPress={() => setTransport(o.key)}
-                  >
-                    <Text style={{ fontSize: 16 }}>{o.icon}</Text>
-                    <Text
-                      style={[
-                        { fontSize: 12, marginTop: 3, color: "#555" },
-                        transport === o.key && pm.chipTextActive,
-                      ]}
-                    >
-                      {t(o.labelKey)}
-                    </Text>
-                  </TouchableOpacity>
-                ))}
-              </View>
-
-              <Text style={pm.sectionTitle}>{t("map.activities")}</Text>
-              <View style={pm.chipRow}>
-                {PREF_OPTIONS.map((o) => (
-                  <TouchableOpacity
-                    key={o.key}
-                    style={[pm.chipMd, preference === o.key && pm.chipActive]}
-                    onPress={() => setPreference(o.key)}
-                  >
-                    <Text style={{ fontSize: 16 }}>{o.icon}</Text>
-                    <Text
-                      style={[
-                        { fontSize: 12, marginTop: 3, color: "#555" },
-                        preference === o.key && pm.chipTextActive,
-                      ]}
-                    >
-                      {t(o.labelKey)}
-                    </Text>
-                  </TouchableOpacity>
-                ))}
-              </View>
-
+              {/* ── BUDŽET ── */}
               <View
                 style={{
-                  flexDirection: "row",
-                  justifyContent: "space-between",
-                  alignItems: "center",
-                  marginBottom: 10,
+                  padding: 16,
+                  borderBottomWidth: 1,
+                  borderBottomColor: "#3a5a30",
                 }}
               >
-                <Text style={pm.sectionTitle}>
-                  {t("map.interestsOptional")}
+                <Text
+                  style={{
+                    fontSize: 14,
+                    fontWeight: "700",
+                    color: "#c0c0c0",
+                    marginBottom: 10,
+                  }}
+                >
+                  💰 {t("map.budgetTitle")}
                 </Text>
-                {interests.length > 0 && (
-                  <TouchableOpacity onPress={() => setInterests([])}>
-                    <Text style={{ fontSize: 13, color: "#667eea" }}>
-                      {t("plan.clearInterests")}
-                    </Text>
-                  </TouchableOpacity>
-                )}
+                <View
+                  style={{
+                    flexDirection: "row",
+                    flexWrap: "wrap",
+                    gap: 8,
+                    marginBottom: 10,
+                  }}
+                >
+                  {["200", "500", "1000", "2000", "5000"].map((b) => {
+                    const active = budget === b;
+                    return (
+                      <TouchableOpacity
+                        key={b}
+                        style={{
+                          paddingHorizontal: 16,
+                          paddingVertical: 9,
+                          backgroundColor: active ? "#3a5a30" : "#2a4230",
+                          borderRadius: 8,
+                          borderWidth: 1,
+                          borderColor: active ? "#5a8a48" : "#3a5a30",
+                        }}
+                        onPress={() => setBudget(b)}
+                      >
+                        <Text
+                          style={{
+                            fontSize: 13,
+                            color: active ? "#e8e8e8" : "#b0b0b0",
+                            fontWeight: active ? "700" : "400",
+                          }}
+                        >
+                          {b} €
+                        </Text>
+                      </TouchableOpacity>
+                    );
+                  })}
+                </View>
+                <TextInput
+                  style={{
+                    backgroundColor: "#2a4230",
+                    borderRadius: 10,
+                    borderWidth: 1,
+                    borderColor: "#4a7040",
+                    paddingHorizontal: 14,
+                    paddingVertical: 10,
+                    fontSize: 15,
+                    color: "#e8e8e8",
+                  }}
+                  placeholder={t("plan.budget")}
+                  placeholderTextColor="#8a8a8a"
+                  value={budget}
+                  onChangeText={setBudget}
+                  keyboardType="numeric"
+                />
               </View>
+
+              {/* ── RADIJUS AKTIVNOSTI ── */}
               <View
                 style={{
-                  flexDirection: "row",
-                  flexWrap: "wrap",
-                  gap: 8,
-                  marginBottom: 24,
+                  padding: 16,
+                  borderBottomWidth: 1,
+                  borderBottomColor: "#3a5a30",
                 }}
               >
-                {getAllCategories().map((cat) => {
-                  const on = interests.includes(cat.id);
-                  return (
-                    <TouchableOpacity
-                      key={cat.id}
-                      style={{
-                        flexDirection: "row",
-                        alignItems: "center",
-                        gap: 5,
-                        paddingHorizontal: 11,
-                        paddingVertical: 7,
-                        borderRadius: 18,
-                        backgroundColor: on ? cat.color : "#f0f0f0",
-                      }}
-                      onPress={() => toggleInterest(cat.id)}
-                    >
-                      <Text style={{ fontSize: 13 }}>{cat.icon}</Text>
+                <Text
+                  style={{
+                    fontSize: 14,
+                    fontWeight: "700",
+                    color: "#c0c0c0",
+                    marginBottom: 10,
+                  }}
+                >
+                  {t("map.activityRadius")}
+                </Text>
+                <View
+                  style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}
+                >
+                  {[1, 2, 3, 5, 10, 20].map((r) => {
+                    const active = activityRadius === r;
+                    return (
+                      <TouchableOpacity
+                        key={r}
+                        style={{
+                          paddingHorizontal: 16,
+                          paddingVertical: 9,
+                          backgroundColor: active ? "#3a5a30" : "#2a4230",
+                          borderRadius: 8,
+                          borderWidth: 1,
+                          borderColor: active ? "#5a8a48" : "#3a5a30",
+                        }}
+                        onPress={() => setActivityRadius(r)}
+                      >
+                        <Text
+                          style={{
+                            fontSize: 13,
+                            color: active ? "#e8e8e8" : "#b0b0b0",
+                            fontWeight: active ? "700" : "400",
+                          }}
+                        >
+                          {r} km
+                        </Text>
+                      </TouchableOpacity>
+                    );
+                  })}
+                </View>
+              </View>
+
+              {/* ── PRIJEVOZ ── */}
+              <View
+                style={{
+                  padding: 16,
+                  borderBottomWidth: 1,
+                  borderBottomColor: "#3a5a30",
+                }}
+              >
+                <Text
+                  style={{
+                    fontSize: 14,
+                    fontWeight: "700",
+                    color: "#c0c0c0",
+                    marginBottom: 10,
+                  }}
+                >
+                  🚗 Prijevoz
+                </Text>
+                <View
+                  style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}
+                >
+                  {TRANSPORT_OPTIONS.map((o) => {
+                    const active = transport === o.key;
+                    return (
+                      <TouchableOpacity
+                        key={o.key}
+                        style={{
+                          paddingHorizontal: 10,
+                          paddingVertical: 10,
+                          backgroundColor: active ? "#3a5a30" : "#2a4230",
+                          borderRadius: 12,
+                          borderWidth: active ? 2 : 1,
+                          borderColor: active ? "#5a8a48" : "#3a5a30",
+                          alignItems: "center",
+                          width: CELL_W,
+                          height: 130,
+                          justifyContent: "center",
+                        }}
+                        onPress={() => setTransport(o.key)}
+                      >
+                        <Image
+                          source={o.image}
+                          style={{ width: 96, height: 96, marginBottom: 4 }}
+                          resizeMode="contain"
+                        />
+                        <Text
+                          style={{
+                            fontSize: 11,
+                            fontWeight: "600",
+                            color: active ? "#fff" : "#c0c0c0",
+                            textAlign: "center",
+                          }}
+                          numberOfLines={2}
+                        >
+                          {t(o.labelKey)}
+                        </Text>
+                      </TouchableOpacity>
+                    );
+                  })}
+                </View>
+              </View>
+
+              {/* ── AKTIVNOSTI PREFERENCE ── */}
+              <View
+                style={{
+                  padding: 16,
+                  borderBottomWidth: 1,
+                  borderBottomColor: "#3a5a30",
+                }}
+              >
+                <Text
+                  style={{
+                    fontSize: 14,
+                    fontWeight: "700",
+                    color: "#c0c0c0",
+                    marginBottom: 10,
+                  }}
+                >
+                  {t("map.activities")}
+                </Text>
+                <View
+                  style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}
+                >
+                  {PREF_OPTIONS.map((o) => {
+                    const active = preference === o.key;
+                    return (
+                      <TouchableOpacity
+                        key={o.key}
+                        style={{
+                          paddingHorizontal: 10,
+                          paddingVertical: 10,
+                          backgroundColor: active ? "#3a5a30" : "#2a4230",
+                          borderRadius: 12,
+                          borderWidth: active ? 2 : 1,
+                          borderColor: active ? "#5a8a48" : "#3a5a30",
+                          alignItems: "center",
+                          width: CELL_W,
+                          height: 130,
+                          justifyContent: "center",
+                        }}
+                        onPress={() => setPreference(o.key)}
+                      >
+                        <Image
+                          source={o.image}
+                          style={{ width: 96, height: 96, marginBottom: 4 }}
+                          resizeMode="contain"
+                        />
+                        <Text
+                          style={{
+                            fontSize: 11,
+                            fontWeight: "600",
+                            color: active ? "#fff" : "#c0c0c0",
+                            textAlign: "center",
+                          }}
+                          numberOfLines={2}
+                        >
+                          {t(o.labelKey)}
+                        </Text>
+                      </TouchableOpacity>
+                    );
+                  })}
+                </View>
+              </View>
+
+              {/* ── INTERESI — IDENTIČNO KATEGORIJAMA U FILTRU ── */}
+              <View
+                style={{
+                  paddingHorizontal: 16,
+                  paddingTop: 12,
+                  paddingBottom: 4,
+                }}
+              >
+                <View
+                  style={{
+                    flexDirection: "row",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                    marginBottom: 8,
+                  }}
+                >
+                  <Text
+                    style={{
+                      fontSize: 14,
+                      fontWeight: "700",
+                      color: "#c0c0c0",
+                    }}
+                  >
+                    {t("map.interestsOptional")}
+                  </Text>
+                  {interests.length > 0 && (
+                    <TouchableOpacity onPress={() => setInterests([])}>
                       <Text
                         style={{
-                          fontSize: 12,
+                          fontSize: 13,
+                          color: "#5a8a48",
                           fontWeight: "600",
-                          color: on ? "#fff" : "#555",
                         }}
                       >
-                        {cat.name}
+                        {t("plan.clearInterests")}
                       </Text>
                     </TouchableOpacity>
-                  );
-                })}
+                  )}
+                </View>
+                <View
+                  style={{ flexDirection: "row", flexWrap: "wrap", gap: 4 }}
+                >
+                  {getAllCategories().map((cat) => {
+                    const active = interests.includes(cat.id);
+                    return (
+                      <TouchableOpacity
+                        key={cat.id}
+                        style={{
+                          width: CELL_W,
+                          height: 130,
+                          backgroundColor: active ? cat.color : "#2a4230",
+                          borderRadius: 12,
+                          justifyContent: "center",
+                          alignItems: "center",
+                          paddingHorizontal: 4,
+                          paddingVertical: 8,
+                          borderWidth: active ? 2 : 1,
+                          borderColor: active ? cat.color : "#3a5a30",
+                        }}
+                        onPress={() => toggleInterest(cat.id)}
+                      >
+                        {CATEGORY_ICONS[cat.id] ? (
+                          <Image
+                            source={CATEGORY_ICONS[cat.id]}
+                            style={{ width: 96, height: 96, marginBottom: 4 }}
+                            resizeMode="contain"
+                          />
+                        ) : (
+                          <Text style={{ fontSize: 56, marginBottom: 4 }}>
+                            {cat.icon}
+                          </Text>
+                        )}
+                        <Text
+                          style={{
+                            fontSize: 11,
+                            fontWeight: "600",
+                            color: active ? "#fff" : "#c0c0c0",
+                            textAlign: "center",
+                          }}
+                          numberOfLines={2}
+                        >
+                          {cat.name}
+                        </Text>
+                      </TouchableOpacity>
+                    );
+                  })}
+                </View>
               </View>
 
-              <TouchableOpacity style={pm.generateBtn} onPress={generate}>
-                <Text style={pm.generateBtnText}>{t("map.generatePlan")}</Text>
+              {/* ── GENERIRAJ GUMB ── */}
+              <TouchableOpacity
+                style={{
+                  margin: 16,
+                  backgroundColor: "#3a5a30",
+                  borderRadius: 12,
+                  borderWidth: 1.5,
+                  borderColor: "#5a8a48",
+                  paddingVertical: 16,
+                  alignItems: "center",
+                }}
+                onPress={generate}
+              >
+                <Text
+                  style={{ color: "#e8e8e8", fontSize: 16, fontWeight: "700" }}
+                >
+                  {t("map.generatePlan")}
+                </Text>
               </TouchableOpacity>
-              <Text style={pm.generateHint}>
+              <Text
+                style={{
+                  textAlign: "center",
+                  fontSize: 12,
+                  color: "#a0a0a0",
+                  marginBottom: 24,
+                  paddingHorizontal: 20,
+                }}
+              >
                 {t("plan.generateHint", {
                   destination: destination || t("plan.destination"),
                 })}
@@ -5241,7 +5696,7 @@ function BadgesModal({
     </Modal>
   );
 }
-const CELL_W = (SW - 32 - 16) / 3;
+const CELL_W = (SW - 32 - 4) / 2;
 const TIME_CATS: Record<string, string[]> = {
   jutro: ["cafe", "park", "landmark", "museum", "market"],
   poslijepodne: ["restaurant", "museum", "beach", "cinema", "opg", "market"],
@@ -5323,6 +5778,7 @@ export default function DashboardScreen() {
         id: "minors",
         label: t("ageGroups.minors"),
         emoji: "👦",
+        icon: maloletnikIcon, // ← dodaj
         desc: "< 18",
         cats: ["park", "cinema", "beach", "museum", "escapeRoom"],
         color: "#3498DB",
@@ -5331,6 +5787,7 @@ export default function DashboardScreen() {
         id: "youth",
         label: t("ageGroups.youth"),
         emoji: "🧑",
+        icon: mladiIcon, // ← dodaj
         desc: "18–25",
         cats: [
           "club",
@@ -5347,6 +5804,7 @@ export default function DashboardScreen() {
         id: "students",
         label: t("ageGroups.students"),
         emoji: "🎓",
+        icon: studentIcon, // ← dodaj
         desc: t("ageGroups.studentDesc"),
         cats: [
           "cafe",
@@ -5363,6 +5821,7 @@ export default function DashboardScreen() {
         id: "adults",
         label: t("ageGroups.adults"),
         emoji: "👔",
+        icon: odrasliIcon, // ← dodaj
         desc: "26–60",
         cats: [
           "restaurant",
@@ -5380,6 +5839,7 @@ export default function DashboardScreen() {
         id: "retired",
         label: t("ageGroups.retired"),
         emoji: "👴",
+        icon: umirovljenikIcon, // ← dodaj
         desc: "60+",
         cats: [
           "restaurant",
@@ -5801,7 +6261,7 @@ export default function DashboardScreen() {
           <Marker
             coordinate={userLocation}
             anchor={{ x: 0.5, y: 0.5 }}
-            tracksViewChanges={false}
+            tracksViewChanges={true}
           >
             <UserLocationMarker />
           </Marker>
@@ -6039,7 +6499,7 @@ export default function DashboardScreen() {
         <View style={s.bottomBar}>
           <Text style={s.countTxt}>
             {showOnlyVisited
-              ? `✓ ${visits.length} ${t("map.visitedOnly")}`
+              ? `${visits.length} ${t("map.visitedOnly")}`
               : t("map.shown", {
                   shown: Math.min(displayLimit, allPlaces.length),
                   total: allPlaces.length,
@@ -6087,14 +6547,14 @@ export default function DashboardScreen() {
         </View>
       )}
 
-      {/* Filter Panel Modal */}
+      {/* Filter Panel Modal - Vara stil */}
       <Modal
         visible={showFilterPanel}
         animationType="slide"
         transparent={false}
         onRequestClose={() => setShowFilterPanel(false)}
       >
-        <View style={{ flex: 1, backgroundColor: "#fff" }}>
+        <View style={{ flex: 1, backgroundColor: "#1a2e1a" }}>
           <View
             style={{
               flexDirection: "row",
@@ -6102,36 +6562,38 @@ export default function DashboardScreen() {
               alignItems: "center",
               padding: 20,
               paddingTop: Platform.OS === "ios" ? 54 : 36,
-              borderBottomWidth: 1,
-              borderBottomColor: "#eee",
+              borderBottomWidth: 1.5,
+              borderBottomColor: "#4a7040",
+              backgroundColor: "#1a2e1a",
             }}
           >
-            <Text style={{ fontSize: 22, fontWeight: "800", color: "#1a1a1a" }}>
-              🔍 {t("map.filters")}
+            <Text style={{ fontSize: 20, fontWeight: "800", color: "#e8e8e8" }}>
+              {t("map.filters")}
             </Text>
             <TouchableOpacity onPress={() => setShowFilterPanel(false)}>
               <Text
-                style={{ fontSize: 15, color: "#667eea", fontWeight: "600" }}
+                style={{ fontSize: 14, color: "#b0b0b0", fontWeight: "600" }}
               >
-                ✕ {t("common.close")}
+                {t("common.close")}
               </Text>
             </TouchableOpacity>
           </View>
+
           <ScrollView contentContainerStyle={{ paddingBottom: 40 }}>
             {/* Search */}
             <View
               style={{
                 padding: 16,
                 borderBottomWidth: 1,
-                borderBottomColor: "#f0f0f0",
+                borderBottomColor: "#3a5a30",
               }}
             >
               <Text
                 style={{
-                  fontSize: 15,
+                  fontSize: 14,
                   fontWeight: "700",
-                  color: "#333",
-                  marginBottom: 12,
+                  color: "#c0c0c0",
+                  marginBottom: 10,
                 }}
               >
                 {t("map.searchPlaceholder")}
@@ -6140,15 +6602,17 @@ export default function DashboardScreen() {
                 <TextInput
                   style={{
                     flex: 1,
-                    backgroundColor: "#f2f2f2",
-                    borderRadius: 12,
+                    backgroundColor: "#2a4230",
+                    borderRadius: 10,
+                    borderWidth: 1,
+                    borderColor: "#4a7040",
                     paddingHorizontal: 14,
                     paddingVertical: 10,
                     fontSize: 15,
-                    color: "#333",
+                    color: "#e8e8e8",
                   }}
                   placeholder={t("common.placeNamePlaceholder")}
-                  placeholderTextColor="#999"
+                  placeholderTextColor="#8a8a8a"
                   value={searchQuery}
                   onChangeText={setSearchQuery}
                   onSubmitEditing={handleSearch}
@@ -6156,31 +6620,35 @@ export default function DashboardScreen() {
                 />
                 <TouchableOpacity
                   style={{
-                    backgroundColor: "#667eea",
+                    backgroundColor: "#3a5a30",
                     paddingHorizontal: 16,
                     paddingVertical: 10,
-                    borderRadius: 12,
+                    borderRadius: 10,
+                    borderWidth: 1,
+                    borderColor: "#4a7040",
                     justifyContent: "center",
                   }}
                   onPress={handleSearch}
                 >
                   {isSearching ? (
-                    <ActivityIndicator color="#fff" size="small" />
+                    <ActivityIndicator color="#e8e8e8" size="small" />
                   ) : (
-                    <Text style={{ color: "#fff", fontWeight: "600" }}>
+                    <Text style={{ color: "#e8e8e8", fontWeight: "700" }}>
                       {t("common.searchBtnShort")}
                     </Text>
                   )}
                 </TouchableOpacity>
               </View>
+
               {showSearchResults && searchResults.length > 0 && (
                 <View
                   style={{
                     marginTop: 10,
                     borderRadius: 12,
                     borderWidth: 1,
-                    borderColor: "#eee",
+                    borderColor: "#4a7040",
                     overflow: "hidden",
+                    backgroundColor: "#2a4230",
                   }}
                 >
                   {searchResults.map((r) => (
@@ -6192,7 +6660,7 @@ export default function DashboardScreen() {
                         padding: 12,
                         gap: 10,
                         borderBottomWidth: 1,
-                        borderBottomColor: "#f0f0f0",
+                        borderBottomColor: "#3a5a30",
                       }}
                       onPress={() => {
                         handleSelectSearchResult(r);
@@ -6207,12 +6675,12 @@ export default function DashboardScreen() {
                           style={{
                             fontSize: 14,
                             fontWeight: "600",
-                            color: "#333",
+                            color: "#e8e8e8",
                           }}
                         >
                           {r.name}
                         </Text>
-                        <Text style={{ fontSize: 12, color: "#999" }}>
+                        <Text style={{ fontSize: 12, color: "#a0a0a0" }}>
                           {t(`categories.${r.type}`, { defaultValue: r.type })}
                         </Text>
                       </View>
@@ -6227,15 +6695,15 @@ export default function DashboardScreen() {
               style={{
                 padding: 16,
                 borderBottomWidth: 1,
-                borderBottomColor: "#f0f0f0",
+                borderBottomColor: "#3a5a30",
               }}
             >
               <Text
                 style={{
-                  fontSize: 15,
+                  fontSize: 14,
                   fontWeight: "700",
-                  color: "#333",
-                  marginBottom: 12,
+                  color: "#c0c0c0",
+                  marginBottom: 10,
                 }}
               >
                 {t("map.timeOfDay")}
@@ -6244,74 +6712,106 @@ export default function DashboardScreen() {
                 {[
                   {
                     key: "jutro",
-                    label: `🌅 ${t("map.morning")}`,
+                    icon: morningIcon,
+                    label: t("map.morning"),
                     sub: t("map.morningDesc"),
                   },
                   {
                     key: "poslijepodne",
-                    label: `☀️ ${t("map.afternoon")}`,
+                    icon: afternoonIcon,
+                    label: t("map.afternoon"),
                     sub: t("map.afternoonDesc"),
                   },
                   {
                     key: "vecer",
-                    label: `🌙 ${t("map.evening")}`,
+                    icon: eveningIcon,
+                    label: t("map.evening"),
                     sub: t("map.eveningDesc"),
                   },
-                ].map((tod) => (
-                  <TouchableOpacity
-                    key={tod.key}
-                    style={[
-                      {
-                        backgroundColor: "#f8f8f8",
-                        borderRadius: 14,
-                        padding: 14,
-                        borderWidth: 2,
-                        borderColor: "transparent",
-                        position: "relative",
-                      },
-                      activeTimeOfDay === tod.key && {
-                        backgroundColor: "#f0f0ff",
-                        borderColor: "#667eea",
-                      },
-                    ]}
-                    onPress={() => applyTimeOfDay(tod.key)}
-                  >
-                    <Text
-                      style={{ fontSize: 15, fontWeight: "700", color: "#333" }}
-                    >
-                      {tod.label}
-                    </Text>
-                    <Text style={{ fontSize: 12, color: "#999", marginTop: 3 }}>
-                      {tod.sub}
-                    </Text>
-                    {activeTimeOfDay === tod.key && (
-                      <View
-                        style={{
-                          position: "absolute",
-                          top: 10,
-                          right: 10,
-                          width: 22,
-                          height: 22,
-                          borderRadius: 11,
-                          backgroundColor: "#667eea",
-                          justifyContent: "center",
+                ].map((tod) => {
+                  const active = activeTimeOfDay === tod.key;
+                  return (
+                    <TouchableOpacity
+                      key={tod.key}
+                      style={[
+                        {
+                          backgroundColor: "#2a4230",
+                          borderRadius: 12,
+                          padding: 14,
+                          borderWidth: 1.5,
+                          borderColor: "#3a5a30",
+                          flexDirection: "row",
                           alignItems: "center",
-                        }}
-                      >
-                        <Text style={{ color: "#fff", fontSize: 12 }}>✓</Text>
+                          gap: 12,
+                        },
+                        active && {
+                          backgroundColor: "#3a5a30",
+                          borderColor: "#5a8a48",
+                        },
+                      ]}
+                      onPress={() => applyTimeOfDay(tod.key)}
+                    >
+                      <Image
+                        source={tod.icon}
+                        style={{ width: 50, height: 50 }}
+                        resizeMode="contain"
+                      />
+                      <View style={{ flex: 1 }}>
+                        <Text
+                          style={{
+                            fontSize: 14,
+                            fontWeight: "700",
+                            color: "#e8e8e8",
+                          }}
+                        >
+                          {tod.label}
+                        </Text>
+                        <Text
+                          style={{
+                            fontSize: 12,
+                            color: "#a0a0a0",
+                            marginTop: 3,
+                          }}
+                        >
+                          {tod.sub}
+                        </Text>
                       </View>
-                    )}
-                  </TouchableOpacity>
-                ))}
+                      {active && (
+                        <View
+                          style={{
+                            width: 22,
+                            height: 22,
+                            borderRadius: 11,
+                            backgroundColor: "#5a8a48",
+                            justifyContent: "center",
+                            alignItems: "center",
+                          }}
+                        >
+                          <Text
+                            style={{
+                              color: "#fff",
+                              fontSize: 12,
+                              fontWeight: "800",
+                            }}
+                          >
+                            ✓
+                          </Text>
+                        </View>
+                      )}
+                    </TouchableOpacity>
+                  );
+                })}
               </View>
             </View>
 
-            {/* Kategorije 3x3 */}
+            {/* Kategorije - VEĆ RADI S SLIKAMA */}
             <View
               style={{
-                padding: 16,
+                paddingHorizontal: 16,
+                paddingTop: 12,
+                paddingBottom: 4,
                 borderBottomWidth: 1,
-                borderBottomColor: "#f0f0f0",
+                borderBottomColor: "#3a5a30",
               }}
             >
               <View
@@ -6319,11 +6819,11 @@ export default function DashboardScreen() {
                   flexDirection: "row",
                   justifyContent: "space-between",
                   alignItems: "center",
-                  marginBottom: 12,
+                  marginBottom: 8,
                 }}
               >
                 <Text
-                  style={{ fontSize: 15, fontWeight: "700", color: "#333" }}
+                  style={{ fontSize: 14, fontWeight: "700", color: "#c0c0c0" }}
                 >
                   {t("map.categories")}
                 </Text>
@@ -6337,7 +6837,7 @@ export default function DashboardScreen() {
                     <Text
                       style={{
                         fontSize: 13,
-                        color: "#667eea",
+                        color: "#5a8a48",
                         fontWeight: "600",
                       }}
                     >
@@ -6346,7 +6846,13 @@ export default function DashboardScreen() {
                   </TouchableOpacity>
                 )}
               </View>
-              <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
+              <View
+                style={{
+                  flexDirection: "row",
+                  flexWrap: "wrap",
+                  gap: 4,
+                }}
+              >
                 {getAllCategories().map((cat) => {
                   const active = selectedTypes.includes(cat.id);
                   return (
@@ -6354,25 +6860,34 @@ export default function DashboardScreen() {
                       key={cat.id}
                       style={{
                         width: CELL_W,
-                        aspectRatio: 1,
-                        backgroundColor: active ? cat.color : "#f5f5f5",
-                        borderRadius: 14,
+                        height: 130, // ← fiksna visina umjesto aspectRatio
+                        backgroundColor: active ? cat.color : "#2a4230",
+                        borderRadius: 12,
                         justifyContent: "center",
                         alignItems: "center",
-                        padding: 8,
-                        borderWidth: 2,
-                        borderColor: active ? cat.color : "transparent",
+                        paddingHorizontal: 4,
+                        paddingVertical: 8,
+                        borderWidth: active ? 2 : 1,
+                        borderColor: active ? cat.color : "#3a5a30",
                       }}
                       onPress={() => toggleType(cat.id)}
                     >
-                      <Text style={{ fontSize: 28, marginBottom: 4 }}>
-                        {cat.icon}
-                      </Text>
+                      {CATEGORY_ICONS[cat.id] ? (
+                        <Image
+                          source={CATEGORY_ICONS[cat.id]}
+                          style={{ width: 96, height: 96, marginBottom: 4 }}
+                          resizeMode="contain"
+                        />
+                      ) : (
+                        <Text style={{ fontSize: 56, marginBottom: 4 }}>
+                          {cat.icon}
+                        </Text>
+                      )}
                       <Text
                         style={{
                           fontSize: 11,
                           fontWeight: "600",
-                          color: active ? "#fff" : "#444",
+                          color: active ? "#fff" : "#c0c0c0",
                           textAlign: "center",
                         }}
                         numberOfLines={2}
@@ -6390,42 +6905,47 @@ export default function DashboardScreen() {
               style={{
                 padding: 16,
                 borderBottomWidth: 1,
-                borderBottomColor: "#f0f0f0",
+                borderBottomColor: "#3a5a30",
               }}
             >
               <Text
                 style={{
-                  fontSize: 15,
+                  fontSize: 14,
                   fontWeight: "700",
-                  color: "#333",
-                  marginBottom: 12,
+                  color: "#c0c0c0",
+                  marginBottom: 10,
                 }}
               >
                 {t("map.radius")}
               </Text>
               <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
-                {[1, 5, 10, 20, 50, 100].map((r) => (
-                  <TouchableOpacity
-                    key={r}
-                    style={{
-                      paddingHorizontal: 14,
-                      paddingVertical: 8,
-                      backgroundColor: radius === r ? "#667eea" : "#f0f0f0",
-                      borderRadius: 20,
-                    }}
-                    onPress={() => setRadius(r)}
-                  >
-                    <Text
+                {[1, 5, 10, 20, 50, 100].map((r) => {
+                  const active = radius === r;
+                  return (
+                    <TouchableOpacity
+                      key={r}
                       style={{
-                        fontSize: 13,
-                        color: radius === r ? "#fff" : "#555",
-                        fontWeight: radius === r ? "700" : "400",
+                        paddingHorizontal: 16,
+                        paddingVertical: 9,
+                        backgroundColor: active ? "#3a5a30" : "#2a4230",
+                        borderRadius: 8,
+                        borderWidth: 1,
+                        borderColor: active ? "#5a8a48" : "#3a5a30",
                       }}
+                      onPress={() => setRadius(r)}
                     >
-                      {r} km
-                    </Text>
-                  </TouchableOpacity>
-                ))}
+                      <Text
+                        style={{
+                          fontSize: 13,
+                          color: active ? "#e8e8e8" : "#b0b0b0",
+                          fontWeight: active ? "700" : "400",
+                        }}
+                      >
+                        {r} km
+                      </Text>
+                    </TouchableOpacity>
+                  );
+                })}
               </View>
             </View>
 
@@ -6434,7 +6954,7 @@ export default function DashboardScreen() {
               style={{
                 padding: 16,
                 borderBottomWidth: 1,
-                borderBottomColor: "#f0f0f0",
+                borderBottomColor: "#3a5a30",
               }}
             >
               <View
@@ -6446,7 +6966,7 @@ export default function DashboardScreen() {
                 }}
               >
                 <Text
-                  style={{ fontSize: 15, fontWeight: "700", color: "#333" }}
+                  style={{ fontSize: 14, fontWeight: "700", color: "#c0c0c0" }}
                 >
                   {t("map.forAgeGroup")}
                 </Text>
@@ -6455,7 +6975,7 @@ export default function DashboardScreen() {
                     <Text
                       style={{
                         fontSize: 13,
-                        color: "#667eea",
+                        color: "#5a8a48",
                         fontWeight: "600",
                       }}
                     >
@@ -6476,10 +6996,10 @@ export default function DashboardScreen() {
                         gap: 6,
                         paddingHorizontal: 14,
                         paddingVertical: 10,
-                        borderRadius: 24,
-                        backgroundColor: active ? grp.color : "#f0f0f0",
-                        borderWidth: 2,
-                        borderColor: active ? grp.color : "transparent",
+                        borderRadius: 10,
+                        backgroundColor: active ? grp.color : "#2a4230",
+                        borderWidth: 1.5,
+                        borderColor: active ? grp.color : "#3a5a30",
                       }}
                       onPress={() =>
                         setSelectedAgeGroups((prev) =>
@@ -6489,13 +7009,17 @@ export default function DashboardScreen() {
                         )
                       }
                     >
-                      <Text style={{ fontSize: 16 }}>{grp.emoji}</Text>
+                      <Image
+                        source={grp.icon}
+                        style={{ width: 60, height: 60 }}
+                        resizeMode="contain"
+                      />
                       <View>
                         <Text
                           style={{
                             fontSize: 13,
                             fontWeight: "700",
-                            color: active ? "#fff" : "#444",
+                            color: active ? "#fff" : "#e8e8e8",
                           }}
                         >
                           {grp.label}
@@ -6503,7 +7027,9 @@ export default function DashboardScreen() {
                         <Text
                           style={{
                             fontSize: 10,
-                            color: active ? "rgba(255,255,255,0.8)" : "#999",
+                            color: active
+                              ? "rgba(255,255,255,0.75)"
+                              : "#a0a0a0",
                           }}
                         >
                           {grp.desc}
@@ -6517,19 +7043,20 @@ export default function DashboardScreen() {
                 <View
                   style={{
                     marginTop: 10,
-                    backgroundColor: "#f0f0ff",
+                    backgroundColor: "#2a4230",
                     borderRadius: 10,
+                    borderWidth: 1,
+                    borderColor: "#5a8a48",
                     padding: 10,
                   }}
                 >
                   <Text
                     style={{
                       fontSize: 12,
-                      color: "#667eea",
+                      color: "#5a8a48",
                       fontWeight: "600",
                     }}
                   >
-                    🔍 {t("map.displayLimit")}
                     {selectedAgeGroups
                       .map(
                         (id) => getAgeGroups().find((g) => g.id === id)?.label,
@@ -6545,14 +7072,14 @@ export default function DashboardScreen() {
               style={{
                 padding: 16,
                 borderBottomWidth: 1,
-                borderBottomColor: "#f0f0f0",
+                borderBottomColor: "#3a5a30",
               }}
             >
               <Text
                 style={{
-                  fontSize: 15,
+                  fontSize: 14,
                   fontWeight: "700",
-                  color: "#333",
+                  color: "#c0c0c0",
                   marginBottom: 4,
                 }}
               >
@@ -6562,7 +7089,9 @@ export default function DashboardScreen() {
                   total: allPlaces.length,
                 })}
               </Text>
-              <Text style={{ fontSize: 12, color: "#999", marginBottom: 12 }}>
+              <Text
+                style={{ fontSize: 12, color: "#a0a0a0", marginBottom: 12 }}
+              >
                 {t("map.displayLimitHint")}
               </Text>
               {allPlaces.length > 0 && (
@@ -6571,53 +7100,62 @@ export default function DashboardScreen() {
                 >
                   {[10, 20, 50, 100]
                     .filter((n) => n <= allPlaces.length || n === 10)
-                    .map((n) => (
-                      <TouchableOpacity
-                        key={n}
-                        style={{
-                          paddingHorizontal: 14,
-                          paddingVertical: 8,
-                          backgroundColor:
-                            displayLimit === n ? "#667eea" : "#f0f0f0",
-                          borderRadius: 20,
-                        }}
-                        onPress={() => setDisplayLimit(n)}
-                      >
-                        <Text
+                    .map((n) => {
+                      const active = displayLimit === n;
+                      return (
+                        <TouchableOpacity
+                          key={n}
                           style={{
-                            fontSize: 13,
-                            color: displayLimit === n ? "#fff" : "#555",
-                            fontWeight: displayLimit === n ? "700" : "400",
+                            paddingHorizontal: 16,
+                            paddingVertical: 9,
+                            backgroundColor: active ? "#3a5a30" : "#2a4230",
+                            borderRadius: 8,
+                            borderWidth: 1,
+                            borderColor: active ? "#5a8a48" : "#3a5a30",
                           }}
+                          onPress={() => setDisplayLimit(n)}
                         >
-                          {n}
-                        </Text>
-                      </TouchableOpacity>
-                    ))}
-                  {allPlaces.length > 0 && (
-                    <TouchableOpacity
+                          <Text
+                            style={{
+                              fontSize: 13,
+                              color: active ? "#e8e8e8" : "#b0b0b0",
+                              fontWeight: active ? "700" : "400",
+                            }}
+                          >
+                            {n}
+                          </Text>
+                        </TouchableOpacity>
+                      );
+                    })}
+                  <TouchableOpacity
+                    style={{
+                      paddingHorizontal: 16,
+                      paddingVertical: 9,
+                      backgroundColor:
+                        displayLimit >= allPlaces.length
+                          ? "#3a5a30"
+                          : "#2a4230",
+                      borderRadius: 8,
+                      borderWidth: 1,
+                      borderColor:
+                        displayLimit >= allPlaces.length
+                          ? "#5a8a48"
+                          : "#3a5a30",
+                    }}
+                    onPress={() => setDisplayLimit(allPlaces.length)}
+                  >
+                    <Text
                       style={{
-                        paddingHorizontal: 14,
-                        paddingVertical: 8,
-                        backgroundColor:
+                        fontSize: 13,
+                        color:
                           displayLimit >= allPlaces.length
-                            ? "#667eea"
-                            : "#f0f0f0",
-                        borderRadius: 20,
+                            ? "#e8e8e8"
+                            : "#b0b0b0",
                       }}
-                      onPress={() => setDisplayLimit(allPlaces.length)}
                     >
-                      <Text
-                        style={{
-                          fontSize: 13,
-                          color:
-                            displayLimit >= allPlaces.length ? "#fff" : "#555",
-                        }}
-                      >
-                        Svi ({allPlaces.length})
-                      </Text>
-                    </TouchableOpacity>
-                  )}
+                      Svi ({allPlaces.length})
+                    </Text>
+                  </TouchableOpacity>
                 </View>
               )}
             </View>
@@ -6627,9 +7165,9 @@ export default function DashboardScreen() {
               <View style={{ padding: 16 }}>
                 <Text
                   style={{
-                    fontSize: 15,
+                    fontSize: 14,
                     fontWeight: "700",
-                    color: "#333",
+                    color: "#c0c0c0",
                     marginBottom: 8,
                   }}
                 >
@@ -6642,20 +7180,22 @@ export default function DashboardScreen() {
                       flexDirection: "row",
                       justifyContent: "space-between",
                       alignItems: "center",
-                      backgroundColor: "#f9f9f9",
+                      backgroundColor: "#2a4230",
                       borderRadius: 10,
+                      borderWidth: 1,
+                      borderColor: "#3a5a30",
                       padding: 12,
                       marginBottom: 8,
                     }}
                     onPress={() => handleRestorePlace(id)}
                   >
                     <Text
-                      style={{ fontSize: 12, color: "#999", flex: 1 }}
+                      style={{ fontSize: 12, color: "#a0a0a0", flex: 1 }}
                       numberOfLines={1}
                     >
                       ID: {id.split("_").slice(-1)[0]}
                     </Text>
-                    <Text style={{ color: "#34c759", fontWeight: "700" }}>
+                    <Text style={{ color: "#5a8a48", fontWeight: "700" }}>
                       ↩ Vrati
                     </Text>
                   </TouchableOpacity>
@@ -6663,17 +7203,22 @@ export default function DashboardScreen() {
               </View>
             )}
 
+            {/* Apply gumb */}
             <TouchableOpacity
               style={{
                 margin: 16,
-                backgroundColor: "#667eea",
-                borderRadius: 16,
+                backgroundColor: "#3a5a30",
+                borderRadius: 12,
+                borderWidth: 1.5,
+                borderColor: "#5a8a48",
                 paddingVertical: 16,
                 alignItems: "center",
               }}
               onPress={() => setShowFilterPanel(false)}
             >
-              <Text style={{ color: "#fff", fontSize: 16, fontWeight: "700" }}>
+              <Text
+                style={{ color: "#e8e8e8", fontSize: 16, fontWeight: "700" }}
+              >
                 {t("map.apply")}
                 {selectedTypes.length > 0
                   ? ` (${selectedTypes.length} kategorija)`

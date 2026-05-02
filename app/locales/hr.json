@@ -174,7 +174,7 @@
     "loading": "Učitavam mjesta...",
     "showMore": "+ Prikaži još {{count}}",
     "shown": "Prikazano {{shown}} od {{total}} mjesta",
-    "visitedOnly": "Samo posjećena",
+    "visitedOnly": "posjećenih mjesta",
     "markVisited": "Označi kao posjećeno",
     "alreadyVisited": "{{name}} je već u arhivi",
     "markedVisited": "Posjećeno!",
