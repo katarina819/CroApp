@@ -30,6 +30,10 @@
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
       },
       "edgeToEdgeEnabled": true,
+      "navigationBar": {
+        "backgroundColor": "#1a2e1a",
+        "barStyle": "light-content"
+      },
       "predictiveBackGestureEnabled": false,
       "permissions": [
         "ACCESS_COARSE_LOCATION",

@@ -30,6 +30,22 @@ import { API_BASE_URL } from "../config/api";
 
 const { width, height } = Dimensions.get("window");
 
+// ─── VARA Paleta — usklađena sa search stilom ──────────────────────────────────
+const V = {
+  forestDeep: "#1A2E15", // search: forestDeep
+  forestMid: "#243B1E", // search: forestMid
+  forestLight: "#2D5518", // search: forestLight
+  borderGreen: "#4A7040", // search: borderGreen
+  borderDim: "#304A28", // search: borderDim
+  silver: "#C4CABC", // search: silver
+  silverBright: "#E8EDE4", // search: silverBright
+  silverDim: "#8A9486", // search: silverDim
+  accentGold: "#B8A060",
+  visited: "#5A8A48", // search: visited
+  danger: "#8B3030",
+  overlay: "rgba(10,20,8,0.88)",
+} as const;
+
 interface VideoItem {
   id: number;
   title: string;
@@ -39,6 +55,7 @@ interface VideoItem {
   userId: number;
   createdAt: string;
   userName?: string;
+  userAvatar?: string | null;
   likeCount?: number;
   commentCount?: number;
   isLiked?: boolean;
@@ -46,6 +63,66 @@ interface VideoItem {
   isOwner?: boolean;
   isInWishlist?: boolean;
   mediaType?: string;
+}
+
+// ─── Helper: avatar URL ────────────────────────────────────────────────────────
+function buildAvatarUrl(avatar: string | null | undefined): string | null {
+  if (!avatar) return null;
+  if (avatar.startsWith("http://") || avatar.startsWith("https://"))
+    return avatar;
+  return `${API_BASE_URL}${avatar.startsWith("/") ? avatar : `/${avatar}`}`;
+}
+
+// ─── VARA Avatar s fallback inicijalima ───────────────────────────────────────
+function VaraAvatar({
+  avatar,
+  firstName,
+  lastName,
+  size,
+}: {
+  avatar?: string | null;
+  firstName?: string;
+  lastName?: string;
+  size: number;
+}) {
+  const [failed, setFailed] = useState(false);
+  const url = buildAvatarUrl(avatar);
+  const initials =
+    `${firstName?.[0] ?? ""}${lastName?.[0] ?? ""}`.toUpperCase();
+  const r = size / 2;
+  if (url && !failed) {
+    return (
+      <Image
+        source={{ uri: url }}
+        style={{ width: size, height: size, borderRadius: r }}
+        onError={() => setFailed(true)}
+      />
+    );
+  }
+  return (
+    <View
+      style={{
+        width: size,
+        height: size,
+        borderRadius: r,
+        backgroundColor: V.forestLight,
+        borderWidth: 1.5,
+        borderColor: V.borderGreen,
+        justifyContent: "center",
+        alignItems: "center",
+      }}
+    >
+      <Text
+        style={{
+          color: V.silverBright,
+          fontSize: size * 0.36,
+          fontWeight: "700",
+        }}
+      >
+        {initials || "?"}
+      </Text>
+    </View>
+  );
 }
 
 // ==================== SINGLE VIDEO COMPONENT ====================
@@ -63,51 +140,20 @@ function VideoItemComponent({
 }: {
   item: VideoItem;
   isActive: boolean;
-  onLikeToggle: (videoId: number) => void;
-  onSaveToggle: (videoId: number) => void;
-  onWishlistToggle: (videoId: number) => void;
-  onDeleteVideo: (videoId: number) => void;
-  onOpenComments: (video: VideoItem) => void;
-  onOpenMessenger: (video: VideoItem) => void;
-  onOpenShare: (video: VideoItem) => void;
-  onDownload: (video: VideoItem) => void;
+  onLikeToggle: (id: number) => void;
+  onSaveToggle: (id: number) => void;
+  onWishlistToggle: (id: number) => void;
+  onDeleteVideo: (id: number) => void;
+  onOpenComments: (v: VideoItem) => void;
+  onOpenMessenger: (v: VideoItem) => void;
+  onOpenShare: (v: VideoItem) => void;
+  onDownload: (v: VideoItem) => void;
 }) {
   const { t } = useTranslation();
-  const [videoOwnerAvatar, setVideoOwnerAvatar] = useState<string | null>(null);
 
   const mediaUrl = item.filePath?.startsWith("http")
     ? item.filePath
-    : `${API_BASE_URL}${item.filePath.startsWith("/") ? item.filePath : "/" + item.filePath}`;
-
-  console.log("Media URL:", mediaUrl, "Type:", item.mediaType);
-
-  // Dohvati avatar vlasnika
-  useEffect(() => {
-    const fetchOwnerAvatar = async () => {
-      try {
-        const token = await AsyncStorage.getItem("token");
-        const res = await fetch(
-          `${API_BASE_URL}/api/auth/users/${item.userId}`,
-          {
-            headers: { Authorization: `Bearer ${token}` },
-          },
-        );
-        if (res.ok) {
-          const userData = await res.json();
-          if (userData.avatar) {
-            const url = userData.avatar.startsWith("http")
-              ? userData.avatar
-              : `${API_BASE_URL}${userData.avatar}`;
-            setVideoOwnerAvatar(url);
-          }
-        }
-      } catch (error) {
-        console.error("Error fetching owner avatar:", error);
-      }
-    };
-
-    fetchOwnerAvatar();
-  }, [item.userId]);
+    : `${API_BASE_URL}${item.filePath?.startsWith("/") ? item.filePath : "/" + item.filePath}`;
 
   const player = useVideoPlayer(mediaUrl, (p) => {
     p.loop = true;
@@ -115,41 +161,33 @@ function VideoItemComponent({
   });
 
   useEffect(() => {
-    if (isActive && item.mediaType === "video") {
-      player.play();
-    } else {
-      player.pause();
-    }
+    if (isActive && item.mediaType === "video") player.play();
+    else player.pause();
   }, [isActive, player, item.mediaType]);
 
-  // Provjeri je li slika
   const imageExtensions = [".jpg", ".jpeg", ".png", ".gif", ".webp"];
-  const filePathLower = (item.filePath || "").toLowerCase();
-  const isImageByExtension = imageExtensions.some((ext) =>
-    filePathLower.includes(ext),
-  );
-  const isImage = item.mediaType === "image" || isImageByExtension;
+  const isImage =
+    item.mediaType === "image" ||
+    imageExtensions.some((ext) =>
+      (item.filePath || "").toLowerCase().includes(ext),
+    );
 
   return (
-    <View style={styles.videoContainer}>
+    <View style={vs.videoContainer}>
       {isImage ? (
-        <Image
-          source={{ uri: mediaUrl }}
-          style={styles.video}
-          resizeMode="cover"
-        />
+        <Image source={{ uri: mediaUrl }} style={vs.video} resizeMode="cover" />
       ) : (
         <VideoView
           player={player}
-          style={styles.video}
+          style={vs.video}
           contentFit="cover"
           nativeControls={false}
         />
       )}
 
-      <View style={styles.rightSidebar}>
+      <View style={vs.rightSidebar}>
         <TouchableOpacity
-          style={styles.actionButton}
+          style={vs.actionButton}
           onPress={() => onLikeToggle(item.id)}
         >
           <Ionicons
@@ -157,96 +195,89 @@ function VideoItemComponent({
             size={32}
             color={item.isLiked ? "#ff3b30" : "white"}
           />
-          <Text style={styles.actionText}>{item.likeCount || 0}</Text>
+          <Text style={vs.actionText}>{item.likeCount || 0}</Text>
         </TouchableOpacity>
         <TouchableOpacity
-          style={styles.actionButton}
+          style={vs.actionButton}
           onPress={() => onOpenComments(item)}
         >
           <Ionicons name="chatbubble-outline" size={28} color="white" />
-          <Text style={styles.actionText}>{item.commentCount || 0}</Text>
+          <Text style={vs.actionText}>{item.commentCount || 0}</Text>
         </TouchableOpacity>
         <TouchableOpacity
-          style={styles.actionButton}
+          style={vs.actionButton}
           onPress={() => onOpenMessenger(item)}
         >
           <Ionicons name="paper-plane-outline" size={28} color="white" />
-          <Text style={styles.actionText}>{t("videos.sendMessage")}</Text>
+          <Text style={vs.actionText}>{t("videos.sendMessage")}</Text>
         </TouchableOpacity>
         <TouchableOpacity
-          style={styles.actionButton}
+          style={vs.actionButton}
           onPress={() => onOpenShare(item)}
         >
           <Ionicons name="share-social-outline" size={28} color="white" />
-          <Text style={styles.actionText}>{t("common.share")}</Text>
+          <Text style={vs.actionText}>{t("common.share")}</Text>
         </TouchableOpacity>
         <TouchableOpacity
-          style={styles.actionButton}
+          style={vs.actionButton}
           onPress={() => onDownload(item)}
         >
           <Ionicons name="download-outline" size={28} color="white" />
-          <Text style={styles.actionText}>{t("common.download")}</Text>
+          <Text style={vs.actionText}>{t("common.download")}</Text>
         </TouchableOpacity>
         <TouchableOpacity
-          style={styles.actionButton}
+          style={vs.actionButton}
           onPress={() => onSaveToggle(item.id)}
         >
           <Ionicons
             name={item.isSaved ? "bookmark" : "bookmark-outline"}
             size={28}
-            color={item.isSaved ? "#2D6418" : "white"}
+            color={item.isSaved ? V.visited : "white"}
           />
-          <Text style={styles.actionText}>{t("profile.box")}</Text>
+          <Text style={vs.actionText}>{t("profile.box")}</Text>
         </TouchableOpacity>
         <TouchableOpacity
-          style={styles.actionButton}
+          style={vs.actionButton}
           onPress={() => onWishlistToggle(item.id)}
         >
           <Ionicons
             name={item.isInWishlist ? "star" : "star-outline"}
             size={28}
-            color={item.isInWishlist ? "#FFD700" : "white"}
+            color={item.isInWishlist ? V.accentGold : "white"}
           />
-          <Text style={styles.actionText}>{t("profile.wishlist")}</Text>
+          <Text style={vs.actionText}>{t("profile.wishlist")}</Text>
         </TouchableOpacity>
       </View>
 
-      <View style={styles.bottomInfo}>
-        <View style={styles.userInfo}>
+      <View style={vs.bottomInfo}>
+        <View style={vs.userInfo}>
           <StoryBadge userId={item.userId} size={40}>
-            {/* ── PROMIJENJENO: samo userId, bez avatar i firstName propa ── */}
             <UserAvatar userId={item.userId} size={40} />
           </StoryBadge>
-          <Text style={styles.userName}>
+          <Text style={vs.userName}>
             {item.userName || `User_${item.userId}`}
           </Text>
         </View>
-        <Text style={styles.videoTitle}>{item.title}</Text>
+        <Text style={vs.videoTitle}>{item.title}</Text>
         {item.location && (
-          <View style={styles.locationRow}>
+          <View style={vs.locationRow}>
             <Ionicons
               name="location-outline"
               size={14}
               color="rgba(255,255,255,0.8)"
             />
-            <Text style={styles.locationText}>{item.location}</Text>
+            <Text style={vs.locationText}>{item.location}</Text>
           </View>
         )}
         {item.additionalDescription && (
-          <Text style={styles.videoDescription}>
-            {item.additionalDescription}
-          </Text>
+          <Text style={vs.videoDescription}>{item.additionalDescription}</Text>
         )}
       </View>
     </View>
   );
 }
-// ==================== COMMENTS MODAL ====================
 
-// app/videos.tsx - zamijeni CommentsModal sa ovim:
-
-// app/videos.tsx - zamijeni CommentsModal sa ovim:
-
+// ==================== COMMENTS MODAL — VARA ===================================
 function CommentsModal({
   visible,
   video,
@@ -266,28 +297,24 @@ function CommentsModal({
   const scrollViewRef = useRef<ScrollView>(null);
 
   const loadComments = async () => {
-    const token = await AsyncStorage.getItem("token");
     if (!video) return;
+    const token = await AsyncStorage.getItem("token");
     setLoading(true);
     try {
       const res = await fetch(`${API_BASE_URL}/api/comment/video/${video.id}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
-      if (res.ok) {
-        const data = await res.json();
-        console.log("Comments loaded:", data.length);
-        setComments(data);
-      }
+      if (res.ok) setComments(await res.json());
     } catch (e) {
-      console.error("Error loading comments:", e);
+      console.error(e);
     } finally {
       setLoading(false);
     }
   };
 
   const addComment = async () => {
-    const token = await AsyncStorage.getItem("token");
     if (!video || !newComment.trim()) return;
+    const token = await AsyncStorage.getItem("token");
     setSubmitting(true);
     try {
       const res = await fetch(`${API_BASE_URL}/api/comment`, {
@@ -302,10 +329,10 @@ function CommentsModal({
         setNewComment("");
         await loadComments();
         onCommentAdded();
-        // Scroll to bottom to show new comment
-        setTimeout(() => {
-          scrollViewRef.current?.scrollToEnd({ animated: true });
-        }, 100);
+        setTimeout(
+          () => scrollViewRef.current?.scrollToEnd({ animated: true }),
+          100,
+        );
         await fetch(`${API_BASE_URL}/api/activity/track/comment`, {
           method: "POST",
           headers: { Authorization: `Bearer ${token}` },
@@ -319,11 +346,8 @@ function CommentsModal({
   };
 
   useEffect(() => {
-    if (visible && video) {
-      loadComments();
-    }
+    if (visible && video) loadComments();
   }, [visible, video]);
-
   if (!video) return null;
 
   return (
@@ -336,33 +360,46 @@ function CommentsModal({
       <KeyboardAvoidingView
         style={{ flex: 1 }}
         behavior={Platform.OS === "ios" ? "padding" : "height"}
-        keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 0}
       >
-        <SafeAreaView style={{ flex: 1, backgroundColor: "#fff" }}>
-          {/* Header */}
-          <View style={styles.modalHeader}>
-            <TouchableOpacity onPress={onClose}>
-              <Ionicons name="close" size={28} color="#333" />
-            </TouchableOpacity>
-            <Text style={styles.modalTitle}>
+        <SafeAreaView style={{ flex: 1, backgroundColor: V.forestDeep }}>
+          {/* ── Header: "Komentari" lijevo, "Zatvori" desno, spušten prema dolje ── */}
+          <View style={modal.headerSplit}>
+            <Text style={modal.headerLeftTitle}>
               {t("videos.comments", { count: video?.commentCount || 0 })}
             </Text>
-            <View style={{ width: 28 }} />
+            <TouchableOpacity onPress={onClose} style={modal.closeBtnText}>
+              <Text style={modal.closeBtnLabel}>Zatvori</Text>
+            </TouchableOpacity>
           </View>
 
-          {/* Lista komentara - flex: 1 gura input na dno */}
+          {/* Lista */}
           {loading ? (
-            <ActivityIndicator
-              size="large"
-              color="#2D6418"
-              style={{ marginTop: 40, flex: 1 }}
-            />
+            <View
+              style={{
+                flex: 1,
+                justifyContent: "center",
+                alignItems: "center",
+              }}
+            >
+              <ActivityIndicator size="large" color={V.visited} />
+            </View>
           ) : comments.length === 0 ? (
-            <View style={[styles.emptyComments, { flex: 1 }]}>
-              <Ionicons name="chatbubbles-outline" size={56} color="#ddd" />
-              <Text style={styles.emptyCommentsText}>
-                {t("videos.noComments")}
-              </Text>
+            <View
+              style={{
+                flex: 1,
+                justifyContent: "center",
+                alignItems: "center",
+                gap: 12,
+              }}
+            >
+              <View style={modal.emptyIconWrap}>
+                <Ionicons
+                  name="chatbubbles-outline"
+                  size={44}
+                  color={V.borderGreen}
+                />
+              </View>
+              <Text style={modal.emptyText}>{t("videos.noComments")}</Text>
             </View>
           ) : (
             <ScrollView
@@ -372,17 +409,15 @@ function CommentsModal({
               keyboardShouldPersistTaps="handled"
             >
               {comments.map((item) => (
-                <View key={item.id} style={styles.commentItem}>
-                  <View style={styles.commentAvatar}>
-                    #2D6418
-                    <Ionicons name="person-circle" size={36} color="" />
-                  </View>
-                  <View style={styles.commentContent}>
-                    <Text style={styles.commentUser}>
+                <View key={item.id} style={modal.commentRow}>
+                  {/* ── Prava profilna slika korisnika ── */}
+                  <UserAvatar userId={item.userId} size={38} />
+                  <View style={{ flex: 1 }}>
+                    <Text style={modal.commentUser}>
                       {item.userName || `User_${item.userId}`}
                     </Text>
-                    <Text style={styles.commentText}>{item.content}</Text>
-                    <Text style={styles.commentDate}>
+                    <Text style={modal.commentText}>{item.content}</Text>
+                    <Text style={modal.commentDate}>
                       {new Date(item.createdAt).toLocaleDateString("hr-HR")}
                     </Text>
                   </View>
@@ -391,12 +426,12 @@ function CommentsModal({
             </ScrollView>
           )}
 
-          {/* Input - uvijek vidljiv iznad tipkovnice */}
-          <View style={styles.inputRow}>
+          {/* Input */}
+          <View style={modal.inputRow}>
             <TextInput
-              style={styles.textInput}
+              style={modal.textInput}
               placeholder={t("videos.addComment")}
-              placeholderTextColor="#999"
+              placeholderTextColor={V.silverDim}
               value={newComment}
               onChangeText={setNewComment}
               multiline
@@ -407,16 +442,16 @@ function CommentsModal({
             />
             <TouchableOpacity
               style={[
-                styles.sendBtn,
-                (!newComment.trim() || submitting) && styles.sendBtnDisabled,
+                modal.sendBtn,
+                (!newComment.trim() || submitting) && modal.sendBtnDisabled,
               ]}
               onPress={addComment}
               disabled={!newComment.trim() || submitting}
             >
               {submitting ? (
-                <ActivityIndicator size="small" color="#fff" />
+                <ActivityIndicator size="small" color={V.silverBright} />
               ) : (
-                <Ionicons name="send" size={20} color="#fff" />
+                <Ionicons name="send" size={20} color={V.silverBright} />
               )}
             </TouchableOpacity>
           </View>
@@ -425,133 +460,8 @@ function CommentsModal({
     </Modal>
   );
 }
-const cm = StyleSheet.create({
-  // KAV = cijeli ekran, sheet se gurkne na vrh tipkovnice
-  root: {
-    flex: 1,
-    justifyContent: "flex-end",
-    backgroundColor: "rgba(0,0,0,0.5)",
-  },
-  emptyComments: {
-    flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 12,
-  },
-  emptyCommentsText: {
-    fontSize: 16,
-    color: "#bbb",
-    textAlign: "center",
-  },
-  commentItem: {
-    flexDirection: "row",
-    marginBottom: 16,
-    gap: 12,
-  },
-  commentAvatar: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  commentContent: {
-    flex: 1,
-  },
-  commentUser: {
-    fontSize: 14,
-    fontWeight: "600",
-    color: "#333",
-    marginBottom: 4,
-  },
-  commentText: {
-    fontSize: 14,
-    color: "#555",
-    lineHeight: 20,
-    marginBottom: 4,
-  },
-  commentDate: {
-    fontSize: 11,
-    color: "#999",
-  },
-  sheet: {
-    backgroundColor: "#fff",
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    maxHeight: "75%",
-    paddingBottom: Platform.OS === "ios" ? 34 : 12,
-  },
-  handle: {
-    width: 40,
-    height: 4,
-    borderRadius: 2,
-    backgroundColor: "#ddd",
-    alignSelf: "center",
-    marginTop: 10,
-    marginBottom: 4,
-  },
-  header: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    paddingHorizontal: 20,
-    paddingVertical: 14,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: "#eee",
-  },
-  title: { fontSize: 17, fontWeight: "700", color: "#1a1a1a" },
-  list: { flex: 1 },
-  listContent: { paddingHorizontal: 16, paddingTop: 8, paddingBottom: 8 },
-  emptyText: {
-    textAlign: "center",
-    color: "#bbb",
-    marginTop: 32,
-    fontSize: 15,
-  },
-  commentRow: {
-    flexDirection: "row",
-    gap: 10,
-    paddingVertical: 10,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: "#f0f0f0",
-  },
-  avatarCircle: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: "#2D6418",
-    justifyContent: "center",
-    alignItems: "center",
-    flexShrink: 0,
-  },
-  commentBody: { flex: 1 },
 
-  input: {
-    flex: 1,
-    backgroundColor: "#f5f5f5",
-    borderRadius: 22,
-    paddingHorizontal: 16,
-    // Eksplicitan vertikalni padding osigurava da tekst nije skriven
-    paddingTop: Platform.OS === "ios" ? 12 : 10,
-    paddingBottom: Platform.OS === "ios" ? 12 : 10,
-    fontSize: 15,
-    color: "#333",
-    maxHeight: 120,
-    minHeight: 44,
-  },
-  sendBtn: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: "#2D6418",
-    justifyContent: "center",
-    alignItems: "center",
-    flexShrink: 0,
-  },
-  sendBtnDisabled: { backgroundColor: "#ccc" },
-});
-
-// ==================== MESSENGER MODAL ====================
+// ==================== MESSENGER MODAL — VARA (fullscreen) ====================
 function MessengerModal({
   visible,
   video,
@@ -566,8 +476,8 @@ function MessengerModal({
   const [sending, setSending] = useState(false);
 
   const sendMessage = async () => {
-    const token = await AsyncStorage.getItem("token");
     if (!video || !message.trim()) return;
+    const token = await AsyncStorage.getItem("token");
     setSending(true);
     try {
       const res = await fetch(`${API_BASE_URL}/api/message/send`, {
@@ -583,7 +493,6 @@ function MessengerModal({
       });
       if (res.ok) {
         setMessage("");
-
         Alert.alert(
           t("common.success"),
           t("messages.messageSent", {
@@ -606,45 +515,41 @@ function MessengerModal({
   return (
     <Modal
       animationType="slide"
-      transparent
+      transparent={false}
       visible={visible}
       onRequestClose={onClose}
       statusBarTranslucent
     >
       <KeyboardAvoidingView
-        style={mm.root}
+        style={{ flex: 1 }}
         behavior={Platform.OS === "ios" ? "padding" : "height"}
       >
-        <TouchableOpacity
-          style={StyleSheet.absoluteFillObject}
-          activeOpacity={1}
-          onPress={onClose}
-        />
-
-        <View style={mm.sheet}>
-          <View style={mm.handle} />
-
-          <View style={mm.header}>
-            <Text style={mm.title}>{t("messages.sendMessage")}</Text>
-            <TouchableOpacity onPress={onClose}>
-              <Ionicons name="close" size={24} color="#333" />
+        <SafeAreaView style={{ flex: 1, backgroundColor: V.forestDeep }}>
+          {/* ── "Pošalji poruku" lijevo, "Zatvori" desno, spušten ── */}
+          <View style={modal.headerSplit}>
+            <Text style={modal.headerLeftTitle}>
+              {t("messages.sendMessage")}
+            </Text>
+            <TouchableOpacity onPress={onClose} style={modal.closeBtnText}>
+              <Text style={modal.closeBtnLabel}>Zatvori</Text>
             </TouchableOpacity>
           </View>
 
-          <View style={mm.recipientRow}>
-            <Ionicons name="person-circle" size={44} color="#2D6418" />
-            <View style={{ flex: 1, marginLeft: 10 }}>
-              <Text style={mm.recipientName}>
+          {/* ── Primatelj s pravom profilnom slikom ── */}
+          <View style={modal.recipientRow}>
+            <UserAvatar userId={video.userId} size={48} />
+            <View style={{ flex: 1, marginLeft: 12 }}>
+              <Text style={modal.recipientName}>
                 {video.userName || `User_${video.userId}`}
               </Text>
-              <Text style={mm.recipientSub} numberOfLines={1}>
+              <Text style={modal.recipientSub} numberOfLines={1}>
                 {video.title}
               </Text>
             </View>
           </View>
 
-          {/* Brze poruke */}
-          <View style={mm.quickRow}>
+          {/* ── Quick replies ── */}
+          <View style={modal.quickRow}>
             {[
               t("videos.quickMessage1"),
               t("videos.quickMessage2"),
@@ -653,21 +558,25 @@ function MessengerModal({
             ].map((q) => (
               <TouchableOpacity
                 key={q}
-                style={mm.quickChip}
+                style={modal.quickChip}
                 onPress={() => setMessage(q)}
               >
-                <Text style={mm.quickText}>{q}</Text>
+                <Text style={modal.quickText}>{q}</Text>
               </TouchableOpacity>
             ))}
           </View>
 
-          <View style={mm.inputRow}>
+          {/* ── Spacer da input bude pri dnu ── */}
+          <View style={{ flex: 1 }} />
+
+          {/* ── Input ── */}
+          <View style={modal.inputRow}>
             <TextInput
-              style={mm.input}
+              style={modal.textInput}
               placeholder={t("messages.writeMessage", {
                 name: video?.userName || "",
               })}
-              placeholderTextColor="#aaa"
+              placeholderTextColor={V.silverDim}
               value={message}
               onChangeText={setMessage}
               multiline
@@ -676,115 +585,26 @@ function MessengerModal({
             />
             <TouchableOpacity
               style={[
-                mm.sendBtn,
-                (!message.trim() || sending) && mm.sendBtnDisabled,
+                modal.sendBtn,
+                (!message.trim() || sending) && modal.sendBtnDisabled,
               ]}
               onPress={sendMessage}
               disabled={!message.trim() || sending}
             >
               {sending ? (
-                <ActivityIndicator size="small" color="#fff" />
+                <ActivityIndicator size="small" color={V.silverBright} />
               ) : (
-                <Ionicons name="send" size={18} color="#fff" />
+                <Ionicons name="send" size={18} color={V.silverBright} />
               )}
             </TouchableOpacity>
           </View>
-        </View>
+        </SafeAreaView>
       </KeyboardAvoidingView>
     </Modal>
   );
 }
 
-const mm = StyleSheet.create({
-  root: {
-    flex: 1,
-    justifyContent: "flex-end",
-    backgroundColor: "rgba(0,0,0,0.5)",
-  },
-  sheet: {
-    backgroundColor: "#fff",
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    paddingBottom: Platform.OS === "ios" ? 34 : 12,
-  },
-  handle: {
-    width: 40,
-    height: 4,
-    borderRadius: 2,
-    backgroundColor: "#ddd",
-    alignSelf: "center",
-    marginTop: 10,
-    marginBottom: 4,
-  },
-  header: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    paddingHorizontal: 20,
-    paddingVertical: 14,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: "#eee",
-  },
-  title: { fontSize: 17, fontWeight: "700", color: "#1a1a1a" },
-  recipientRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: 20,
-    paddingVertical: 14,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: "#f0f0f0",
-  },
-  recipientName: { fontSize: 15, fontWeight: "600", color: "#333" },
-  recipientSub: { fontSize: 13, color: "#999", marginTop: 2 },
-  quickRow: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 8,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-  },
-  quickChip: {
-    backgroundColor: "#f0f0ff",
-    borderRadius: 16,
-    paddingHorizontal: 12,
-    paddingVertical: 7,
-  },
-  quickText: { fontSize: 13, color: "#2D6418" },
-  inputRow: {
-    flexDirection: "row",
-    alignItems: "flex-end",
-    paddingHorizontal: 16,
-    paddingTop: 10,
-    paddingBottom: 6,
-    borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: "#eee",
-    gap: 10,
-  },
-  input: {
-    flex: 1,
-    backgroundColor: "#f5f5f5",
-    borderRadius: 22,
-    paddingHorizontal: 16,
-    paddingTop: Platform.OS === "ios" ? 12 : 10,
-    paddingBottom: Platform.OS === "ios" ? 12 : 10,
-    fontSize: 15,
-    color: "#333",
-    maxHeight: 120,
-    minHeight: 44,
-  },
-  sendBtn: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: "#2D6418",
-    justifyContent: "center",
-    alignItems: "center",
-    flexShrink: 0,
-  },
-  sendBtnDisabled: { backgroundColor: "#ccc" },
-});
-
-// ==================== SHARE MODAL ====================
+// ==================== SHARE MODAL — VARA =====================================
 function ShareModal({
   visible,
   video,
@@ -816,19 +636,19 @@ function ShareModal({
   };
 
   const shareToUser = async (receiverId: number, userName: string) => {
-    const token = await AsyncStorage.getItem("token");
     if (!video) return;
+    const token = await AsyncStorage.getItem("token");
     setSending(receiverId);
     try {
       const VIDEO_PREFIX = "__CROMAP_VIDEO__";
-      const videoContent = `${VIDEO_PREFIX}${JSON.stringify({ id: video.id, title: video.title, url: video.filePath })}`;
+      const content = `${VIDEO_PREFIX}${JSON.stringify({ id: video.id, title: video.title, url: video.filePath })}`;
       const res = await fetch(`${API_BASE_URL}/api/message/send`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({ receiverId, content: videoContent }),
+        body: JSON.stringify({ receiverId, content }),
       });
       if (res.ok) {
         Alert.alert(
@@ -850,6 +670,7 @@ function ShareModal({
       setSearch("");
     }
   }, [visible]);
+
   const filtered = users.filter((u) =>
     u.username?.toLowerCase().includes(search.toLowerCase()),
   );
@@ -862,66 +683,94 @@ function ShareModal({
       visible={visible}
       onRequestClose={onClose}
     >
-      <View style={{ flex: 1, backgroundColor: "#fff" }}>
-        <View style={styles.modalHeader}>
-          <TouchableOpacity onPress={onClose}>
-            <Ionicons name="close" size={28} color="black" />
+      <SafeAreaView style={{ flex: 1, backgroundColor: V.forestDeep }}>
+        {/* ── Header: "Podijeli video" lijevo, "Zatvori" desno, spušten ── */}
+        <View style={modal.headerSplit}>
+          <Text style={modal.headerLeftTitle}>{t("videos.shareVideo")}</Text>
+          <TouchableOpacity onPress={onClose} style={modal.closeBtnText}>
+            <Text style={modal.closeBtnLabel}>Zatvori</Text>
           </TouchableOpacity>
-          <Text style={styles.modalTitle}>{t("videos.shareVideo")}</Text>
-          <View style={{ width: 28 }} />
         </View>
-        <View style={{ paddingHorizontal: 16, paddingBottom: 8 }}>
-          <TextInput
-            style={styles.searchInput}
-            placeholder={t("videos.searchUsers")}
-            placeholderTextColor="#999"
-            value={search}
-            onChangeText={setSearch}
-          />
+
+        {/* ── Search — s razmakom ispod headera ── */}
+        <View
+          style={{ paddingHorizontal: 16, paddingTop: 14, paddingBottom: 8 }}
+        >
+          <View style={modal.searchBar}>
+            <Ionicons
+              name="search-outline"
+              size={16}
+              color={V.silverDim}
+              style={{ marginRight: 8 }}
+            />
+            <TextInput
+              style={modal.searchInput}
+              placeholder={t("videos.searchUsers")}
+              placeholderTextColor={V.silverDim}
+              value={search}
+              onChangeText={setSearch}
+            />
+          </View>
         </View>
+
+        {/* Lista korisnika */}
         {loading ? (
-          <ActivityIndicator
-            size="large"
-            color="#2D6418"
-            style={{ marginTop: 40 }}
-          />
+          <View
+            style={{ flex: 1, justifyContent: "center", alignItems: "center" }}
+          >
+            <ActivityIndicator size="large" color={V.visited} />
+          </View>
         ) : (
           <FlatList
             data={filtered}
             keyExtractor={(u) => u.id.toString()}
+            contentContainerStyle={{ paddingHorizontal: 12 }}
             renderItem={({ item: u }) => (
               <TouchableOpacity
-                style={styles.userRow}
+                style={modal.userRow}
                 onPress={() => shareToUser(u.id, u.username)}
                 disabled={sending === u.id}
               >
-                <Ionicons name="person-circle" size={44} color="#2D6418" />
+                <UserAvatar userId={u.id} size={44} />
                 <View style={{ flex: 1, marginLeft: 12 }}>
-                  <Text style={styles.recipientName}>{u.username}</Text>
-                  <Text style={styles.recipientSub}>
+                  <Text style={modal.recipientName}>{u.username}</Text>
+                  <Text style={modal.recipientSub}>
                     {u.firstName} {u.lastName}
                   </Text>
                 </View>
                 {sending === u.id ? (
-                  <ActivityIndicator size="small" color="#2D6418" />
+                  <ActivityIndicator size="small" color={V.visited} />
                 ) : (
-                  <Ionicons
-                    name="paper-plane-outline"
-                    size={22}
-                    color="#2D6418"
-                  />
+                  <View style={modal.shareIconWrap}>
+                    <Ionicons
+                      name="paper-plane-outline"
+                      size={18}
+                      color={V.visited}
+                    />
+                  </View>
                 )}
               </TouchableOpacity>
             )}
-            contentContainerStyle={{ paddingHorizontal: 16 }}
+            ListEmptyComponent={
+              <View style={{ alignItems: "center", paddingTop: 60, gap: 12 }}>
+                <Ionicons
+                  name="people-outline"
+                  size={44}
+                  color={V.borderGreen}
+                />
+                <Text style={{ color: V.silverDim, fontSize: 15 }}>
+                  Nema korisnika
+                </Text>
+              </View>
+            }
           />
         )}
-      </View>
+      </SafeAreaView>
     </Modal>
   );
 }
 
-// ==================== UPLOAD MODAL ====================
+// ==================== UPLOAD MODAL — VARA =====================================
 export function UploadModal({
   visible,
   onClose,
@@ -970,32 +819,26 @@ export function UploadModal({
 
   const recordMedia = async () => {
     const perm = await ImagePicker.requestCameraPermissionsAsync();
-
     if (!perm.granted) {
       Alert.alert(t("common.permissionRequired"), t("common.cameraPermission"));
       return;
     }
-
     const result = await ImagePicker.launchCameraAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.All,
       videoMaxDuration: 60,
       quality: 1,
     });
-
     if (!result.canceled && result.assets[0]) {
       const asset = result.assets[0];
-
       setMediaUri(asset.uri);
       setMediaType(asset.type === "video" ? "video" : "image");
       setStep("preview");
     }
   };
 
-  // Zamijeni uploadMedia funkciju s ovom:
   const uploadMedia = async () => {
     const token = await AsyncStorage.getItem("token");
     let userId = await AsyncStorage.getItem("userId");
-
     if (!userId || userId === "0") {
       try {
         const payload = JSON.parse(atob(token!.split(".")[1]));
@@ -1005,101 +848,55 @@ export function UploadModal({
           ];
       } catch {}
     }
-
     if (!mediaUri || !title.trim()) {
       Alert.alert(t("common.error"), t("videos.titleRequired"));
       return;
     }
-
     if (!location.trim()) {
       Alert.alert(t("common.error"), t("videos.locationRequired"));
       return;
     }
-
     if (!userId || userId === "0") {
       Alert.alert(t("common.error"), t("auth.notLoggedIn"));
       return;
     }
 
-    // 🔥 IZMJENA: Podrži i slike i videe
-    if (mediaType !== "video" && mediaType !== "image") {
-      Alert.alert(t("common.error"), t("videos.unsupportedMediaType"));
-      return;
-    }
-
     setUploading(true);
-
     try {
-      const formData = new FormData();
-
-      // Odredi MIME tip na temelju ekstenzije
       let mimeType = "video/mp4";
       let fileName = "media.mp4";
-
       if (mediaType === "image") {
-        // Provjeri ekstenziju za slike
-        const uriParts = mediaUri.split(".");
-        const fileExtension = uriParts[uriParts.length - 1].toLowerCase();
-
-        if (fileExtension === "jpg" || fileExtension === "jpeg") {
-          mimeType = "image/jpeg";
-          fileName = "image.jpg";
-        } else if (fileExtension === "png") {
-          mimeType = "image/png";
-          fileName = "image.png";
-        } else if (fileExtension === "gif") {
-          mimeType = "image/gif";
-          fileName = "image.gif";
-        } else if (fileExtension === "webp") {
-          mimeType = "image/webp";
-          fileName = "image.webp";
-        } else {
-          mimeType = "image/jpeg";
-          fileName = "image.jpg";
-        }
-      } else {
-        // Video
-        mimeType = "video/mp4";
-        fileName = "video.mp4";
+        const ext = mediaUri.split(".").pop()?.toLowerCase() ?? "jpg";
+        mimeType =
+          ext === "png"
+            ? "image/png"
+            : ext === "gif"
+              ? "image/gif"
+              : "image/jpeg";
+        fileName = `image.${ext}`;
       }
-
+      const formData = new FormData();
       formData.append("Video", {
         uri: mediaUri,
         type: mimeType,
         name: fileName,
       } as any);
-
       formData.append("Title", title.trim());
       formData.append("Location", location.trim());
       formData.append("Description", description.trim() || "Nema opisa");
       formData.append("UserId", userId);
-      formData.append("MediaType", mediaType); // Dodaj tip medija
-
-      console.log("Uploading media:", {
-        type: mediaType,
-        mimeType: mimeType,
-        title: title.trim(),
-        location: location.trim(),
-        userId: userId,
-      });
+      formData.append("MediaType", mediaType);
 
       const res = await fetch(`${API_BASE_URL}/api/video/upload`, {
         method: "POST",
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
+        headers: { Authorization: `Bearer ${token}` },
         body: formData,
       });
-
       if (res.ok) {
-        const data = await res.json();
-        console.log("Upload success:", data);
-
         await fetch(`${API_BASE_URL}/api/activity/track/post`, {
           method: "POST",
           headers: { Authorization: `Bearer ${token}` },
         }).catch(() => {});
-
         Alert.alert(
           t("common.success"),
           t("videos.publishSuccess", {
@@ -1109,11 +906,9 @@ export function UploadModal({
         resetModal();
         onUploaded();
       } else {
-        const errorText = await res.text();
         Alert.alert(t("common.error"), t("videos.uploadFailed"));
       }
-    } catch (error) {
-      console.error("Upload exception:", error);
+    } catch {
       Alert.alert(t("common.error"), t("videos.uploadFailedCheckConnection"));
     } finally {
       setUploading(false);
@@ -1140,66 +935,70 @@ export function UploadModal({
         style={{ flex: 1 }}
         behavior={Platform.OS === "ios" ? "padding" : "height"}
       >
-        <SafeAreaView style={{ flex: 1, backgroundColor: "#fff" }}>
-          <View style={styles.modalHeader}>
+        <SafeAreaView style={{ flex: 1, backgroundColor: V.forestDeep }}>
+          <View style={modal.header}>
             <TouchableOpacity onPress={resetModal}>
-              <Ionicons name="close" size={28} color="black" />
+              <Ionicons name="close" size={28} color={V.silver} />
             </TouchableOpacity>
-            <Text style={styles.modalTitle}>
+            <Text style={modal.title}>
               {step === "pick" ? "Dodaj sadržaj" : "Pregled i objava"}
             </Text>
             <View style={{ width: 28 }} />
           </View>
+
           <ScrollView
             keyboardShouldPersistTaps="handled"
-            contentContainerStyle={{ padding: 16 }}
+            contentContainerStyle={{
+              padding: 16,
+              backgroundColor: V.forestDeep,
+            }}
           >
             {step === "pick" ? (
-              <View style={styles.pickContainer}>
-                <Text style={styles.pickHint}>Odaberi vrstu i izvor</Text>
+              <View style={upload.pickContainer}>
+                <Text style={upload.pickHint}>Odaberi vrstu i izvor</Text>
                 <TouchableOpacity
-                  style={styles.pickBtn}
+                  style={upload.pickBtn}
                   onPress={pickFromGallery}
                 >
-                  <Ionicons name="images" size={40} color="#2D6418" />
-                  <Text style={styles.pickBtnText}>Iz galerije</Text>
-                  <Text style={styles.pickBtnSub}>Slike i videji</Text>
+                  <Ionicons name="images" size={40} color={V.visited} />
+                  <Text style={upload.pickBtnText}>Iz galerije</Text>
+                  <Text style={upload.pickBtnSub}>Slike i videji</Text>
                 </TouchableOpacity>
-                <TouchableOpacity style={styles.pickBtn} onPress={recordMedia}>
-                  <Ionicons name="camera" size={40} color="#2D6418" />
-                  <Text style={styles.pickBtnText}>Kamera / Snimanje</Text>
-                  <Text style={styles.pickBtnSub}>Snimite sliku ili video</Text>
+                <TouchableOpacity style={upload.pickBtn} onPress={recordMedia}>
+                  <Ionicons name="camera" size={40} color={V.visited} />
+                  <Text style={upload.pickBtnText}>Kamera / Snimanje</Text>
+                  <Text style={upload.pickBtnSub}>Snimite sliku ili video</Text>
                 </TouchableOpacity>
               </View>
             ) : (
               <>
-                <View style={styles.previewContainer}>
+                <View style={upload.previewContainer}>
                   {mediaType === "image" ? (
                     <Image
                       source={{ uri: mediaUri ?? "" }}
-                      style={styles.previewMedia}
+                      style={upload.previewMedia}
                       resizeMode="cover"
                     />
                   ) : (
                     <VideoView
                       player={previewPlayer}
-                      style={styles.previewMedia}
+                      style={upload.previewMedia}
                       contentFit="cover"
                       nativeControls={false}
                     />
                   )}
-                  <View style={styles.mediaTypeBadge}>
+                  <View style={upload.mediaTypeBadge}>
                     <Ionicons
                       name={mediaType === "video" ? "videocam" : "image"}
                       size={14}
                       color="#fff"
                     />
-                    <Text style={styles.mediaTypeBadgeText}>
+                    <Text style={upload.mediaTypeBadgeText}>
                       {mediaType === "video" ? "Video" : "Slika"}
                     </Text>
                   </View>
                   <TouchableOpacity
-                    style={styles.changeBtn}
+                    style={upload.changeBtn}
                     onPress={() => {
                       setMediaUri(null);
                       setStep("pick");
@@ -1213,47 +1012,52 @@ export function UploadModal({
                     </Text>
                   </TouchableOpacity>
                 </View>
-                <Text style={styles.fieldLabel}>Naslov *</Text>
+
+                <Text style={upload.fieldLabel}>Naslov *</Text>
                 <TextInput
-                  style={styles.fieldInput}
+                  style={upload.fieldInput}
                   placeholder="Naslov objave"
-                  placeholderTextColor="#999"
+                  placeholderTextColor={V.silverDim}
                   value={title}
                   onChangeText={setTitle}
                   maxLength={100}
                 />
-                <Text style={styles.fieldLabel}>
-                  Lokacija *{" "}
+
+                <Text style={upload.fieldLabel}>
+                  Lokacija *
                   <Text style={{ color: "#ff3b30", fontSize: 12 }}>
+                    {" "}
                     (obavezno)
                   </Text>
                 </Text>
                 <TextInput
-                  style={styles.fieldInput}
+                  style={upload.fieldInput}
                   placeholder="Npr. Zagreb, Dolac"
-                  placeholderTextColor="#999"
+                  placeholderTextColor={V.silverDim}
                   value={location}
                   onChangeText={setLocation}
                   maxLength={150}
                 />
-                <Text style={styles.fieldLabel}>Opis (opcionalno)</Text>
+
+                <Text style={upload.fieldLabel}>Opis (opcionalno)</Text>
                 <TextInput
                   style={[
-                    styles.fieldInput,
+                    upload.fieldInput,
                     { height: 80, textAlignVertical: "top" },
                   ]}
                   placeholder="Kratki opis..."
-                  placeholderTextColor="#999"
+                  placeholderTextColor={V.silverDim}
                   value={description}
                   onChangeText={setDescription}
                   multiline
                   maxLength={300}
                 />
+
                 <View style={{ flexDirection: "row", gap: 12, marginTop: 24 }}>
                   <TouchableOpacity
                     style={[
-                      styles.actionBtn,
-                      { flex: 1, backgroundColor: "#ff3b30" },
+                      upload.actionBtn,
+                      { flex: 1, backgroundColor: V.danger },
                     ]}
                     onPress={() => {
                       setMediaUri(null);
@@ -1262,29 +1066,32 @@ export function UploadModal({
                     disabled={uploading}
                   >
                     <Ionicons name="trash-outline" size={22} color="#fff" />
-                    <Text style={styles.actionBtnText}>Obriši</Text>
+                    <Text style={upload.actionBtnText}>Obriši</Text>
                   </TouchableOpacity>
                   <TouchableOpacity
                     style={[
-                      styles.actionBtn,
+                      upload.actionBtn,
                       {
                         flex: 1,
-                        backgroundColor: uploading ? "#a0aec0" : "#2D6418",
+                        backgroundColor: uploading
+                          ? V.borderDim
+                          : V.forestLight,
+                        borderColor: uploading ? V.borderDim : V.borderGreen,
                       },
                     ]}
                     onPress={uploadMedia}
                     disabled={uploading}
                   >
                     {uploading ? (
-                      <ActivityIndicator color="#fff" />
+                      <ActivityIndicator color={V.silverBright} />
                     ) : (
                       <>
                         <Ionicons
                           name="cloud-upload-outline"
                           size={22}
-                          color="#fff"
+                          color={V.silverBright}
                         />
-                        <Text style={styles.actionBtnText}>Objavi</Text>
+                        <Text style={upload.actionBtnText}>Objavi</Text>
                       </>
                     )}
                   </TouchableOpacity>
@@ -1335,7 +1142,6 @@ export default function VideosScreen() {
     loadVideos();
   }, []);
 
-  // ── LIKE ──
   const handleLikeToggle = async (videoId: number) => {
     const token = await AsyncStorage.getItem("token");
     setVideos((prev) =>
@@ -1361,7 +1167,6 @@ export default function VideosScreen() {
         body: JSON.stringify({ videoId }),
       });
       if (!res.ok) throw new Error();
-
       await fetch(`${API_BASE_URL}/api/activity/track/like`, {
         method: "POST",
         headers: { Authorization: `Bearer ${token}` },
@@ -1383,20 +1188,15 @@ export default function VideosScreen() {
     }
   };
 
-  // ── BOX / SAVE (FIX: use correct save/unsave endpoints) ──
   const handleSaveToggle = async (videoId: number) => {
     const token = await AsyncStorage.getItem("token");
     const video = videos.find((v) => v.id === videoId);
     if (!video) return;
-
-    // Optimistički update
     setVideos((prev) =>
       prev.map((v) => (v.id === videoId ? { ...v, isSaved: !v.isSaved } : v)),
     );
-
     try {
       if (!video.isSaved) {
-        // Spremi video u Box
         const res = await fetch(`${API_BASE_URL}/api/savedvideo/save`, {
           method: "POST",
           headers: {
@@ -1405,9 +1205,8 @@ export default function VideosScreen() {
           },
           body: JSON.stringify({ videoId }),
         });
-        if (!res.ok) throw new Error(`Save failed: ${res.status}`);
+        if (!res.ok) throw new Error();
       } else {
-        // Ukloni iz Boxa
         const userId = await AsyncStorage.getItem("userId");
         const res = await fetch(
           `${API_BASE_URL}/api/savedvideo/unsave?videoId=${videoId}&userId=${userId}`,
@@ -1416,11 +1215,9 @@ export default function VideosScreen() {
             headers: { Authorization: `Bearer ${token}` },
           },
         );
-        if (!res.ok) throw new Error(`Unsave failed: ${res.status}`);
+        if (!res.ok) throw new Error();
       }
-    } catch (e) {
-      console.error("Box toggle error:", e);
-      // Vrati na staro
+    } catch {
       setVideos((prev) =>
         prev.map((v) => (v.id === videoId ? { ...v, isSaved: !v.isSaved } : v)),
       );
@@ -1428,22 +1225,17 @@ export default function VideosScreen() {
     }
   };
 
-  // ── WISHLIST ──
   const handleWishlistToggle = async (videoId: number) => {
     const token = await AsyncStorage.getItem("token");
     const video = videos.find((v) => v.id === videoId);
     if (!video) return;
-
-    // Optimistički update
     setVideos((prev) =>
       prev.map((v) =>
         v.id === videoId ? { ...v, isInWishlist: !v.isInWishlist } : v,
       ),
     );
-
     try {
       if (!video.isInWishlist) {
-        // Dodaj u wishlist - koristi ispravan endpoint
         const res = await fetch(`${API_BASE_URL}/api/wishlistvideo/add`, {
           method: "POST",
           headers: {
@@ -1452,16 +1244,8 @@ export default function VideosScreen() {
           },
           body: JSON.stringify({ videoId, notes: "" }),
         });
-
-        if (!res.ok) {
-          const error = await res.text();
-          console.error("Add to wishlist error:", error);
-          throw new Error(error);
-        }
-
-        console.log("Video added to wishlist successfully");
+        if (!res.ok) throw new Error();
       } else {
-        // Ukloni iz wishlist - koristi ispravan endpoint
         const userId = await AsyncStorage.getItem("userId");
         const res = await fetch(
           `${API_BASE_URL}/api/wishlistvideo/remove?userId=${userId}&videoId=${videoId}`,
@@ -1470,18 +1254,9 @@ export default function VideosScreen() {
             headers: { Authorization: `Bearer ${token}` },
           },
         );
-
-        if (!res.ok) {
-          const error = await res.text();
-          console.error("Remove from wishlist error:", error);
-          throw new Error(error);
-        }
-
-        console.log("Video removed from wishlist successfully");
+        if (!res.ok) throw new Error();
       }
-    } catch (error) {
-      console.error("Wishlist toggle error:", error);
-      // Vrati na staro ako je greška
+    } catch {
       setVideos((prev) =>
         prev.map((v) =>
           v.id === videoId ? { ...v, isInWishlist: !v.isInWishlist } : v,
@@ -1491,7 +1266,6 @@ export default function VideosScreen() {
     }
   };
 
-  // ── DOWNLOAD ──
   const handleDownload = async (video: VideoItem) => {
     const { status } = await MediaLibrary.requestPermissionsAsync();
     if (status !== "granted") {
@@ -1513,7 +1287,6 @@ export default function VideosScreen() {
     }
   };
 
-  // ── DELETE ──
   const handleDeleteVideo = async (videoId: number) => {
     Alert.alert(t("videos.deleteConfirm"), t("videos.deleteConfirmQuestion"), [
       { text: t("common.cancel"), style: "cancel" },
@@ -1544,15 +1317,15 @@ export default function VideosScreen() {
 
   if (loading)
     return (
-      <View style={styles.centerContainer}>
-        <ActivityIndicator size="large" color="#2D6418" />
+      <View style={vs.centerContainer}>
+        <ActivityIndicator size="large" color={V.visited} />
       </View>
     );
 
   return (
-    <View style={styles.container}>
+    <View style={vs.container}>
       <TouchableOpacity
-        style={styles.addButton}
+        style={vs.addButton}
         onPress={() => setShowUploadModal(true)}
       >
         <Ionicons name="add" size={32} color="white" />
@@ -1607,40 +1380,14 @@ export default function VideosScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+// ─── Video screen stilovi ──────────────────────────────────────────────────────
+const vs = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#000" },
   centerContainer: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
     backgroundColor: "#000",
-  },
-  commentUser: {
-    fontWeight: "600",
-    fontSize: 14,
-    color: "#333",
-    marginBottom: 4,
-  },
-  emptyComments: {
-    flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 12,
-  },
-  emptyCommentsText: {
-    fontSize: 16,
-    color: "#bbb",
-    textAlign: "center",
-  },
-  commentAvatar: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  commentContent: {
-    flex: 1,
   },
   videoContainer: {
     width,
@@ -1679,7 +1426,7 @@ const styles = StyleSheet.create({
     position: "absolute",
     top: Platform.OS === "ios" ? 56 : 40,
     right: 16,
-    backgroundColor: "#2D6418",
+    backgroundColor: V.forestLight,
     width: 48,
     height: 48,
     borderRadius: 24,
@@ -1687,95 +1434,220 @@ const styles = StyleSheet.create({
     alignItems: "center",
     zIndex: 10,
     elevation: 5,
+    borderWidth: 1.5,
+    borderColor: V.borderGreen,
   },
-  modalHeader: {
+});
+
+// ─── Modal stilovi — VARA tema ─────────────────────────────────────────────────
+const modal = StyleSheet.create({
+  // ── Standardni centered header (Upload modal) ──
+  header: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    padding: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: "#eee",
+    paddingHorizontal: 16,
+    paddingTop: 20, // spušten prema dolje
+    paddingBottom: 16,
+    borderBottomWidth: 1.5,
+    borderBottomColor: V.borderGreen,
+    backgroundColor: V.forestDeep,
   },
-  modalTitle: { fontSize: 17, fontWeight: "600", color: "#333" },
-  commentItem: { flexDirection: "row", marginVertical: 10, gap: 10 },
+  title: { fontSize: 17, fontWeight: "700", color: V.silverBright },
 
-  commentText: { fontSize: 14, color: "#555", marginBottom: 2 },
-  commentDate: { fontSize: 11, color: "#999" },
-  emptyText: {
-    textAlign: "center",
-    color: "#999",
-    marginTop: 40,
-    fontSize: 15,
+  // ── Split header: naslov lijevo, "Zatvori" desno — za Komentare, Poruke i Dijeli ──
+  headerSplit: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingHorizontal: 20,
+    paddingTop: 36, // dodatno spušten prema dolje
+    paddingBottom: 16,
+    borderBottomWidth: 1.5,
+    borderBottomColor: V.borderGreen,
+    backgroundColor: V.forestDeep,
   },
+  headerLeftTitle: {
+    fontSize: 20,
+    fontWeight: "700",
+    color: V.silverBright,
+  },
+  // "Zatvori" tekst gumb
+  closeBtnText: {
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 16,
+    backgroundColor: V.forestMid,
+    borderWidth: 1,
+    borderColor: V.borderGreen,
+  },
+  closeBtnLabel: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: V.silverDim,
+  },
+  // stari closeBtn (ostavljen radi kompatibilnosti)
+  closeBtn: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: V.forestMid,
+    borderWidth: 1,
+    borderColor: V.borderGreen,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+
+  // Empty state
+  emptyIconWrap: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: V.forestMid,
+    borderWidth: 1.5,
+    borderColor: V.borderGreen,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  emptyText: { fontSize: 16, color: V.silverDim, textAlign: "center" },
+
+  // Comments
+  commentRow: {
+    flexDirection: "row",
+    marginBottom: 16,
+    gap: 12,
+    paddingBottom: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: V.borderDim,
+    alignItems: "flex-start",
+  },
+  commentUser: {
+    fontSize: 14,
+    fontWeight: "700",
+    color: V.silver,
+    marginBottom: 4,
+  },
+  commentText: {
+    fontSize: 14,
+    color: V.silverDim,
+    lineHeight: 20,
+    marginBottom: 4,
+  },
+  commentDate: { fontSize: 11, color: V.silverDim },
+
+  // Input row
   inputRow: {
     flexDirection: "row",
     padding: 12,
-    borderTopWidth: 1,
-    borderTopColor: "#eee",
-    backgroundColor: "white",
-    alignItems: "flex-end",
     gap: 8,
+    alignItems: "flex-end",
+    borderTopWidth: 1.5,
+    borderTopColor: V.borderGreen,
+    backgroundColor: V.forestDeep,
   },
   textInput: {
     flex: 1,
-    backgroundColor: "#f5f5f5",
+    backgroundColor: V.forestMid,
     borderRadius: 20,
+    borderWidth: 1,
+    borderColor: V.borderGreen,
     paddingHorizontal: 16,
     paddingVertical: 10,
     maxHeight: 100,
     fontSize: 15,
-    color: "#333",
+    color: V.silverBright,
   },
   sendBtn: {
-    backgroundColor: "#2D6418",
     width: 42,
     height: 42,
     borderRadius: 21,
+    backgroundColor: V.forestLight,
+    borderWidth: 1.5,
+    borderColor: V.borderGreen,
     justifyContent: "center",
     alignItems: "center",
+    flexShrink: 0,
   },
-  sendBtnDisabled: { backgroundColor: "#ccc" },
-  recipientCard: {
+  sendBtnDisabled: { backgroundColor: V.borderDim, borderColor: V.borderDim },
+
+  // Recipient row (Messenger fullscreen)
+  recipientRow: {
     flexDirection: "row",
     alignItems: "center",
-    padding: 16,
-    backgroundColor: "#f8f8ff",
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: "#e0e0ff",
-  },
-  recipientName: { fontSize: 15, fontWeight: "600", color: "#333" },
-  recipientSub: { fontSize: 13, color: "#666", marginTop: 2 },
-  searchInput: {
-    backgroundColor: "#f5f5f5",
-    borderRadius: 12,
     paddingHorizontal: 16,
-    paddingVertical: 10,
-    fontSize: 15,
-    color: "#333",
-    marginBottom: 8,
+    paddingVertical: 14,
+    borderBottomWidth: 1,
+    borderBottomColor: V.borderDim,
   },
+  recipientName: { fontSize: 15, fontWeight: "700", color: V.silverBright },
+  recipientSub: { fontSize: 13, color: V.silverDim, marginTop: 2 },
+
+  // Quick replies
+  quickRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 8,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+  },
+  quickChip: {
+    backgroundColor: V.forestMid,
+    borderRadius: 16,
+    paddingHorizontal: 12,
+    paddingVertical: 7,
+    borderWidth: 1,
+    borderColor: V.borderGreen,
+  },
+  quickText: { fontSize: 13, color: V.silver, fontWeight: "600" },
+
+  // Share — search bar + user row
+  searchBar: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: V.forestMid,
+    borderRadius: 12,
+    borderWidth: 1.5,
+    borderColor: V.borderGreen,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+  },
+  searchInput: { flex: 1, fontSize: 15, color: V.silverBright },
   userRow: {
     flexDirection: "row",
     alignItems: "center",
     paddingVertical: 12,
     borderBottomWidth: 1,
-    borderBottomColor: "#f0f0f0",
+    borderBottomColor: V.borderDim,
   },
+  shareIconWrap: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    backgroundColor: V.forestMid,
+    borderWidth: 1,
+    borderColor: V.borderGreen,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+});
+
+// ─── Upload modal stilovi — VARA ───────────────────────────────────────────────
+const upload = StyleSheet.create({
   pickContainer: { alignItems: "center", gap: 20, paddingTop: 40 },
-  pickHint: { fontSize: 18, color: "#666", marginBottom: 8 },
+  pickHint: { fontSize: 18, color: V.silverDim, marginBottom: 8 },
   pickBtn: {
     width: "80%",
     alignItems: "center",
     padding: 24,
     borderRadius: 16,
     borderWidth: 2,
-    borderColor: "#2D6418",
+    borderColor: V.borderGreen,
     borderStyle: "dashed",
     gap: 8,
+    backgroundColor: V.forestMid,
   },
-  pickBtnText: { fontSize: 16, color: "#2D6418", fontWeight: "600" },
-  pickBtnSub: { fontSize: 13, color: "#999" },
+  pickBtnText: { fontSize: 16, color: V.visited, fontWeight: "600" },
+  pickBtnSub: { fontSize: 13, color: V.silverDim },
   previewContainer: { position: "relative", marginBottom: 20 },
   previewMedia: { width: "100%", height: 260, borderRadius: 12 },
   mediaTypeBadge: {
@@ -1804,20 +1676,20 @@ const styles = StyleSheet.create({
   },
   fieldLabel: {
     fontSize: 14,
-    fontWeight: "500",
-    color: "#333",
+    fontWeight: "600",
+    color: V.silver,
     marginBottom: 6,
     marginTop: 12,
   },
   fieldInput: {
-    backgroundColor: "#f5f5f5",
+    backgroundColor: V.forestMid,
     borderRadius: 12,
     paddingHorizontal: 16,
     paddingVertical: 12,
     fontSize: 15,
-    color: "#333",
+    color: V.silverBright,
     borderWidth: 1,
-    borderColor: "#e0e0e0",
+    borderColor: V.borderGreen,
   },
   actionBtn: {
     flexDirection: "row",
@@ -1826,13 +1698,8 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     paddingVertical: 16,
     gap: 8,
+    borderWidth: 1.5,
+    borderColor: V.borderGreen,
   },
-  userAvatar: {
-    // ← DODANO
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-  },
-
-  actionBtnText: { color: "#fff", fontSize: 16, fontWeight: "600" },
+  actionBtnText: { color: V.silverBright, fontSize: 16, fontWeight: "600" },
 });

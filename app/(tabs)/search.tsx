@@ -1,4 +1,4 @@
-// app/(tabs)/search.tsx
+// app/(tabs)/search.tsx — VARA tema
 import { Ionicons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { router } from "expo-router";
@@ -21,9 +21,22 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { StoryBadge } from "../../app/StoryBadge";
-import { useTheme } from "../../components/AdaptiveThemeProvider";
-import UserAvatar from "../../components/UserAvatar";
 import { API_BASE_URL, API_ENDPOINTS } from "../config/api";
+
+// ─── VARA Paleta ───────────────────────────────────────────────────────────────
+const V = {
+  forestDeep: "#1A2E15",
+  forestMid: "#243B1E",
+  forestLight: "#2D5518",
+  borderGreen: "#4A7040",
+  borderDim: "#304A28",
+  silver: "#C4CABC",
+  silverBright: "#E8EDE4",
+  silverDim: "#8A9486",
+  accentGold: "#B8A060",
+  visited: "#5A8A48",
+  danger: "#8B3030",
+} as const;
 
 interface User {
   id: number;
@@ -37,7 +50,69 @@ interface User {
   isFollowing?: boolean;
 }
 
-// ── Compose Message Modal ──────────────────────────────────────────────────────
+// ─── Helper: ispravna URL konstrukcija avatara ─────────────────────────────────
+function buildAvatarUrl(avatar: string | null | undefined): string | null {
+  if (!avatar) return null;
+  if (avatar.startsWith("http://") || avatar.startsWith("https://"))
+    return avatar;
+  const path = avatar.startsWith("/") ? avatar : `/${avatar}`;
+  return `${API_BASE_URL}${path}`;
+}
+
+// ─── Avatar s fallback inicijalima ────────────────────────────────────────────
+function VaraAvatar({
+  avatar,
+  firstName,
+  lastName,
+  size,
+}: {
+  avatar?: string | null;
+  firstName: string;
+  lastName: string;
+  size: number;
+}) {
+  const [failed, setFailed] = useState(false);
+  const url = buildAvatarUrl(avatar);
+  const initials =
+    `${firstName?.[0] ?? ""}${lastName?.[0] ?? ""}`.toUpperCase();
+  const r = size / 2;
+
+  if (url && !failed) {
+    return (
+      <Image
+        source={{ uri: url }}
+        style={{ width: size, height: size, borderRadius: r }}
+        onError={() => setFailed(true)}
+      />
+    );
+  }
+  return (
+    <View
+      style={{
+        width: size,
+        height: size,
+        borderRadius: r,
+        backgroundColor: V.forestLight,
+        borderWidth: 1.5,
+        borderColor: V.borderGreen,
+        justifyContent: "center",
+        alignItems: "center",
+      }}
+    >
+      <Text
+        style={{
+          color: V.silverBright,
+          fontSize: size * 0.36,
+          fontWeight: "700",
+        }}
+      >
+        {initials || "?"}
+      </Text>
+    </View>
+  );
+}
+
+// ─── Compose Message Modal — VARA stil ────────────────────────────────────────
 function ComposeMessageModal({
   visible,
   recipient,
@@ -48,7 +123,6 @@ function ComposeMessageModal({
   onClose: () => void;
 }) {
   const { t } = useTranslation();
-  const { colors, isDark } = useTheme();
   const [message, setMessage] = useState("");
   const [sending, setSending] = useState(false);
 
@@ -90,13 +164,10 @@ function ComposeMessageModal({
     setMessage("");
     onClose();
   };
-
   if (!recipient) return null;
 
   const firstName = recipient.firstname || recipient.firstName || "";
   const lastName = recipient.lastname || recipient.lastName || "";
-  const initials =
-    `${firstName?.[0] || ""}${lastName?.[0] || ""}`.toUpperCase();
 
   return (
     <Modal
@@ -106,28 +177,19 @@ function ComposeMessageModal({
       onRequestClose={handleClose}
     >
       <KeyboardAvoidingView
-        style={{ flex: 1, backgroundColor: colors.background }}
+        style={{ flex: 1, backgroundColor: V.forestDeep }}
         behavior={Platform.OS === "ios" ? "padding" : "height"}
       >
         <SafeAreaView
-          style={{ flex: 1, backgroundColor: colors.background }}
+          style={{ flex: 1, backgroundColor: V.forestDeep }}
           edges={["top"]}
         >
-          <View
-            style={[
-              cs.header,
-              {
-                backgroundColor: colors.background,
-                borderBottomColor: colors.border,
-              },
-            ]}
-          >
+          {/* Header */}
+          <View style={cs.header}>
             <TouchableOpacity onPress={handleClose}>
-              <Ionicons name="close" size={28} color={colors.text} />
+              <Ionicons name="close" size={28} color={V.silver} />
             </TouchableOpacity>
-            <Text style={[cs.title, { color: colors.text }]}>
-              {t("search.sendMessage")}
-            </Text>
+            <Text style={cs.title}>{t("search.sendMessage")}</Text>
             <TouchableOpacity
               style={[
                 cs.sendHeaderBtn,
@@ -137,44 +199,33 @@ function ComposeMessageModal({
               disabled={!message.trim() || sending}
             >
               {sending ? (
-                <ActivityIndicator size="small" color="#fff" />
+                <ActivityIndicator size="small" color={V.silverBright} />
               ) : (
                 <Text style={cs.sendHeaderBtnText}>{t("search.sendBtn")}</Text>
               )}
             </TouchableOpacity>
           </View>
 
-          <View style={[cs.recipientRow, { borderBottomColor: colors.border }]}>
-            <Text style={[cs.toLabel, { color: colors.textSecondary }]}>
-              {t("search.messageTo")}
-            </Text>
-            <View
-              style={[
-                cs.recipientChip,
-                { backgroundColor: isDark ? "#1C2128" : "#f0f0ff" },
-              ]}
-            >
-              {recipient.avatar ? (
-                <Image
-                  source={{ uri: recipient.avatar }}
-                  style={cs.chipAvatar}
-                />
-              ) : (
-                <View style={[cs.chipAvatar, cs.chipAvatarPlaceholder]}>
-                  <Text style={cs.chipInitials}>{initials || "?"}</Text>
-                </View>
-              )}
-              <Text style={[cs.chipName, { color: colors.primary }]}>
-                @{recipient.username}
-              </Text>
+          {/* Primatelj */}
+          <View style={cs.recipientRow}>
+            <Text style={cs.toLabel}>{t("search.messageTo")}</Text>
+            <View style={cs.recipientChip}>
+              <VaraAvatar
+                avatar={recipient.avatar}
+                firstName={firstName}
+                lastName={lastName}
+                size={28}
+              />
+              <Text style={cs.chipName}>@{recipient.username}</Text>
             </View>
           </View>
 
+          {/* Input */}
           <View style={cs.inputArea}>
             <TextInput
-              style={[cs.input, { color: colors.text }]}
+              style={cs.input}
               placeholder={t("search.messagePlaceholder", { name: firstName })}
-              placeholderTextColor={colors.textSecondary}
+              placeholderTextColor={V.silverDim}
               value={message}
               onChangeText={setMessage}
               multiline
@@ -182,36 +233,21 @@ function ComposeMessageModal({
               autoFocus
               textAlignVertical="top"
             />
-            <Text style={[cs.counter, { color: colors.textSecondary }]}>
-              {message.length}/1000
-            </Text>
+            <Text style={cs.counter}>{message.length}/1000</Text>
           </View>
 
-          <View style={[cs.suggestions, { borderTopColor: colors.border }]}>
-            <Text
-              style={[cs.suggestionsLabel, { color: colors.textSecondary }]}
-            >
-              {t("search.quickMessages")}
-            </Text>
+          {/* Quick replies */}
+          <View style={cs.suggestions}>
+            <Text style={cs.suggestionsLabel}>{t("search.quickMessages")}</Text>
             <View style={cs.suggestionsList}>
               {["Hej! 👋", "Kako si?", "Vidimo se uskoro!", "Odlično! 🔥"].map(
                 (s) => (
                   <TouchableOpacity
                     key={s}
-                    style={[
-                      cs.suggestionChip,
-                      { backgroundColor: isDark ? "#1C2128" : "#f5f5f5" },
-                    ]}
+                    style={cs.suggestionChip}
                     onPress={() => setMessage(s)}
                   >
-                    <Text
-                      style={[
-                        cs.suggestionText,
-                        { color: colors.textSecondary },
-                      ]}
-                    >
-                      {s}
-                    </Text>
+                    <Text style={cs.suggestionText}>{s}</Text>
                   </TouchableOpacity>
                 ),
               )}
@@ -229,61 +265,78 @@ const cs = StyleSheet.create({
     justifyContent: "space-between",
     alignItems: "center",
     padding: 16,
-    borderBottomWidth: 1,
+    borderBottomWidth: 1.5,
+    borderBottomColor: V.borderGreen,
+    backgroundColor: V.forestDeep,
   },
-  title: { fontSize: 17, fontWeight: "600" },
+  title: { fontSize: 17, fontWeight: "700", color: V.silverBright },
   sendHeaderBtn: {
-    backgroundColor: "#2D6418",
+    backgroundColor: V.forestLight,
     paddingHorizontal: 16,
     paddingVertical: 8,
     borderRadius: 20,
     minWidth: 70,
     alignItems: "center",
+    borderWidth: 1,
+    borderColor: V.borderGreen,
   },
-  sendHeaderBtnDisabled: { backgroundColor: "#ccc" },
-  sendHeaderBtnText: { color: "#fff", fontWeight: "700", fontSize: 14 },
+  sendHeaderBtnDisabled: {
+    backgroundColor: V.borderDim,
+    borderColor: V.borderDim,
+  },
+  sendHeaderBtnText: { color: V.silverBright, fontWeight: "700", fontSize: 14 },
   recipientRow: {
     flexDirection: "row",
     alignItems: "center",
     padding: 16,
-    borderBottomWidth: 1,
     gap: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: V.borderDim,
+    backgroundColor: V.forestDeep,
   },
-  toLabel: { fontSize: 15, fontWeight: "600" },
+  toLabel: { fontSize: 15, fontWeight: "600", color: V.silverDim },
   recipientChip: {
     flexDirection: "row",
     alignItems: "center",
     borderRadius: 20,
     paddingHorizontal: 10,
     paddingVertical: 6,
-    gap: 6,
+    gap: 8,
+    backgroundColor: V.forestMid,
+    borderWidth: 1,
+    borderColor: V.borderGreen,
   },
-  chipAvatar: { width: 28, height: 28, borderRadius: 14 },
-  chipAvatarPlaceholder: {
-    backgroundColor: "#2D6418",
-    justifyContent: "center",
-    alignItems: "center",
+  chipName: { fontSize: 14, fontWeight: "600", color: V.visited },
+  inputArea: { flex: 1, padding: 16, backgroundColor: V.forestDeep },
+  input: { flex: 1, fontSize: 16, lineHeight: 24, color: V.silverBright },
+  counter: {
+    fontSize: 12,
+    textAlign: "right",
+    marginTop: 4,
+    color: V.silverDim,
   },
-  chipInitials: { color: "#fff", fontSize: 11, fontWeight: "700" },
-  chipName: { fontSize: 14, fontWeight: "600" },
-  inputArea: { flex: 1, padding: 16 },
-  input: { flex: 1, fontSize: 16, lineHeight: 24 },
-  counter: { fontSize: 12, textAlign: "right", marginTop: 4 },
-  suggestions: { padding: 16, borderTopWidth: 1 },
-  suggestionsLabel: { fontSize: 13, marginBottom: 10 },
+  suggestions: {
+    padding: 16,
+    borderTopWidth: 1,
+    borderTopColor: V.borderDim,
+    backgroundColor: V.forestMid,
+  },
+  suggestionsLabel: { fontSize: 13, marginBottom: 10, color: V.silverDim },
   suggestionsList: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
   suggestionChip: {
     borderRadius: 16,
-    paddingHorizontal: 12,
-    paddingVertical: 7,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    backgroundColor: V.forestLight,
+    borderWidth: 1,
+    borderColor: V.borderGreen,
   },
-  suggestionText: { fontSize: 13 },
+  suggestionText: { fontSize: 13, color: V.silver, fontWeight: "600" },
 });
 
-// ── Main Search Screen ─────────────────────────────────────────────────────────
+// ─── Main Search Screen ────────────────────────────────────────────────────────
 export default function SearchScreen() {
   const { t } = useTranslation();
-  const { colors, isDark } = useTheme();
   const [query, setQuery] = useState("");
   const [users, setUsers] = useState<User[]>([]);
   const [filtered, setFiltered] = useState<User[]>([]);
@@ -314,7 +367,6 @@ export default function SearchScreen() {
         setUsers(others);
         setFiltered(others);
       }
-
       try {
         const followRes = await fetch(
           `${API_BASE_URL}/api/follow/following/${parsedId}`,
@@ -330,9 +382,7 @@ export default function SearchScreen() {
           });
           setFollowingMap(map);
         }
-      } catch (error) {
-        console.error("Error loading following list:", error);
-      }
+      } catch {}
     } catch (e) {
       if (!silent) Alert.alert(t("common.error"), t("search.loadFailed"));
     } finally {
@@ -372,31 +422,21 @@ export default function SearchScreen() {
     const isFollowing = followingMap[userId];
     setLoadingFollow((p) => ({ ...p, [userId]: true }));
     setFollowingMap((p) => ({ ...p, [userId]: !isFollowing }));
-
     try {
-      let res: Response;
-      if (isFollowing) {
-        res = await fetch(`${API_BASE_URL}/api/follow/${userId}`, {
-          method: "DELETE",
-          headers: { Authorization: `Bearer ${token}` },
-        });
-      } else {
-        res = await fetch(`${API_BASE_URL}/api/follow/${userId}`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-        });
-      }
-
-      if (!res.ok) {
-        const errText = await res.text();
-        console.error("Follow error:", res.status, errText);
-        throw new Error(`Status ${res.status}`);
-      }
-    } catch (e) {
-      console.error("Follow/unfollow failed:", e);
+      const res = isFollowing
+        ? await fetch(`${API_BASE_URL}/api/follow/${userId}`, {
+            method: "DELETE",
+            headers: { Authorization: `Bearer ${token}` },
+          })
+        : await fetch(`${API_BASE_URL}/api/follow/${userId}`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${token}`,
+            },
+          });
+      if (!res.ok) throw new Error(`Status ${res.status}`);
+    } catch {
       setFollowingMap((p) => ({ ...p, [userId]: isFollowing }));
       Alert.alert(t("common.error"), t("search.followFailed"));
     } finally {
@@ -404,83 +444,63 @@ export default function SearchScreen() {
     }
   };
 
-  const handleOpenCompose = (user: User) => {
-    setComposeTarget(user);
-    setShowCompose(true);
-  };
-
-  const handleViewProfile = (user: User) => {
-    router.push({
-      pathname: "/profile/[userId]",
-      params: { userId: user.id.toString() },
-    } as any);
-  };
-
   const renderUser = ({ item }: { item: User }) => {
     const firstName = item.firstname || item.firstName || "";
     const lastName = item.lastname || item.lastName || "";
-
     const isFollowing = followingMap[item.id] || false;
     const isLoadingThis = loadingFollow[item.id] || false;
 
     return (
-      <View style={[styles.userCard, { borderBottomColor: colors.border }]}>
-        <TouchableOpacity
-          style={styles.avatarContainer}
-          onPress={() => handleViewProfile(item)}
-        >
-          <StoryBadge userId={item.id} size={54}>
-            <UserAvatar
-              avatar={item.avatar}
-              firstName={firstName}
-              lastName={lastName}
-              size={54}
-            />
-          </StoryBadge>
-        </TouchableOpacity>
+      <TouchableOpacity
+        style={styles.userCard}
+        onPress={() =>
+          router.push({
+            pathname: "/profile/[userId]",
+            params: { userId: item.id.toString() },
+          } as any)
+        }
+        activeOpacity={0.75}
+      >
+        {/* Avatar s prstenom za story */}
+        <StoryBadge userId={item.id} size={54}>
+          <VaraAvatar
+            avatar={item.avatar}
+            firstName={firstName}
+            lastName={lastName}
+            size={54}
+          />
+        </StoryBadge>
 
-        <TouchableOpacity
-          style={styles.userInfo}
-          onPress={() => handleViewProfile(item)}
-        >
-          <Text style={[styles.userName, { color: colors.text }]}>
+        {/* Info */}
+        <View style={styles.userInfo}>
+          <Text style={styles.userName} numberOfLines={1}>
             {firstName} {lastName}
           </Text>
-          <Text style={[styles.userUsername, { color: colors.primary }]}>
-            @{item.username}
-          </Text>
+          <Text style={styles.userUsername}>@{item.username}</Text>
           {item.followersCount !== undefined && (
-            <Text
-              style={[styles.followersCount, { color: colors.textSecondary }]}
-            >
+            <Text style={styles.followersCount}>
               {t("search.followers", { count: item.followersCount })}
             </Text>
           )}
-        </TouchableOpacity>
+        </View>
 
+        {/* Akcije */}
         <View style={styles.actions}>
           <TouchableOpacity
-            style={[
-              styles.followBtn,
-              isFollowing && styles.followingBtn,
-              isFollowing && { borderColor: colors.primary },
-            ]}
+            style={[styles.followBtn, isFollowing && styles.followingBtn]}
             onPress={() => handleFollow(item.id)}
             disabled={isLoadingThis}
           >
             {isLoadingThis ? (
               <ActivityIndicator
                 size="small"
-                color={isFollowing ? colors.primary : "#fff"}
+                color={isFollowing ? V.visited : V.silverBright}
               />
             ) : (
               <Text
                 style={[
                   styles.followBtnText,
-                  isFollowing && [
-                    styles.followingBtnText,
-                    { color: colors.primary },
-                  ],
+                  isFollowing && styles.followingBtnText,
                 ]}
               >
                 {isFollowing ? t("search.following") : t("search.follow")}
@@ -489,79 +509,64 @@ export default function SearchScreen() {
           </TouchableOpacity>
 
           <TouchableOpacity
-            style={[
-              styles.msgBtn,
-              { backgroundColor: isDark ? "#1C2128" : "#f0f0ff" },
-            ]}
-            onPress={() => handleOpenCompose(item)}
+            style={styles.msgBtn}
+            onPress={() => {
+              setComposeTarget(item);
+              setShowCompose(true);
+            }}
           >
-            <Ionicons
-              name="paper-plane-outline"
-              size={18}
-              color={colors.primary}
-            />
+            <Ionicons name="paper-plane-outline" size={18} color={V.visited} />
           </TouchableOpacity>
         </View>
-      </View>
+      </TouchableOpacity>
     );
   };
 
   return (
-    <SafeAreaView
-      style={[styles.safeArea, { backgroundColor: colors.background }]}
-      edges={["top"]}
-    >
-      <View style={[styles.container, { backgroundColor: colors.background }]}>
-        <View style={[styles.header, { borderBottomColor: colors.border }]}>
-          <Text style={[styles.headerTitle, { color: colors.text }]}>
-            {t("search.title")}
-          </Text>
+    <SafeAreaView style={styles.safeArea} edges={["top"]}>
+      <View style={styles.container}>
+        {/* Header */}
+        <View style={styles.header}>
+          <Text style={styles.headerTitle}>{t("search.title")}</Text>
         </View>
 
-        <View
-          style={[
-            styles.searchBar,
-            { backgroundColor: isDark ? "#1C2128" : "#f5f5f5" },
-          ]}
-        >
-          <Ionicons
-            name="search-outline"
-            size={18}
-            color={colors.textSecondary}
-          />
-          <TextInput
-            style={[styles.searchInput, { color: colors.text }]}
-            placeholder={t("search.placeholder")}
-            placeholderTextColor={colors.textSecondary}
-            value={query}
-            onChangeText={setQuery}
-            autoCapitalize="none"
-            autoCorrect={false}
-            clearButtonMode="while-editing"
-          />
-          {query.length > 0 && (
-            <TouchableOpacity onPress={() => setQuery("")}>
-              <Ionicons
-                name="close-circle"
-                size={18}
-                color={colors.textSecondary}
-              />
-            </TouchableOpacity>
-          )}
+        {/* Search bar */}
+        <View style={styles.searchBarWrap}>
+          <View style={styles.searchBar}>
+            <Ionicons
+              name="search-outline"
+              size={18}
+              color={V.silverDim}
+              style={{ marginRight: 8 }}
+            />
+            <TextInput
+              style={styles.searchInput}
+              placeholder={t("search.placeholder")}
+              placeholderTextColor={V.silverDim}
+              value={query}
+              onChangeText={setQuery}
+              autoCapitalize="none"
+              autoCorrect={false}
+            />
+            {query.length > 0 && (
+              <TouchableOpacity onPress={() => setQuery("")}>
+                <Ionicons name="close-circle" size={18} color={V.silverDim} />
+              </TouchableOpacity>
+            )}
+          </View>
         </View>
 
+        {/* Broj rezultata */}
         {!loading && query.length > 0 && (
-          <Text style={[styles.resultsInfo, { color: colors.textSecondary }]}>
+          <Text style={styles.resultsInfo}>
             {t("search.results", { count: filtered.length })}
           </Text>
         )}
 
         {loading ? (
           <View style={styles.center}>
-            <ActivityIndicator size="large" color={colors.primary} />
-            <Text style={[styles.loadingText, { color: colors.textSecondary }]}>
-              {t("search.loading")}
-            </Text>
+            <ActivityIndicator size="large" color={V.visited} />
+            <Text style={styles.loadingText}>{t("search.loading")}</Text>
           </View>
         ) : (
           <FlatList
@@ -579,27 +584,22 @@ export default function SearchScreen() {
                   setRefreshing(true);
                   loadData(true);
                 }}
-                tintColor={colors.primary}
+                tintColor={V.visited}
               />
             }
             ListEmptyComponent={
               <View style={styles.emptyContainer}>
-                <Ionicons
-                  name="people-outline"
-                  size={64}
-                  color={colors.textSecondary}
-                />
-                <Text
-                  style={[styles.emptyTitle, { color: colors.textSecondary }]}
-                >
+                <View style={styles.emptyIconWrap}>
+                  <Ionicons
+                    name="people-outline"
+                    size={44}
+                    color={V.borderGreen}
+                  />
+                </View>
+                <Text style={styles.emptyTitle}>
                   {query ? t("search.noResults") : t("search.noUsers")}
                 </Text>
-                <Text
-                  style={[
-                    styles.emptySubtitle,
-                    { color: colors.textSecondary },
-                  ]}
-                >
+                <Text style={styles.emptySubtitle}>
                   {query
                     ? t("search.noResultsDesc", { query })
                     : t("search.noUsersDesc")}
@@ -622,70 +622,124 @@ export default function SearchScreen() {
   );
 }
 
+// ─── Stilovi — VARA tema ───────────────────────────────────────────────────────
 const styles = StyleSheet.create({
-  safeArea: { flex: 1 },
-  container: { flex: 1 },
+  safeArea: { flex: 1, backgroundColor: V.forestDeep },
+  container: { flex: 1, backgroundColor: V.forestDeep },
+
+  // Header
   header: {
     paddingHorizontal: 20,
     paddingVertical: 16,
-    borderBottomWidth: 1,
+    borderBottomWidth: 1.5,
+    borderBottomColor: V.borderGreen,
+    backgroundColor: V.forestDeep,
   },
-  headerTitle: { fontSize: 28, fontWeight: "bold" },
+  headerTitle: { fontSize: 28, fontWeight: "bold", color: V.silverBright },
+
+  // Search bar
+  searchBarWrap: { paddingHorizontal: 16, paddingVertical: 12 },
   searchBar: {
     flexDirection: "row",
     alignItems: "center",
+    backgroundColor: V.forestMid,
     borderRadius: 12,
-    marginHorizontal: 16,
-    marginVertical: 12,
+    borderWidth: 1.5,
+    borderColor: V.borderGreen,
     paddingHorizontal: 14,
     paddingVertical: 10,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    elevation: 4,
   },
-  searchInput: { flex: 1, fontSize: 16 },
-  resultsInfo: { fontSize: 13, paddingHorizontal: 20, marginBottom: 4 },
-  listContent: { paddingHorizontal: 16, paddingBottom: 100 },
+  searchInput: { flex: 1, fontSize: 15, color: V.silverBright },
+  resultsInfo: {
+    fontSize: 13,
+    paddingHorizontal: 20,
+    marginBottom: 4,
+    color: V.silverDim,
+  },
+
+  // List
+  listContent: { paddingHorizontal: 12, paddingBottom: 100 },
   emptyList: { flex: 1 },
+
+  // User card
   userCard: {
     flexDirection: "row",
     alignItems: "center",
     paddingVertical: 12,
-    borderBottomWidth: StyleSheet.hairlineWidth,
+    paddingHorizontal: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: V.borderDim,
+    backgroundColor: V.forestDeep,
+    gap: 12,
   },
-  avatarContainer: { marginRight: 12 },
-  userInfo: { flex: 1 },
-  userName: { fontSize: 15, fontWeight: "600", marginBottom: 2 },
-  userUsername: { fontSize: 13, marginBottom: 2 },
-  followersCount: { fontSize: 12 },
+
+  // User info
+  userInfo: { flex: 1, gap: 2 },
+  userName: { fontSize: 15, fontWeight: "700", color: V.silverBright },
+  userUsername: { fontSize: 13, color: V.visited },
+  followersCount: { fontSize: 12, color: V.silverDim, marginTop: 1 },
+
+  // Action buttons
   actions: { flexDirection: "row", alignItems: "center", gap: 8 },
   followBtn: {
-    backgroundColor: "#2D6418",
+    backgroundColor: V.forestLight,
     borderRadius: 20,
+    borderWidth: 1.5,
+    borderColor: V.borderGreen,
     paddingHorizontal: 14,
     paddingVertical: 7,
-    minWidth: 76,
+    minWidth: 78,
     alignItems: "center",
   },
   followingBtn: {
     backgroundColor: "transparent",
-    borderWidth: 1.5,
+    borderColor: V.visited,
   },
-  followBtnText: { color: "#fff", fontSize: 13, fontWeight: "600" },
-  followingBtnText: { fontWeight: "600" },
+  followBtnText: { color: V.silverBright, fontSize: 13, fontWeight: "600" },
+  followingBtnText: { color: V.visited },
   msgBtn: {
     width: 38,
     height: 38,
     borderRadius: 19,
     justifyContent: "center",
     alignItems: "center",
+    backgroundColor: V.forestMid,
+    borderWidth: 1,
+    borderColor: V.borderGreen,
   },
+
+  // Loading
   center: { flex: 1, justifyContent: "center", alignItems: "center", gap: 12 },
-  loadingText: { fontSize: 14 },
+  loadingText: { fontSize: 14, color: V.silverDim },
+
+  // Empty state
   emptyContainer: {
     flex: 1,
     alignItems: "center",
     justifyContent: "center",
     paddingTop: 80,
-    gap: 12,
+    gap: 14,
   },
-  emptyTitle: { fontSize: 18, fontWeight: "700" },
-  emptySubtitle: { fontSize: 14, textAlign: "center" },
+  emptyIconWrap: {
+    width: 88,
+    height: 88,
+    borderRadius: 44,
+    backgroundColor: V.forestMid,
+    borderWidth: 1.5,
+    borderColor: V.borderGreen,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  emptyTitle: { fontSize: 18, fontWeight: "700", color: V.silverDim },
+  emptySubtitle: {
+    fontSize: 14,
+    textAlign: "center",
+    color: V.silverDim,
+    paddingHorizontal: 32,
+  },
 });

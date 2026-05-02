@@ -28,6 +28,22 @@ import {
 } from "../../utils/messagesApi";
 import { API_BASE_URL } from "../config/api";
 
+// ─── VARA Paleta ───────────────────────────────────────────────────────────────
+const V = {
+  forestDeep: "#1A2E15",
+  forestMid: "#243B1E",
+  forestLight: "#2D5518",
+  borderGreen: "#4A7040",
+  borderDim: "#304A28",
+  silver: "#C4CABC",
+  silverBright: "#E8EDE4",
+  silverDim: "#8A9486",
+  accentGold: "#B8A060",
+  visited: "#5A8A48",
+  danger: "#8B3030",
+  overlay: "rgba(10,20,8,0.88)",
+} as const;
+
 // ─── Video Share Format ────────────────────────────────────────────────────────
 export const VIDEO_PREFIX = "__CROMAP_VIDEO__";
 
@@ -46,7 +62,7 @@ export function parseVideoMessage(content: string): VideoSharePayload | null {
   }
 }
 
-// ─── Video Bubble Component ────────────────────────────────────────────────────
+// ─── Video Bubble ──────────────────────────────────────────────────────────────
 const vbStyles = StyleSheet.create({
   container: {
     width: 240,
@@ -54,11 +70,10 @@ const vbStyles = StyleSheet.create({
     borderRadius: 12,
     overflow: "hidden",
     backgroundColor: "#000",
+    borderWidth: 1,
+    borderColor: V.borderGreen,
   },
-  video: {
-    width: "100%",
-    height: "100%",
-  },
+  video: { width: "100%", height: "100%" },
 });
 
 function VideoBubble({ url }: { url: string }) {
@@ -66,48 +81,44 @@ function VideoBubble({ url }: { url: string }) {
     p.loop = false;
     p.muted = false;
   });
-
   useEffect(() => {
     return () => {
       try {
         if (player) player.pause();
-      } catch (e) {
-        console.log("VideoPlayer already released");
-      }
+      } catch {}
     };
   }, []);
-
   return (
     <View style={vbStyles.container}>
       <VideoView
         player={player}
         style={vbStyles.video}
         contentFit="contain"
-        nativeControls={true}
+        nativeControls
       />
     </View>
   );
 }
 
-// ─── Image Bubble Component ────────────────────────────────────────────────────
-const ibStyles = StyleSheet.create({
-  container: {
-    width: 200,
-    height: 200,
-    borderRadius: 12,
-    overflow: "hidden",
-    backgroundColor: "#f0f0f0",
-  },
-  image: {
-    width: "100%",
-    height: "100%",
-  },
-});
-
+// ─── Image Bubble ──────────────────────────────────────────────────────────────
 function ImageBubble({ url }: { url: string }) {
   return (
-    <View style={ibStyles.container}>
-      <Image source={{ uri: url }} style={ibStyles.image} resizeMode="cover" />
+    <View
+      style={{
+        width: 200,
+        height: 200,
+        borderRadius: 12,
+        overflow: "hidden",
+        backgroundColor: V.forestMid,
+        borderWidth: 1,
+        borderColor: V.borderGreen,
+      }}
+    >
+      <Image
+        source={{ uri: url }}
+        style={{ width: "100%", height: "100%" }}
+        resizeMode="cover"
+      />
     </View>
   );
 }
@@ -122,12 +133,72 @@ function parseImageMessage(content: string): string | null {
   }
 }
 
-// ─── Helper funkcija za inicijale ─────────────────────────────────────────────
-const getInitials = (firstName?: string, lastName?: string) => {
-  const first = firstName?.[0] || "";
-  const last = lastName?.[0] || "";
-  return `${first}${last}`.toUpperCase();
-};
+// ─── Helper: ispravna konstrukcija avatar URL-a ────────────────────────────────
+function buildAvatarUrl(avatar: string | null | undefined): string | null {
+  if (!avatar) return null;
+  if (avatar.startsWith("http://") || avatar.startsWith("https://"))
+    return avatar;
+  // osiguraj da ima vodeću kosu crtu
+  const path = avatar.startsWith("/") ? avatar : `/${avatar}`;
+  return `${API_BASE_URL}${path}`;
+}
+
+// ─── Inicijali ────────────────────────────────────────────────────────────────
+const getInitials = (firstName?: string, lastName?: string) =>
+  `${firstName?.[0] ?? ""}${lastName?.[0] ?? ""}`.toUpperCase();
+
+// ─── Avatar komponenta s fallback-om ──────────────────────────────────────────
+function AvatarCircle({
+  avatarUrl,
+  initials,
+  size,
+  style,
+}: {
+  avatarUrl: string | null;
+  initials: string;
+  size: number;
+  style?: any;
+}) {
+  const [failed, setFailed] = useState(false);
+  const r = size / 2;
+
+  if (avatarUrl && !failed) {
+    return (
+      <Image
+        source={{ uri: avatarUrl }}
+        style={[{ width: size, height: size, borderRadius: r }, style]}
+        onError={() => setFailed(true)}
+      />
+    );
+  }
+  return (
+    <View
+      style={[
+        {
+          width: size,
+          height: size,
+          borderRadius: r,
+          backgroundColor: V.forestLight,
+          borderWidth: 1.5,
+          borderColor: V.borderGreen,
+          justifyContent: "center",
+          alignItems: "center",
+        },
+        style,
+      ]}
+    >
+      <Text
+        style={{
+          color: V.silverBright,
+          fontSize: size * 0.35,
+          fontWeight: "700",
+        }}
+      >
+        {initials || "?"}
+      </Text>
+    </View>
+  );
+}
 
 // ─── Chat Screen ───────────────────────────────────────────────────────────────
 export default function ChatScreen() {
@@ -135,15 +206,13 @@ export default function ChatScreen() {
     userId: string;
     name?: string;
   }>();
-
   const otherUserId = parseInt(userId ?? "0", 10);
   const displayName = name ?? `User_${userId}`;
 
-  // State za korisničke podatke (ime, prezime, avatar)
   const [otherUserInfo, setOtherUserInfo] = useState<{
     firstName: string;
     lastName: string;
-    avatar: string | null;
+    avatarUrl: string | null;
   } | null>(null);
 
   const [messages, setMessages] = useState<Message[]>([]);
@@ -163,7 +232,7 @@ export default function ChatScreen() {
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const inputRef = useRef<TextInput>(null);
 
-  // Dohvati podatke o drugom korisniku (ime, prezime, avatar)
+  // ─── Dohvat info o drugom korisniku ─────────────────────────────────────────
   useEffect(() => {
     const fetchUserInfo = async () => {
       try {
@@ -176,29 +245,20 @@ export default function ChatScreen() {
         );
         if (res.ok) {
           const userData = await res.json();
-          let avatar = null;
-          if (userData.avatar) {
-            avatar = userData.avatar.startsWith("http")
-              ? userData.avatar
-              : `${API_BASE_URL}${userData.avatar}`;
-          }
           setOtherUserInfo({
             firstName: userData.firstName || "",
             lastName: userData.lastName || "",
-            avatar: avatar,
+            avatarUrl: buildAvatarUrl(userData.avatar),
           });
         }
-      } catch (error) {
-        console.error("Error fetching user info:", error);
+      } catch (e) {
+        console.error("Error fetching user info:", e);
       }
     };
-
-    if (otherUserId) {
-      fetchUserInfo();
-    }
+    if (otherUserId) fetchUserInfo();
   }, [otherUserId]);
 
-  // Funkcija za odabir medija
+  // ─── Odabir medija ───────────────────────────────────────────────────────────
   const pickMedia = async (source: "gallery" | "camera") => {
     const perm =
       source === "gallery"
@@ -208,19 +268,16 @@ export default function ChatScreen() {
       Alert.alert("Dozvola potrebna", "Dozvolite pristup za slanje medija");
       return;
     }
-
     const result =
       source === "gallery"
         ? await ImagePicker.launchImageLibraryAsync({
             mediaTypes: ["images", "videos"],
             quality: 0.8,
-            allowsEditing: false,
           })
         : await ImagePicker.launchCameraAsync({
             mediaTypes: ["images", "videos"],
             quality: 0.8,
           });
-
     if (!result.canceled && result.assets[0]) {
       const asset = result.assets[0];
       setMediaPreview({
@@ -231,25 +288,22 @@ export default function ChatScreen() {
     }
   };
 
-  // Funkcija za upload i slanje medija
+  // ─── Upload i slanje medija ──────────────────────────────────────────────────
   const sendMedia = async () => {
     if (!mediaPreview) return;
     setSendingMedia(true);
-
     try {
       const token = await AsyncStorage.getItem("token");
-      let userId = await AsyncStorage.getItem("userId");
-
-      if (!userId || userId === "0") {
+      let uid = await AsyncStorage.getItem("userId");
+      if (!uid || uid === "0") {
         try {
           const payload = JSON.parse(atob(token!.split(".")[1]));
-          userId =
+          uid =
             payload[
               "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier"
             ];
         } catch {}
       }
-
       const formData = new FormData();
       formData.append("Video", {
         uri: mediaPreview.uri,
@@ -260,33 +314,27 @@ export default function ChatScreen() {
       formData.append("Title", "Chat Media");
       formData.append("Location", "Chat");
       formData.append("Description", "");
-      formData.append("UserId", userId || "");
-
+      formData.append("UserId", uid || "");
       const uploadRes = await fetch(`${API_BASE_URL}/api/video/upload`, {
         method: "POST",
         headers: { Authorization: `Bearer ${token}` },
         body: formData,
       });
-
       if (!uploadRes.ok) throw new Error("Upload failed");
-
       const uploadData = await uploadRes.json();
       const mediaUrl = uploadData.videoUrl || uploadData.url;
-
       const mediaContent =
         mediaPreview.type === "video"
           ? `${VIDEO_PREFIX}${JSON.stringify({ id: Date.now(), title: "Video", url: mediaUrl })}`
           : `__CROMAP_IMAGE__${JSON.stringify({ url: mediaUrl })}`;
-
       const ok = await sendMessage(otherUserId, mediaContent);
-
       if (ok) {
         setMediaPreview(null);
         setShowMediaPreview(false);
         await loadMessages(true);
       }
-    } catch (error) {
-      console.error("Send media error:", error);
+    } catch (e) {
+      console.error("Send media error:", e);
       Alert.alert("Greška", "Nije moguće poslati medij");
     } finally {
       setSendingMedia(false);
@@ -303,7 +351,6 @@ export default function ChatScreen() {
           (a, b) => new Date(a.sentAt).getTime() - new Date(b.sentAt).getTime(),
         );
         setMessages(msgs);
-
         const unread = msgs.filter((m) => m.receiverId === myId && !m.isRead);
         unread.forEach((m) => markAsRead(m.id).catch(() => {}));
       } catch {
@@ -344,7 +391,6 @@ export default function ChatScreen() {
   const handleSend = async () => {
     const text = inputText.trim();
     if (!text || sending) return;
-
     const optimisticMsg: Message = {
       id: Date.now(),
       senderId: myId!,
@@ -356,7 +402,6 @@ export default function ChatScreen() {
     setMessages((prev) => [...prev, optimisticMsg]);
     setInputText("");
     setSending(true);
-
     try {
       const ok = await sendMessage(otherUserId, text);
       if (!ok) {
@@ -379,12 +424,11 @@ export default function ChatScreen() {
   const formatTime = (sentAt: string) => {
     const date = new Date(sentAt);
     const now = new Date();
-    if (date.toDateString() === now.toDateString()) {
+    if (date.toDateString() === now.toDateString())
       return date.toLocaleTimeString("hr-HR", {
         hour: "2-digit",
         minute: "2-digit",
       });
-    }
     return date.toLocaleDateString("hr-HR", {
       day: "2-digit",
       month: "2-digit",
@@ -418,7 +462,6 @@ export default function ChatScreen() {
       !prev ||
       new Date(item.sentAt).toDateString() !==
         new Date(prev.sentAt).toDateString();
-
     const prevSameSender =
       prev &&
       prev.senderId === item.senderId &&
@@ -426,7 +469,6 @@ export default function ChatScreen() {
         new Date(item.sentAt).getTime() - new Date(prev.sentAt).getTime(),
       ) <
         60 * 1000;
-
     const showTime =
       !messages[index + 1] ||
       messages[index + 1].senderId !== item.senderId ||
@@ -436,8 +478,7 @@ export default function ChatScreen() {
       ) >
         60 * 1000;
 
-    // Inicijali za drugog korisnika (ako nema avatar)
-    const userInitials = otherUserInfo
+    const initials = otherUserInfo
       ? getInitials(otherUserInfo.firstName, otherUserInfo.lastName)
       : (displayName?.[0]?.toUpperCase() ?? "?");
 
@@ -452,7 +493,6 @@ export default function ChatScreen() {
             <View style={styles.dateSepLine} />
           </View>
         )}
-
         <View
           style={[
             styles.msgRow,
@@ -460,16 +500,16 @@ export default function ChatScreen() {
             prevSameSender && { marginTop: 2 },
           ]}
         >
+          {/* Avatar za primljene poruke */}
           {!isMine && (
-            <View style={[styles.msgAvatar, prevSameSender && styles.hidden]}>
-              {otherUserInfo?.avatar ? (
-                <Image
-                  source={{ uri: otherUserInfo.avatar }}
-                  style={styles.msgAvatarImage}
-                />
-              ) : (
-                <Text style={styles.msgAvatarText}>{userInitials}</Text>
-              )}
+            <View
+              style={[styles.msgAvatarWrap, prevSameSender && styles.hidden]}
+            >
+              <AvatarCircle
+                avatarUrl={otherUserInfo?.avatarUrl ?? null}
+                initials={initials}
+                size={30}
+              />
             </View>
           )}
 
@@ -497,7 +537,6 @@ export default function ChatScreen() {
                 </Text>
               </View>
             )}
-
             {showTime && (
               <View
                 style={[
@@ -510,7 +549,7 @@ export default function ChatScreen() {
                   <Ionicons
                     name={item.isRead ? "checkmark-done" : "checkmark"}
                     size={12}
-                    color={item.isRead ? "#667eea" : "#bbb"}
+                    color={item.isRead ? V.visited : V.silverDim}
                     style={{ marginLeft: 3 }}
                   />
                 )}
@@ -522,7 +561,6 @@ export default function ChatScreen() {
     );
   };
 
-  // Inicijali za header
   const headerInitials = otherUserInfo
     ? getInitials(otherUserInfo.firstName, otherUserInfo.lastName)
     : (displayName?.[0]?.toUpperCase() ?? "?");
@@ -530,24 +568,17 @@ export default function ChatScreen() {
   // ─── UI ──────────────────────────────────────────────────────────────────────
   return (
     <SafeAreaView style={styles.safeArea} edges={["top", "bottom"]}>
-      {/* Header s avatarom */}
+      {/* ── Header ── */}
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
-          <Ionicons name="chevron-back" size={26} color="#333" />
+          <Ionicons name="chevron-back" size={26} color={V.silver} />
         </TouchableOpacity>
-
         <View style={styles.headerCenter}>
-          {otherUserInfo?.avatar ? (
-            <Image
-              source={{ uri: otherUserInfo.avatar }}
-              style={styles.headerAvatar}
-            />
-          ) : (
-            <View style={styles.headerAvatar}>
-              <Text style={styles.headerAvatarText}>{headerInitials}</Text>
-            </View>
-          )}
-
+          <AvatarCircle
+            avatarUrl={otherUserInfo?.avatarUrl ?? null}
+            initials={headerInitials}
+            size={40}
+          />
           <View>
             <Text style={styles.headerName} numberOfLines={1}>
               {displayName}
@@ -555,7 +586,6 @@ export default function ChatScreen() {
             <Text style={styles.headerStatus}>Aktivan korisnik</Text>
           </View>
         </View>
-
         <View style={{ width: 40 }} />
       </View>
 
@@ -577,7 +607,7 @@ export default function ChatScreen() {
       >
         {loading ? (
           <View style={styles.center}>
-            <ActivityIndicator size="large" color="#667eea" />
+            <ActivityIndicator size="large" color={V.visited} />
             <Text style={styles.loadingText}>Učitavanje razgovora...</Text>
           </View>
         ) : (
@@ -598,7 +628,7 @@ export default function ChatScreen() {
                 <Ionicons
                   name="chatbubble-ellipses-outline"
                   size={56}
-                  color="#e0e0e0"
+                  color={V.borderGreen}
                 />
                 <Text style={styles.emptyTitle}>Nema poruka</Text>
                 <Text style={styles.emptySubtitle}>
@@ -609,35 +639,32 @@ export default function ChatScreen() {
           />
         )}
 
+        {/* ── Input area ── */}
         <View style={styles.inputArea}>
           <TouchableOpacity
             style={styles.mediaBtn}
             onPress={() => pickMedia("gallery")}
             disabled={sendingMedia}
           >
-            <Ionicons name="images-outline" size={24} color="#667eea" />
+            <Ionicons name="images-outline" size={22} color={V.visited} />
           </TouchableOpacity>
-
           <TouchableOpacity
             style={styles.mediaBtn}
             onPress={() => pickMedia("camera")}
             disabled={sendingMedia}
           >
-            <Ionicons name="camera-outline" size={24} color="#667eea" />
+            <Ionicons name="camera-outline" size={22} color={V.visited} />
           </TouchableOpacity>
-
           <TextInput
             ref={inputRef}
             style={styles.textInput}
             placeholder={`Poruka za ${displayName}...`}
-            placeholderTextColor="#aaa"
+            placeholderTextColor={V.silverDim}
             value={inputText}
             onChangeText={setInputText}
             multiline
             maxLength={1000}
-            returnKeyType="default"
           />
-
           <TouchableOpacity
             style={[
               styles.sendBtn,
@@ -649,19 +676,19 @@ export default function ChatScreen() {
             disabled={(!inputText.trim() && !mediaPreview) || sending}
           >
             {sending ? (
-              <ActivityIndicator size="small" color="white" />
+              <ActivityIndicator size="small" color={V.silverBright} />
             ) : (
               <Ionicons
                 name={inputText.trim() ? "send" : "attach"}
                 size={18}
-                color="white"
+                color={V.silverBright}
               />
             )}
           </TouchableOpacity>
         </View>
       </KeyboardAvoidingView>
 
-      {/* Preview Modal */}
+      {/* ── Media Preview Modal ── */}
       <Modal
         visible={showMediaPreview}
         animationType="slide"
@@ -711,18 +738,21 @@ export default function ChatScreen() {
   );
 }
 
-const BUBBLE_RADIUS = 18;
+// ─── Stilovi — VARA tema ──────────────────────────────────────────────────────
+const BUBBLE_RADIUS = 16;
 
 const styles = StyleSheet.create({
-  safeArea: { flex: 1, backgroundColor: "#fff" },
+  safeArea: { flex: 1, backgroundColor: V.forestDeep },
+
+  // Header
   header: {
     flexDirection: "row",
     alignItems: "center",
     paddingHorizontal: 8,
     paddingVertical: 10,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: "#ebebeb",
-    backgroundColor: "#fff",
+    borderBottomWidth: 1.5,
+    borderBottomColor: V.borderGreen,
+    backgroundColor: V.forestDeep,
   },
   backBtn: { padding: 8 },
   headerCenter: {
@@ -732,35 +762,40 @@ const styles = StyleSheet.create({
     gap: 10,
     marginLeft: 4,
   },
-  headerAvatar: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: "#667eea",
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  headerAvatarText: { color: "white", fontSize: 16, fontWeight: "700" },
   headerName: {
     fontSize: 16,
     fontWeight: "700",
-    color: "#1a1a1a",
+    color: V.silverBright,
     maxWidth: 180,
   },
-  headerStatus: { fontSize: 12, color: "#aaa", marginTop: 1 },
+  headerStatus: { fontSize: 12, color: V.silverDim, marginTop: 1 },
+
+  // Error
   errorBanner: {
     flexDirection: "row",
     alignItems: "center",
     gap: 8,
-    backgroundColor: "#fff5f5",
+    backgroundColor: "#2A1010",
     paddingHorizontal: 16,
     paddingVertical: 8,
     borderBottomWidth: 1,
-    borderBottomColor: "#ffe0e0",
+    borderBottomColor: "#5A2A2A",
   },
   errorText: { fontSize: 13, color: "#ff3b30", flex: 1 },
-  messagesList: { padding: 12, paddingBottom: 8 },
-  emptyList: { flex: 1, justifyContent: "center" },
+
+  // Messages list
+  messagesList: {
+    padding: 12,
+    paddingBottom: 8,
+    backgroundColor: V.forestDeep,
+  },
+  emptyList: {
+    flex: 1,
+    justifyContent: "center",
+    backgroundColor: V.forestDeep,
+  },
+
+  // Date separator
   dateSep: {
     flexDirection: "row",
     alignItems: "center",
@@ -770,91 +805,125 @@ const styles = StyleSheet.create({
   dateSepLine: {
     flex: 1,
     height: StyleSheet.hairlineWidth,
-    backgroundColor: "#e8e8e8",
+    backgroundColor: V.borderDim,
   },
-  dateSepText: { fontSize: 12, color: "#bbb", fontWeight: "500" },
-  msgRow: { flexDirection: "row", marginVertical: 4, alignItems: "flex-end" },
+  dateSepText: { fontSize: 12, color: V.silverDim, fontWeight: "500" },
+
+  // Message row
+  msgRow: { flexDirection: "row", marginVertical: 3, alignItems: "flex-end" },
   msgRowLeft: { justifyContent: "flex-start" },
   msgRowRight: { justifyContent: "flex-end" },
-  msgAvatar: {
-    width: 30,
-    height: 30,
-    borderRadius: 15,
-    backgroundColor: "#667eea",
-    justifyContent: "center",
-    alignItems: "center",
-    marginRight: 8,
-    flexShrink: 0,
-    overflow: "hidden",
-  },
-  msgAvatarImage: {
-    width: 30,
-    height: 30,
-    borderRadius: 15,
-  },
-  msgAvatarText: { color: "white", fontSize: 12, fontWeight: "700" },
+  msgAvatarWrap: { marginRight: 6, flexShrink: 0 },
   hidden: { opacity: 0 },
+
+  // Bubble containers
   outgoing: { alignItems: "flex-end", maxWidth: "75%" },
   incomingGroup: { alignItems: "flex-start", maxWidth: "75%" },
+
+  // Bubbles
   bubble: {
     borderRadius: BUBBLE_RADIUS,
     paddingHorizontal: 14,
     paddingVertical: 10,
   },
-  bubbleMine: { backgroundColor: "#667eea", borderBottomRightRadius: 4 },
-  bubbleOther: { backgroundColor: "#f2f2f7", borderBottomLeftRadius: 4 },
-  bubbleTextMine: { color: "white", fontSize: 15, lineHeight: 21 },
-  bubbleTextOther: { color: "#1a1a1a", fontSize: 15, lineHeight: 21 },
+  bubbleMine: {
+    backgroundColor: V.forestLight,
+    borderBottomRightRadius: 4,
+    borderWidth: 1,
+    borderColor: V.borderGreen,
+  },
+  bubbleOther: {
+    backgroundColor: V.forestMid,
+    borderBottomLeftRadius: 4,
+    borderWidth: 1,
+    borderColor: V.borderDim,
+  },
+  bubbleTextMine: { color: V.silverBright, fontSize: 15, lineHeight: 21 },
+  bubbleTextOther: { color: V.silver, fontSize: 15, lineHeight: 21 },
+
+  // Time
   timeRow: { flexDirection: "row", alignItems: "center", marginTop: 3 },
   timeRowRight: { justifyContent: "flex-end" },
   timeRowLeft: { justifyContent: "flex-start" },
-  timeText: { fontSize: 11, color: "#bbb" },
+  timeText: { fontSize: 11, color: V.silverDim },
+
+  // Empty state
   emptyState: { alignItems: "center", paddingHorizontal: 48, gap: 12 },
-  emptyTitle: { fontSize: 18, fontWeight: "700", color: "#aaa" },
+  emptyTitle: { fontSize: 18, fontWeight: "700", color: V.silverDim },
   emptySubtitle: {
     fontSize: 14,
-    color: "#bbb",
+    color: V.silverDim,
     textAlign: "center",
     lineHeight: 20,
   },
-  center: { flex: 1, justifyContent: "center", alignItems: "center", gap: 12 },
-  loadingText: { color: "#aaa", fontSize: 14 },
+
+  // Loading
+  center: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    gap: 12,
+    backgroundColor: V.forestDeep,
+  },
+  loadingText: { color: V.silverDim, fontSize: 14 },
+
+  // Input area
   inputArea: {
     flexDirection: "row",
     alignItems: "flex-end",
     paddingHorizontal: 12,
     paddingVertical: 10,
-    borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: "#ebebeb",
-    backgroundColor: "#fff",
+    borderTopWidth: 1.5,
+    borderTopColor: V.borderGreen,
+    backgroundColor: V.forestDeep,
     gap: 8,
+  },
+  mediaBtn: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: V.forestMid,
+    borderWidth: 1,
+    borderColor: V.borderGreen,
   },
   textInput: {
     flex: 1,
     minHeight: 42,
     maxHeight: 120,
-    backgroundColor: "#f2f2f7",
+    backgroundColor: V.forestMid,
     borderRadius: 21,
+    borderWidth: 1,
+    borderColor: V.borderGreen,
     paddingHorizontal: 16,
     paddingVertical: 10,
     fontSize: 15,
-    color: "#1a1a1a",
+    color: V.silverBright,
     lineHeight: 20,
   },
   sendBtn: {
     width: 42,
     height: 42,
     borderRadius: 21,
-    backgroundColor: "#667eea",
+    backgroundColor: V.forestLight,
+    borderWidth: 1.5,
+    borderColor: V.borderGreen,
     justifyContent: "center",
     alignItems: "center",
-    shadowColor: "#667eea",
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.3,
+    shadowOpacity: 0.4,
     shadowRadius: 4,
     elevation: 3,
   },
-  sendBtnDisabled: { backgroundColor: "#d0d0d0", shadowOpacity: 0 },
+  sendBtnDisabled: {
+    backgroundColor: V.borderDim,
+    borderColor: V.borderDim,
+    shadowOpacity: 0,
+  },
+
+  // Preview modal
   previewHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
@@ -864,12 +933,14 @@ const styles = StyleSheet.create({
   },
   previewTitle: { fontSize: 17, fontWeight: "600", color: "#fff" },
   previewSendBtn: {
-    backgroundColor: "#667eea",
+    backgroundColor: V.forestLight,
     paddingHorizontal: 16,
     paddingVertical: 8,
     borderRadius: 20,
+    borderWidth: 1,
+    borderColor: V.borderGreen,
   },
-  previewSendBtnText: { color: "#fff", fontWeight: "600" },
+  previewSendBtnText: { color: V.silverBright, fontWeight: "600" },
   previewContainer: {
     flex: 1,
     justifyContent: "center",
@@ -877,12 +948,4 @@ const styles = StyleSheet.create({
     backgroundColor: "#000",
   },
   previewMedia: { width: "100%", height: "100%" },
-  mediaBtn: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: "#f0f0ff",
-  },
 });

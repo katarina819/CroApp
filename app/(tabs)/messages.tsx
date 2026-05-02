@@ -1343,12 +1343,14 @@ function StoriesRow({
 }
 
 // DODAJ OVU FUNKCIJU NEPOSREDNO ISPOD const srs = StyleSheet.create({ ... }) (ili prije StoriesRow komponente)
+// ZAMIJENI getSrsStyles funkciju:
 const getSrsStyles = (colors: any) =>
   StyleSheet.create({
     container: {
-      borderBottomWidth: StyleSheet.hairlineWidth,
-      borderBottomColor: colors.border,
+      borderBottomWidth: 1.5,
+      borderBottomColor: "#4a7040",
       paddingVertical: 12,
+      backgroundColor: "#1a2e1a",
     },
     list: { paddingHorizontal: 12, gap: 12 },
     storyItem: { alignItems: "center", width: 72 },
@@ -1363,28 +1365,28 @@ const getSrsStyles = (colors: any) =>
     },
     myHasStory: {
       borderWidth: 2.5,
-      borderColor: "#2D6418",
+      borderColor: "#5a8a48",
     },
     noStory: {
       borderWidth: 2,
-      borderColor: "#ddd",
+      borderColor: "#3a5a30",
       borderStyle: "dashed",
     },
     viewedRing: {
       borderRadius: 32,
       borderWidth: 2,
-      borderColor: "#ccc",
+      borderColor: "#4a7040",
     },
     img: { width: 64, height: 64, borderRadius: 32 },
     addBg: {
       width: 64,
       height: 64,
       borderRadius: 32,
-      backgroundColor: "#2D6418",
+      backgroundColor: "#3a5a30",
       justifyContent: "center",
       alignItems: "center",
     },
-    initials: { color: "#fff", fontSize: 22, fontWeight: "700" },
+    initials: { color: "#e8e8e8", fontSize: 22, fontWeight: "700" },
     addIcon: {
       position: "absolute",
       bottom: -2,
@@ -1392,13 +1394,13 @@ const getSrsStyles = (colors: any) =>
       width: 22,
       height: 22,
       borderRadius: 11,
-      backgroundColor: "#2D6418",
+      backgroundColor: "#5a8a48",
       justifyContent: "center",
       alignItems: "center",
       borderWidth: 2,
-      borderColor: "#fff",
+      borderColor: "#1a2e1a",
     },
-    label: { fontSize: 12, color: colors.textSecondary, textAlign: "center" },
+    label: { fontSize: 12, color: "#8a9486", textAlign: "center" },
   });
 
 // ─── Add Story Modal ──────────────────────────────────────────────────────────
@@ -1550,6 +1552,7 @@ function AddStoryModal({
   );
 }
 
+// ZAMIJENI getAsmStyles funkciju:
 const getAsmStyles = (colors: any) =>
   StyleSheet.create({
     header: {
@@ -1557,33 +1560,41 @@ const getAsmStyles = (colors: any) =>
       justifyContent: "space-between",
       alignItems: "center",
       padding: 16,
-      borderBottomWidth: 1,
-      borderBottomColor: colors.border,
+      paddingTop: Platform.OS === "ios" ? 54 : 36,
+      borderBottomWidth: 1.5,
+      borderBottomColor: "#4a7040",
+      backgroundColor: "#1a2e1a",
     },
-    title: { fontSize: 17, fontWeight: "600", color: colors.text },
+    title: { fontSize: 20, fontWeight: "800", color: "#e8e8e8" },
     pickContainer: {
       flex: 1,
       justifyContent: "center",
       alignItems: "center",
       gap: 24,
-      backgroundColor: colors.background,
+      backgroundColor: "#1a2e1a",
     },
-    hint: { fontSize: 18, color: colors.textSecondary, marginBottom: 8 },
+    hint: { fontSize: 16, color: "#a0a0a0", marginBottom: 8 },
     pickBtn: {
       width: 160,
       alignItems: "center",
       padding: 28,
       borderRadius: 16,
-      borderWidth: 2,
-      borderColor: "#2D6418",
+      borderWidth: 1.5,
+      borderColor: "#5a8a48",
       borderStyle: "dashed",
       gap: 10,
+      backgroundColor: "#2a4230",
     },
-    pickLabel: { fontSize: 16, color: "#2D6418", fontWeight: "600" },
+    pickLabel: { fontSize: 16, color: "#5a8a48", fontWeight: "600" },
     preview: { flex: 1 },
-    previewActions: { flexDirection: "row", gap: 12, padding: 16 },
+    previewActions: {
+      flexDirection: "row",
+      gap: 12,
+      padding: 16,
+      backgroundColor: "#1a2e1a",
+    },
     btn: { flex: 1, padding: 16, borderRadius: 12, alignItems: "center" },
-    btnText: { color: "#fff", fontSize: 16, fontWeight: "600" },
+    btnText: { color: "#e8e8e8", fontSize: 16, fontWeight: "600" },
   });
 
 // ─── Main Messages Screen ─────────────────────────────────────────────────────
@@ -1883,20 +1894,22 @@ function ConversationItem({
 
 // Obriši postojeći const styles = StyleSheet.create({ ... }) i zamijeni s ovom funkcijom:
 
+// ZAMIJENI getStyles funkciju:
 const getStyles = (colors: any, isDark: boolean) =>
   StyleSheet.create({
-    safeArea: { flex: 1, backgroundColor: colors.background },
-    container: { flex: 1, backgroundColor: colors.background },
+    safeArea: { flex: 1, backgroundColor: "#1a2e1a" },
+    container: { flex: 1, backgroundColor: "#1a2e1a" },
     header: {
       flexDirection: "row",
       alignItems: "center",
       paddingHorizontal: 20,
       paddingVertical: 16,
-      borderBottomWidth: 1,
-      borderBottomColor: colors.border,
+      borderBottomWidth: 1.5,
+      borderBottomColor: "#4a7040",
       gap: 10,
+      backgroundColor: "#1a2e1a",
     },
-    headerTitle: { fontSize: 28, fontWeight: "bold", color: colors.text },
+    headerTitle: { fontSize: 28, fontWeight: "bold", color: "#e8e8e8" },
     badge: {
       backgroundColor: "#ff3b30",
       borderRadius: 12,
@@ -1910,11 +1923,11 @@ const getStyles = (colors: any, isDark: boolean) =>
       flexDirection: "row",
       alignItems: "center",
       gap: 8,
-      backgroundColor: isDark ? "#3a1a1a" : "#fff5f5",
+      backgroundColor: "#3a1a1a",
       paddingHorizontal: 16,
       paddingVertical: 10,
       borderBottomWidth: 1,
-      borderBottomColor: isDark ? "#5a2a2a" : "#ffe0e0",
+      borderBottomColor: "#5a2a2a",
     },
     errorText: { fontSize: 13, color: "#ff3b30", flex: 1 },
     listContent: { paddingBottom: 24 },
@@ -1923,7 +1936,7 @@ const getStyles = (colors: any, isDark: boolean) =>
       flex: 1,
       justifyContent: "center",
       alignItems: "center",
-      backgroundColor: colors.background,
+      backgroundColor: "#1a2e1a",
     },
     emptyState: {
       flex: 1,
@@ -1933,64 +1946,70 @@ const getStyles = (colors: any, isDark: boolean) =>
       paddingTop: 60,
       gap: 12,
     },
-    emptyTitle: { fontSize: 20, fontWeight: "700", color: colors.text },
+    emptyTitle: { fontSize: 20, fontWeight: "700", color: "#e8e8e8" },
     emptySubtitle: {
       fontSize: 14,
-      color: colors.textSecondary,
+      color: "#a0a0a0",
       textAlign: "center",
       lineHeight: 20,
     },
     newMsgBtn: {
       marginTop: 8,
-      backgroundColor: colors.primary,
+      backgroundColor: "#3a5a30",
       paddingHorizontal: 24,
       paddingVertical: 12,
       borderRadius: 24,
+      borderWidth: 1.5,
+      borderColor: "#5a8a48",
     },
-    newMsgBtnText: { color: "#fff", fontWeight: "600", fontSize: 15 },
+    newMsgBtnText: { color: "#e8e8e8", fontWeight: "600", fontSize: 15 },
     convItem: {
       flexDirection: "row",
       paddingHorizontal: 16,
       paddingVertical: 12,
       alignItems: "center",
-      borderBottomWidth: StyleSheet.hairlineWidth,
-      borderBottomColor: colors.border,
+      borderBottomWidth: 1,
+      borderBottomColor: "#2a4230",
+      backgroundColor: "#1a2e1a",
+      gap: 12,
     },
     convAvatar: {
       width: 56,
       height: 56,
       borderRadius: 28,
-      backgroundColor: colors.primary,
+      backgroundColor: "#3a5a30",
       justifyContent: "center",
       alignItems: "center",
       marginRight: 12,
     },
-    convAvatarText: { color: "#fff", fontSize: 18, fontWeight: "700" },
+    convAvatarText: { color: "#e8e8e8", fontSize: 18, fontWeight: "700" },
     convInfo: { flex: 1, gap: 4 },
     convNameRow: {
       flexDirection: "row",
       justifyContent: "space-between",
       alignItems: "center",
     },
-    convName: { fontSize: 15, fontWeight: "500", color: colors.text, flex: 1 },
-    convNameBold: { fontWeight: "700", color: colors.text },
-    convTime: { fontSize: 12, color: colors.textSecondary, marginLeft: 8 },
-    convTimeUnread: { color: colors.primary, fontWeight: "600" },
+    convName: { fontSize: 15, fontWeight: "500", color: "#e8e8e8", flex: 1 },
+    convNameBold: { fontWeight: "700", color: "#ffffff" },
+    convTime: { fontSize: 12, color: "#6a9a60", marginLeft: 8 },
+    convTimeUnread: { color: "#5a8a48", fontWeight: "600" },
     convMsgRow: {
       flexDirection: "row",
       alignItems: "center",
       justifyContent: "space-between",
     },
-    convLastMsg: { fontSize: 14, color: colors.textSecondary, flex: 1 },
-    convLastMsgUnread: { color: colors.text, fontWeight: "600" },
+    convLastMsg: { fontSize: 14, color: "#8a9486", flex: 1 },
+    convLastMsgUnread: { color: "#c0c0c0", fontWeight: "600" },
     unreadBadge: {
-      backgroundColor: colors.primary,
+      backgroundColor: "#3a5a30",
       borderRadius: 12,
       paddingHorizontal: 7,
       paddingVertical: 2,
       minWidth: 22,
       alignItems: "center",
       marginLeft: 8,
+      borderWidth: 1,
+      borderColor: "#5a8a48",
     },
-    unreadBadgeText: { color: "#fff", fontSize: 11, fontWeight: "700" },
+    unreadBadgeText: { color: "#e8e8e8", fontSize: 11, fontWeight: "700" },
   });

@@ -21,6 +21,7 @@ import {
   Dimensions,
   FlatList,
   Image,
+  ImageBackground,
   KeyboardAvoidingView,
   Modal,
   Platform,
@@ -37,7 +38,6 @@ import {
   ag,
   dm,
   mapLegend,
-  ms,
   pb,
   planStyles,
   pm,
@@ -476,7 +476,6 @@ function PlaceMarker({
 }) {
   const cat = placeCategories[place.type as keyof typeof placeCategories];
   const color = cat?.color || "#667eea";
-  const emoji = EMOJIS[place.type] || "📍";
   const pulse = useRef(new Animated.Value(1)).current;
 
   useEffect(() => {
@@ -502,22 +501,24 @@ function PlaceMarker({
     return () => anim.stop();
   }, [isVisited]);
 
+  const iconSource = CATEGORY_ICONS[place.type];
+
   return (
     <Marker
       coordinate={{ latitude: place.latitude, longitude: place.longitude }}
       onPress={onPress}
       tracksViewChanges={isVisited}
     >
-      <View style={{ alignItems: "center", width: 56, height: 64 }}>
-        {/* Vibrirajući prsten za posjećena mjesta — na istom markeru */}
+      <View style={{ alignItems: "center", width: 60, height: 74 }}>
+        {/* Vibrirajući prsten */}
         {isVisited && (
           <Animated.View
             style={{
               position: "absolute",
               top: 0,
-              width: 52,
-              height: 52,
-              borderRadius: 26,
+              width: 54,
+              height: 54,
+              borderRadius: 27,
               borderWidth: 2.5,
               borderColor: "#34c759",
               transform: [{ scale: pulse }],
@@ -525,16 +526,70 @@ function PlaceMarker({
             }}
           />
         )}
-        <View style={[ms.circle, { backgroundColor: color }]}>
-          <Text style={ms.emoji}>{emoji}</Text>
-        </View>
-        {/* Zelena kvačica badge za posjećena */}
+
+        {/* Marker krug s ikonom */}
+        {iconSource ? (
+          // Android zahtijeva ImageBackground za borderRadius + sadržaj
+          <ImageBackground
+            source={iconSource}
+            style={{
+              width: 50,
+              height: 50,
+              justifyContent: "center",
+              alignItems: "center",
+            }}
+            imageStyle={{
+              width: 50,
+              height: 50,
+              borderRadius: 25,
+              borderWidth: 2.5,
+              borderColor: "#fff",
+            }}
+            resizeMode="contain"
+            fadeDuration={0}
+          >
+            {/* Poluprozirna pozadina u boji kategorije */}
+            <View
+              style={{
+                position: "absolute",
+                width: 50,
+                height: 50,
+                borderRadius: 25,
+                backgroundColor: color,
+                opacity: 0.25,
+              }}
+            />
+          </ImageBackground>
+        ) : (
+          // Fallback — emoji ako nema ikone
+          <View
+            style={{
+              width: 50,
+              height: 50,
+              borderRadius: 25,
+              backgroundColor: color,
+              justifyContent: "center",
+              alignItems: "center",
+              borderWidth: 2.5,
+              borderColor: "#fff",
+              shadowColor: "#000",
+              shadowOffset: { width: 0, height: 3 },
+              shadowOpacity: 0.4,
+              shadowRadius: 4,
+              elevation: 7,
+            }}
+          >
+            <Text style={{ fontSize: 22 }}>{EMOJIS[place.type] || "📍"}</Text>
+          </View>
+        )}
+
+        {/* Zelena kvačica za posjećena */}
         {isVisited && (
           <View
             style={{
               position: "absolute",
               top: -4,
-              right: 0,
+              right: 2,
               width: 20,
               height: 20,
               borderRadius: 10,
@@ -551,7 +606,18 @@ function PlaceMarker({
             </Text>
           </View>
         )}
-        <View style={[ms.pin, { backgroundColor: color }]} />
+
+        {/* Pin */}
+        <View
+          style={{
+            width: 5,
+            height: 12,
+            backgroundColor: color,
+            borderBottomLeftRadius: 5,
+            borderBottomRightRadius: 5,
+            marginTop: -2,
+          }}
+        />
       </View>
     </Marker>
   );
@@ -725,7 +791,7 @@ function PlaceDetailModal({
                     ✕
                   </Text>
                 </TouchableOpacity>
-                <TouchableOpacity
+                {/* <TouchableOpacity
                   style={dm.hideBtn}
                   onPress={() =>
                     Alert.alert(
@@ -734,7 +800,7 @@ function PlaceDetailModal({
                       [
                         { text: t("common.cancel"), style: "cancel" },
                         {
-                          text: "Ukloni 🚫",
+                          text: "Ukloni ",
                           style: "destructive",
                           onPress: () => {
                             onHidePlace(place.id);
@@ -745,8 +811,8 @@ function PlaceDetailModal({
                     )
                   }
                 >
-                  <Text style={{ fontSize: 18 }}>🚫</Text>
-                </TouchableOpacity>
+                  <Text style={{ fontSize: 18 }}></Text>
+                </TouchableOpacity> */}
               </View>
 
               <View style={dm.body}>
@@ -1049,6 +1115,7 @@ function NotificationSettingsModal({
   useEffect(() => {
     setP(prefs);
   }, [visible, prefs]);
+
   const toggle = (cat: string) =>
     setP((prev) => ({
       ...prev,
@@ -1056,170 +1123,264 @@ function NotificationSettingsModal({
         ? prev.categories.filter((c) => c !== cat)
         : [...prev.categories, cat],
     }));
+
   return (
     <Modal
       visible={visible}
       animationType="slide"
-      transparent
+      transparent={false}
       onRequestClose={onClose}
     >
-      <View
-        style={{
-          flex: 1,
-          backgroundColor: "rgba(0,0,0,0.5)",
-          justifyContent: "flex-end",
-        }}
-      >
+      <View style={{ flex: 1, backgroundColor: "#1a2e1a" }}>
+        {/* Header */}
         <View
           style={{
-            backgroundColor: "#fff",
-            borderTopLeftRadius: 24,
-            borderTopRightRadius: 24,
-            maxHeight: SH * 0.9,
+            flexDirection: "row",
+            justifyContent: "space-between",
+            alignItems: "center",
+            padding: 20,
+            paddingTop: Platform.OS === "ios" ? 54 : 36,
+            borderBottomWidth: 1.5,
+            borderBottomColor: "#4a7040",
+            backgroundColor: "#1a2e1a",
           }}
         >
+          <Text style={{ fontSize: 20, fontWeight: "800", color: "#e8e8e8" }}>
+            {t("map.notifSettings")}
+          </Text>
+          <TouchableOpacity onPress={onClose}>
+            <Text style={{ fontSize: 14, color: "#b0b0b0", fontWeight: "600" }}>
+              {t("common.close")}
+            </Text>
+          </TouchableOpacity>
+        </View>
+
+        <ScrollView
+          contentContainerStyle={{ paddingBottom: 40 }}
+          style={{ backgroundColor: "#1a2e1a" }}
+        >
+          {/* App notifikacije toggle */}
           <View
             style={{
-              flexDirection: "row",
-              justifyContent: "space-between",
-              alignItems: "center",
-              padding: 20,
+              padding: 16,
               borderBottomWidth: 1,
-              borderBottomColor: "#eee",
+              borderBottomColor: "#3a5a30",
             }}
           >
-            <Text style={{ fontSize: 19, fontWeight: "800" }}>
-              🔔 {t("map.notifSettings")}
-            </Text>
-            <TouchableOpacity onPress={onClose}>
-              <Text
-                style={{ fontSize: 16, color: "#667eea", fontWeight: "600" }}
-              >
-                {t("common.close")}
-              </Text>
-            </TouchableOpacity>
-          </View>
-          <ScrollView contentContainerStyle={{ padding: 20 }}>
             <View
               style={{
                 flexDirection: "row",
                 justifyContent: "space-between",
                 alignItems: "center",
-                marginBottom: 12,
+                backgroundColor: "#2a4230",
+                borderRadius: 12,
+                padding: 14,
+                borderWidth: 1,
+                borderColor: "#3a5a30",
+                marginBottom: 10,
               }}
             >
-              <Text style={{ fontSize: 15, fontWeight: "700" }}>
+              <Text
+                style={{ fontSize: 15, fontWeight: "700", color: "#e8e8e8" }}
+              >
                 {t("map.appNotifications")}
               </Text>
               <Switch
                 value={p.appEnabled}
                 onValueChange={(v) => setP((x) => ({ ...x, appEnabled: v }))}
-                trackColor={{ true: "#667eea", false: "#ccc" }}
-                thumbColor="#fff"
+                trackColor={{ true: "#5a8a48", false: "#3a5a30" }}
+                thumbColor={p.appEnabled ? "#34c759" : "#888"}
               />
             </View>
+
+            {/* Email notifikacije toggle */}
             <View
               style={{
                 flexDirection: "row",
                 justifyContent: "space-between",
                 alignItems: "center",
-                marginBottom: 8,
+                backgroundColor: "#2a4230",
+                borderRadius: 12,
+                padding: 14,
+                borderWidth: 1,
+                borderColor: "#3a5a30",
               }}
             >
-              <Text style={{ fontSize: 15, fontWeight: "700" }}>
+              <Text
+                style={{ fontSize: 15, fontWeight: "700", color: "#e8e8e8" }}
+              >
                 {t("map.emailNotifications")}
               </Text>
               <Switch
                 value={p.emailEnabled}
                 onValueChange={(v) => setP((x) => ({ ...x, emailEnabled: v }))}
-                trackColor={{ true: "#667eea", false: "#ccc" }}
-                thumbColor="#fff"
+                trackColor={{ true: "#5a8a48", false: "#3a5a30" }}
+                thumbColor={p.emailEnabled ? "#34c759" : "#888"}
               />
             </View>
+
             {p.emailEnabled && (
               <TextInput
                 style={{
-                  borderWidth: 1,
-                  borderColor: "#e0e0e0",
+                  marginTop: 10,
+                  backgroundColor: "#2a4230",
                   borderRadius: 10,
-                  padding: 12,
-                  fontSize: 14,
-                  color: "#333",
-                  marginBottom: 16,
+                  borderWidth: 1,
+                  borderColor: "#4a7040",
+                  paddingHorizontal: 14,
+                  paddingVertical: 10,
+                  fontSize: 15,
+                  color: "#e8e8e8",
                 }}
                 placeholder={t("auth.emailPlaceholder")}
-                placeholderTextColor="#bbb"
+                placeholderTextColor="#8a8a8a"
                 value={p.email}
                 onChangeText={(v) => setP((x) => ({ ...x, email: v }))}
                 keyboardType="email-address"
                 autoCapitalize="none"
               />
             )}
-            <Text
+          </View>
+
+          {/* Kategorije — grid s ikonama */}
+          <View
+            style={{
+              paddingHorizontal: 16,
+              paddingTop: 12,
+              paddingBottom: 4,
+            }}
+          >
+            <View
               style={{
-                fontSize: 15,
-                fontWeight: "700",
-                marginBottom: 12,
-                marginTop: 8,
+                flexDirection: "row",
+                justifyContent: "space-between",
+                alignItems: "center",
+                marginBottom: 10,
               }}
             >
-              {t("profile.notifications")}
-            </Text>
-            <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
+              <Text
+                style={{ fontSize: 14, fontWeight: "700", color: "#c0c0c0" }}
+              >
+                {t("profile.notifications")}
+              </Text>
+              {p.categories.length > 0 && (
+                <TouchableOpacity
+                  onPress={() => setP((x) => ({ ...x, categories: [] }))}
+                >
+                  <Text
+                    style={{
+                      fontSize: 13,
+                      color: "#5a8a48",
+                      fontWeight: "600",
+                    }}
+                  >
+                    {t("map.clearAll")}
+                  </Text>
+                </TouchableOpacity>
+              )}
+            </View>
+
+            <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 4 }}>
               {getAllCategories().map((cat) => {
                 const on = p.categories.includes(cat.id);
                 return (
                   <TouchableOpacity
                     key={cat.id}
                     style={{
-                      flexDirection: "row",
+                      width: CELL_W,
+                      height: 130,
+                      backgroundColor: on ? cat.color : "#2a4230",
+                      borderRadius: 12,
+                      justifyContent: "center",
                       alignItems: "center",
-                      gap: 6,
-                      paddingHorizontal: 12,
+                      paddingHorizontal: 4,
                       paddingVertical: 8,
-                      borderRadius: 20,
-                      backgroundColor: on ? cat.color : "#f0f0f0",
+                      borderWidth: on ? 2 : 1,
+                      borderColor: on ? cat.color : "#3a5a30",
                     }}
                     onPress={() => toggle(cat.id)}
                   >
-                    <Text style={{ fontSize: 14 }}>{cat.icon}</Text>
+                    {CATEGORY_ICONS[cat.id] ? (
+                      <Image
+                        source={CATEGORY_ICONS[cat.id]}
+                        style={{ width: 96, height: 96, marginBottom: 4 }}
+                        resizeMode="contain"
+                      />
+                    ) : (
+                      <Text style={{ fontSize: 56, marginBottom: 4 }}>
+                        {cat.icon}
+                      </Text>
+                    )}
                     <Text
                       style={{
-                        fontSize: 12,
+                        fontSize: 11,
                         fontWeight: "600",
-                        color: on ? "#fff" : "#555",
+                        color: on ? "#fff" : "#c0c0c0",
+                        textAlign: "center",
                       }}
+                      numberOfLines={2}
                     >
-                      {cat.name}{" "}
-                      {/* cat.name ovdje postoji jer getAllCategories vraća object s name property */}
+                      {cat.name}
                     </Text>
+                    {on && (
+                      <View
+                        style={{
+                          position: "absolute",
+                          top: 6,
+                          right: 6,
+                          width: 18,
+                          height: 18,
+                          borderRadius: 9,
+                          backgroundColor: "#34c759",
+                          justifyContent: "center",
+                          alignItems: "center",
+                          borderWidth: 1.5,
+                          borderColor: "#fff",
+                        }}
+                      >
+                        <Text
+                          style={{
+                            color: "#fff",
+                            fontSize: 10,
+                            fontWeight: "900",
+                          }}
+                        >
+                          ✓
+                        </Text>
+                      </View>
+                    )}
                   </TouchableOpacity>
                 );
               })}
             </View>
-            <TouchableOpacity
-              style={{
-                backgroundColor: "#667eea",
-                borderRadius: 14,
-                paddingVertical: 14,
-                alignItems: "center",
-                marginTop: 24,
-              }}
-              onPress={() => {
-                onSave(p);
-                onClose();
-                Alert.alert(
-                  t("profile.savedSuccess"),
-                  t("profile.updateSettingsSuccess"),
-                );
-              }}
-            >
-              <Text style={{ color: "#fff", fontSize: 16, fontWeight: "700" }}>
-                {t("common.save")}
-              </Text>
-            </TouchableOpacity>
-          </ScrollView>
-        </View>
+          </View>
+
+          {/* Spremi gumb */}
+          <TouchableOpacity
+            style={{
+              margin: 16,
+              marginTop: 20,
+              backgroundColor: "#3a5a30",
+              borderRadius: 12,
+              borderWidth: 1.5,
+              borderColor: "#5a8a48",
+              paddingVertical: 16,
+              alignItems: "center",
+            }}
+            onPress={() => {
+              onSave(p);
+              onClose();
+              Alert.alert(
+                t("profile.savedSuccess"),
+                t("profile.updateSettingsSuccess"),
+              );
+            }}
+          >
+            <Text style={{ color: "#e8e8e8", fontSize: 16, fontWeight: "700" }}>
+              {t("common.save")}
+            </Text>
+          </TouchableOpacity>
+        </ScrollView>
       </View>
     </Modal>
   );
@@ -1254,6 +1415,9 @@ export function ActivityGroupsModal({
     null,
   );
   const [myName, setMyName] = useState("");
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState<string | null>(
+    null,
+  );
   const [chatMsg, setChatMsg] = useState("");
   const flatRef = useRef<FlatList>(null);
   const [showDMCompose, setShowDMCompose] = useState(false);
@@ -1266,6 +1430,10 @@ export function ActivityGroupsModal({
   });
   const [dmMessage, setDmMessage] = useState("");
   const [sendingDM, setSendingDM] = useState(false);
+  const [myAvatar, setMyAvatar] = useState<string | null>(null);
+  const [memberAvatars, setMemberAvatars] = useState<Record<string, string>>(
+    {},
+  );
   const [newGroup, setNewGroup] = useState({
     activity: "",
     description: "",
@@ -1301,6 +1469,13 @@ export function ActivityGroupsModal({
         if (res.ok) {
           const profile = await res.json();
           setMyName(`${profile.firstName} ${profile.lastName}`.trim());
+          const avatarField =
+            profile.profileImage ||
+            profile.avatarUrl ||
+            profile.profilePicture ||
+            profile.avatar ||
+            null;
+          if (avatarField) setMyAvatar(avatarField);
           return;
         }
       }
@@ -1312,6 +1487,36 @@ export function ActivityGroupsModal({
     const f = await AsyncStorage.getItem("firstName");
     const l = await AsyncStorage.getItem("lastName");
     setMyName(`${f || ""} ${l || ""}`.trim() || "Korisnik");
+  };
+
+  const fetchMemberAvatars = async (members: string[]) => {
+    try {
+      const token = await AsyncStorage.getItem("token");
+      const res = await fetch(`${API_BASE_URL}/api/auth/users`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!res.ok) return;
+      const users = await res.json();
+      const avatars: Record<string, string> = {};
+      for (const member of members) {
+        const nameLower = member.toLowerCase().trim();
+        const found = users.find((u: any) => {
+          const fn = (u.firstName || u.firstname || "").toLowerCase();
+          const ln = (u.lastName || u.lastname || "").toLowerCase();
+          return `${fn} ${ln}`.trim() === nameLower || fn === nameLower;
+        });
+        const url =
+          found?.profileImage ||
+          found?.avatarUrl ||
+          found?.profilePicture ||
+          found?.avatar ||
+          null;
+        if (url) avatars[member] = url;
+      }
+      setMemberAvatars(avatars);
+    } catch {
+      // tiho ignoriraj
+    }
   };
 
   const loadGroups = async () => {
@@ -1591,57 +1796,45 @@ export function ActivityGroupsModal({
   // ============================================================
   // 7. deleteGroup - brisanje grupe na serveru
   // ============================================================
+  // ZAMIJENI deleteGroup funkciju:
   const deleteGroup = async (groupId: string) => {
     const g = groups.find((x) => x.id === groupId);
     if (g?.creatorName !== myName) {
-      Alert.alert(t("groups.deleteOwnOnly"), t("groups.deleteConfirm"));
+      setShowDeleteConfirm(null);
       return;
     }
+    setShowDeleteConfirm(groupId);
+  };
 
-    Alert.alert(t("groups.deleteConfirm"), t("groups.deleteConfirmQuestion"), [
-      { text: t("common.cancel"), style: "cancel" },
-      {
-        text: t("common.delete"),
-        style: "destructive",
-        onPress: async () => {
-          try {
-            const token = await AsyncStorage.getItem("token");
-            if (!token) return;
-
-            const res = await fetch(
-              `${API_BASE_URL}/api/activity-groups/${groupId}?creatorName=${encodeURIComponent(myName)}`,
-              {
-                method: "DELETE",
-                headers: { Authorization: `Bearer ${token}` },
-              },
-            );
-
-            if (res.ok) {
-              setGroups((prev) => prev.filter((x) => x.id !== groupId));
-              setSelectedGroup(null);
-              Alert.alert(t("common.success"), t("groups.deleteSuccess"));
-            } else {
-              Alert.alert("Greška", "Nije moguće obrisati grupu");
-            }
-          } catch (error) {
-            console.error("Error deleting group:", error);
-            Alert.alert("Greška", "Nije moguće obrisati grupu");
-          }
-        },
-      },
-    ]);
+  const confirmDeleteGroup = async (groupId: string) => {
+    try {
+      const token = await AsyncStorage.getItem("token");
+      if (!token) return;
+      const res = await fetch(
+        `${API_BASE_URL}/api/activity-groups/${groupId}?creatorName=${encodeURIComponent(myName)}`,
+        { method: "DELETE", headers: { Authorization: `Bearer ${token}` } },
+      );
+      if (res.ok) {
+        setGroups((prev) => prev.filter((x) => x.id !== groupId));
+        setSelectedGroup(null);
+      }
+    } catch (error) {
+      console.error("Error deleting group:", error);
+    } finally {
+      setShowDeleteConfirm(null);
+    }
   };
 
   // ============================================================
   // 8. Polling za poruke (osvježavanje svakih 5 sekundi)
-  // ============================================================
+
   useEffect(() => {
     if (!selectedGroup) return;
-
-    const interval = setInterval(async () => {
-      await loadGroupMessages(selectedGroup.id);
-    }, 5000); // osvježi svake 5 sekunde
-
+    fetchMemberAvatars(selectedGroup.members);
+    const interval = setInterval(
+      () => loadGroupMessages(selectedGroup.id),
+      5000,
+    );
     return () => clearInterval(interval);
   }, [selectedGroup?.id]);
 
@@ -1733,11 +1926,12 @@ export function ActivityGroupsModal({
     >
       {/* JEDAN Modal, tri različita "ekrana" unutar njega */}
       {selectedGroup ? (
-        // ─── Chat ekran ───────────────────────────────────────────────────────
         <KeyboardAvoidingView
-          style={{ flex: 1, backgroundColor: "#fff" }}
+          style={{ flex: 1, backgroundColor: "#1a2e1a" }}
           behavior={Platform.OS === "ios" ? "padding" : "height"}
+          keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 0}
         >
+          {/* Header */}
           <View style={ag.chatHeader}>
             <TouchableOpacity
               onPress={() => {
@@ -1745,7 +1939,7 @@ export function ActivityGroupsModal({
                 setChatMsg("");
               }}
             >
-              <Text style={ag.chatHeaderBack}>←</Text>
+              <Text style={ag.chatHeaderBack}>Natrag</Text>
             </TouchableOpacity>
             <View style={{ flex: 1 }}>
               <Text style={ag.chatHeaderTitle} numberOfLines={1}>
@@ -1753,17 +1947,53 @@ export function ActivityGroupsModal({
                 {selectedGroup.activity}
               </Text>
               <Text style={ag.chatHeaderSub}>
-                📍 {selectedGroup.locationName} · {selectedGroup.members.length}
-                /{selectedGroup.maxPeople} članova
+                {selectedGroup.locationName} · {selectedGroup.members.length}/
+                {selectedGroup.maxPeople} članova
               </Text>
             </View>
+            // PRONAĐI i ZAMIJENI ovaj dio u chat headeru ActivityGroupsModal:
             {selectedGroup.creatorName === myName ? (
-              <TouchableOpacity onPress={() => deleteGroup(selectedGroup.id)}>
-                <Text style={{ fontSize: 20 }}>🗑️</Text>
+              <TouchableOpacity
+                onPress={() => setShowDeleteConfirm(selectedGroup.id)}
+                style={{
+                  backgroundColor: "#2a4230",
+                  borderRadius: 8,
+                  paddingHorizontal: 12,
+                  paddingVertical: 6,
+                  borderWidth: 1.5,
+                  borderColor: "#4a7040",
+                }}
+              >
+                <Text
+                  style={{
+                    color: "#e8e8e8",
+                    fontSize: 13,
+                    fontWeight: "800",
+                    letterSpacing: 0.3,
+                  }}
+                >
+                  Obriši
+                </Text>
               </TouchableOpacity>
             ) : selectedGroup.members.includes(myName) ? (
-              <TouchableOpacity onPress={() => leaveGroup(selectedGroup.id)}>
-                <Text style={{ color: "#fff", fontSize: 13 }}>
+              <TouchableOpacity
+                onPress={() => leaveGroup(selectedGroup.id)}
+                style={{
+                  backgroundColor: "#2a4230",
+                  borderRadius: 8,
+                  paddingHorizontal: 12,
+                  paddingVertical: 6,
+                  borderWidth: 1,
+                  borderColor: "#3a5a30",
+                }}
+              >
+                <Text
+                  style={{
+                    color: "#a0c080",
+                    fontSize: 13,
+                    fontWeight: "700",
+                  }}
+                >
                   {t("groups.leave")}
                 </Text>
               </TouchableOpacity>
@@ -1774,7 +2004,10 @@ export function ActivityGroupsModal({
           <ScrollView
             horizontal
             showsHorizontalScrollIndicator={false}
-            style={ag.membersRow}
+            style={[
+              ag.membersRow,
+              { backgroundColor: "#2a4230", borderBottomColor: "#3a5a30" },
+            ]}
             contentContainerStyle={{
               paddingHorizontal: 12,
               paddingVertical: 10,
@@ -1783,6 +2016,7 @@ export function ActivityGroupsModal({
           >
             {selectedGroup.members.map((m, i) => {
               const isMe = m === myName;
+              const avatarUrl = isMe ? myAvatar : memberAvatars[m];
               return (
                 <TouchableOpacity
                   key={i}
@@ -1793,21 +2027,32 @@ export function ActivityGroupsModal({
                   <View
                     style={[
                       ag.memberAvatar,
-                      isMe && { borderWidth: 2, borderColor: "#fff" },
+                      isMe && { borderWidth: 2, borderColor: "#5a8a48" },
                     ]}
                   >
-                    <Text style={{ color: "#fff", fontWeight: "700" }}>
-                      {m[0]?.toUpperCase()}
-                    </Text>
+                    {avatarUrl ? (
+                      <Image
+                        source={{ uri: avatarUrl }}
+                        style={{ width: 36, height: 36, borderRadius: 18 }}
+                        resizeMode="cover"
+                      />
+                    ) : (
+                      <Text style={{ color: "#fff", fontWeight: "700" }}>
+                        {m[0]?.toUpperCase()}
+                      </Text>
+                    )}
                   </View>
-                  <Text style={ag.memberName} numberOfLines={1}>
+                  <Text
+                    style={[ag.memberName, { color: "#c0c0c0" }]}
+                    numberOfLines={1}
+                  >
                     {m.split(" ")[0]}
                   </Text>
                   {!isMe && (
                     <Text
                       style={{
                         fontSize: 9,
-                        color: "#667eea",
+                        color: "#5a8a48",
                         fontWeight: "700",
                         marginTop: 1,
                       }}
@@ -1822,10 +2067,15 @@ export function ActivityGroupsModal({
               length: selectedGroup.maxPeople - selectedGroup.members.length,
             }).map((_, i) => (
               <View key={`e_${i}`} style={{ alignItems: "center" }}>
-                <View style={ag.memberAvatarEmpty}>
-                  <Text style={{ color: "#ccc", fontSize: 18 }}>+</Text>
+                <View
+                  style={[
+                    ag.memberAvatarEmpty,
+                    { backgroundColor: "#3a5a30", borderColor: "#4a7040" },
+                  ]}
+                >
+                  <Text style={{ color: "#5a8a48", fontSize: 18 }}>+</Text>
                 </View>
-                <Text style={{ fontSize: 10, color: "#ccc", marginTop: 2 }}>
+                <Text style={{ fontSize: 10, color: "#6a9a60", marginTop: 2 }}>
                   {t("groups.freeSpots")}
                 </Text>
               </View>
@@ -1837,25 +2087,22 @@ export function ActivityGroupsModal({
             ref={flatRef}
             data={selectedGroup.messages || []}
             keyExtractor={(_, i) => i.toString()}
+            style={{ backgroundColor: "#1a2e1a" }}
             contentContainerStyle={{ padding: 16, paddingBottom: 8 }}
             renderItem={({ item }) => {
-              // Zaštita od undefined/null itema
               if (!item || typeof item !== "object") return null;
-
               const name = item.name || "?";
               const text = item.text || "";
               const time = item.time || "";
-
               const isMe = name === myName;
               const isSys = name === "Sustav";
-
               if (isSys)
                 return (
                   <View style={{ alignItems: "center", marginVertical: 6 }}>
                     <Text
                       style={{
                         fontSize: 12,
-                        color: "#999",
+                        color: "#6a9a60",
                         fontStyle: "italic",
                       }}
                     >
@@ -1863,6 +2110,7 @@ export function ActivityGroupsModal({
                     </Text>
                   </View>
                 );
+              const avatarUrl = isMe ? myAvatar : memberAvatars[name];
               return (
                 <View
                   style={[
@@ -1873,26 +2121,48 @@ export function ActivityGroupsModal({
                   ]}
                 >
                   {!isMe && (
-                    <View style={ag.msgAvatar}>
-                      <Text
-                        style={{
-                          color: "#fff",
-                          fontSize: 12,
-                          fontWeight: "700",
-                        }}
-                      >
-                        {name[0]?.toUpperCase()}
-                      </Text>
+                    <View
+                      style={[ag.msgAvatar, { backgroundColor: "#3a5a30" }]}
+                    >
+                      {avatarUrl ? (
+                        <Image
+                          source={{ uri: avatarUrl }}
+                          style={{ width: 30, height: 30, borderRadius: 15 }}
+                          resizeMode="cover"
+                        />
+                      ) : (
+                        <Text
+                          style={{
+                            color: "#e8e8e8",
+                            fontSize: 12,
+                            fontWeight: "700",
+                          }}
+                        >
+                          {name[0]?.toUpperCase()}
+                        </Text>
+                      )}
                     </View>
                   )}
                   <View style={{ maxWidth: "70%" }}>
-                    {!isMe && <Text style={ag.msgSender}>{name}</Text>}
+                    {!isMe && (
+                      <Text style={[ag.msgSender, { color: "#5a8a48" }]}>
+                        {name}
+                      </Text>
+                    )}
                     <View
-                      style={[ag.bubble, isMe ? ag.bubbleMine : ag.bubbleOther]}
+                      style={[
+                        ag.bubble,
+                        isMe
+                          ? ag.bubbleMine
+                          : {
+                              backgroundColor: "#2a4230",
+                              borderBottomLeftRadius: 4,
+                            },
+                      ]}
                     >
                       <Text
                         style={{
-                          color: isMe ? "#fff" : "#1a1a1a",
+                          color: isMe ? "#fff" : "#e8e8e8",
                           fontSize: 14,
                         }}
                       >
@@ -1900,7 +2170,11 @@ export function ActivityGroupsModal({
                       </Text>
                     </View>
                     <Text
-                      style={[ag.msgTime, isMe ? { textAlign: "right" } : {}]}
+                      style={[
+                        ag.msgTime,
+                        isMe ? { textAlign: "right" } : {},
+                        { color: "#6a9a60" },
+                      ]}
                     >
                       {time}
                     </Text>
@@ -1912,11 +2186,29 @@ export function ActivityGroupsModal({
 
           {/* Input */}
           {(selectedGroup.members || []).includes(myName) ? (
-            <View style={ag.inputRow}>
+            <View
+              style={[
+                ag.inputRow,
+                {
+                  backgroundColor: "#2a4230", // ← tamna pozadina
+                  borderTopColor: "#3a5a30",
+                  borderTopWidth: 1,
+                  paddingBottom: Platform.OS === "ios" ? 34 : 16,
+                },
+              ]}
+            >
               <TextInput
-                style={ag.input}
+                style={[
+                  ag.input,
+                  {
+                    backgroundColor: "#3a5a30",
+                    color: "#e8e8e8",
+                    borderWidth: 1,
+                    borderColor: "#4a7040",
+                  },
+                ]}
                 placeholder={t("groups.sendMessage")}
-                placeholderTextColor="#aaa"
+                placeholderTextColor="#6a9a60"
                 value={chatMsg}
                 onChangeText={setChatMsg}
                 returnKeyType="send"
@@ -1925,7 +2217,7 @@ export function ActivityGroupsModal({
               <TouchableOpacity
                 style={[
                   ag.sendBtn,
-                  !chatMsg.trim() && { backgroundColor: "#ddd" },
+                  !chatMsg.trim() && { backgroundColor: "#3a5a30" },
                 ]}
                 onPress={() => sendGroupMessage(selectedGroup.id)}
                 disabled={!chatMsg.trim()}
@@ -1935,13 +2227,29 @@ export function ActivityGroupsModal({
             </View>
           ) : (
             <View
-              style={{ padding: 16, borderTopWidth: 1, borderTopColor: "#eee" }}
+              style={{
+                padding: 16,
+                borderTopWidth: 1,
+                borderTopColor: "#3a5a30",
+                backgroundColor: "#2a4230",
+              }}
             >
               <TouchableOpacity
-                style={ag.joinBtn}
+                style={{
+                  backgroundColor: "#3a5a30",
+                  borderRadius: 14,
+                  paddingVertical: 14,
+                  alignItems: "center",
+                  borderWidth: 1.5,
+                  borderColor: "#5a8a48",
+                }}
                 onPress={() => joinGroup(selectedGroup.id)}
               >
-                <Text style={ag.joinBtnText}>{t("groups.joinGroup")}</Text>
+                <Text
+                  style={{ color: "#e8e8e8", fontSize: 16, fontWeight: "700" }}
+                >
+                  {t("groups.joinGroup")}
+                </Text>
               </TouchableOpacity>
             </View>
           )}
@@ -2056,127 +2364,336 @@ export function ActivityGroupsModal({
       ) : showCreate ? (
         // ─── Forma za kreiranje ───────────────────────────────────────────────
         <KeyboardAvoidingView
-          style={{ flex: 1, backgroundColor: "#fff" }}
+          style={{ flex: 1, backgroundColor: "#1a2e1a" }}
           behavior={Platform.OS === "ios" ? "padding" : "height"}
         >
-          <View style={ag.navHeader}>
-            <TouchableOpacity onPress={() => setShowCreate(false)}>
-              <Text style={ag.navHeaderLink}>← {t("common.back")}</Text>
-            </TouchableOpacity>
-            <Text style={ag.navHeaderTitle}>Nova aktivnost</Text>
-            <View style={{ width: 60 }} />
-          </View>
-          <ScrollView
-            contentContainerStyle={{ padding: 20, paddingBottom: 40 }}
-            keyboardShouldPersistTaps="handled"
+          {/* Header */}
+          <View
+            style={{
+              flexDirection: "row",
+              alignItems: "center",
+              padding: 20,
+              paddingTop: Platform.OS === "ios" ? 54 : 36,
+              borderBottomWidth: 1.5,
+              borderBottomColor: "#4a7040",
+              backgroundColor: "#1a2e1a",
+            }}
           >
-            <Text style={ag.formLabel}>{t("groups.activityType")}</Text>
-            <View
+            <Text
               style={{
-                flexDirection: "row",
-                flexWrap: "wrap",
-                gap: 8,
-                marginBottom: 20,
+                flex: 1,
+                fontSize: 20,
+                fontWeight: "800",
+                color: "#e8e8e8",
               }}
             >
-              {ACTIVITY_TEMPLATES.map((t) => (
-                <TouchableOpacity
-                  key={t.value}
-                  style={[
-                    ag.templateChip,
-                    newGroup.category === t.value && ag.templateChipActive,
-                  ]}
-                  onPress={() =>
-                    setNewGroup((p) => ({
-                      ...p,
-                      category: t.value,
-                      activity: t.label,
-                    }))
-                  }
-                >
-                  <Text
-                    style={[
-                      ag.templateChipText,
-                      newGroup.category === t.value && { color: "#fff" },
-                    ]}
-                  >
-                    {t.label}
-                  </Text>
-                </TouchableOpacity>
-              ))}
+              Nova aktivnost
+            </Text>
+            <TouchableOpacity onPress={() => setShowCreate(false)}>
+              <Text
+                style={{ fontSize: 16, color: "#5a8a48", fontWeight: "700" }}
+              >
+                Natrag
+              </Text>
+            </TouchableOpacity>
+          </View>
+
+          <ScrollView
+            contentContainerStyle={{ paddingBottom: 40 }}
+            keyboardShouldPersistTaps="handled"
+            style={{ backgroundColor: "#1a2e1a" }}
+          >
+            {/* ── VRSTA AKTIVNOSTI ── */}
+            <View
+              style={{
+                padding: 16,
+                borderBottomWidth: 1,
+                borderBottomColor: "#3a5a30",
+              }}
+            >
+              <Text
+                style={{
+                  fontSize: 14,
+                  fontWeight: "700",
+                  color: "#c0c0c0",
+                  marginBottom: 10,
+                }}
+              >
+                {t("groups.activityType")}
+              </Text>
+              <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 4 }}>
+                {ACTIVITY_TEMPLATES.map((tmpl) => {
+                  const active = newGroup.category === tmpl.value;
+                  const catMeta =
+                    placeCategories[tmpl.value as keyof typeof placeCategories];
+                  const bgColor = catMeta?.color || "#667eea";
+                  return (
+                    <TouchableOpacity
+                      key={tmpl.value}
+                      style={{
+                        width: CELL_W,
+                        height: 130,
+                        backgroundColor: active ? bgColor : "#2a4230",
+                        borderRadius: 12,
+                        justifyContent: "center",
+                        alignItems: "center",
+                        paddingHorizontal: 4,
+                        paddingVertical: 8,
+                        borderWidth: active ? 2 : 1,
+                        borderColor: active ? bgColor : "#3a5a30",
+                      }}
+                      onPress={() =>
+                        setNewGroup((p) => ({
+                          ...p,
+                          category: tmpl.value,
+                          activity: tmpl.label,
+                        }))
+                      }
+                    >
+                      {CATEGORY_ICONS[tmpl.value] ? (
+                        <Image
+                          source={CATEGORY_ICONS[tmpl.value]}
+                          style={{ width: 96, height: 96, marginBottom: 4 }}
+                          resizeMode="contain"
+                        />
+                      ) : (
+                        <Text style={{ fontSize: 56, marginBottom: 4 }}>
+                          {EMOJIS[tmpl.value] || "📍"}
+                        </Text>
+                      )}
+                      <Text
+                        style={{
+                          fontSize: 11,
+                          fontWeight: "600",
+                          color: active ? "#fff" : "#c0c0c0",
+                          textAlign: "center",
+                        }}
+                        numberOfLines={2}
+                      >
+                        {tmpl.label.replace(/^[\p{Emoji}\s]+/u, "").trim()}
+                      </Text>
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
             </View>
-            <Text style={ag.formLabel}>{t("groups.activityDesc")}</Text>
-            <TextInput
-              style={ag.formInput}
-              placeholder={t("groups.activityPlaceholder")}
-              value={newGroup.activity}
-              onChangeText={(v) => setNewGroup((p) => ({ ...p, activity: v }))}
-              maxLength={80}
-            />
-            <Text style={ag.formLabel}>{t("groups.location")}</Text>
-            <TextInput
-              style={ag.formInput}
-              placeholder={t("groups.locationPlaceholder")}
-              value={newGroup.locationName}
-              onChangeText={(v) =>
-                setNewGroup((p) => ({ ...p, locationName: v }))
-              }
-              maxLength={100}
-            />
-            <Text style={ag.formLabel}>{t("groups.shortDescription")}</Text>
-            <TextInput
-              style={[ag.formInput, { minHeight: 70 }]}
-              placeholder={t("groups.descriptionPlaceholder")}
-              value={newGroup.description}
-              onChangeText={(v) =>
-                setNewGroup((p) => ({ ...p, description: v }))
-              }
-              multiline
-              maxLength={200}
-            />
-            <Text style={ag.formLabel}>{t("groups.maxPeople")}</Text>
-            <View style={{ flexDirection: "row", gap: 8, marginBottom: 24 }}>
-              {[2, 3, 4, 5, 8, 10].map((n) => (
-                <TouchableOpacity
-                  key={n}
-                  style={[
-                    ag.templateChip,
-                    newGroup.maxPeople === String(n) && ag.templateChipActive,
-                  ]}
-                  onPress={() =>
-                    setNewGroup((p) => ({ ...p, maxPeople: String(n) }))
-                  }
-                >
-                  <Text
-                    style={[
-                      ag.templateChipText,
-                      newGroup.maxPeople === String(n) && { color: "#fff" },
-                    ]}
-                  >
-                    {n}
-                  </Text>
-                </TouchableOpacity>
-              ))}
+
+            {/* ── OPIS AKTIVNOSTI ── */}
+            <View
+              style={{
+                padding: 16,
+                borderBottomWidth: 1,
+                borderBottomColor: "#3a5a30",
+              }}
+            >
+              <Text
+                style={{
+                  fontSize: 14,
+                  fontWeight: "700",
+                  color: "#c0c0c0",
+                  marginBottom: 10,
+                }}
+              >
+                {t("groups.activityDesc")}
+              </Text>
+              <TextInput
+                style={{
+                  backgroundColor: "#2a4230",
+                  borderRadius: 10,
+                  borderWidth: 1,
+                  borderColor: "#4a7040",
+                  paddingHorizontal: 14,
+                  paddingVertical: 10,
+                  fontSize: 15,
+                  color: "#e8e8e8",
+                }}
+                placeholder={t("groups.activityPlaceholder")}
+                placeholderTextColor="#8a8a8a"
+                value={newGroup.activity}
+                onChangeText={(v) =>
+                  setNewGroup((p) => ({ ...p, activity: v }))
+                }
+                maxLength={80}
+              />
             </View>
-            <TouchableOpacity style={ag.joinBtn} onPress={createGroup}>
-              <Text style={ag.joinBtnText}>{t("groups.postActivity")}</Text>
+
+            {/* ── LOKACIJA ── */}
+            <View
+              style={{
+                padding: 16,
+                borderBottomWidth: 1,
+                borderBottomColor: "#3a5a30",
+              }}
+            >
+              <Text
+                style={{
+                  fontSize: 14,
+                  fontWeight: "700",
+                  color: "#c0c0c0",
+                  marginBottom: 10,
+                }}
+              >
+                {t("groups.location")}
+              </Text>
+              <TextInput
+                style={{
+                  backgroundColor: "#2a4230",
+                  borderRadius: 10,
+                  borderWidth: 1,
+                  borderColor: "#4a7040",
+                  paddingHorizontal: 14,
+                  paddingVertical: 10,
+                  fontSize: 15,
+                  color: "#e8e8e8",
+                }}
+                placeholder={t("groups.locationPlaceholder")}
+                placeholderTextColor="#8a8a8a"
+                value={newGroup.locationName}
+                onChangeText={(v) =>
+                  setNewGroup((p) => ({ ...p, locationName: v }))
+                }
+                maxLength={100}
+              />
+            </View>
+
+            {/* ── KRATKI OPIS ── */}
+            <View
+              style={{
+                padding: 16,
+                borderBottomWidth: 1,
+                borderBottomColor: "#3a5a30",
+              }}
+            >
+              <Text
+                style={{
+                  fontSize: 14,
+                  fontWeight: "700",
+                  color: "#c0c0c0",
+                  marginBottom: 10,
+                }}
+              >
+                {t("groups.shortDescription")}
+              </Text>
+              <TextInput
+                style={{
+                  backgroundColor: "#2a4230",
+                  borderRadius: 10,
+                  borderWidth: 1,
+                  borderColor: "#4a7040",
+                  paddingHorizontal: 14,
+                  paddingVertical: 10,
+                  fontSize: 15,
+                  color: "#e8e8e8",
+                  minHeight: 80,
+                  textAlignVertical: "top",
+                }}
+                placeholder={t("groups.descriptionPlaceholder")}
+                placeholderTextColor="#8a8a8a"
+                value={newGroup.description}
+                onChangeText={(v) =>
+                  setNewGroup((p) => ({ ...p, description: v }))
+                }
+                multiline
+                maxLength={200}
+              />
+            </View>
+
+            {/* ── MAKS. BROJ LJUDI ── */}
+            <View
+              style={{
+                padding: 16,
+                borderBottomWidth: 1,
+                borderBottomColor: "#3a5a30",
+              }}
+            >
+              <Text
+                style={{
+                  fontSize: 14,
+                  fontWeight: "700",
+                  color: "#c0c0c0",
+                  marginBottom: 10,
+                }}
+              >
+                {t("groups.maxPeople")}
+              </Text>
+              <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
+                {[2, 3, 4, 5, 8, 10].map((n) => {
+                  const active = newGroup.maxPeople === String(n);
+                  return (
+                    <TouchableOpacity
+                      key={n}
+                      style={{
+                        paddingHorizontal: 16,
+                        paddingVertical: 9,
+                        backgroundColor: active ? "#3a5a30" : "#2a4230",
+                        borderRadius: 8,
+                        borderWidth: 1,
+                        borderColor: active ? "#5a8a48" : "#3a5a30",
+                      }}
+                      onPress={() =>
+                        setNewGroup((p) => ({ ...p, maxPeople: String(n) }))
+                      }
+                    >
+                      <Text
+                        style={{
+                          fontSize: 13,
+                          color: active ? "#e8e8e8" : "#b0b0b0",
+                          fontWeight: active ? "700" : "400",
+                        }}
+                      >
+                        {n}
+                      </Text>
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
+            </View>
+
+            {/* ── OBJAVI GUMB ── */}
+            <TouchableOpacity
+              style={{
+                margin: 16,
+                backgroundColor: "#3a5a30",
+                borderRadius: 12,
+                borderWidth: 1.5,
+                borderColor: "#5a8a48",
+                paddingVertical: 16,
+                alignItems: "center",
+              }}
+              onPress={createGroup}
+            >
+              <Text
+                style={{ color: "#e8e8e8", fontSize: 16, fontWeight: "700" }}
+              >
+                {t("groups.postActivity")}
+              </Text>
             </TouchableOpacity>
           </ScrollView>
         </KeyboardAvoidingView>
       ) : (
         // ─── Lista grupa ──────────────────────────────────────────────────────
-        <View style={{ flex: 1, backgroundColor: "#f5f5f5" }}>
-          <View style={ag.listHeader}>
+        <View style={{ flex: 1, backgroundColor: "#1a2e1a" }}>
+          {/* Header — bez +Nova aktivnost gumba */}
+          <View
+            style={{
+              flexDirection: "row",
+              justifyContent: "space-between",
+              alignItems: "center",
+              padding: 20,
+              paddingTop: Platform.OS === "ios" ? 54 : 36,
+              borderBottomWidth: 1.5,
+              borderBottomColor: "#4a7040",
+              backgroundColor: "#1a2e1a",
+            }}
+          >
+            <Text style={{ fontSize: 20, fontWeight: "800", color: "#e8e8e8" }}>
+              Zajedničke aktivnosti
+            </Text>
             <TouchableOpacity onPress={onClose}>
-              <Text style={{ color: "#fff", fontSize: 16 }}>✕</Text>
-            </TouchableOpacity>
-            <Text style={ag.listHeaderTitle}>{t("groups.title")}</Text>
-            <TouchableOpacity
-              style={ag.newBtn}
-              onPress={() => setShowCreate(true)}
-            >
-              <Text style={{ color: "#fff", fontSize: 13, fontWeight: "700" }}>
-                + {t("groups.createNew")}
+              <Text
+                style={{ fontSize: 14, color: "#b0b0b0", fontWeight: "600" }}
+              >
+                Zatvori
               </Text>
             </TouchableOpacity>
           </View>
@@ -2191,31 +2708,32 @@ export function ActivityGroupsModal({
               }}
             >
               <Text style={{ fontSize: 64 }}>🤝</Text>
-              <Text style={{ fontSize: 18, fontWeight: "700", color: "#333" }}>
+              <Text
+                style={{ fontSize: 18, fontWeight: "700", color: "#e8e8e8" }}
+              >
                 {t("groups.noActivities")}
               </Text>
               <Text
                 style={{
                   fontSize: 14,
-                  color: "#999",
+                  color: "#a0a0a0",
                   textAlign: "center",
                   paddingHorizontal: 40,
                 }}
               >
                 {t("groups.beFirst")}
               </Text>
-              <TouchableOpacity
-                style={ag.joinBtn}
-                onPress={() => setShowCreate(true)}
-              >
-                <Text style={ag.joinBtnText}>{t("groups.create")}</Text>
-              </TouchableOpacity>
             </View>
           ) : (
             <FlatList
               data={groups}
               keyExtractor={(g) => g.id}
-              contentContainerStyle={{ padding: 16 }}
+              contentContainerStyle={{
+                padding: 16,
+                paddingBottom: 100,
+                backgroundColor: "#1a2e1a",
+              }}
+              style={{ backgroundColor: "#1a2e1a" }}
               renderItem={({ item: g }) => {
                 if (!g || typeof g !== "object") return null;
 
@@ -2260,8 +2778,20 @@ export function ActivityGroupsModal({
 
                 return (
                   <TouchableOpacity
-                    style={[ag.groupCard, { borderLeftColor: color }]}
-                    onPress={() => setSelectedGroup(g)}
+                    style={{
+                      backgroundColor: "#2a4230",
+                      borderRadius: 16,
+                      padding: 16,
+                      marginBottom: 12,
+                      borderLeftWidth: 4,
+                      borderLeftColor: color,
+                      borderWidth: 1,
+                      borderColor: "#3a5a30",
+                    }}
+                    onPress={() => {
+                      setSelectedGroup(g);
+                      loadGroupMessages(g.id); // ← DODAJ OVO
+                    }}
                   >
                     <View
                       style={{
@@ -2271,30 +2801,62 @@ export function ActivityGroupsModal({
                       }}
                     >
                       <View style={{ flex: 1 }}>
-                        <Text style={ag.groupTitle} numberOfLines={1}>
+                        <Text
+                          style={{
+                            fontSize: 16,
+                            fontWeight: "800",
+                            color: "#e8e8e8",
+                          }}
+                          numberOfLines={1}
+                        >
                           {g.activity || "Aktivnost"}
                         </Text>
-                        <Text style={ag.groupLocation}>
+                        <Text
+                          style={{
+                            fontSize: 13,
+                            color: "#5a8a48",
+                            marginTop: 2,
+                          }}
+                        >
                           📍 {g.locationName || "Nepoznata lokacija"}
                         </Text>
                         {g.description ? (
-                          <Text style={ag.groupDesc} numberOfLines={2}>
+                          <Text
+                            style={{
+                              fontSize: 13,
+                              color: "#a0a0a0",
+                              marginTop: 4,
+                            }}
+                            numberOfLines={2}
+                          >
                             {g.description}
                           </Text>
                         ) : null}
                       </View>
                       <View
-                        style={[
-                          ag.groupIcon,
-                          { backgroundColor: color + "22" },
-                        ]}
+                        style={{
+                          width: 44,
+                          height: 44,
+                          borderRadius: 22,
+                          justifyContent: "center",
+                          alignItems: "center",
+                          marginLeft: 12,
+                          backgroundColor: color + "33",
+                        }}
                       >
                         <Text style={{ fontSize: 22 }}>
                           {EMOJIS[categoryKey] || "🤝"}
                         </Text>
                       </View>
                     </View>
-                    <View style={ag.groupFooter}>
+                    <View
+                      style={{
+                        flexDirection: "row",
+                        alignItems: "center",
+                        justifyContent: "space-between",
+                        marginTop: 12,
+                      }}
+                    >
                       <View
                         style={{
                           flexDirection: "row",
@@ -2305,23 +2867,49 @@ export function ActivityGroupsModal({
                         {members.slice(0, 4).map((m, i) => (
                           <View
                             key={i}
-                            style={[
-                              ag.footerAvatar,
-                              { marginLeft: i > 0 ? -8 : 0 },
-                            ]}
+                            style={{
+                              width: 26,
+                              height: 26,
+                              borderRadius: 13,
+                              backgroundColor: "#667eea",
+                              justifyContent: "center",
+                              alignItems: "center",
+                              borderWidth: 2,
+                              borderColor: "#2a4230",
+                              marginLeft: i > 0 ? -8 : 0,
+                            }}
                           >
-                            <Text
-                              style={{
-                                color: "#fff",
-                                fontSize: 10,
-                                fontWeight: "700",
-                              }}
-                            >
-                              {(m || "")[0]?.toUpperCase()}
-                            </Text>
+                            {memberAvatars[m] ? (
+                              <Image
+                                source={{ uri: memberAvatars[m] }}
+                                style={{
+                                  width: 26,
+                                  height: 26,
+                                  borderRadius: 13,
+                                }}
+                                resizeMode="cover"
+                              />
+                            ) : (
+                              <Text
+                                style={{
+                                  color: "#fff",
+                                  fontSize: 10,
+                                  fontWeight: "700",
+                                }}
+                              >
+                                {(m || "")[0]?.toUpperCase()}
+                              </Text>
+                            )}
                           </View>
                         ))}
-                        <Text style={ag.groupCount}>
+                        <Text
+                          style={{
+                            fontSize: 12,
+                            color: "#c0c0c0",
+                            fontWeight: "600",
+                            marginLeft: 4,
+                          }}
+                        >
                           {members.length}/{g.maxPeople || 0}
                         </Text>
                       </View>
@@ -2332,36 +2920,78 @@ export function ActivityGroupsModal({
                           alignItems: "center",
                         }}
                       >
-                        <Text style={{ fontSize: 11, color: "#bbb" }}>
+                        <Text style={{ fontSize: 11, color: "#888" }}>
                           {timeStr}
                         </Text>
                         {isCreator ? (
-                          <View style={ag.badgeOwn}>
-                            <Text style={ag.badgeOwnText}>
+                          <View
+                            style={{
+                              backgroundColor: "#1a2e1a",
+                              borderRadius: 12,
+                              paddingHorizontal: 10,
+                              paddingVertical: 4,
+                              borderWidth: 1,
+                              borderColor: "#5a8a48",
+                            }}
+                          >
+                            <Text
+                              style={{
+                                fontSize: 11,
+                                color: "#5a8a48",
+                                fontWeight: "700",
+                              }}
+                            >
                               {t("groups.yourGroup")}
                             </Text>
                           </View>
                         ) : isMember ? (
-                          <View style={ag.badgeMember}>
-                            <Text style={ag.badgeMemberText}>
+                          <View
+                            style={{
+                              backgroundColor: "#1a3a20",
+                              borderRadius: 12,
+                              paddingHorizontal: 10,
+                              paddingVertical: 4,
+                            }}
+                          >
+                            <Text
+                              style={{
+                                fontSize: 11,
+                                color: "#34c759",
+                                fontWeight: "700",
+                              }}
+                            >
                               ✓ {t("groups.joined")}
                             </Text>
                           </View>
                         ) : isFull ? (
-                          <View style={ag.badgeFull}>
-                            <Text style={{ fontSize: 11, color: "#999" }}>
+                          <View
+                            style={{
+                              backgroundColor: "#1a2e1a",
+                              borderRadius: 12,
+                              paddingHorizontal: 10,
+                              paddingVertical: 4,
+                            }}
+                          >
+                            <Text style={{ fontSize: 11, color: "#888" }}>
                               {t("groups.full")}
                             </Text>
                           </View>
                         ) : (
                           <TouchableOpacity
-                            style={ag.joinSmallBtn}
+                            style={{
+                              backgroundColor: "#3a5a30",
+                              borderRadius: 12,
+                              paddingHorizontal: 12,
+                              paddingVertical: 5,
+                              borderWidth: 1,
+                              borderColor: "#5a8a48",
+                            }}
                             onPress={() => joinGroup(g.id)}
                           >
                             <Text
                               style={{
                                 fontSize: 12,
-                                color: "#fff",
+                                color: "#e8e8e8",
                                 fontWeight: "700",
                               }}
                             >
@@ -2376,6 +3006,121 @@ export function ActivityGroupsModal({
               }}
             />
           )}
+
+          {/* ── FAB — Dodaj novu aktivnost, uvijek vidljiv ── */}
+          <TouchableOpacity
+            style={{
+              position: "absolute",
+              bottom: 80,
+              left: 20,
+              right: 20,
+              backgroundColor: "#3a5a30",
+              borderRadius: 14,
+              paddingVertical: 16,
+              alignItems: "center",
+              borderWidth: 1.5,
+              borderColor: "#5a8a48",
+              shadowColor: "#000",
+              shadowOffset: { width: 0, height: 4 },
+              shadowOpacity: 0.3,
+              shadowRadius: 8,
+              elevation: 8,
+            }}
+            onPress={() => setShowCreate(true)}
+          >
+            <Text style={{ color: "#e8e8e8", fontSize: 16, fontWeight: "700" }}>
+              + Dodaj novu aktivnost
+            </Text>
+          </TouchableOpacity>
+        </View>
+      )}
+
+      {/* Confirm brisanje - Vara stil */}
+      {showDeleteConfirm && (
+        <View
+          style={{
+            position: "absolute",
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: "rgba(0,0,0,0.6)",
+            justifyContent: "center",
+            alignItems: "center",
+            zIndex: 999,
+          }}
+        >
+          <View
+            style={{
+              backgroundColor: "#1a2e1a",
+              borderRadius: 20,
+              padding: 28,
+              marginHorizontal: 24,
+              borderWidth: 1.5,
+              borderColor: "#4a7040",
+            }}
+          >
+            <Text
+              style={{ fontSize: 22, textAlign: "center", marginBottom: 8 }}
+            ></Text>
+            <Text
+              style={{
+                fontSize: 17,
+                fontWeight: "800",
+                color: "#e8e8e8",
+                textAlign: "center",
+                marginBottom: 8,
+              }}
+            >
+              {t("groups.deleteConfirm")}
+            </Text>
+            <Text
+              style={{
+                fontSize: 13,
+                color: "#a0a0a0",
+                textAlign: "center",
+                marginBottom: 24,
+                lineHeight: 20,
+              }}
+            >
+              {t("groups.deleteConfirmQuestion")}
+            </Text>
+            <TouchableOpacity
+              style={{
+                backgroundColor: "#2a3020",
+                borderRadius: 12,
+                paddingVertical: 14,
+                alignItems: "center",
+                borderWidth: 1.5,
+                borderColor: "#4a6030",
+                marginBottom: 10,
+              }}
+              onPress={() => confirmDeleteGroup(showDeleteConfirm)}
+            >
+              <Text
+                style={{ color: "#c8d8a0", fontSize: 15, fontWeight: "700" }}
+              >
+                {t("common.delete")}
+              </Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={{
+                backgroundColor: "#2a4230",
+                borderRadius: 12,
+                paddingVertical: 14,
+                alignItems: "center",
+                borderWidth: 1,
+                borderColor: "#3a5a30",
+              }}
+              onPress={() => setShowDeleteConfirm(null)}
+            >
+              <Text
+                style={{ color: "#c0c0c0", fontSize: 15, fontWeight: "600" }}
+              >
+                {t("common.cancel")}
+              </Text>
+            </TouchableOpacity>
+          </View>
         </View>
       )}
     </Modal>
@@ -2787,7 +3532,7 @@ async function fetchVenuesNearCity(
   for (const p of places) {
     if (!venues[p.type]) venues[p.type] = [];
     // Min 5, max 15 opcija po kategoriji
-    if (venues[p.type].length < 15) {
+    if (venues[p.type].length < 20) {
       venues[p.type].push({
         name: p.name,
         address: p.address,
@@ -3602,6 +4347,7 @@ export function PlanMyDayModal({
 
   const [step, setStep] = useState<PlanStep>("form");
   const [destination, setDestination] = useState("");
+  const [mapMarkerLimit, setMapMarkerLimit] = useState(10);
   const [postalCode, setPostalCode] = useState("");
   const [accommodationAddress, setAccommodationAddress] = useState("");
   const [period, setPeriod] = useState<PlanPeriod>("vikend");
@@ -3657,6 +4403,7 @@ export function PlanMyDayModal({
     setInterests([]);
     setAllVenues({});
     setSelectedVenues({});
+    setMapMarkerLimit(10);
     setAccommodationCoords(null);
     if (loadingInterval.current) clearInterval(loadingInterval.current);
   };
@@ -3961,7 +4708,7 @@ Plan napiši po danima, OBAVEZNO koristi konkretna imena mjesta, adrese, procjen
               <Text
                 style={{ fontSize: 16, color: "#5a8a48", fontWeight: "700" }}
               >
-                ← Novi plan
+                Novi plan
               </Text>
             </TouchableOpacity>
           ) : (
@@ -4019,7 +4766,7 @@ Plan napiši po danima, OBAVEZNO koristi konkretna imena mjesta, adrese, procjen
           <ScrollView
             contentContainerStyle={{ padding: 20, paddingBottom: 60 }}
           >
-            {/* Progress bar: posjećena/ukupna */}
+            {/* Progress */}
             <View style={planStyles.progressCard}>
               <View style={planStyles.progressHeader}>
                 <Text style={planStyles.progressTitle}>
@@ -4049,7 +4796,7 @@ Plan napiši po danima, OBAVEZNO koristi konkretna imena mjesta, adrese, procjen
               )}
             </View>
 
-            {/* Mapa */}
+            {/* KARTA — s korisnikovom lokacijom i svim kategorijama */}
             <View style={mapLegend.header}>
               <View style={{ flex: 1 }}>
                 <Text style={mapLegend.headerTitle}>
@@ -4057,8 +4804,8 @@ Plan napiši po danima, OBAVEZNO koristi konkretna imena mjesta, adrese, procjen
                 </Text>
                 <Text style={mapLegend.headerSub}>
                   {accommodationAddress
-                    ? `🏨 Smještaj: ${accommodationAddress}`
-                    : "Kliknite marker za detalje i označavanje posjete"}
+                    ? `🏨 ${accommodationAddress}`
+                    : "Tapnite marker za detalje"}
                 </Text>
               </View>
               {accommodationCoords && (
@@ -4081,52 +4828,275 @@ Plan napiši po danima, OBAVEZNO koristi konkretna imena mjesta, adrese, procjen
               )}
             </View>
 
-            <MapView
-              ref={mapRef}
-              style={{ height: 360, borderRadius: 16, marginBottom: 8 }}
-              initialRegion={{
-                latitude: accommodationCoords?.latitude || 45.815,
-                longitude: accommodationCoords?.longitude || 15.9819,
-                latitudeDelta: 0.06,
-                longitudeDelta: 0.06,
-              }}
-            >
-              {/* Smještaj marker */}
-              {accommodationCoords && (
-                <Marker
-                  coordinate={accommodationCoords}
-                  title="🏨 Vaš smještaj"
-                  description={accommodationAddress || "Adresa smještaja"}
-                  pinColor="#667eea"
-                />
-              )}
+            {(() => {
+              const allMapVenues: {
+                venue: {
+                  name: string;
+                  address?: string;
+                  latitude: number;
+                  longitude: number;
+                };
+                type: string;
+              }[] = [];
+              Object.entries(allVenues).forEach(([type, options]) => {
+                options.forEach((venue) => allMapVenues.push({ venue, type }));
+              });
+              const visibleVenues = allMapVenues.slice(0, mapMarkerLimit);
+              const hasMoreMarkers = allMapVenues.length > mapMarkerLimit;
+              const moreCount = Math.min(
+                allMapVenues.length - mapMarkerLimit,
+                10,
+              );
 
-              {/* Markeri SVIH pronađenih mjesta */}
-              {Object.entries(allVenues).map(([type, options]) =>
-                options.map((venue, idx) => {
-                  const placeObj = venueToPlace(venue, type);
-                  const visited = isVenueVisited(venue, type);
-                  return (
-                    <PlaceMarker
-                      key={`plan_marker_${type}_${idx}`}
-                      place={placeObj}
-                      isVisited={visited}
-                      onPress={() => {
-                        // Otvori PlaceDetailModal s punim detaljima
-                        setSelectedPlaceForDetail(placeObj);
-                        setShowDetailModal(true);
-                      }}
-                    />
-                  );
-                }),
-              )}
-            </MapView>
+              return (
+                <>
+                  <MapView
+                    ref={mapRef}
+                    style={{ height: 360, borderRadius: 16, marginBottom: 0 }}
+                    initialRegion={{
+                      latitude: accommodationCoords?.latitude || 45.815,
+                      longitude: accommodationCoords?.longitude || 15.9819,
+                      latitudeDelta: 0.06,
+                      longitudeDelta: 0.06,
+                    }}
+                  >
+                    {/* Korisnikova stvarna lokacija */}
+                    {userLocation && (
+                      <Marker
+                        coordinate={userLocation}
+                        anchor={{ x: 0.5, y: 0.5 }}
+                        tracksViewChanges={false}
+                      >
+                        <UserLocationMarker />
+                      </Marker>
+                    )}
+
+                    {/* Marker smještaja */}
+                    {accommodationCoords && (
+                      <Marker
+                        coordinate={accommodationCoords}
+                        title="🏨 Vaš smještaj"
+                        description={accommodationAddress || "Adresa smještaja"}
+                        pinColor="#667eea"
+                      />
+                    )}
+
+                    {/* Vidljivi markeri s ikonama kategorija */}
+                    {visibleVenues.map(({ venue, type }, idx) => {
+                      const placeObj = venueToPlace(venue, type);
+                      const visited = isVenueVisited(venue, type);
+                      return (
+                        <PlaceMarker
+                          key={`plan_marker_${type}_${idx}`}
+                          place={placeObj}
+                          isVisited={visited}
+                          onPress={() => {
+                            setSelectedPlaceForDetail(placeObj);
+                            setShowDetailModal(true);
+                          }}
+                        />
+                      );
+                    })}
+                  </MapView>
+
+                  {/* Info traka ispod karte: prikazano X od Y + dodaj još */}
+                  <View
+                    style={{
+                      backgroundColor: "#2a4230",
+                      borderBottomLeftRadius: 12,
+                      borderBottomRightRadius: 12,
+                      paddingHorizontal: 14,
+                      paddingVertical: 10,
+                      marginBottom: 8,
+                      flexDirection: "row",
+                      alignItems: "center",
+                      justifyContent: "space-between",
+                      borderWidth: 1,
+                      borderTopWidth: 0,
+                      borderColor: "#3a5a30",
+                    }}
+                  >
+                    <Text style={{ fontSize: 12, color: "#6a9a60", flex: 1 }}>
+                      📍 Prikazano{" "}
+                      {Math.min(mapMarkerLimit, allMapVenues.length)} od{" "}
+                      {allMapVenues.length} mjesta
+                    </Text>
+                    {hasMoreMarkers ? (
+                      <View style={{ flexDirection: "row", gap: 6 }}>
+                        <TouchableOpacity
+                          style={{
+                            backgroundColor: "#3a5a30",
+                            borderRadius: 8,
+                            paddingHorizontal: 10,
+                            paddingVertical: 5,
+                            borderWidth: 1,
+                            borderColor: "#5a8a48",
+                          }}
+                          onPress={() => {
+                            const newLimit = mapMarkerLimit + 5;
+                            setMapMarkerLimit(newLimit);
+                            const newVisible = allMapVenues.slice(0, newLimit);
+                            if (mapRef.current && newVisible.length > 0) {
+                              mapRef.current.fitToCoordinates(
+                                [
+                                  ...newVisible.map(({ venue }) => ({
+                                    latitude: venue.latitude,
+                                    longitude: venue.longitude,
+                                  })),
+                                  ...(accommodationCoords
+                                    ? [accommodationCoords]
+                                    : []),
+                                ],
+                                {
+                                  edgePadding: {
+                                    top: 60,
+                                    right: 40,
+                                    bottom: 60,
+                                    left: 40,
+                                  },
+                                  animated: true,
+                                },
+                              );
+                            }
+                          }}
+                        >
+                          <Text
+                            style={{
+                              color: "#e8e8e8",
+                              fontSize: 11,
+                              fontWeight: "700",
+                            }}
+                          >
+                            +5
+                          </Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity
+                          style={{
+                            backgroundColor: "#3a5a30",
+                            borderRadius: 8,
+                            paddingHorizontal: 10,
+                            paddingVertical: 5,
+                            borderWidth: 1,
+                            borderColor: "#5a8a48",
+                          }}
+                          onPress={() => {
+                            const newLimit = mapMarkerLimit + 10;
+                            setMapMarkerLimit(newLimit);
+                            const newVisible = allMapVenues.slice(0, newLimit);
+                            if (mapRef.current && newVisible.length > 0) {
+                              mapRef.current.fitToCoordinates(
+                                [
+                                  ...newVisible.map(({ venue }) => ({
+                                    latitude: venue.latitude,
+                                    longitude: venue.longitude,
+                                  })),
+                                  ...(accommodationCoords
+                                    ? [accommodationCoords]
+                                    : []),
+                                ],
+                                {
+                                  edgePadding: {
+                                    top: 60,
+                                    right: 40,
+                                    bottom: 60,
+                                    left: 40,
+                                  },
+                                  animated: true,
+                                },
+                              );
+                            }
+                          }}
+                        >
+                          <Text
+                            style={{
+                              color: "#e8e8e8",
+                              fontSize: 11,
+                              fontWeight: "700",
+                            }}
+                          >
+                            +10
+                          </Text>
+                        </TouchableOpacity>
+                        {allMapVenues.length - mapMarkerLimit > 10 && (
+                          <TouchableOpacity
+                            style={{
+                              backgroundColor: "#1a3a20",
+                              borderRadius: 8,
+                              paddingHorizontal: 10,
+                              paddingVertical: 5,
+                              borderWidth: 1,
+                              borderColor: "#4a7040",
+                            }}
+                            onPress={() => {
+                              setMapMarkerLimit(allMapVenues.length);
+                              if (mapRef.current && allMapVenues.length > 0) {
+                                mapRef.current.fitToCoordinates(
+                                  allMapVenues.map(({ venue }) => ({
+                                    latitude: venue.latitude,
+                                    longitude: venue.longitude,
+                                  })),
+                                  {
+                                    edgePadding: {
+                                      top: 60,
+                                      right: 40,
+                                      bottom: 60,
+                                      left: 40,
+                                    },
+                                    animated: true,
+                                  },
+                                );
+                              }
+                            }}
+                          >
+                            <Text
+                              style={{
+                                color: "#6a9a60",
+                                fontSize: 11,
+                                fontWeight: "700",
+                              }}
+                            >
+                              Svi ({allMapVenues.length})
+                            </Text>
+                          </TouchableOpacity>
+                        )}
+                      </View>
+                    ) : (
+                      <Text
+                        style={{
+                          fontSize: 11,
+                          color: "#5a8a48",
+                          fontWeight: "600",
+                        }}
+                      >
+                        ✓ Sve prikazano
+                      </Text>
+                    )}
+                  </View>
+                </>
+              );
+            })()}
 
             {/* Legenda kategorija */}
             <View style={mapLegend.legendContainer}>
               <Text style={mapLegend.legendTitle}>KATEGORIJE NA KARTI</Text>
               <ScrollView horizontal showsHorizontalScrollIndicator={false}>
                 <View style={mapLegend.legendRow}>
+                  {userLocation && (
+                    <View
+                      style={[
+                        mapLegend.chip,
+                        {
+                          backgroundColor: "#34c75922",
+                          borderColor: "#34c759",
+                        },
+                      ]}
+                    >
+                      <View
+                        style={[mapLegend.dot, { backgroundColor: "#34c759" }]}
+                      />
+                      <Text style={mapLegend.chipText}>📍 Vaša lokacija</Text>
+                    </View>
+                  )}
                   {accommodationCoords && (
                     <View
                       style={[
@@ -4167,30 +5137,46 @@ Plan napiši po danima, OBAVEZNO koristi konkretna imena mjesta, adrese, procjen
                             { backgroundColor: cat.color },
                           ]}
                         />
-                        <Text style={mapLegend.chipText}>
-                          {EMOJIS[type]}{" "}
-                          {t(`categories.${type}`, { defaultValue: type })} (
-                          {options.length})
-                          {visitedInCat > 0 ? ` ✓${visitedInCat}` : ""}
-                        </Text>
+                        <View
+                          style={{
+                            flexDirection: "row",
+                            alignItems: "center",
+                            gap: 4,
+                          }}
+                        >
+                          {CATEGORY_ICONS[type] ? (
+                            <Image
+                              source={CATEGORY_ICONS[type]}
+                              style={{ width: 16, height: 16 }}
+                              resizeMode="contain"
+                            />
+                          ) : (
+                            <Text style={{ fontSize: 11 }}>{EMOJIS[type]}</Text>
+                          )}
+                          <Text style={mapLegend.chipText}>
+                            {t(`categories.${type}`, { defaultValue: type })} (
+                            {options.length})
+                            {visitedInCat > 0 ? ` ✓${visitedInCat}` : ""}
+                          </Text>
+                        </View>
                       </View>
                     );
                   })}
                 </View>
               </ScrollView>
-              <Text style={{ fontSize: 11, color: "#999", marginTop: 6 }}>
-                💡 Tapnite marker → detalji, slike, recenzija + označite posjet
+              <Text style={{ fontSize: 11, color: "#6a9a60", marginTop: 6 }}>
+                💡 Tapnite marker → slike, radno vrijeme, ocjena, označi posjet
               </Text>
             </View>
 
-            {/* ── PO KATEGORIJAMA: sve ponuđene lokacije ─────────────────── */}
+            {/* PO KATEGORIJAMA: min 5 opcija, korisnik bira */}
             <View style={{ marginTop: 8, marginBottom: 8 }}>
               <Text style={planStyles.sectionHeader}>
-                🗂️ Sve preporučene lokacije — označite posjete
+                🗂️ Odaberite svoja mjesta po kategorijama
               </Text>
               <Text style={planStyles.sectionSub}>
-                Svaku posjet možete označiti odmah — sprema se u arhivu i
-                dodjeljuje značku
+                Tapnite karticu za detalje · Tapnite "Označi posjet" kada
+                posjetite
               </Text>
             </View>
 
@@ -4200,6 +5186,8 @@ Plan napiši po danima, OBAVEZNO koristi konkretna imena mjesta, adrese, procjen
               const visitedInCat = options.filter((v) =>
                 isVenueVisited(v, type),
               ).length;
+              // Prikaži sve opcije, minimum 5 ako ih ima
+              const displayOptions = options;
 
               return (
                 <View
@@ -4214,41 +5202,80 @@ Plan napiši po danima, OBAVEZNO koristi konkretna imena mjesta, adrese, procjen
                     <View
                       style={[
                         planStyles.categoryDot,
-                        { backgroundColor: color },
+                        {
+                          backgroundColor: color + "22",
+                          borderWidth: 1,
+                          borderColor: color,
+                        },
                       ]}
                     >
-                      <Text style={{ fontSize: 16 }}>
-                        {EMOJIS[type] || "📍"}
-                      </Text>
+                      {CATEGORY_ICONS[type] ? (
+                        <Image
+                          source={CATEGORY_ICONS[type]}
+                          style={{ width: 56, height: 56 }} // ← povećano
+                          resizeMode="contain"
+                        />
+                      ) : (
+                        <Text style={{ fontSize: 28 }}>
+                          {EMOJIS[type] || "📍"}
+                        </Text>
+                      )}
                     </View>
                     <View style={{ flex: 1 }}>
                       <Text style={planStyles.categoryTitle}>
                         {t(`categories.${type}`, { defaultValue: type })}
                       </Text>
                       <Text style={planStyles.categorySub}>
-                        {options.length} prijedloga
+                        {displayOptions.length} prijedloga
                         {visitedInCat > 0
                           ? ` · ✓ ${visitedInCat} posjećeno`
                           : ""}
+                        {displayOptions.length < 5 ? " (OSM podaci)" : ""}
                       </Text>
                     </View>
-                    {/* Mini progress */}
                     {visitedInCat > 0 && (
                       <View
                         style={[
-                          planStyles.catBadge,
-                          { backgroundColor: color + "22", borderColor: color },
+                          planStyles.categoryDot,
+                          {
+                            backgroundColor: color + "22",
+                            borderWidth: 1,
+                            borderColor: color,
+                            width: 64, // ← povećano
+                            height: 64, // ← povećano
+                            borderRadius: 32, // ← povećano
+                          },
                         ]}
                       >
                         <Text style={[planStyles.catBadgeText, { color }]}>
-                          {visitedInCat}/{options.length}
+                          {visitedInCat}/{displayOptions.length}
                         </Text>
                       </View>
                     )}
                   </View>
 
+                  {/* Info ako nema dovoljno opcija */}
+                  {displayOptions.length < 5 && (
+                    <View
+                      style={{
+                        backgroundColor: "#2a4230",
+                        marginHorizontal: 12,
+                        marginBottom: 8,
+                        borderRadius: 8,
+                        padding: 10,
+                        borderWidth: 1,
+                        borderColor: "#3a5a30",
+                      }}
+                    >
+                      <Text style={{ fontSize: 12, color: "#6a9a60" }}>
+                        ℹ️ Pronađeno {displayOptions.length} mjesta u radijusu{" "}
+                        {activityRadius} km. Povećajte radijus za više opcija.
+                      </Text>
+                    </View>
+                  )}
+
                   {/* Venue kartice */}
-                  {options.map((venue, idx) => {
+                  {displayOptions.map((venue, idx) => {
                     const visited = isVenueVisited(venue, type);
                     const dist = accommodationCoords
                       ? haversineKm(
@@ -4268,7 +5295,34 @@ Plan napiši po danima, OBAVEZNO koristi konkretna imena mjesta, adrese, procjen
                           visited && planStyles.venueCardVisited,
                         ]}
                       >
-                        {/* Lijeva strana: info */}
+                        {/* Broj opcije */}
+                        <View
+                          style={{
+                            width: 28,
+                            height: 28,
+                            borderRadius: 14,
+                            backgroundColor: visited
+                              ? "#34c75922"
+                              : color + "22",
+                            justifyContent: "center",
+                            alignItems: "center",
+                            borderWidth: 1,
+                            borderColor: visited ? "#34c759" : color,
+                            marginRight: 2,
+                          }}
+                        >
+                          <Text
+                            style={{
+                              fontSize: 11,
+                              fontWeight: "800",
+                              color: visited ? "#34c759" : color,
+                            }}
+                          >
+                            {idx + 1}
+                          </Text>
+                        </View>
+
+                        {/* Info */}
                         <TouchableOpacity
                           style={{ flex: 1 }}
                           onPress={() => {
@@ -4281,12 +5335,20 @@ Plan napiši po danima, OBAVEZNO koristi konkretna imena mjesta, adrese, procjen
                             style={{
                               flexDirection: "row",
                               alignItems: "flex-start",
-                              gap: 8,
+                              gap: 6,
                             }}
                           >
-                            <Text style={{ fontSize: 20, marginTop: 1 }}>
-                              {EMOJIS[type] || "📍"}
-                            </Text>
+                            {CATEGORY_ICONS[type] ? (
+                              <Image
+                                source={CATEGORY_ICONS[type]}
+                                style={{ width: 40, height: 40 }} // ← povećano
+                                resizeMode="contain"
+                              />
+                            ) : (
+                              <Text style={{ fontSize: 28 }}>
+                                {EMOJIS[type] || "📍"}
+                              </Text>
+                            )}
                             <View style={{ flex: 1 }}>
                               <Text
                                 style={[
@@ -4317,9 +5379,7 @@ Plan napiši po danima, OBAVEZNO koristi konkretna imena mjesta, adrese, procjen
                                   <Text
                                     style={[
                                       planStyles.venueDist,
-                                      {
-                                        color: dist < 1 ? "#34c759" : "#667eea",
-                                      },
+                                      { color: dist < 1 ? "#34c759" : color },
                                     ]}
                                   >
                                     {dist < 1
@@ -4328,31 +5388,40 @@ Plan napiši po danima, OBAVEZNO koristi konkretna imena mjesta, adrese, procjen
                                   </Text>
                                 )}
                                 <Text style={planStyles.venueDetailHint}>
-                                  Tapni za detalje →
+                                  Tapni za slike i detalje
                                 </Text>
                               </View>
                             </View>
                           </View>
                         </TouchableOpacity>
 
-                        {/* Desna strana: Mark visited gumb */}
+                        {/* Označi posjet gumb */}
                         <TouchableOpacity
                           style={[
                             planStyles.visitToggleBtn,
                             visited
                               ? planStyles.visitToggleBtnVisited
                               : { borderColor: color },
+                            { minWidth: 52, maxWidth: 52 }, // ← fiksiraj širinu
                           ]}
                           onPress={() => handleMarkVisitedFromPlan(venue, type)}
                           disabled={visited}
                         >
                           {visited ? (
-                            <Text style={planStyles.visitToggleTextVisited}>
-                              ✓ Posjet.
+                            <Text
+                              style={[
+                                planStyles.visitToggleTextVisited,
+                                { fontSize: 9 },
+                              ]}
+                            >
+                              ✓{"\n"}Bilo
                             </Text>
                           ) : (
                             <Text
-                              style={[planStyles.visitToggleText, { color }]}
+                              style={[
+                                planStyles.visitToggleText,
+                                { color, fontSize: 9 },
+                              ]}
                             >
                               Označi{"\n"}posjet
                             </Text>
@@ -4365,10 +5434,14 @@ Plan napiši po danima, OBAVEZNO koristi konkretna imena mjesta, adrese, procjen
               );
             })}
 
-            {/* Generirani tekst plana */}
+            {/* Generirani plan */}
             <View style={{ marginTop: 20 }}>
               <Text style={planStyles.sectionHeader}>
                 📋 Generirani plan putovanja
+              </Text>
+              <Text style={planStyles.sectionSub}>
+                Konkretna mjesta iz gornjih kategorija integrirana u dnevni
+                raspored
               </Text>
             </View>
             <PlanRenderer text={result} />
@@ -4381,7 +5454,7 @@ Plan napiši po danima, OBAVEZNO koristi konkretna imena mjesta, adrese, procjen
                 style={pm.btnSecondary}
                 onPress={() => setStep("form")}
               >
-                <Text style={pm.btnSecondaryText}>← Generiraj novi plan</Text>
+                <Text style={pm.btnSecondaryText}> Generiraj novi plan</Text>
               </TouchableOpacity>
             </View>
           </ScrollView>
@@ -4416,43 +5489,40 @@ Plan napiši po danima, OBAVEZNO koristi konkretna imena mjesta, adrese, procjen
                 >
                   {t("map.destination")}
                 </Text>
-                <View style={{ flexDirection: "row", gap: 8 }}>
-                  <TextInput
-                    style={{
-                      flex: 2,
-                      backgroundColor: "#2a4230",
-                      borderRadius: 10,
-                      borderWidth: 1,
-                      borderColor: "#4a7040",
-                      paddingHorizontal: 14,
-                      paddingVertical: 10,
-                      fontSize: 15,
-                      color: "#e8e8e8",
-                    }}
-                    placeholder={t("plan.destinationPlaceholder")}
-                    placeholderTextColor="#8a8a8a"
-                    value={destination}
-                    onChangeText={setDestination}
-                  />
-                  <TextInput
-                    style={{
-                      flex: 1,
-                      backgroundColor: "#2a4230",
-                      borderRadius: 10,
-                      borderWidth: 1,
-                      borderColor: "#4a7040",
-                      paddingHorizontal: 14,
-                      paddingVertical: 10,
-                      fontSize: 15,
-                      color: "#e8e8e8",
-                    }}
-                    placeholder={t("plan.postalCode")}
-                    placeholderTextColor="#8a8a8a"
-                    value={postalCode}
-                    onChangeText={setPostalCode}
-                    keyboardType="numeric"
-                  />
-                </View>
+                <TextInput
+                  style={{
+                    backgroundColor: "#2a4230",
+                    borderRadius: 10,
+                    borderWidth: 1,
+                    borderColor: "#4a7040",
+                    paddingHorizontal: 14,
+                    paddingVertical: 10,
+                    fontSize: 15,
+                    color: "#e8e8e8",
+                    marginBottom: 8,
+                  }}
+                  placeholder={t("plan.destinationPlaceholder")}
+                  placeholderTextColor="#8a8a8a"
+                  value={destination}
+                  onChangeText={setDestination}
+                />
+                <TextInput
+                  style={{
+                    backgroundColor: "#2a4230",
+                    borderRadius: 10,
+                    borderWidth: 1,
+                    borderColor: "#4a7040",
+                    paddingHorizontal: 14,
+                    paddingVertical: 10,
+                    fontSize: 15,
+                    color: "#e8e8e8",
+                  }}
+                  placeholder={t("plan.postalCode")}
+                  placeholderTextColor="#8a8a8a"
+                  value={postalCode}
+                  onChangeText={setPostalCode}
+                  keyboardType="numeric"
+                />
                 <TextInput
                   style={{
                     marginTop: 8,
@@ -4589,7 +5659,7 @@ Plan napiši po danima, OBAVEZNO koristi konkretna imena mjesta, adrese, procjen
                   {t("plan.travelWith")}
                 </Text>
                 <View
-                  style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}
+                  style={{ flexDirection: "row", flexWrap: "wrap", gap: 4 }}
                 >
                   {COMPANION_OPTIONS.map((o) => {
                     const active = companions === o.key;
@@ -4655,7 +5725,6 @@ Plan napiši po danima, OBAVEZNO koristi konkretna imena mjesta, adrese, procjen
                     flexDirection: "row",
                     flexWrap: "wrap",
                     gap: 8,
-                    marginBottom: 10,
                   }}
                 >
                   {["200", "500", "1000", "2000", "5000"].map((b) => {
@@ -4686,23 +5755,6 @@ Plan napiši po danima, OBAVEZNO koristi konkretna imena mjesta, adrese, procjen
                     );
                   })}
                 </View>
-                <TextInput
-                  style={{
-                    backgroundColor: "#2a4230",
-                    borderRadius: 10,
-                    borderWidth: 1,
-                    borderColor: "#4a7040",
-                    paddingHorizontal: 14,
-                    paddingVertical: 10,
-                    fontSize: 15,
-                    color: "#e8e8e8",
-                  }}
-                  placeholder={t("plan.budget")}
-                  placeholderTextColor="#8a8a8a"
-                  value={budget}
-                  onChangeText={setBudget}
-                  keyboardType="numeric"
-                />
               </View>
 
               {/* ── RADIJUS AKTIVNOSTI ── */}
@@ -4775,7 +5827,7 @@ Plan napiši po danima, OBAVEZNO koristi konkretna imena mjesta, adrese, procjen
                   🚗 Prijevoz
                 </Text>
                 <View
-                  style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}
+                  style={{ flexDirection: "row", flexWrap: "wrap", gap: 4 }}
                 >
                   {TRANSPORT_OPTIONS.map((o) => {
                     const active = transport === o.key;
@@ -4837,7 +5889,7 @@ Plan napiši po danima, OBAVEZNO koristi konkretna imena mjesta, adrese, procjen
                   {t("map.activities")}
                 </Text>
                 <View
-                  style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}
+                  style={{ flexDirection: "row", flexWrap: "wrap", gap: 4 }}
                 >
                   {PREF_OPTIONS.map((o) => {
                     const active = preference === o.key;
@@ -5022,9 +6074,7 @@ Plan napiši po danima, OBAVEZNO koristi konkretna imena mjesta, adrese, procjen
             setSelectedPlaceForDetail(null);
           }}
           onMarkVisited={async (p) => {
-            // 1. Spremi u parent (arhiva + značka)
             if (onMarkVisited) await onMarkVisited(p);
-            // 2. Ažuriraj lokalni set odmah
             setLocalVisitedIds((prev) => new Set([...prev, p.id]));
             setShowDetailModal(false);
             setSelectedPlaceForDetail(null);
@@ -5301,225 +6351,260 @@ function VisitArchiveModal({
     ? visits.filter((v) => v.placeType === filter)
     : visits;
   const usedTypes = [...new Set(visits.map((v) => v.placeType))];
+
   return (
     <Modal
       visible={visible}
       animationType="slide"
-      transparent
+      transparent={false}
       onRequestClose={onClose}
     >
-      <View
-        style={{
-          flex: 1,
-          backgroundColor: "rgba(0,0,0,0.5)",
-          justifyContent: "flex-end",
-        }}
-      >
+      <View style={{ flex: 1, backgroundColor: "#1a2e1a" }}>
+        {/* Header */}
         <View
           style={{
-            backgroundColor: "#fff",
-            borderTopLeftRadius: 24,
-            borderTopRightRadius: 24,
-            maxHeight: SH * 0.88,
+            flexDirection: "row",
+            justifyContent: "space-between",
+            alignItems: "center",
+            padding: 20,
+            paddingTop: Platform.OS === "ios" ? 54 : 36,
+            borderBottomWidth: 1.5,
+            borderBottomColor: "#4a7040",
+            backgroundColor: "#1a2e1a",
           }}
         >
-          <View
+          <Text style={{ fontSize: 20, fontWeight: "800", color: "#e8e8e8" }}>
+            📋 {t("map.visitArchive", { count: visits.length })}
+          </Text>
+          <TouchableOpacity onPress={onClose}>
+            <Text style={{ fontSize: 14, color: "#b0b0b0", fontWeight: "600" }}>
+              {t("common.close")}
+            </Text>
+          </TouchableOpacity>
+        </View>
+
+        {/* Filter chips */}
+        {usedTypes.length > 0 && (
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
             style={{
-              flexDirection: "row",
-              justifyContent: "space-between",
-              alignItems: "center",
-              padding: 20,
+              maxHeight: 56,
               borderBottomWidth: 1,
-              borderBottomColor: "#eee",
+              borderBottomColor: "#3a5a30",
+              backgroundColor: "#1a2e1a",
+            }}
+            contentContainerStyle={{
+              paddingHorizontal: 12,
+              paddingVertical: 10,
+              gap: 8,
             }}
           >
-            <Text style={{ fontSize: 18, fontWeight: "800" }}>
-              📋 {t("map.visitArchive", { count: visits.length })}
-            </Text>
-            <TouchableOpacity onPress={onClose}>
+            <TouchableOpacity
+              style={{
+                paddingHorizontal: 14,
+                paddingVertical: 6,
+                backgroundColor: !filter ? "#3a5a30" : "#2a4230",
+                borderRadius: 8,
+                borderWidth: 1,
+                borderColor: !filter ? "#5a8a48" : "#3a5a30",
+              }}
+              onPress={() => setFilter(null)}
+            >
               <Text
-                style={{ color: "#667eea", fontSize: 15, fontWeight: "600" }}
+                style={{
+                  fontSize: 13,
+                  fontWeight: "600",
+                  color: !filter ? "#e8e8e8" : "#a0a0a0",
+                }}
               >
-                {t("common.close")}
+                {t("common.all")}
               </Text>
             </TouchableOpacity>
-          </View>
-          {usedTypes.length > 0 && (
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
+            {usedTypes.map((type) => {
+              const cat = placeCategories[type as keyof typeof placeCategories];
+              const active = filter === type;
+              return (
+                <TouchableOpacity
+                  key={type}
+                  style={{
+                    paddingHorizontal: 14,
+                    paddingVertical: 6,
+                    backgroundColor: active
+                      ? cat?.color || "#3a5a30"
+                      : "#2a4230",
+                    borderRadius: 8,
+                    borderWidth: 1,
+                    borderColor: active ? cat?.color || "#5a8a48" : "#3a5a30",
+                  }}
+                  onPress={() => setFilter(active ? null : type)}
+                >
+                  <Text
+                    style={{
+                      fontSize: 13,
+                      fontWeight: "600",
+                      color: active ? "#fff" : "#a0a0a0",
+                    }}
+                  >
+                    {EMOJIS[type]}{" "}
+                    {t(`categories.${type}`, { defaultValue: type })}
+                  </Text>
+                </TouchableOpacity>
+              );
+            })}
+          </ScrollView>
+        )}
+
+        {/* Prazan state */}
+        {filtered.length === 0 ? (
+          <View
+            style={{
+              flex: 1,
+              alignItems: "center",
+              justifyContent: "center",
+              gap: 16,
+              backgroundColor: "#1a2e1a",
+            }}
+          >
+            <Text style={{ fontSize: 64 }}>🗺️</Text>
+            <Text style={{ fontSize: 18, fontWeight: "700", color: "#e8e8e8" }}>
+              {visits.length === 0 ? t("map.noPlaces") : t("common.noResults")}
+            </Text>
+            <Text
               style={{
-                maxHeight: 52,
-                borderBottomWidth: 1,
-                borderBottomColor: "#f0f0f0",
-              }}
-              contentContainerStyle={{
-                paddingHorizontal: 12,
-                paddingVertical: 8,
-                gap: 8,
+                fontSize: 14,
+                color: "#a0a0a0",
+                textAlign: "center",
+                paddingHorizontal: 40,
               }}
             >
-              <TouchableOpacity
-                style={{
-                  paddingHorizontal: 14,
-                  paddingVertical: 6,
-                  backgroundColor: !filter ? "#667eea" : "#f0f0f0",
-                  borderRadius: 20,
-                }}
-                onPress={() => setFilter(null)}
-              >
-                <Text
+              {visits.length === 0
+                ? "Označi mjesta kao posjećena na karti"
+                : "Nema mjesta za odabrani filter"}
+            </Text>
+          </View>
+        ) : (
+          <FlatList
+            data={filtered}
+            keyExtractor={(item) => item.id}
+            style={{ backgroundColor: "#1a2e1a" }}
+            contentContainerStyle={{ padding: 16, paddingBottom: 40 }}
+            renderItem={({ item }) => {
+              const cat =
+                placeCategories[item.placeType as keyof typeof placeCategories];
+              const color = cat?.color || "#667eea";
+              return (
+                <TouchableOpacity
                   style={{
-                    fontSize: 13,
-                    fontWeight: "600",
-                    color: !filter ? "#fff" : "#555",
+                    flexDirection: "row",
+                    alignItems: "center",
+                    backgroundColor: "#2a4230",
+                    borderRadius: 14,
+                    padding: 14,
+                    marginBottom: 10,
+                    gap: 12,
+                    borderWidth: 1,
+                    borderColor: "#3a5a30",
+                    borderLeftWidth: 4,
+                    borderLeftColor: color,
+                  }}
+                  onPress={() => {
+                    onSelectVisit(item);
+                    onClose();
                   }}
                 >
-                  {t("common.all")}
-                </Text>
-              </TouchableOpacity>
-              {usedTypes.map((type) => {
-                const cat =
-                  placeCategories[type as keyof typeof placeCategories];
-                const active = filter === type;
-                return (
-                  <TouchableOpacity
-                    key={type}
+                  {/* Ikona kategorije */}
+                  <View
                     style={{
-                      paddingHorizontal: 14,
-                      paddingVertical: 6,
-                      backgroundColor: active
-                        ? cat?.color || "#667eea"
-                        : "#f0f0f0",
-                      borderRadius: 20,
+                      width: 46,
+                      height: 46,
+                      borderRadius: 10,
+                      backgroundColor: color + "33",
+                      justifyContent: "center",
+                      alignItems: "center",
+                      borderWidth: 1,
+                      borderColor: color + "66",
                     }}
-                    onPress={() => setFilter(active ? null : type)}
                   >
+                    <Text style={{ fontSize: 22 }}>
+                      {EMOJIS[item.placeType] || "📍"}
+                    </Text>
+                  </View>
+
+                  {/* Info */}
+                  <View style={{ flex: 1 }}>
                     <Text
                       style={{
-                        fontSize: 13,
-                        fontWeight: "600",
-                        color: active ? "#fff" : "#555",
+                        fontSize: 15,
+                        fontWeight: "700",
+                        color: "#e8e8e8",
                       }}
+                      numberOfLines={1}
                     >
-                      {EMOJIS[type]}{" "}
-                      {t(`categories.${type}`, { defaultValue: type })}
+                      {item.placeName}
                     </Text>
-                  </TouchableOpacity>
-                );
-              })}
-            </ScrollView>
-          )}
-          {filtered.length === 0 ? (
-            <View style={{ alignItems: "center", padding: 60, gap: 12 }}>
-              <Text style={{ fontSize: 48 }}>🗺️</Text>
-              <Text style={{ fontSize: 15, color: "#999" }}>
-                {visits.length === 0
-                  ? t("map.noPlaces")
-                  : t("common.noResults")}
-              </Text>
-            </View>
-          ) : (
-            <FlatList
-              data={filtered}
-              keyExtractor={(item) => item.id}
-              contentContainerStyle={{ padding: 16 }}
-              renderItem={({ item }) => {
-                const cat =
-                  placeCategories[
-                    item.placeType as keyof typeof placeCategories
-                  ];
-                const color = cat?.color || "#667eea";
-                return (
-                  <TouchableOpacity
-                    style={{
-                      flexDirection: "row",
-                      alignItems: "center",
-                      backgroundColor: "#fafafa",
-                      borderRadius: 14,
-                      padding: 12,
-                      marginBottom: 10,
-                      gap: 12,
-                    }}
-                    onPress={() => {
-                      onSelectVisit(item);
-                      onClose();
-                    }}
-                  >
-                    <View
-                      style={{
-                        width: 46,
-                        height: 46,
-                        borderRadius: 23,
-                        backgroundColor: color,
-                        justifyContent: "center",
-                        alignItems: "center",
-                      }}
-                    >
-                      <Text style={{ fontSize: 22 }}>
-                        {EMOJIS[item.placeType] || "📍"}
-                      </Text>
-                    </View>
-                    <View style={{ flex: 1 }}>
+                    {item.address ? (
                       <Text
                         style={{
-                          fontSize: 15,
-                          fontWeight: "700",
-                          color: "#1a1a1a",
+                          fontSize: 12,
+                          color: "#8a9486",
+                          marginTop: 2,
                         }}
                         numberOfLines={1}
                       >
-                        {item.placeName}
+                        📍 {item.address}
                       </Text>
-                      {item.address ? (
-                        <Text
-                          style={{ fontSize: 12, color: "#999", marginTop: 2 }}
-                          numberOfLines={1}
-                        >
-                          {item.address}
-                        </Text>
-                      ) : null}
-                      <Text
-                        style={{ fontSize: 12, color: "#667eea", marginTop: 3 }}
-                      >
-                        {new Date(item.visitedAt).toLocaleDateString("hr-HR", {
-                          day: "2-digit",
-                          month: "2-digit",
-                          year: "numeric",
-                          hour: "2-digit",
-                          minute: "2-digit",
-                        })}
-                      </Text>
-                    </View>
-                    <TouchableOpacity
+                    ) : null}
+                    <Text
                       style={{
-                        padding: 8,
-                        borderRadius: 10,
-                        backgroundColor: "#fff0f0",
+                        fontSize: 12,
+                        color: "#5a8a48",
+                        marginTop: 4,
+                        fontWeight: "600",
                       }}
-                      onPress={() =>
-                        Alert.alert(
-                          t("map.hidePlace"),
-                          `${t("map.hidePlaceConfirm", { name: item.placeName })}`,
-                          [
-                            { text: t("common.cancel"), style: "cancel" },
-                            {
-                              text: t("common.remove"),
-                              style: "destructive",
-                              onPress: () => onDeleteVisit(item.id),
-                            },
-                          ],
-                        )
-                      }
                     >
-                      <Text style={{ fontSize: 18 }}>🗑️</Text>
-                    </TouchableOpacity>
+                      ✓{" "}
+                      {new Date(item.visitedAt).toLocaleDateString("hr-HR", {
+                        day: "2-digit",
+                        month: "2-digit",
+                        year: "numeric",
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      })}
+                    </Text>
+                  </View>
+
+                  {/* Delete gumb */}
+                  <TouchableOpacity
+                    style={{
+                      padding: 8,
+                      borderRadius: 8,
+                      backgroundColor: "#3a2020",
+                      borderWidth: 1,
+                      borderColor: "#5a3030",
+                    }}
+                    onPress={() =>
+                      Alert.alert(
+                        t("map.hidePlace"),
+                        `${t("map.hidePlaceConfirm", { name: item.placeName })}`,
+                        [
+                          { text: t("common.cancel"), style: "cancel" },
+                          {
+                            text: t("common.remove"),
+                            style: "destructive",
+                            onPress: () => onDeleteVisit(item.id),
+                          },
+                        ],
+                      )
+                    }
+                  >
+                    <Text style={{ fontSize: 16 }}></Text>
                   </TouchableOpacity>
-                );
-              }}
-            />
-          )}
-        </View>
+                </TouchableOpacity>
+              );
+            }}
+          />
+        )}
       </View>
     </Modal>
   );
@@ -5543,159 +6628,331 @@ function BadgesModal({
   }[];
 }) {
   const { t } = useTranslation();
-
   const [badges, setBadges] = useState<Badge[]>([]);
+
   useEffect(() => {
     if (visible) loadJSON<Badge[]>(STORAGE_BADGES, []).then(setBadges);
   }, [visible]);
+
   const counts: Record<string, number> = {};
   visits.forEach((v) => {
     counts[v.placeType] = (counts[v.placeType] || 0) + 1;
   });
+
+  const totalBadges = badges.length;
+  const totalVisits = visits.length;
+
   return (
     <Modal
       visible={visible}
       animationType="slide"
-      transparent
+      transparent={false}
       onRequestClose={onClose}
     >
-      <View
-        style={{
-          flex: 1,
-          backgroundColor: "rgba(0,0,0,0.5)",
-          justifyContent: "flex-end",
-        }}
-      >
+      <View style={{ flex: 1, backgroundColor: "#1a2e1a" }}>
+        {/* Header */}
         <View
           style={{
-            backgroundColor: "#fff",
-            borderTopLeftRadius: 24,
-            borderTopRightRadius: 24,
-            maxHeight: SH * 0.88,
+            flexDirection: "row",
+            justifyContent: "space-between",
+            alignItems: "center",
+            padding: 20,
+            paddingTop: Platform.OS === "ios" ? 54 : 36,
+            borderBottomWidth: 1.5,
+            borderBottomColor: "#4a7040",
+            backgroundColor: "#1a2e1a",
+          }}
+        >
+          <Text style={{ fontSize: 20, fontWeight: "800", color: "#e8e8e8" }}>
+            {t("map.badges")}
+          </Text>
+          <TouchableOpacity onPress={onClose}>
+            <Text style={{ fontSize: 14, color: "#b0b0b0", fontWeight: "600" }}>
+              {t("common.close")}
+            </Text>
+          </TouchableOpacity>
+        </View>
+
+        {/* Summary stats */}
+        <View
+          style={{
+            flexDirection: "row",
+            gap: 10,
+            padding: 16,
+            paddingBottom: 8,
           }}
         >
           <View
             style={{
-              flexDirection: "row",
-              justifyContent: "space-between",
+              flex: 1,
+              backgroundColor: "#2a4230",
+              borderRadius: 14,
+              padding: 14,
               alignItems: "center",
-              padding: 20,
-              borderBottomWidth: 1,
-              borderBottomColor: "#eee",
+              borderWidth: 1,
+              borderColor: "#3a5a30",
             }}
           >
-            <Text style={{ fontSize: 20, fontWeight: "800", color: "#1a1a1a" }}>
-              🏆 {t("map.badges")}
+            <Text style={{ fontSize: 28, fontWeight: "900", color: "#5a8a48" }}>
+              {totalVisits}
             </Text>
-            <TouchableOpacity onPress={onClose}>
-              <Text
-                style={{ color: "#667eea", fontSize: 15, fontWeight: "600" }}
-              >
-                {t("map.badgesClose")}
-              </Text>
-            </TouchableOpacity>
+            <Text style={{ fontSize: 12, color: "#a0a0a0", marginTop: 2 }}>
+              Ukupno posjeta
+            </Text>
           </View>
-          <ScrollView contentContainerStyle={{ padding: 16 }}>
-            {getAllCategories().map((cat) => {
-              const count = counts[cat.id] || 0;
-              const earned = BADGE_T.filter((t) =>
-                badges.find((b) => b.category === cat.id && b.level === t),
-              );
-              const next = BADGE_T.find((t) => count < t);
-              return (
+          <View
+            style={{
+              flex: 1,
+              backgroundColor: "#2a4230",
+              borderRadius: 14,
+              padding: 14,
+              alignItems: "center",
+              borderWidth: 1,
+              borderColor: "#3a5a30",
+            }}
+          >
+            <Text style={{ fontSize: 28, fontWeight: "900", color: "#f0c040" }}>
+              {totalBadges}
+            </Text>
+            <Text style={{ fontSize: 12, color: "#a0a0a0", marginTop: 2 }}>
+              Zarađenih značaka
+            </Text>
+          </View>
+        </View>
+
+        <ScrollView
+          contentContainerStyle={{ padding: 16, paddingBottom: 40 }}
+          style={{ backgroundColor: "#1a2e1a" }}
+        >
+          {getAllCategories().map((cat) => {
+            const count = counts[cat.id] || 0;
+            const earned = BADGE_T.filter((threshold) =>
+              badges.find(
+                (b) => b.category === cat.id && b.level === threshold,
+              ),
+            );
+            const next = BADGE_T.find((threshold) => count < threshold);
+            const progress = next ? count / next : 1;
+            const hasAnyBadge = earned.length > 0;
+
+            return (
+              <View
+                key={cat.id}
+                style={{
+                  backgroundColor: "#2a4230",
+                  borderRadius: 16,
+                  marginBottom: 12,
+                  borderWidth: 1,
+                  borderColor: hasAnyBadge ? cat.color + "88" : "#3a5a30",
+                  borderLeftWidth: 4,
+                  borderLeftColor: hasAnyBadge ? cat.color : "#3a5a30",
+                  overflow: "hidden",
+                }}
+              >
+                {/* Card header */}
                 <View
-                  key={cat.id}
                   style={{
                     flexDirection: "row",
-                    alignItems: "flex-start",
-                    backgroundColor: "#fafafa",
-                    borderRadius: 12,
-                    padding: 12,
-                    marginBottom: 12,
-                    borderLeftWidth: 4,
-                    borderLeftColor: cat.color,
-                    gap: 10,
+                    alignItems: "center",
+                    padding: 14,
+                    gap: 12,
+                    borderBottomWidth: 1,
+                    borderBottomColor: "#3a5a30",
                   }}
                 >
-                  <Text style={{ fontSize: 28, marginTop: 2 }}>{cat.icon}</Text>
+                  {/* Category icon */}
+                  <View
+                    style={{
+                      width: 56,
+                      height: 56,
+                      borderRadius: 12,
+                      backgroundColor: hasAnyBadge
+                        ? cat.color + "33"
+                        : "#1a2e1a",
+                      justifyContent: "center",
+                      alignItems: "center",
+                      borderWidth: 1,
+                      borderColor: hasAnyBadge ? cat.color + "66" : "#3a5a30",
+                    }}
+                  >
+                    {CATEGORY_ICONS[cat.id] ? (
+                      <Image
+                        source={CATEGORY_ICONS[cat.id]}
+                        style={{ width: 44, height: 44 }}
+                        resizeMode="contain"
+                      />
+                    ) : (
+                      <Text style={{ fontSize: 28 }}>{cat.icon}</Text>
+                    )}
+                  </View>
+
+                  {/* Name + count */}
                   <View style={{ flex: 1 }}>
                     <Text
                       style={{
                         fontSize: 15,
-                        fontWeight: "700",
-                        color: "#1a1a1a",
+                        fontWeight: "800",
+                        color: "#e8e8e8",
                       }}
                     >
                       {cat.name}
                     </Text>
                     <Text
-                      style={{ fontSize: 13, color: "#667eea", marginTop: 2 }}
+                      style={{
+                        fontSize: 13,
+                        color: "#5a8a48",
+                        marginTop: 2,
+                        fontWeight: "600",
+                      }}
                     >
-                      {t("map.visitCount", { count })}
+                      {count}{" "}
+                      {count === 1
+                        ? "posjet"
+                        : count < 5
+                          ? "posjeta"
+                          : "posjeta"}
                     </Text>
                     {next && (
                       <Text
-                        style={{ fontSize: 12, color: "#999", marginTop: 2 }}
+                        style={{ fontSize: 11, color: "#6a9a60", marginTop: 1 }}
                       >
-                        {t("map.nextBadgeIn", { count: next - count })}
+                        Sljedeća značka za {next - count} više
                       </Text>
                     )}
+                    {!next && count > 0 && (
+                      <Text
+                        style={{
+                          fontSize: 11,
+                          color: "#f0c040",
+                          marginTop: 1,
+                          fontWeight: "700",
+                        }}
+                      >
+                        🏆 Sve značke zarađene!
+                      </Text>
+                    )}
+                  </View>
+
+                  {/* Earned count badge */}
+                  {hasAnyBadge && (
                     <View
                       style={{
-                        flexDirection: "row",
-                        gap: 6,
-                        marginTop: 8,
-                        flexWrap: "wrap",
+                        backgroundColor: cat.color + "33",
+                        borderRadius: 20,
+                        paddingHorizontal: 10,
+                        paddingVertical: 5,
+                        borderWidth: 1.5,
+                        borderColor: cat.color,
                       }}
                     >
-                      {BADGE_T.map((t) => {
-                        const e = earned.includes(t);
-                        return (
-                          <View
-                            key={t}
+                      <Text
+                        style={{
+                          fontSize: 13,
+                          color: cat.color,
+                          fontWeight: "800",
+                        }}
+                      >
+                        ×{earned.length}
+                      </Text>
+                    </View>
+                  )}
+                </View>
+
+                {/* Progress bar */}
+                {count > 0 && next && (
+                  <View style={{ paddingHorizontal: 14, paddingTop: 10 }}>
+                    <View
+                      style={{
+                        height: 6,
+                        backgroundColor: "#1a2e1a",
+                        borderRadius: 3,
+                        overflow: "hidden",
+                      }}
+                    >
+                      <View
+                        style={{
+                          height: "100%",
+                          width: `${Math.min(progress * 100, 100)}%`,
+                          backgroundColor: cat.color,
+                          borderRadius: 3,
+                        }}
+                      />
+                    </View>
+                    <Text
+                      style={{
+                        fontSize: 10,
+                        color: "#6a9a60",
+                        marginTop: 4,
+                        textAlign: "right",
+                      }}
+                    >
+                      {count}/{next}
+                    </Text>
+                  </View>
+                )}
+
+                {/* Badge pills */}
+                <View
+                  style={{
+                    flexDirection: "row",
+                    gap: 6,
+                    padding: 14,
+                    paddingTop: count > 0 && next ? 8 : 14,
+                    flexWrap: "wrap",
+                  }}
+                >
+                  {BADGE_T.map((threshold) => {
+                    const isEarned = earned.includes(threshold);
+                    const badgeName = BADGE_NAMES[cat.id]?.[threshold];
+                    return (
+                      <View
+                        key={threshold}
+                        style={{
+                          borderRadius: 10,
+                          paddingHorizontal: 10,
+                          paddingVertical: 6,
+                          backgroundColor: isEarned ? cat.color : "#1a2e1a",
+                          borderWidth: 1,
+                          borderColor: isEarned ? cat.color : "#3a5a30",
+                          alignItems: "center",
+                          minWidth: 52,
+                        }}
+                      >
+                        <Text
+                          style={{
+                            color: isEarned ? "#fff" : "#555",
+                            fontSize: 12,
+                            fontWeight: "800",
+                          }}
+                        >
+                          {isEarned ? "🏆" : "🔒"} {threshold}x
+                        </Text>
+                        {isEarned && badgeName && (
+                          <Text
                             style={{
-                              borderRadius: 10,
-                              paddingHorizontal: 8,
-                              paddingVertical: 4,
-                              backgroundColor: e ? cat.color : "#e0e0e0",
-                              minWidth: 40,
-                              alignItems: "center",
+                              color: "rgba(255,255,255,0.85)",
+                              fontSize: 9,
+                              fontWeight: "600",
+                              marginTop: 2,
+                              textAlign: "center",
                             }}
                           >
-                            <Text
-                              style={{
-                                color: "#fff",
-                                fontSize: 11,
-                                fontWeight: "800",
-                              }}
-                            >
-                              {t}x
-                            </Text>
-                            {e && (
-                              <Text
-                                style={{
-                                  color: "#fff",
-                                  fontSize: 9,
-                                  fontWeight: "600",
-                                }}
-                              >
-                                {(BADGE_NAMES[cat.id]?.[t] || "").split(" ")[0]}
-                              </Text>
-                            )}
-                          </View>
-                        );
-                      })}
-                    </View>
-                  </View>
+                            {badgeName.split(" ").slice(0, 1).join(" ")}
+                          </Text>
+                        )}
+                      </View>
+                    );
+                  })}
                 </View>
-              );
-            })}
-          </ScrollView>
-        </View>
+              </View>
+            );
+          })}
+        </ScrollView>
       </View>
     </Modal>
   );
 }
+
 const CELL_W = (SW - 32 - 4) / 2;
 const TIME_CATS: Record<string, string[]> = {
   jutro: ["cafe", "park", "landmark", "museum", "market"],
@@ -5739,7 +6996,7 @@ export default function DashboardScreen() {
   const [searchLocationName, setSearchLocationName] = useState<string>("");
   const [cityQuery, setCityQuery] = useState("");
   const [citySearching, setCitySearching] = useState(false);
-
+  const [circleBeforeDetail, setCircleBeforeDetail] = useState(false);
   const [selectedTypes, setSelectedTypes] = useState<string[]>([]);
   const [radius, setRadius] = useState(5);
   // Svi pronađeni rezultati (neograničeni)
@@ -6110,6 +7367,8 @@ export default function DashboardScreen() {
     );
     setSearchQuery(place.name);
     setShowSearchResults(false);
+    setCircleBeforeDetail(showRadiusCircle); // ← DODAJ
+    setShowRadiusCircle(false); // ← DODAJ
     setSelectedPlace(place);
     setShowPlaceDetail(true);
   };
@@ -6295,6 +7554,7 @@ export default function DashboardScreen() {
               place={place}
               isVisited={(place as any)._isVisited}
               onPress={() => {
+                setShowRadiusCircle(false);
                 setSelectedPlace(place);
                 setShowPlaceDetail(true);
               }}
@@ -7171,7 +8431,7 @@ export default function DashboardScreen() {
                     marginBottom: 8,
                   }}
                 >
-                  🚫 Skrivena mjesta ({hiddenPlaceIds.length})
+                  Skrivena mjesta ({hiddenPlaceIds.length})
                 </Text>
                 {hiddenPlaceIds.map((id) => (
                   <TouchableOpacity
@@ -7233,7 +8493,9 @@ export default function DashboardScreen() {
       <PlaceDetailModal
         place={selectedPlace}
         visible={showPlaceDetail}
-        onClose={() => setShowPlaceDetail(false)}
+        onClose={() => {
+          setShowPlaceDetail(false);
+        }}
         onMarkVisited={handleMarkVisited}
         onHidePlace={handleHidePlace}
         isVisited={selectedPlace ? isVisited(selectedPlace.id) : false}
@@ -7434,4 +8696,4 @@ export default function DashboardScreen() {
 //     marginLeft: 8,
 //   },
 //   showMoreTxt: { color: "#fff", fontSize: 12, fontWeight: "700" },
-// });
+// })

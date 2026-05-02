@@ -1069,7 +1069,7 @@ export const planStyles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     paddingHorizontal: 14,
-    paddingVertical: 12,
+    paddingVertical: 14,
     borderBottomWidth: 1,
     borderBottomColor: V.borderDim,
     gap: 10,
@@ -1081,10 +1081,11 @@ export const planStyles = StyleSheet.create({
   venueDist: { fontSize: 11, fontWeight: "700", marginTop: 2 },
   venueDetailHint: { fontSize: 11, color: V.silverDim, marginTop: 2 },
   visitToggleBtn: {
-    minWidth: 64,
-    paddingHorizontal: 10,
+    minWidth: 50, // ← smanjeno
+    maxWidth: 52, // ← dodaj max
+    paddingHorizontal: 6, // ← smanjeno
     paddingVertical: 8,
-    borderRadius: 8,
+    borderRadius: 10,
     borderWidth: 1.5,
     alignItems: "center",
     justifyContent: "center",
