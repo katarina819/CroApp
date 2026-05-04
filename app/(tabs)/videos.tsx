@@ -1,11 +1,11 @@
-// app/videos.tsx
+// app/videos.tsx — VARA tema, usklađena s dashboard.tsx
 import { Ionicons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as FileSystem from "expo-file-system/legacy";
 import * as ImagePicker from "expo-image-picker";
 import * as MediaLibrary from "expo-media-library";
 import { VideoView, useVideoPlayer } from "expo-video";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
   ActivityIndicator,
@@ -25,26 +25,46 @@ import {
   View,
 } from "react-native";
 import { StoryBadge } from "../../app/StoryBadge";
+import { useTheme } from "../../components/AdaptiveThemeProvider";
 import UserAvatar from "../../components/UserAvatar";
 import { API_BASE_URL } from "../config/api";
 
 const { width, height } = Dimensions.get("window");
 
-// ─── VARA Paleta — usklađena sa search stilom ──────────────────────────────────
+// ─── VARA Paleta — identična dashboard.tsx / varaTheme.ts ────────────────────
 const V = {
-  forestDeep: "#1A2E15", // search: forestDeep
-  forestMid: "#243B1E", // search: forestMid
-  forestLight: "#2D5518", // search: forestLight
-  borderGreen: "#4A7040", // search: borderGreen
-  borderDim: "#304A28", // search: borderDim
-  silver: "#C4CABC", // search: silver
-  silverBright: "#E8EDE4", // search: silverBright
-  silverDim: "#8A9486", // search: silverDim
+  forestDeep: "#1A2E15",
+  forestMid: "#243B1E",
+  forestLight: "#2D5518",
+  borderGreen: "#4A7040",
+  borderDim: "#304A28",
+  silver: "#C4CABC",
+  silverBright: "#E8EDE4",
+  silverDim: "#8A9486",
   accentGold: "#B8A060",
-  visited: "#5A8A48", // search: visited
+  visited: "#5A8A48",
   danger: "#8B3030",
   overlay: "rgba(10,20,8,0.88)",
 } as const;
+
+function getVT(dark: boolean) {
+  return {
+    bg: dark ? "#1A2E15" : "#f0ede4",
+    bgCard: dark ? "#243B1E" : "#e4ead8",
+    bgLight: dark ? "#2D5518" : "#ccdcb8",
+    border: dark ? "#304A28" : "#c0d0a8",
+    borderBright: dark ? "#4A7040" : "#5a8a40",
+    textPrimary: dark ? "#E8EDE4" : "#1a2a18",
+    textSecondary: dark ? "#C4CABC" : "#3a4a35",
+    textMuted: dark ? "#8A9486" : "#5a6a55",
+    accent: dark ? "#5A8A48" : "#3a6a28",
+    accentGold: "#B8A060",
+    inputBg: dark ? "#243B1E" : "#e4ead8",
+    placeholder: dark ? "#8A9486" : "#7a8a75",
+    danger: dark ? "#8B3030" : "#7a2020",
+    overlay: "rgba(10,20,8,0.88)",
+  } as const;
+}
 
 interface VideoItem {
   id: number;
@@ -197,6 +217,7 @@ function VideoItemComponent({
           />
           <Text style={vs.actionText}>{item.likeCount || 0}</Text>
         </TouchableOpacity>
+
         <TouchableOpacity
           style={vs.actionButton}
           onPress={() => onOpenComments(item)}
@@ -204,6 +225,7 @@ function VideoItemComponent({
           <Ionicons name="chatbubble-outline" size={28} color="white" />
           <Text style={vs.actionText}>{item.commentCount || 0}</Text>
         </TouchableOpacity>
+
         <TouchableOpacity
           style={vs.actionButton}
           onPress={() => onOpenMessenger(item)}
@@ -211,6 +233,7 @@ function VideoItemComponent({
           <Ionicons name="paper-plane-outline" size={28} color="white" />
           <Text style={vs.actionText}>{t("videos.sendMessage")}</Text>
         </TouchableOpacity>
+
         <TouchableOpacity
           style={vs.actionButton}
           onPress={() => onOpenShare(item)}
@@ -218,6 +241,7 @@ function VideoItemComponent({
           <Ionicons name="share-social-outline" size={28} color="white" />
           <Text style={vs.actionText}>{t("common.share")}</Text>
         </TouchableOpacity>
+
         <TouchableOpacity
           style={vs.actionButton}
           onPress={() => onDownload(item)}
@@ -225,6 +249,7 @@ function VideoItemComponent({
           <Ionicons name="download-outline" size={28} color="white" />
           <Text style={vs.actionText}>{t("common.download")}</Text>
         </TouchableOpacity>
+
         <TouchableOpacity
           style={vs.actionButton}
           onPress={() => onSaveToggle(item.id)}
@@ -236,6 +261,7 @@ function VideoItemComponent({
           />
           <Text style={vs.actionText}>{t("profile.box")}</Text>
         </TouchableOpacity>
+
         <TouchableOpacity
           style={vs.actionButton}
           onPress={() => onWishlistToggle(item.id)}
@@ -277,7 +303,7 @@ function VideoItemComponent({
   );
 }
 
-// ==================== COMMENTS MODAL — VARA ===================================
+// ==================== COMMENTS MODAL — identičan dashboard stilu =============
 function CommentsModal({
   visible,
   video,
@@ -290,6 +316,9 @@ function CommentsModal({
   onCommentAdded: () => void;
 }) {
   const { t } = useTranslation();
+  const { isDark } = useTheme(); // ← DODATI
+  const VT = useMemo(() => getVT(isDark), [isDark]); // ← DODATI
+  const modal = useMemo(() => makeModalStyles(VT), [VT]);
   const [comments, setComments] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [newComment, setNewComment] = useState("");
@@ -361,18 +390,18 @@ function CommentsModal({
         style={{ flex: 1 }}
         behavior={Platform.OS === "ios" ? "padding" : "height"}
       >
-        <SafeAreaView style={{ flex: 1, backgroundColor: V.forestDeep }}>
-          {/* ── Header: "Komentari" lijevo, "Zatvori" desno, spušten prema dolje ── */}
-          <View style={modal.headerSplit}>
-            <Text style={modal.headerLeftTitle}>
+        <SafeAreaView style={{ flex: 1, backgroundColor: VT.bg }}>
+          {/* ── Header — identičan dashboard NotificationSettingsModal / ActivityGroupsModal ── */}
+          <View style={modal.header}>
+            <Text style={modal.headerTitle}>
               {t("videos.comments", { count: video?.commentCount || 0 })}
             </Text>
-            <TouchableOpacity onPress={onClose} style={modal.closeBtnText}>
-              <Text style={modal.closeBtnLabel}>Zatvori</Text>
+            <TouchableOpacity onPress={onClose}>
+              <Text style={modal.closeTxt}>{t("common.close")}</Text>
             </TouchableOpacity>
           </View>
 
-          {/* Lista */}
+          {/* Lista komentara */}
           {loading ? (
             <View
               style={{
@@ -381,7 +410,7 @@ function CommentsModal({
                 alignItems: "center",
               }}
             >
-              <ActivityIndicator size="large" color={V.visited} />
+              <ActivityIndicator size="large" color={VT.accent} />
             </View>
           ) : comments.length === 0 ? (
             <View
@@ -396,7 +425,7 @@ function CommentsModal({
                 <Ionicons
                   name="chatbubbles-outline"
                   size={44}
-                  color={V.borderGreen}
+                  color={VT.borderBright}
                 />
               </View>
               <Text style={modal.emptyText}>{t("videos.noComments")}</Text>
@@ -410,7 +439,6 @@ function CommentsModal({
             >
               {comments.map((item) => (
                 <View key={item.id} style={modal.commentRow}>
-                  {/* ── Prava profilna slika korisnika ── */}
                   <UserAvatar userId={item.userId} size={38} />
                   <View style={{ flex: 1 }}>
                     <Text style={modal.commentUser}>
@@ -426,12 +454,12 @@ function CommentsModal({
             </ScrollView>
           )}
 
-          {/* Input */}
+          {/* ── Input row ── */}
           <View style={modal.inputRow}>
             <TextInput
               style={modal.textInput}
               placeholder={t("videos.addComment")}
-              placeholderTextColor={V.silverDim}
+              placeholderTextColor={VT.placeholder}
               value={newComment}
               onChangeText={setNewComment}
               multiline
@@ -449,9 +477,9 @@ function CommentsModal({
               disabled={!newComment.trim() || submitting}
             >
               {submitting ? (
-                <ActivityIndicator size="small" color={V.silverBright} />
+                <ActivityIndicator size="small" color={VT.textPrimary} />
               ) : (
-                <Ionicons name="send" size={20} color={V.silverBright} />
+                <Ionicons name="send" size={20} color={VT.textPrimary} />
               )}
             </TouchableOpacity>
           </View>
@@ -461,7 +489,7 @@ function CommentsModal({
   );
 }
 
-// ==================== MESSENGER MODAL — VARA (fullscreen) ====================
+// ==================== MESSENGER MODAL — identičan dashboard stilu =============
 function MessengerModal({
   visible,
   video,
@@ -472,6 +500,9 @@ function MessengerModal({
   onClose: () => void;
 }) {
   const { t } = useTranslation();
+  const { isDark } = useTheme(); // ← DODATI
+  const VT = useMemo(() => getVT(isDark), [isDark]); // ← DODATI
+  const modal = useMemo(() => makeModalStyles(VT), [VT]);
   const [message, setMessage] = useState("");
   const [sending, setSending] = useState(false);
 
@@ -524,18 +555,16 @@ function MessengerModal({
         style={{ flex: 1 }}
         behavior={Platform.OS === "ios" ? "padding" : "height"}
       >
-        <SafeAreaView style={{ flex: 1, backgroundColor: V.forestDeep }}>
-          {/* ── "Pošalji poruku" lijevo, "Zatvori" desno, spušten ── */}
-          <View style={modal.headerSplit}>
-            <Text style={modal.headerLeftTitle}>
-              {t("messages.sendMessage")}
-            </Text>
-            <TouchableOpacity onPress={onClose} style={modal.closeBtnText}>
-              <Text style={modal.closeBtnLabel}>Zatvori</Text>
+        <SafeAreaView style={{ flex: 1, backgroundColor: VT.bg }}>
+          {/* ── Header — identičan dashboard stilu ── */}
+          <View style={modal.header}>
+            <Text style={modal.headerTitle}>{t("messages.sendMessage")}</Text>
+            <TouchableOpacity onPress={onClose}>
+              <Text style={modal.closeTxt}>{t("common.close")}</Text>
             </TouchableOpacity>
           </View>
 
-          {/* ── Primatelj s pravom profilnom slikom ── */}
+          {/* ── Primatelj ── */}
           <View style={modal.recipientRow}>
             <UserAvatar userId={video.userId} size={48} />
             <View style={{ flex: 1, marginLeft: 12 }}>
@@ -561,22 +590,22 @@ function MessengerModal({
                 style={modal.quickChip}
                 onPress={() => setMessage(q)}
               >
-                <Text style={modal.quickText}>{q}</Text>
+                <Text style={modal.quickChipText}>{q}</Text>
               </TouchableOpacity>
             ))}
           </View>
 
-          {/* ── Spacer da input bude pri dnu ── */}
+          {/* ── Spacer ── */}
           <View style={{ flex: 1 }} />
 
-          {/* ── Input ── */}
+          {/* ── Input row ── */}
           <View style={modal.inputRow}>
             <TextInput
               style={modal.textInput}
               placeholder={t("messages.writeMessage", {
                 name: video?.userName || "",
               })}
-              placeholderTextColor={V.silverDim}
+              placeholderTextColor={VT.placeholder}
               value={message}
               onChangeText={setMessage}
               multiline
@@ -592,9 +621,9 @@ function MessengerModal({
               disabled={!message.trim() || sending}
             >
               {sending ? (
-                <ActivityIndicator size="small" color={V.silverBright} />
+                <ActivityIndicator size="small" color={VT.textPrimary} />
               ) : (
-                <Ionicons name="send" size={18} color={V.silverBright} />
+                <Ionicons name="send" size={18} color={VT.textPrimary} />
               )}
             </TouchableOpacity>
           </View>
@@ -604,7 +633,7 @@ function MessengerModal({
   );
 }
 
-// ==================== SHARE MODAL — VARA =====================================
+// ==================== SHARE MODAL — identičan dashboard stilu ================
 function ShareModal({
   visible,
   video,
@@ -615,6 +644,9 @@ function ShareModal({
   onClose: () => void;
 }) {
   const { t } = useTranslation();
+  const { isDark } = useTheme(); // ← DODATI
+  const VT = useMemo(() => getVT(isDark), [isDark]); // ← DODATI
+  const modal = useMemo(() => makeModalStyles(VT), [VT]);
   const [users, setUsers] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [sending, setSending] = useState<number | null>(null);
@@ -683,55 +715,66 @@ function ShareModal({
       visible={visible}
       onRequestClose={onClose}
     >
-      <SafeAreaView style={{ flex: 1, backgroundColor: V.forestDeep }}>
-        {/* ── Header: "Podijeli video" lijevo, "Zatvori" desno, spušten ── */}
-        <View style={modal.headerSplit}>
-          <Text style={modal.headerLeftTitle}>{t("videos.shareVideo")}</Text>
-          <TouchableOpacity onPress={onClose} style={modal.closeBtnText}>
-            <Text style={modal.closeBtnLabel}>Zatvori</Text>
+      <SafeAreaView style={{ flex: 1, backgroundColor: VT.bg }}>
+        {/* ── Header — identičan dashboard stilu ── */}
+        <View style={modal.header}>
+          <Text style={modal.headerTitle}>{t("videos.shareVideo")}</Text>
+          <TouchableOpacity onPress={onClose}>
+            <Text style={modal.closeTxt}>{t("common.close")}</Text>
           </TouchableOpacity>
         </View>
 
-        {/* ── Search — s razmakom ispod headera ── */}
+        {/* ── Search bar — identičan dashboard filter panelu ── */}
         <View
           style={{ paddingHorizontal: 16, paddingTop: 14, paddingBottom: 8 }}
         >
           <View style={modal.searchBar}>
             <Ionicons
               name="search-outline"
-              size={16}
-              color={V.silverDim}
+              size={18}
+              color={VT.textMuted}
               style={{ marginRight: 8 }}
             />
             <TextInput
               style={modal.searchInput}
               placeholder={t("videos.searchUsers")}
-              placeholderTextColor={V.silverDim}
+              placeholderTextColor={VT.placeholder}
               value={search}
               onChangeText={setSearch}
             />
+            {search.length > 0 && (
+              <TouchableOpacity onPress={() => setSearch("")}>
+                <Ionicons name="close-circle" size={18} color={VT.textMuted} />
+              </TouchableOpacity>
+            )}
           </View>
         </View>
 
-        {/* Lista korisnika */}
+        {/* ── Lista korisnika ── */}
         {loading ? (
           <View
             style={{ flex: 1, justifyContent: "center", alignItems: "center" }}
           >
-            <ActivityIndicator size="large" color={V.visited} />
+            <ActivityIndicator size="large" color={VT.accent} />
+            <Text style={{ color: VT.textMuted, marginTop: 12, fontSize: 14 }}>
+              Učitavanje...
+            </Text>
           </View>
         ) : (
           <FlatList
             data={filtered}
             keyExtractor={(u) => u.id.toString()}
-            contentContainerStyle={{ paddingHorizontal: 12 }}
+            contentContainerStyle={
+              filtered.length === 0 ? { flex: 1 } : { paddingHorizontal: 12 }
+            }
             renderItem={({ item: u }) => (
               <TouchableOpacity
                 style={modal.userRow}
                 onPress={() => shareToUser(u.id, u.username)}
                 disabled={sending === u.id}
+                activeOpacity={0.75}
               >
-                <UserAvatar userId={u.id} size={44} />
+                <UserAvatar userId={u.id} size={48} />
                 <View style={{ flex: 1, marginLeft: 12 }}>
                   <Text style={modal.recipientName}>{u.username}</Text>
                   <Text style={modal.recipientSub}>
@@ -739,28 +782,36 @@ function ShareModal({
                   </Text>
                 </View>
                 {sending === u.id ? (
-                  <ActivityIndicator size="small" color={V.visited} />
+                  <ActivityIndicator size="small" color={VT.accent} />
                 ) : (
                   <View style={modal.shareIconWrap}>
                     <Ionicons
                       name="paper-plane-outline"
                       size={18}
-                      color={V.visited}
+                      color={VT.accent}
                     />
                   </View>
                 )}
               </TouchableOpacity>
             )}
             ListEmptyComponent={
-              <View style={{ alignItems: "center", paddingTop: 60, gap: 12 }}>
-                <Ionicons
-                  name="people-outline"
-                  size={44}
-                  color={V.borderGreen}
-                />
-                <Text style={{ color: V.silverDim, fontSize: 15 }}>
-                  Nema korisnika
-                </Text>
+              <View
+                style={{
+                  flex: 1,
+                  alignItems: "center",
+                  justifyContent: "center",
+                  gap: 12,
+                  paddingTop: 60,
+                }}
+              >
+                <View style={modal.emptyIconWrap}>
+                  <Ionicons
+                    name="people-outline"
+                    size={44}
+                    color={VT.borderBright}
+                  />
+                </View>
+                <Text style={modal.emptyText}>Nema korisnika</Text>
               </View>
             }
           />
@@ -770,7 +821,7 @@ function ShareModal({
   );
 }
 
-// ==================== UPLOAD MODAL — VARA =====================================
+// ==================== UPLOAD MODAL — Vara stil ================================
 export function UploadModal({
   visible,
   onClose,
@@ -781,6 +832,10 @@ export function UploadModal({
   onUploaded: () => void;
 }) {
   const { t } = useTranslation();
+  const { isDark } = useTheme(); // ← DODATI
+  const VT = useMemo(() => getVT(isDark), [isDark]); // ← DODATI
+  const modal = useMemo(() => makeModalStyles(VT), [VT]); // ← DODATI
+  const upload = useMemo(() => makeUploadStyles(VT), [VT]);
   const [mediaUri, setMediaUri] = useState<string | null>(null);
   const [mediaType, setMediaType] = useState<"video" | "image">("video");
   const [title, setTitle] = useState("");
@@ -935,12 +990,13 @@ export function UploadModal({
         style={{ flex: 1 }}
         behavior={Platform.OS === "ios" ? "padding" : "height"}
       >
-        <SafeAreaView style={{ flex: 1, backgroundColor: V.forestDeep }}>
+        <SafeAreaView style={{ flex: 1, backgroundColor: VT.bg }}>
+          {/* Header */}
           <View style={modal.header}>
             <TouchableOpacity onPress={resetModal}>
-              <Ionicons name="close" size={28} color={V.silver} />
+              <Ionicons name="close" size={28} color={VT.textSecondary} />
             </TouchableOpacity>
-            <Text style={modal.title}>
+            <Text style={modal.headerTitle}>
               {step === "pick" ? "Dodaj sadržaj" : "Pregled i objava"}
             </Text>
             <View style={{ width: 28 }} />
@@ -954,23 +1010,29 @@ export function UploadModal({
             }}
           >
             {step === "pick" ? (
+              /* ── ODABIR IZVORA ── */
               <View style={upload.pickContainer}>
                 <Text style={upload.pickHint}>Odaberi vrstu i izvor</Text>
                 <TouchableOpacity
                   style={upload.pickBtn}
                   onPress={pickFromGallery}
                 >
-                  <Ionicons name="images" size={40} color={V.visited} />
+                  <View style={upload.pickIconWrap}>
+                    <Ionicons name="images" size={40} color={VT.accent} />
+                  </View>
                   <Text style={upload.pickBtnText}>Iz galerije</Text>
                   <Text style={upload.pickBtnSub}>Slike i videji</Text>
                 </TouchableOpacity>
                 <TouchableOpacity style={upload.pickBtn} onPress={recordMedia}>
-                  <Ionicons name="camera" size={40} color={V.visited} />
+                  <View style={upload.pickIconWrap}>
+                    <Ionicons name="camera" size={40} color={VT.accent} />
+                  </View>
                   <Text style={upload.pickBtnText}>Kamera / Snimanje</Text>
                   <Text style={upload.pickBtnSub}>Snimite sliku ili video</Text>
                 </TouchableOpacity>
               </View>
             ) : (
+              /* ── PREVIEW + FORMA ── */
               <>
                 <View style={upload.previewContainer}>
                   {mediaType === "image" ? (
@@ -1017,7 +1079,7 @@ export function UploadModal({
                 <TextInput
                   style={upload.fieldInput}
                   placeholder="Naslov objave"
-                  placeholderTextColor={V.silverDim}
+                  placeholderTextColor={VT.placeholder}
                   value={title}
                   onChangeText={setTitle}
                   maxLength={100}
@@ -1025,7 +1087,7 @@ export function UploadModal({
 
                 <Text style={upload.fieldLabel}>
                   Lokacija *
-                  <Text style={{ color: "#ff3b30", fontSize: 12 }}>
+                  <Text style={{ color: "#C05050", fontSize: 12 }}>
                     {" "}
                     (obavezno)
                   </Text>
@@ -1033,7 +1095,7 @@ export function UploadModal({
                 <TextInput
                   style={upload.fieldInput}
                   placeholder="Npr. Zagreb, Dolac"
-                  placeholderTextColor={V.silverDim}
+                  placeholderTextColor={VT.placeholder}
                   value={location}
                   onChangeText={setLocation}
                   maxLength={150}
@@ -1046,7 +1108,7 @@ export function UploadModal({
                     { height: 80, textAlignVertical: "top" },
                   ]}
                   placeholder="Kratki opis..."
-                  placeholderTextColor={V.silverDim}
+                  placeholderTextColor={VT.placeholder}
                   value={description}
                   onChangeText={setDescription}
                   multiline
@@ -1057,7 +1119,11 @@ export function UploadModal({
                   <TouchableOpacity
                     style={[
                       upload.actionBtn,
-                      { flex: 1, backgroundColor: V.danger },
+                      {
+                        flex: 1,
+                        backgroundColor: V.danger,
+                        borderColor: "#5A3030",
+                      },
                     ]}
                     onPress={() => {
                       setMediaUri(null);
@@ -1065,7 +1131,11 @@ export function UploadModal({
                     }}
                     disabled={uploading}
                   >
-                    <Ionicons name="trash-outline" size={22} color="#fff" />
+                    <Ionicons
+                      name="trash-outline"
+                      size={22}
+                      color={V.silverBright}
+                    />
                     <Text style={upload.actionBtnText}>Obriši</Text>
                   </TouchableOpacity>
                   <TouchableOpacity
@@ -1105,9 +1175,11 @@ export function UploadModal({
   );
 }
 
-// ==================== MAIN SCREEN ====================
+// ==================== MAIN SCREEN ============================================
 export default function VideosScreen() {
   const { t } = useTranslation();
+  const { isDark } = useTheme(); // ← DODATI
+  const VT = useMemo(() => getVT(isDark), [isDark]);
   const [videos, setVideos] = useState<VideoItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [currentPlayingIndex, setCurrentPlayingIndex] = useState<number | null>(
@@ -1158,7 +1230,7 @@ export default function VideosScreen() {
       ),
     );
     try {
-      const res = await fetch(`${API_BASE_URL}/api/like/toggle`, {
+      await fetch(`${API_BASE_URL}/api/like/toggle`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -1166,7 +1238,6 @@ export default function VideosScreen() {
         },
         body: JSON.stringify({ videoId }),
       });
-      if (!res.ok) throw new Error();
       await fetch(`${API_BASE_URL}/api/activity/track/like`, {
         method: "POST",
         headers: { Authorization: `Bearer ${token}` },
@@ -1197,7 +1268,7 @@ export default function VideosScreen() {
     );
     try {
       if (!video.isSaved) {
-        const res = await fetch(`${API_BASE_URL}/api/savedvideo/save`, {
+        await fetch(`${API_BASE_URL}/api/savedvideo/save`, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
@@ -1205,17 +1276,15 @@ export default function VideosScreen() {
           },
           body: JSON.stringify({ videoId }),
         });
-        if (!res.ok) throw new Error();
       } else {
         const userId = await AsyncStorage.getItem("userId");
-        const res = await fetch(
+        await fetch(
           `${API_BASE_URL}/api/savedvideo/unsave?videoId=${videoId}&userId=${userId}`,
           {
             method: "DELETE",
             headers: { Authorization: `Bearer ${token}` },
           },
         );
-        if (!res.ok) throw new Error();
       }
     } catch {
       setVideos((prev) =>
@@ -1236,7 +1305,7 @@ export default function VideosScreen() {
     );
     try {
       if (!video.isInWishlist) {
-        const res = await fetch(`${API_BASE_URL}/api/wishlistvideo/add`, {
+        await fetch(`${API_BASE_URL}/api/wishlistvideo/add`, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
@@ -1244,17 +1313,15 @@ export default function VideosScreen() {
           },
           body: JSON.stringify({ videoId, notes: "" }),
         });
-        if (!res.ok) throw new Error();
       } else {
         const userId = await AsyncStorage.getItem("userId");
-        const res = await fetch(
+        await fetch(
           `${API_BASE_URL}/api/wishlistvideo/remove?userId=${userId}&videoId=${videoId}`,
           {
             method: "DELETE",
             headers: { Authorization: `Bearer ${token}` },
           },
         );
-        if (!res.ok) throw new Error();
       }
     } catch {
       setVideos((prev) =>
@@ -1318,7 +1385,7 @@ export default function VideosScreen() {
   if (loading)
     return (
       <View style={vs.centerContainer}>
-        <ActivityIndicator size="large" color={V.visited} />
+        <ActivityIndicator size="large" color={VT.accent} />
       </View>
     );
 
@@ -1330,6 +1397,7 @@ export default function VideosScreen() {
       >
         <Ionicons name="add" size={32} color="white" />
       </TouchableOpacity>
+
       <FlatList
         ref={flatListRef}
         data={videos}
@@ -1355,6 +1423,7 @@ export default function VideosScreen() {
         snapToInterval={height}
         decelerationRate="fast"
       />
+
       <CommentsModal
         visible={selectedVideoForComments !== null}
         video={selectedVideoForComments}
@@ -1380,7 +1449,7 @@ export default function VideosScreen() {
   );
 }
 
-// ─── Video screen stilovi ──────────────────────────────────────────────────────
+// ─── Video screen stilovi ─────────────────────────────────────────────────────
 const vs = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#000" },
   centerContainer: {
@@ -1439,267 +1508,571 @@ const vs = StyleSheet.create({
   },
 });
 
-// ─── Modal stilovi — VARA tema ─────────────────────────────────────────────────
-const modal = StyleSheet.create({
-  // ── Standardni centered header (Upload modal) ──
-  header: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    paddingHorizontal: 16,
-    paddingTop: 20, // spušten prema dolje
-    paddingBottom: 16,
-    borderBottomWidth: 1.5,
-    borderBottomColor: V.borderGreen,
-    backgroundColor: V.forestDeep,
-  },
-  title: { fontSize: 17, fontWeight: "700", color: V.silverBright },
+// ─── Modal stilovi — VARA, identični dashboard.tsx ────────────────────────────
+// const modal = StyleSheet.create({
+//   // ── Header — identičan svim dashboard modalima ──────────────────────────────
+//   // Uspoređeno s: NotificationSettingsModal, ActivityGroupsModal, VisitArchiveModal,
+//   //               BadgesModal, PlanMyDayModal, VisitArchiveModal u dashboard.tsx
+//   header: {
+//     flexDirection: "row",
+//     justifyContent: "space-between",
+//     alignItems: "center",
+//     padding: 20,
+//     paddingTop: Platform.OS === "ios" ? 54 : 36, // ← identičan dashboard (ag.chatHeader)
+//     borderBottomWidth: 1.5,
+//     borderBottomColor: V.borderGreen, // ← identičan dashboard (#4a7040)
+//     backgroundColor: V.forestDeep, // ← identičan dashboard (#1a2e1a)
+//   },
+//   headerTitle: {
+//     fontSize: 20,
+//     fontWeight: "800",
+//     color: V.silverBright, // ← identičan dashboard (#e8e8e8)
+//   },
+//   // ── "Zatvori" — čisti tekst, identičan dashboard ────────────────────────────
+//   // Dashboard koristi: fontSize: 14, color: "#b0b0b0", fontWeight: "600"
+//   closeTxt: {
+//     fontSize: 14,
+//     fontWeight: "600",
+//     color: V.silverDim, // ← #8A9486, blizu "#b0b0b0"
+//   },
 
-  // ── Split header: naslov lijevo, "Zatvori" desno — za Komentare, Poruke i Dijeli ──
-  headerSplit: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    paddingHorizontal: 20,
-    paddingTop: 36, // dodatno spušten prema dolje
-    paddingBottom: 16,
-    borderBottomWidth: 1.5,
-    borderBottomColor: V.borderGreen,
-    backgroundColor: V.forestDeep,
-  },
-  headerLeftTitle: {
-    fontSize: 20,
-    fontWeight: "700",
-    color: V.silverBright,
-  },
-  // "Zatvori" tekst gumb
-  closeBtnText: {
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    borderRadius: 16,
-    backgroundColor: V.forestMid,
-    borderWidth: 1,
-    borderColor: V.borderGreen,
-  },
-  closeBtnLabel: {
-    fontSize: 14,
-    fontWeight: "600",
-    color: V.silverDim,
-  },
-  // stari closeBtn (ostavljen radi kompatibilnosti)
-  closeBtn: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: V.forestMid,
-    borderWidth: 1,
-    borderColor: V.borderGreen,
-    justifyContent: "center",
-    alignItems: "center",
-  },
+//   // ── Empty state ─────────────────────────────────────────────────────────────
+//   emptyIconWrap: {
+//     width: 88,
+//     height: 88,
+//     borderRadius: 44,
+//     backgroundColor: V.forestMid,
+//     borderWidth: 1.5,
+//     borderColor: V.borderGreen,
+//     justifyContent: "center",
+//     alignItems: "center",
+//   },
+//   emptyText: {
+//     fontSize: 16,
+//     color: V.silverDim,
+//     textAlign: "center",
+//     paddingHorizontal: 32,
+//   },
 
-  // Empty state
-  emptyIconWrap: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    backgroundColor: V.forestMid,
-    borderWidth: 1.5,
-    borderColor: V.borderGreen,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  emptyText: { fontSize: 16, color: V.silverDim, textAlign: "center" },
+//   // ── Comments ─────────────────────────────────────────────────────────────────
+//   commentRow: {
+//     flexDirection: "row",
+//     marginBottom: 16,
+//     gap: 12,
+//     paddingBottom: 16,
+//     borderBottomWidth: 1,
+//     borderBottomColor: V.borderDim, // ← #304A28
+//     alignItems: "flex-start",
+//   },
+//   commentUser: {
+//     fontSize: 14,
+//     fontWeight: "700",
+//     color: V.silverBright,
+//     marginBottom: 4,
+//   },
+//   commentText: {
+//     fontSize: 14,
+//     color: V.silver,
+//     lineHeight: 20,
+//     marginBottom: 4,
+//   },
+//   commentDate: {
+//     fontSize: 11,
+//     color: V.silverDim,
+//   },
 
-  // Comments
-  commentRow: {
-    flexDirection: "row",
-    marginBottom: 16,
-    gap: 12,
-    paddingBottom: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: V.borderDim,
-    alignItems: "flex-start",
-  },
-  commentUser: {
-    fontSize: 14,
-    fontWeight: "700",
-    color: V.silver,
-    marginBottom: 4,
-  },
-  commentText: {
-    fontSize: 14,
-    color: V.silverDim,
-    lineHeight: 20,
-    marginBottom: 4,
-  },
-  commentDate: { fontSize: 11, color: V.silverDim },
+//   // ── Input row — identičan ag.inputRow u dashboard ────────────────────────────
+//   inputRow: {
+//     flexDirection: "row",
+//     padding: 12,
+//     borderTopWidth: 1,
+//     borderTopColor: V.borderDim, // ← #304A28, identičan ag.inputRow
+//     gap: 8,
+//     alignItems: "flex-end",
+//     backgroundColor: V.forestDeep, // ← #1A2E15
+//     paddingBottom: Platform.OS === "ios" ? 28 : 12,
+//   },
+//   textInput: {
+//     flex: 1,
+//     backgroundColor: V.forestMid, // ← #243B1E, identičan ag.input
+//     borderRadius: 22,
+//     borderWidth: 1,
+//     borderColor: V.borderGreen, // ← #4A7040
+//     paddingHorizontal: 16,
+//     paddingVertical: 10,
+//     maxHeight: 100,
+//     fontSize: 15,
+//     color: V.silverBright,
+//   },
+//   sendBtn: {
+//     width: 44,
+//     height: 44,
+//     borderRadius: 22,
+//     backgroundColor: V.forestLight, // ← #2D5518, identičan ag.sendBtn
+//     borderWidth: 1.5,
+//     borderColor: V.borderGreen,
+//     justifyContent: "center",
+//     alignItems: "center",
+//     flexShrink: 0,
+//   },
+//   sendBtnDisabled: {
+//     backgroundColor: V.borderDim,
+//     borderColor: V.borderDim,
+//   },
 
-  // Input row
-  inputRow: {
-    flexDirection: "row",
-    padding: 12,
-    gap: 8,
-    alignItems: "flex-end",
-    borderTopWidth: 1.5,
-    borderTopColor: V.borderGreen,
-    backgroundColor: V.forestDeep,
-  },
-  textInput: {
-    flex: 1,
-    backgroundColor: V.forestMid,
-    borderRadius: 20,
-    borderWidth: 1,
-    borderColor: V.borderGreen,
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    maxHeight: 100,
-    fontSize: 15,
-    color: V.silverBright,
-  },
-  sendBtn: {
-    width: 42,
-    height: 42,
-    borderRadius: 21,
-    backgroundColor: V.forestLight,
-    borderWidth: 1.5,
-    borderColor: V.borderGreen,
-    justifyContent: "center",
-    alignItems: "center",
-    flexShrink: 0,
-  },
-  sendBtnDisabled: { backgroundColor: V.borderDim, borderColor: V.borderDim },
+//   // ── Recipient row ─────────────────────────────────────────────────────────────
+//   recipientRow: {
+//     flexDirection: "row",
+//     alignItems: "center",
+//     paddingHorizontal: 16,
+//     paddingVertical: 14,
+//     borderBottomWidth: 1,
+//     borderBottomColor: V.borderDim,
+//     backgroundColor: V.forestDeep,
+//   },
+//   recipientName: {
+//     fontSize: 15,
+//     fontWeight: "700",
+//     color: V.silverBright,
+//   },
+//   recipientSub: {
+//     fontSize: 13,
+//     color: V.silverDim,
+//     marginTop: 2,
+//   },
 
-  // Recipient row (Messenger fullscreen)
-  recipientRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-    borderBottomWidth: 1,
-    borderBottomColor: V.borderDim,
-  },
-  recipientName: { fontSize: 15, fontWeight: "700", color: V.silverBright },
-  recipientSub: { fontSize: 13, color: V.silverDim, marginTop: 2 },
+//   // ── Quick replies — identične ag.dmQuickBtn ───────────────────────────────────
+//   quickRow: {
+//     flexDirection: "row",
+//     flexWrap: "wrap",
+//     gap: 8,
+//     paddingHorizontal: 16,
+//     paddingVertical: 12,
+//     backgroundColor: V.forestMid,
+//     borderBottomWidth: 1,
+//     borderBottomColor: V.borderDim,
+//   },
+//   quickChip: {
+//     backgroundColor: V.forestDeep, // ← identičan ag.dmQuickBtn
+//     borderRadius: 18,
+//     borderWidth: 1,
+//     borderColor: V.borderDim,
+//     paddingHorizontal: 12,
+//     paddingVertical: 7,
+//   },
+//   quickChipText: {
+//     fontSize: 13,
+//     color: V.silver,
+//     fontWeight: "600",
+//   },
 
-  // Quick replies
-  quickRow: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 8,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-  },
-  quickChip: {
-    backgroundColor: V.forestMid,
-    borderRadius: 16,
-    paddingHorizontal: 12,
-    paddingVertical: 7,
-    borderWidth: 1,
-    borderColor: V.borderGreen,
-  },
-  quickText: { fontSize: 13, color: V.silver, fontWeight: "600" },
+//   // ── Share — search bar ────────────────────────────────────────────────────────
+//   // Identičan dashboard filter panelu
+//   searchBar: {
+//     flexDirection: "row",
+//     alignItems: "center",
+//     backgroundColor: V.forestMid,
+//     borderRadius: 12,
+//     borderWidth: 1.5,
+//     borderColor: V.borderGreen,
+//     paddingHorizontal: 14,
+//     paddingVertical: 10,
+//     shadowColor: "#000",
+//     shadowOffset: { width: 0, height: 2 },
+//     shadowOpacity: 0.3,
+//     shadowRadius: 4,
+//     elevation: 4,
+//   },
+//   searchInput: {
+//     flex: 1,
+//     fontSize: 15,
+//     color: V.silverBright,
+//   },
 
-  // Share — search bar + user row
-  searchBar: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: V.forestMid,
-    borderRadius: 12,
-    borderWidth: 1.5,
-    borderColor: V.borderGreen,
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-  },
-  searchInput: { flex: 1, fontSize: 15, color: V.silverBright },
-  userRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: V.borderDim,
-  },
-  shareIconWrap: {
-    width: 38,
-    height: 38,
-    borderRadius: 19,
-    backgroundColor: V.forestMid,
-    borderWidth: 1,
-    borderColor: V.borderGreen,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-});
+//   // ── User row (Share lista) ────────────────────────────────────────────────────
+//   userRow: {
+//     flexDirection: "row",
+//     alignItems: "center",
+//     paddingVertical: 12,
+//     paddingHorizontal: 4,
+//     borderBottomWidth: 1,
+//     borderBottomColor: V.borderDim,
+//     backgroundColor: V.forestDeep,
+//     gap: 0,
+//   },
+//   shareIconWrap: {
+//     width: 40,
+//     height: 40,
+//     borderRadius: 20,
+//     backgroundColor: V.forestMid,
+//     borderWidth: 1,
+//     borderColor: V.borderGreen,
+//     justifyContent: "center",
+//     alignItems: "center",
+//   },
+// });
 
-// ─── Upload modal stilovi — VARA ───────────────────────────────────────────────
-const upload = StyleSheet.create({
-  pickContainer: { alignItems: "center", gap: 20, paddingTop: 40 },
-  pickHint: { fontSize: 18, color: V.silverDim, marginBottom: 8 },
-  pickBtn: {
-    width: "80%",
-    alignItems: "center",
-    padding: 24,
-    borderRadius: 16,
-    borderWidth: 2,
-    borderColor: V.borderGreen,
-    borderStyle: "dashed",
-    gap: 8,
-    backgroundColor: V.forestMid,
-  },
-  pickBtnText: { fontSize: 16, color: V.visited, fontWeight: "600" },
-  pickBtnSub: { fontSize: 13, color: V.silverDim },
-  previewContainer: { position: "relative", marginBottom: 20 },
-  previewMedia: { width: "100%", height: 260, borderRadius: 12 },
-  mediaTypeBadge: {
-    position: "absolute",
-    top: 10,
-    left: 10,
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 4,
-    backgroundColor: "rgba(0,0,0,0.6)",
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: 20,
-  },
-  mediaTypeBadgeText: { color: "#fff", fontSize: 12, fontWeight: "600" },
-  changeBtn: {
-    position: "absolute",
-    bottom: 10,
-    right: 10,
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "rgba(0,0,0,0.6)",
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 20,
-  },
-  fieldLabel: {
-    fontSize: 14,
-    fontWeight: "600",
-    color: V.silver,
-    marginBottom: 6,
-    marginTop: 12,
-  },
-  fieldInput: {
-    backgroundColor: V.forestMid,
-    borderRadius: 12,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    fontSize: 15,
-    color: V.silverBright,
-    borderWidth: 1,
-    borderColor: V.borderGreen,
-  },
-  actionBtn: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    borderRadius: 12,
-    paddingVertical: 16,
-    gap: 8,
-    borderWidth: 1.5,
-    borderColor: V.borderGreen,
-  },
-  actionBtnText: { color: V.silverBright, fontSize: 16, fontWeight: "600" },
-});
+// // ─── Upload modal stilovi ─────────────────────────────────────────────────────
+// const upload = StyleSheet.create({
+//   pickContainer: {
+//     alignItems: "center",
+//     gap: 20,
+//     paddingTop: 40,
+//   },
+//   pickHint: {
+//     fontSize: 16,
+//     color: V.silverDim,
+//     marginBottom: 8,
+//   },
+//   pickIconWrap: {
+//     width: 80,
+//     height: 80,
+//     borderRadius: 40,
+//     backgroundColor: V.forestMid,
+//     borderWidth: 1.5,
+//     borderColor: V.borderGreen,
+//     justifyContent: "center",
+//     alignItems: "center",
+//     marginBottom: 8,
+//   },
+//   pickBtn: {
+//     width: "85%",
+//     alignItems: "center",
+//     padding: 24,
+//     borderRadius: 16,
+//     borderWidth: 1.5,
+//     borderColor: V.borderGreen,
+//     borderStyle: "dashed",
+//     gap: 4,
+//     backgroundColor: V.forestMid,
+//   },
+//   pickBtnText: {
+//     fontSize: 16,
+//     color: V.visited,
+//     fontWeight: "700",
+//   },
+//   pickBtnSub: {
+//     fontSize: 13,
+//     color: V.silverDim,
+//   },
+//   previewContainer: {
+//     position: "relative",
+//     marginBottom: 20,
+//   },
+//   previewMedia: {
+//     width: "100%",
+//     height: 260,
+//     borderRadius: 12,
+//   },
+//   mediaTypeBadge: {
+//     position: "absolute",
+//     top: 10,
+//     left: 10,
+//     flexDirection: "row",
+//     alignItems: "center",
+//     gap: 4,
+//     backgroundColor: V.overlay,
+//     paddingHorizontal: 10,
+//     paddingVertical: 5,
+//     borderRadius: 20,
+//     borderWidth: 1,
+//     borderColor: V.borderGreen,
+//   },
+//   mediaTypeBadgeText: {
+//     color: V.silver,
+//     fontSize: 12,
+//     fontWeight: "600",
+//   },
+//   changeBtn: {
+//     position: "absolute",
+//     bottom: 10,
+//     right: 10,
+//     flexDirection: "row",
+//     alignItems: "center",
+//     backgroundColor: V.overlay,
+//     paddingHorizontal: 10,
+//     paddingVertical: 6,
+//     borderRadius: 20,
+//     borderWidth: 1,
+//     borderColor: V.borderDim,
+//   },
+//   fieldLabel: {
+//     fontSize: 14,
+//     fontWeight: "700",
+//     color: V.silver,
+//     marginBottom: 8,
+//     marginTop: 14,
+//     textTransform: "uppercase",
+//     letterSpacing: 0.5,
+//   },
+//   fieldInput: {
+//     backgroundColor: V.forestMid,
+//     borderRadius: 10,
+//     borderWidth: 1,
+//     borderColor: V.borderGreen,
+//     paddingHorizontal: 16,
+//     paddingVertical: 12,
+//     fontSize: 15,
+//     color: V.silverBright,
+//   },
+//   actionBtn: {
+//     flexDirection: "row",
+//     alignItems: "center",
+//     justifyContent: "center",
+//     borderRadius: 12,
+//     paddingVertical: 16,
+//     gap: 8,
+//     borderWidth: 1.5,
+//   },
+//   actionBtnText: {
+//     color: V.silverBright,
+//     fontSize: 15,
+//     fontWeight: "700",
+//   },
+// });
+
+// OBRISATI: const modal = StyleSheet.create({ ... })
+// OBRISATI: const upload = StyleSheet.create({ ... })
+
+function makeModalStyles(VT: ReturnType<typeof getVT>) {
+  return StyleSheet.create({
+    header: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "center",
+      padding: 20,
+      paddingTop: Platform.OS === "ios" ? 54 : 36,
+      borderBottomWidth: 1.5,
+      borderBottomColor: VT.borderBright,
+      backgroundColor: VT.bg,
+    },
+    headerTitle: { fontSize: 20, fontWeight: "800", color: VT.textPrimary },
+    closeTxt: { fontSize: 14, fontWeight: "600", color: VT.textMuted },
+    emptyIconWrap: {
+      width: 88,
+      height: 88,
+      borderRadius: 44,
+      backgroundColor: VT.bgCard,
+      borderWidth: 1.5,
+      borderColor: VT.borderBright,
+      justifyContent: "center",
+      alignItems: "center",
+    },
+    emptyText: {
+      fontSize: 16,
+      color: VT.textMuted,
+      textAlign: "center",
+      paddingHorizontal: 32,
+    },
+    commentRow: {
+      flexDirection: "row",
+      marginBottom: 16,
+      gap: 12,
+      paddingBottom: 16,
+      borderBottomWidth: 1,
+      borderBottomColor: VT.border,
+      alignItems: "flex-start",
+    },
+    commentUser: {
+      fontSize: 14,
+      fontWeight: "700",
+      color: VT.textPrimary,
+      marginBottom: 4,
+    },
+    commentText: {
+      fontSize: 14,
+      color: VT.textSecondary,
+      lineHeight: 20,
+      marginBottom: 4,
+    },
+    commentDate: { fontSize: 11, color: VT.textMuted },
+    inputRow: {
+      flexDirection: "row",
+      padding: 12,
+      borderTopWidth: 1,
+      borderTopColor: VT.border,
+      gap: 8,
+      alignItems: "flex-end",
+      backgroundColor: VT.bg,
+      paddingBottom: Platform.OS === "ios" ? 28 : 12,
+    },
+    textInput: {
+      flex: 1,
+      backgroundColor: VT.bgCard,
+      borderRadius: 22,
+      borderWidth: 1,
+      borderColor: VT.borderBright,
+      paddingHorizontal: 16,
+      paddingVertical: 10,
+      maxHeight: 100,
+      fontSize: 15,
+      color: VT.textPrimary,
+    },
+    sendBtn: {
+      width: 44,
+      height: 44,
+      borderRadius: 22,
+      backgroundColor: VT.bgLight,
+      borderWidth: 1.5,
+      borderColor: VT.borderBright,
+      justifyContent: "center",
+      alignItems: "center",
+      flexShrink: 0,
+    },
+    sendBtnDisabled: { backgroundColor: VT.border, borderColor: VT.border },
+    recipientRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      paddingHorizontal: 16,
+      paddingVertical: 14,
+      borderBottomWidth: 1,
+      borderBottomColor: VT.border,
+      backgroundColor: VT.bg,
+    },
+    recipientName: { fontSize: 15, fontWeight: "700", color: VT.textPrimary },
+    recipientSub: { fontSize: 13, color: VT.textMuted, marginTop: 2 },
+    quickRow: {
+      flexDirection: "row",
+      flexWrap: "wrap",
+      gap: 8,
+      paddingHorizontal: 16,
+      paddingVertical: 12,
+      backgroundColor: VT.bgCard,
+      borderBottomWidth: 1,
+      borderBottomColor: VT.border,
+    },
+    quickChip: {
+      backgroundColor: VT.bg,
+      borderRadius: 18,
+      borderWidth: 1,
+      borderColor: VT.border,
+      paddingHorizontal: 12,
+      paddingVertical: 7,
+    },
+    quickChipText: { fontSize: 13, color: VT.textSecondary, fontWeight: "600" },
+    searchBar: {
+      flexDirection: "row",
+      alignItems: "center",
+      backgroundColor: VT.bgCard,
+      borderRadius: 12,
+      borderWidth: 1.5,
+      borderColor: VT.borderBright,
+      paddingHorizontal: 14,
+      paddingVertical: 10,
+    },
+    searchInput: { flex: 1, fontSize: 15, color: VT.textPrimary },
+    userRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      paddingVertical: 12,
+      paddingHorizontal: 4,
+      borderBottomWidth: 1,
+      borderBottomColor: VT.border,
+      backgroundColor: VT.bg,
+    },
+    shareIconWrap: {
+      width: 40,
+      height: 40,
+      borderRadius: 20,
+      backgroundColor: VT.bgCard,
+      borderWidth: 1,
+      borderColor: VT.borderBright,
+      justifyContent: "center",
+      alignItems: "center",
+    },
+  });
+}
+
+function makeUploadStyles(VT: ReturnType<typeof getVT>) {
+  return StyleSheet.create({
+    pickContainer: { alignItems: "center", gap: 20, paddingTop: 40 },
+    pickHint: { fontSize: 16, color: VT.textMuted, marginBottom: 8 },
+    pickIconWrap: {
+      width: 80,
+      height: 80,
+      borderRadius: 40,
+      backgroundColor: VT.bgCard,
+      borderWidth: 1.5,
+      borderColor: VT.borderBright,
+      justifyContent: "center",
+      alignItems: "center",
+      marginBottom: 8,
+    },
+    pickBtn: {
+      width: "85%",
+      alignItems: "center",
+      padding: 24,
+      borderRadius: 16,
+      borderWidth: 1.5,
+      borderColor: VT.borderBright,
+      borderStyle: "dashed",
+      gap: 4,
+      backgroundColor: VT.bgCard,
+    },
+    pickBtnText: { fontSize: 16, color: VT.accent, fontWeight: "700" },
+    pickBtnSub: { fontSize: 13, color: VT.textMuted },
+    previewContainer: { position: "relative", marginBottom: 20 },
+    previewMedia: { width: "100%", height: 260, borderRadius: 12 },
+    mediaTypeBadge: {
+      position: "absolute",
+      top: 10,
+      left: 10,
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 4,
+      backgroundColor: VT.overlay,
+      paddingHorizontal: 10,
+      paddingVertical: 5,
+      borderRadius: 20,
+      borderWidth: 1,
+      borderColor: VT.borderBright,
+    },
+    mediaTypeBadgeText: {
+      color: VT.textSecondary,
+      fontSize: 12,
+      fontWeight: "600",
+    },
+    changeBtn: {
+      position: "absolute",
+      bottom: 10,
+      right: 10,
+      flexDirection: "row",
+      alignItems: "center",
+      backgroundColor: VT.overlay,
+      paddingHorizontal: 10,
+      paddingVertical: 6,
+      borderRadius: 20,
+      borderWidth: 1,
+      borderColor: VT.border,
+    },
+    fieldLabel: {
+      fontSize: 14,
+      fontWeight: "700",
+      color: VT.textSecondary,
+      marginBottom: 8,
+      marginTop: 14,
+      textTransform: "uppercase",
+      letterSpacing: 0.5,
+    },
+    fieldInput: {
+      backgroundColor: VT.bgCard,
+      borderRadius: 10,
+      borderWidth: 1,
+      borderColor: VT.borderBright,
+      paddingHorizontal: 16,
+      paddingVertical: 12,
+      fontSize: 15,
+      color: VT.textPrimary,
+    },
+    actionBtn: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "center",
+      borderRadius: 12,
+      paddingVertical: 16,
+      gap: 8,
+      borderWidth: 1.5,
+    },
+    actionBtnText: { color: VT.textPrimary, fontSize: 15, fontWeight: "700" },
+  });
+}

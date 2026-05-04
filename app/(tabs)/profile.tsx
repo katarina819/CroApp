@@ -4,7 +4,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as ImagePicker from "expo-image-picker";
 import { router, useFocusEffect } from "expo-router";
 import { VideoView, useVideoPlayer } from "expo-video";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
   ActivityIndicator,
@@ -24,32 +24,54 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import Svg, { Defs, LinearGradient, Path, Stop } from "react-native-svg";
 import { StoryBadge } from "../../app/StoryBadge";
-import { ThemeToggle } from "../../components/ThemeToggle";
+import { useTheme } from "../../components/AdaptiveThemeProvider";
 import UserAvatar from "../../components/UserAvatar";
 import { API_BASE_URL } from "../config/api";
 import { useUser } from "./../contexts/UserContext";
 
 const { width: SCREEN_W } = Dimensions.get("window");
 
-// ─── VARA Paleta ───────────────────────────────────────────────────────────────
-const V = {
-  forestDeep: "#1A2E15",
-  forestMid: "#243B1E",
-  forestLight: "#2D5518",
-  borderGreen: "#4A7040",
-  borderDim: "#304A28",
-  silver: "#C4CABC",
-  silverBright: "#E8EDE4",
-  silverDim: "#8A9486",
+// ─── VARA Paleta (dark fallback za module-level StyleSheets koji ne ovise o temi) ──
+const V_DARK = {
+  forestDeep: "#1a2e1a",
+  forestMid: "#2a4230",
+  forestLight: "#3a5a30",
+  borderGreen: "#4a7040",
+  borderDim: "#3a5a30",
+  silver: "#c0c0c0",
+  silverBright: "#e8e8e8",
+  silverDim: "#a0a0a0",
   accentGold: "#B8A060",
-  visited: "#5A8A48",
-  visitedLight: "#3D6B32",
+  visited: "#5a8a48",
+  visitedLight: "#3a5a30",
   danger: "#8B3030",
-  overlay: "rgba(10,20,8,0.88)",
+  overlay: "rgba(0,0,0,0.6)",
   overlayLight: "rgba(26,46,21,0.92)",
-  cardBg: "#1E3418",
-  inputBg: "#243B1E",
+  cardBg: "#2a4230",
+  inputBg: "#2a4230",
 } as const;
+
+// ─── Dinamički getter boja koji se koristi UNUTAR komponenti ──────────────────
+function getVara(dark: boolean) {
+  return {
+    forestDeep: dark ? "#1a2e1a" : "#f0ede4",
+    forestMid: dark ? "#2a4230" : "#e4ead8",
+    forestLight: dark ? "#3a5a30" : "#ccdcb8",
+    borderGreen: dark ? "#4a7040" : "#5a8a40",
+    borderDim: dark ? "#3a5a30" : "#c0d0a8",
+    silver: dark ? "#c0c0c0" : "#3a4a35",
+    silverBright: dark ? "#e8e8e8" : "#1a2a18",
+    silverDim: dark ? "#a0a0a0" : "#5a6a55",
+    accentGold: "#B8A060",
+    visited: dark ? "#5a8a48" : "#3a6a28",
+    visitedLight: dark ? "#3a5a30" : "#ccdcb8",
+    danger: dark ? "#8B3030" : "#7a2020",
+    overlay: dark ? "rgba(0,0,0,0.6)" : "rgba(0,0,0,0.4)",
+    overlayLight: dark ? "rgba(26,46,21,0.92)" : "rgba(240,237,228,0.96)",
+    cardBg: dark ? "#2a4230" : "#e4ead8",
+    inputBg: dark ? "#2a4230" : "#e4ead8",
+  } as const;
+}
 
 type Tab = "me" | "box" | "wishlist" | "golden";
 
@@ -112,7 +134,658 @@ interface DailyActivity {
   followersCount?: number;
 }
 
-// ─── SVG Avatari (nepromijenjeni) ─────────────────────────────────────────────
+// ─── StyleSheet factory funkcije — pozivaju se unutar komponenti s aktualnim V ─
+function makeFlStyles(V: ReturnType<typeof getVara>) {
+  return StyleSheet.create({
+    header: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "center",
+      padding: 16,
+      borderBottomWidth: 1.5,
+      borderBottomColor: V.borderGreen,
+      backgroundColor: V.forestDeep,
+    },
+    title: { fontSize: 17, fontWeight: "600", color: V.silverBright },
+    row: {
+      flexDirection: "row",
+      alignItems: "center",
+      paddingVertical: 12,
+      borderBottomWidth: StyleSheet.hairlineWidth,
+      borderBottomColor: V.borderDim,
+    },
+    avatarContainer: { marginRight: 12 },
+    userInfo: { flex: 1 },
+    name: { fontSize: 15, fontWeight: "600", color: V.silverBright },
+    username: { fontSize: 13, color: V.visited, marginTop: 2 },
+    actionButtons: { flexDirection: "row", gap: 8 },
+    goldenBtn: {
+      width: 40,
+      height: 40,
+      borderRadius: 20,
+      backgroundColor: V.forestMid,
+      borderWidth: 1.5,
+      borderColor: V.borderDim,
+      justifyContent: "center",
+      alignItems: "center",
+    },
+    goldenBtnActive: { backgroundColor: "#231C0A", borderColor: V.accentGold },
+    blockBtn: {
+      width: 40,
+      height: 40,
+      borderRadius: 20,
+      backgroundColor: V.forestMid,
+      borderWidth: 1.5,
+      borderColor: V.borderDim,
+      justifyContent: "center",
+      alignItems: "center",
+    },
+    blockBtnActive: { borderColor: V.danger },
+    empty: {
+      flex: 1,
+      alignItems: "center",
+      justifyContent: "center",
+      gap: 12,
+      paddingTop: 60,
+    },
+    emptyIconWrap: {
+      width: 88,
+      height: 88,
+      borderRadius: 44,
+      backgroundColor: V.forestMid,
+      borderWidth: 1.5,
+      borderColor: V.borderGreen,
+      justifyContent: "center",
+      alignItems: "center",
+    },
+    emptyText: { fontSize: 16, color: V.silverDim },
+  });
+}
+
+function makeAcStyles(V: ReturnType<typeof getVara>) {
+  return StyleSheet.create({
+    periodSelector: {
+      flexDirection: "row",
+      justifyContent: "center",
+      gap: 10,
+      paddingVertical: 12,
+      marginHorizontal: 16,
+    },
+    periodBtn: {
+      paddingHorizontal: 16,
+      paddingVertical: 8,
+      borderRadius: 20,
+      backgroundColor: V.forestMid,
+      borderWidth: 1,
+      borderColor: V.borderDim,
+    },
+    periodBtnActive: {
+      backgroundColor: V.forestLight,
+      borderColor: V.borderGreen,
+    },
+    periodBtnText: { fontSize: 13, color: V.silverDim },
+    periodBtnTextActive: { color: V.silverBright, fontWeight: "600" },
+    summaryRow: { flexDirection: "row", flexWrap: "wrap", gap: 8, padding: 16 },
+    summaryCard: {
+      flex: 1,
+      minWidth: (SCREEN_W - 56) / 2,
+      alignItems: "center",
+      padding: 14,
+      backgroundColor: V.forestMid,
+      borderRadius: 12,
+      borderWidth: 1,
+      borderColor: V.borderDim,
+      borderTopWidth: 3,
+      gap: 4,
+    },
+    summaryNum: { fontSize: 22, fontWeight: "800" },
+    summaryLabel: { fontSize: 12, color: V.silverDim },
+    followersCard: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 12,
+      backgroundColor: V.forestMid,
+      marginHorizontal: 16,
+      padding: 16,
+      borderRadius: 12,
+      borderWidth: 1,
+      borderColor: V.borderDim,
+      borderLeftWidth: 3,
+      borderLeftColor: V.visited,
+    },
+    followersNum: { fontSize: 24, fontWeight: "800", color: V.visited },
+    followersLabel: { fontSize: 12, color: V.silverDim },
+    sectionTitle: {
+      fontSize: 15,
+      fontWeight: "700",
+      color: V.silverBright,
+      paddingHorizontal: 16,
+      marginTop: 16,
+      marginBottom: 8,
+    },
+    chartSection: {
+      marginHorizontal: 16,
+      marginBottom: 20,
+      backgroundColor: V.forestMid,
+      borderRadius: 12,
+      padding: 12,
+      borderWidth: 1,
+      borderColor: V.borderDim,
+    },
+    chartTitle: {
+      fontSize: 13,
+      fontWeight: "600",
+      color: V.silver,
+      marginBottom: 10,
+    },
+    bars: { flexDirection: "row", alignItems: "flex-end", gap: 6, height: 90 },
+    barColumn: {
+      flex: 1,
+      alignItems: "center",
+      justifyContent: "flex-end",
+      gap: 4,
+    },
+    bar: { width: "100%", borderRadius: 4, minHeight: 2 },
+    barValue: { fontSize: 10, color: V.silverDim, fontWeight: "600" },
+    barDate: { fontSize: 9, color: V.silverDim, marginTop: 4 },
+  });
+}
+
+function makeTabStyles(V: ReturnType<typeof getVara>) {
+  return StyleSheet.create({
+    addBtn: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "center",
+      backgroundColor: V.forestLight,
+      borderWidth: 1.5,
+      borderColor: V.borderGreen,
+      borderRadius: 12,
+      margin: 16,
+      paddingVertical: 12,
+      gap: 8,
+    },
+    addBtnText: { color: V.silverBright, fontSize: 15, fontWeight: "600" },
+    gridItem: { flex: 1 / 3, aspectRatio: 1, padding: 1 },
+    gridImg: { width: "100%", height: "100%" },
+    videoIcon: {
+      ...StyleSheet.absoluteFillObject,
+      justifyContent: "center",
+      alignItems: "center",
+      backgroundColor: "rgba(0,0,0,0.25)",
+    },
+    gridDate: {
+      position: "absolute",
+      bottom: 4,
+      left: 4,
+      right: 4,
+      fontSize: 10,
+      color: V.silver,
+      textShadowColor: "#000",
+      textShadowOffset: { width: 0, height: 1 },
+      textShadowRadius: 3,
+    },
+    listItem: {
+      flexDirection: "row",
+      alignItems: "center",
+      paddingVertical: 12,
+      borderBottomWidth: StyleSheet.hairlineWidth,
+      borderBottomColor: V.borderDim,
+      gap: 12,
+    },
+    thumb: { width: 60, height: 60, borderRadius: 8 },
+    thumbContainer: {
+      position: "relative",
+      width: 60,
+      height: 60,
+      borderRadius: 8,
+      overflow: "hidden",
+    },
+    playIcon: {
+      position: "absolute",
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
+      justifyContent: "center",
+      alignItems: "center",
+      backgroundColor: "rgba(0,0,0,0.3)",
+    },
+    itemTitle: {
+      fontSize: 14,
+      fontWeight: "600",
+      color: V.silverBright,
+      marginBottom: 3,
+    },
+    itemMeta: { fontSize: 13, color: V.visited, marginBottom: 2 },
+    itemDate: { fontSize: 12, color: V.silverDim },
+    removeBtn: { padding: 8 },
+    empty: {
+      alignItems: "center",
+      justifyContent: "center",
+      paddingTop: 60,
+      gap: 14,
+    },
+    emptyIconWrap: {
+      width: 88,
+      height: 88,
+      borderRadius: 44,
+      backgroundColor: V.forestMid,
+      borderWidth: 1.5,
+      borderColor: V.borderGreen,
+      justifyContent: "center",
+      alignItems: "center",
+    },
+    emptyText: {
+      fontSize: 16,
+      color: V.silverDim,
+      textAlign: "center",
+      paddingHorizontal: 32,
+    },
+    filterRow: {
+      flexDirection: "row",
+      gap: 8,
+      paddingHorizontal: 16,
+      marginVertical: 12,
+    },
+    filterBtn: {
+      paddingHorizontal: 12,
+      paddingVertical: 7,
+      borderRadius: 20,
+      backgroundColor: V.forestMid,
+      borderWidth: 1,
+      borderColor: V.borderDim,
+    },
+    filterBtnActive: {
+      backgroundColor: V.forestLight,
+      borderColor: V.borderGreen,
+    },
+    filterBtnText: { fontSize: 13, color: V.silver },
+    filterBtnTextActive: { color: V.silverBright, fontWeight: "600" },
+    goingBadge: { fontSize: 13, color: V.visited, marginTop: 4 },
+    deleteOverlay: {
+      position: "absolute",
+      top: 4,
+      right: 4,
+      backgroundColor: "rgba(0,0,0,0.65)",
+      borderRadius: 12,
+      padding: 4,
+      zIndex: 1,
+    },
+  });
+}
+
+function makeSmStyles(V: ReturnType<typeof getVara>) {
+  return StyleSheet.create({
+    header: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "center",
+      padding: 16,
+      borderBottomWidth: 1.5,
+      borderBottomColor: V.borderGreen,
+      backgroundColor: V.forestDeep,
+    },
+    dangerHeader: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 10,
+      marginBottom: 8,
+    },
+    dangerHeaderLine: {
+      flex: 1,
+      height: 1,
+      opacity: 0.5,
+      backgroundColor: V.borderGreen,
+    },
+    dangerHeaderText: {
+      fontSize: 11,
+      fontWeight: "700",
+      textTransform: "uppercase" as const,
+      letterSpacing: 1.5,
+      color: V.silverDim,
+    },
+    dangerDesc: {
+      fontSize: 12,
+      marginBottom: 16,
+      fontStyle: "italic" as const,
+      color: V.silverDim,
+    },
+    varaBtn: {
+      flexDirection: "row" as const,
+      alignItems: "center" as const,
+      gap: 12,
+      padding: 14,
+      borderRadius: 12,
+      borderWidth: 1,
+      marginBottom: 8,
+      backgroundColor: V.forestMid,
+      borderColor: V.borderDim,
+    },
+    varaBtnDestructive: {
+      borderWidth: 1.5,
+      borderTopWidth: 2,
+      backgroundColor: "#1e2e18",
+      borderColor: V.accentGold,
+    },
+    varaBtnIcon: {
+      width: 34,
+      height: 34,
+      borderRadius: 8,
+      borderWidth: 1,
+      justifyContent: "center" as const,
+      alignItems: "center" as const,
+      backgroundColor: V.forestLight,
+      borderColor: V.borderDim,
+    },
+    varaBtnIconDestructive: {
+      backgroundColor: "#2a1e0a",
+      borderColor: V.accentGold,
+    },
+    varaBtnText: {
+      flex: 1,
+      fontSize: 15,
+      fontWeight: "500" as const,
+      color: V.silver,
+    },
+    varaBtnTextDestructive: {
+      flex: 1,
+      fontSize: 15,
+      fontWeight: "600" as const,
+      color: V.accentGold,
+    },
+    title: { fontSize: 17, fontWeight: "600", color: V.silverBright },
+    saveBtn: { fontSize: 16, fontWeight: "600", color: V.visited },
+    section: { marginTop: 24, paddingHorizontal: 16 },
+    sectionTitle: {
+      fontSize: 12,
+      fontWeight: "700",
+      marginBottom: 12,
+      textTransform: "uppercase" as const,
+      letterSpacing: 1,
+      color: V.silverDim,
+    },
+    row: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "center",
+      paddingVertical: 12,
+      borderBottomWidth: StyleSheet.hairlineWidth,
+      borderBottomColor: V.borderDim,
+    },
+    rowLabel: { fontSize: 16, color: V.silverBright },
+    rowSub: { fontSize: 13, marginTop: 2, color: V.silverDim },
+    currentValue: {
+      fontSize: 12,
+      marginTop: 4,
+      marginBottom: 8,
+      color: V.visited,
+    },
+    activeLimit: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 6,
+      padding: 8,
+      borderRadius: 8,
+      marginVertical: 8,
+      borderWidth: 1,
+      backgroundColor: V.forestMid,
+      borderColor: V.borderGreen,
+    },
+    activeLimitText: { fontSize: 13, fontWeight: "600", color: V.visited },
+    timeRow: { flexDirection: "row", flexWrap: "wrap", gap: 8, marginTop: 12 },
+    timeBtn: {
+      paddingHorizontal: 12,
+      paddingVertical: 8,
+      borderRadius: 20,
+      borderWidth: 1,
+      backgroundColor: V.forestMid,
+      borderColor: V.borderDim,
+    },
+    timeBtnActive: {
+      backgroundColor: V.forestLight,
+      borderColor: V.borderGreen,
+    },
+    timeBtnText: { fontSize: 13, color: V.silver },
+    timeBtnTextActive: { fontWeight: "600", color: V.silverBright },
+    blockedUser: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "center",
+      paddingVertical: 10,
+      borderBottomWidth: StyleSheet.hairlineWidth,
+      borderBottomColor: V.borderDim,
+    },
+    dangerBtn: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 10,
+      padding: 14,
+      borderRadius: 12,
+      borderWidth: 1.5,
+    },
+    dangerBtnText: { fontSize: 15, fontWeight: "600" },
+  });
+}
+
+function makeLangStyles(V: ReturnType<typeof getVara>) {
+  return StyleSheet.create({
+    currentLang: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      backgroundColor: V.forestMid,
+      borderWidth: 1,
+      borderColor: V.borderDim,
+      padding: 12,
+      borderRadius: 10,
+      marginBottom: 12,
+    },
+    currentLangLabel: { fontSize: 14, color: V.silverDim },
+    currentLangValue: { fontSize: 14, fontWeight: "700", color: V.visited },
+    langGrid: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
+    langBtn: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 8,
+      paddingHorizontal: 14,
+      paddingVertical: 10,
+      borderRadius: 20,
+      backgroundColor: V.forestMid,
+      borderWidth: 1.5,
+      borderColor: V.borderDim,
+      position: "relative",
+      paddingRight: 28,
+    },
+    langBtnActive: {
+      backgroundColor: V.forestLight,
+      borderColor: V.borderGreen,
+    },
+    langFlag: { fontSize: 18 },
+    langLabel: { fontSize: 13, fontWeight: "600", color: V.silver },
+    langLabelActive: { color: V.silverBright },
+  });
+}
+
+function makeSctStyles(V: ReturnType<typeof getVara>) {
+  return StyleSheet.create({
+    container: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 6,
+      backgroundColor: V.forestMid,
+      borderWidth: 1,
+      borderColor: V.borderGreen,
+      paddingHorizontal: 12,
+      paddingVertical: 6,
+      borderRadius: 20,
+      alignSelf: "center",
+      marginBottom: 8,
+    },
+    warning: { backgroundColor: "#2A1010", borderColor: "#5A3030" },
+    text: { fontSize: 13, color: V.visited, fontWeight: "600" },
+    warningText: { color: "#C05050" },
+  });
+}
+
+function makeThemeStyles(V: ReturnType<typeof getVara>) {
+  return StyleSheet.create({
+    optionsRow: { flexDirection: "row", gap: 10, marginBottom: 12 },
+    themeCard: {
+      flex: 1,
+      borderRadius: 14,
+      padding: 10,
+      alignItems: "center",
+      borderWidth: 2,
+      position: "relative",
+      gap: 6,
+    },
+    themeCardLight: { backgroundColor: "#f0ead8", borderColor: "#c8b870" },
+    themeCardActive: {
+      borderWidth: 2.5,
+      shadowColor: "#e0c060",
+      shadowOffset: { width: 0, height: 3 },
+      shadowOpacity: 0.5,
+      shadowRadius: 6,
+      elevation: 4,
+    },
+    previewLight: {
+      width: "100%",
+      height: 52,
+      backgroundColor: "#fff8e8",
+      borderRadius: 8,
+      padding: 6,
+      gap: 4,
+      justifyContent: "center",
+      borderWidth: 1,
+      borderColor: "#e0d090",
+    },
+    previewBarLight: {
+      height: 6,
+      width: "80%",
+      backgroundColor: "#c8a840",
+      borderRadius: 3,
+    },
+    previewCircleLight: {
+      width: 18,
+      height: 18,
+      borderRadius: 9,
+      backgroundColor: "#e8c848",
+      alignSelf: "flex-end",
+      marginTop: 2,
+    },
+    themeLabelLight: { fontSize: 22 },
+    themeTitleLight: { fontSize: 12, fontWeight: "700", color: "#5a4a10" },
+    themeCardAuto: { backgroundColor: V.forestMid, borderColor: V.borderDim },
+    themeCardActiveAuto: {
+      borderColor: V.visited,
+      borderWidth: 2.5,
+      shadowColor: V.visited,
+      shadowOffset: { width: 0, height: 3 },
+      shadowOpacity: 0.4,
+      shadowRadius: 6,
+      elevation: 4,
+    },
+    previewAuto: {
+      width: "100%",
+      height: 52,
+      backgroundColor: V.forestDeep,
+      borderRadius: 8,
+      padding: 6,
+      gap: 4,
+      justifyContent: "center",
+      borderWidth: 1,
+      borderColor: V.borderGreen,
+      overflow: "hidden",
+    },
+    previewBarAuto: {
+      height: 6,
+      width: "80%",
+      backgroundColor: V.visited,
+      borderRadius: 3,
+    },
+    previewCircleAuto: {
+      width: 18,
+      height: 18,
+      borderRadius: 9,
+      backgroundColor: "#5a8a48",
+      alignSelf: "flex-end",
+      marginTop: 2,
+    },
+    themeLabelAuto: { fontSize: 22 },
+    themeTitleAuto: { fontSize: 12, fontWeight: "700", color: V.silverBright },
+    themeSubAuto: { fontSize: 9, color: V.silverDim, textAlign: "center" },
+    themeCardDark: { backgroundColor: "#120820", borderColor: "#4a3870" },
+    themeCardActiveDark: {
+      borderColor: "#9080e0",
+      borderWidth: 2.5,
+      shadowColor: "#7060c0",
+      shadowOffset: { width: 0, height: 3 },
+      shadowOpacity: 0.5,
+      shadowRadius: 6,
+      elevation: 4,
+    },
+    previewDark: {
+      width: "100%",
+      height: 52,
+      backgroundColor: "#0a0418",
+      borderRadius: 8,
+      padding: 6,
+      gap: 4,
+      justifyContent: "center",
+      borderWidth: 1,
+      borderColor: "#4a3870",
+    },
+    previewBarDark: {
+      height: 6,
+      width: "80%",
+      backgroundColor: "#7060c0",
+      borderRadius: 3,
+    },
+    previewCircleDark: {
+      width: 18,
+      height: 18,
+      borderRadius: 9,
+      backgroundColor: "#5040a0",
+      alignSelf: "flex-end",
+      marginTop: 2,
+    },
+    themeLabelDark: { fontSize: 22 },
+    themeTitleDark: { fontSize: 12, fontWeight: "700", color: "#c0b0ff" },
+    checkDot: {
+      position: "absolute",
+      top: 6,
+      right: 6,
+      width: 20,
+      height: 20,
+      borderRadius: 10,
+      justifyContent: "center",
+      alignItems: "center",
+    },
+    autoInfoRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 10,
+      backgroundColor: V.forestDeep,
+      borderRadius: 12,
+      padding: 12,
+      borderWidth: 1,
+      borderColor: V.borderGreen,
+      marginTop: 4,
+    },
+    autoInfoEmoji: { fontSize: 24 },
+    autoInfoTitle: { fontSize: 14, fontWeight: "700", color: V.silverBright },
+    autoInfoSub: { fontSize: 11, color: V.silverDim, marginTop: 2 },
+    autoSchemeDot: {
+      paddingHorizontal: 8,
+      paddingVertical: 4,
+      borderRadius: 8,
+      alignItems: "center",
+    },
+  });
+}
+
+// ─── SVG Avatari ──────────────────────────────────────────────────────────────
 function AvatarMale({ size = 96 }: { size?: number }) {
   return (
     <Svg width={size} height={size} viewBox="0 0 100 100">
@@ -285,6 +958,8 @@ function AvatarFemale({ size = 96 }: { size?: number }) {
 // ─── Avatar Section ───────────────────────────────────────────────────────────
 function AvatarSection({ onUpdate }: { onUpdate: () => void }) {
   const { t } = useTranslation();
+  const { isDark } = useTheme();
+  const V = useMemo(() => getVara(isDark), [isDark]);
   const { profile, updateAvatar, refreshProfile } = useUser();
   const [loading, setLoading] = useState(false);
   const [showAvatarModal, setShowAvatarModal] = useState(false);
@@ -454,8 +1129,15 @@ function AvatarSection({ onUpdate }: { onUpdate: () => void }) {
           ) : avatarUrl ? (
             <Image source={{ uri: avatarUrl }} style={av.img} />
           ) : (
-            <View style={av.placeholder}>
-              <Text style={av.initials}>{initials}</Text>
+            <View
+              style={[
+                av.placeholder,
+                { backgroundColor: V.forestLight, borderColor: V.borderGreen },
+              ]}
+            >
+              <Text style={[av.initials, { color: V.silverBright }]}>
+                {initials}
+              </Text>
             </View>
           )}
         </StoryBadge>
@@ -464,12 +1146,16 @@ function AvatarSection({ onUpdate }: { onUpdate: () => void }) {
             <ActivityIndicator color={V.silverBright} />
           </View>
         )}
-        <View style={av.editIcon}>
+        <View
+          style={[
+            av.editIcon,
+            { backgroundColor: V.forestLight, borderColor: V.borderGreen },
+          ]}
+        >
           <Ionicons name="camera" size={14} color={V.silverBright} />
         </View>
       </TouchableOpacity>
 
-      {/* Avatar Modal — Vara stil */}
       <Modal
         visible={showAvatarModal}
         transparent
@@ -477,25 +1163,50 @@ function AvatarSection({ onUpdate }: { onUpdate: () => void }) {
         onRequestClose={() => setShowAvatarModal(false)}
       >
         <TouchableOpacity
-          style={avModal.overlay}
+          style={[avModal.overlay, { backgroundColor: V.overlay }]}
           activeOpacity={1}
           onPress={() => setShowAvatarModal(false)}
         >
-          <View style={avModal.container}>
-            {/* Handle */}
-            <View style={avModal.handle} />
-            <Text style={avModal.title}>{t("profile.avatarTitle")}</Text>
-            <Text style={avModal.subtitle}>{t("profile.avatarSubtitle")}</Text>
+          <View
+            style={[
+              avModal.container,
+              { backgroundColor: V.forestDeep, borderColor: V.borderGreen },
+            ]}
+          >
+            <View
+              style={[avModal.handle, { backgroundColor: V.borderGreen }]}
+            />
+            <Text style={[avModal.title, { color: V.silverBright }]}>
+              {t("profile.avatarTitle")}
+            </Text>
+            <Text style={[avModal.subtitle, { color: V.silverDim }]}>
+              {t("profile.avatarSubtitle")}
+            </Text>
             <View style={avModal.avatarRow}>
               <TouchableOpacity
-                style={[avModal.option, isMaleAvatar && avModal.optionActive]}
+                style={[
+                  avModal.option,
+                  { borderColor: V.borderDim, backgroundColor: V.forestMid },
+                  isMaleAvatar && {
+                    borderColor: V.borderGreen,
+                    backgroundColor: V.forestLight,
+                  },
+                ]}
                 onPress={() => selectAvatar("male")}
                 activeOpacity={0.8}
               >
                 <View style={avModal.avatarWrapper}>
                   <AvatarMale size={88} />
                   {isMaleAvatar && (
-                    <View style={avModal.checkBadge}>
+                    <View
+                      style={[
+                        avModal.checkBadge,
+                        {
+                          backgroundColor: V.visited,
+                          borderColor: V.forestDeep,
+                        },
+                      ]}
+                    >
                       <Ionicons
                         name="checkmark"
                         size={14}
@@ -504,48 +1215,35 @@ function AvatarSection({ onUpdate }: { onUpdate: () => void }) {
                     </View>
                   )}
                 </View>
-                <Text style={avModal.optionLabel}>
+                <Text style={[avModal.optionLabel, { color: V.silver }]}>
                   {t("profile.maleAvatar")}
-                </Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                style={[avModal.option, isFemaleAvatar && avModal.optionActive]}
-                onPress={() => selectAvatar("female")}
-                activeOpacity={0.8}
-              >
-                <View style={avModal.avatarWrapper}>
-                  <AvatarFemale size={88} />
-                  {isFemaleAvatar && (
-                    <View style={avModal.checkBadge}>
-                      <Ionicons
-                        name="checkmark"
-                        size={14}
-                        color={V.silverBright}
-                      />
-                    </View>
-                  )}
-                </View>
-                <Text style={avModal.optionLabel}>
-                  {t("profile.femaleAvatar")}
                 </Text>
               </TouchableOpacity>
 
               <TouchableOpacity
                 style={[
                   avModal.option,
-                  !avatarUrl &&
-                    !isMaleAvatar &&
-                    !isFemaleAvatar &&
-                    avModal.optionActive,
+                  { borderColor: V.borderDim, backgroundColor: V.forestMid },
+                  isFemaleAvatar && {
+                    borderColor: V.borderGreen,
+                    backgroundColor: V.forestLight,
+                  },
                 ]}
-                onPress={selectInitials}
+                onPress={() => selectAvatar("female")}
                 activeOpacity={0.8}
               >
-                <View style={[avModal.avatarWrapper, avModal.initialsWrapper]}>
-                  <Text style={avModal.initialsText}>{initials}</Text>
-                  {!avatarUrl && !isMaleAvatar && !isFemaleAvatar && (
-                    <View style={avModal.checkBadge}>
+                <View style={avModal.avatarWrapper}>
+                  <AvatarFemale size={88} />
+                  {isFemaleAvatar && (
+                    <View
+                      style={[
+                        avModal.checkBadge,
+                        {
+                          backgroundColor: V.visited,
+                          borderColor: V.forestDeep,
+                        },
+                      ]}
+                    >
                       <Ionicons
                         name="checkmark"
                         size={14}
@@ -554,7 +1252,59 @@ function AvatarSection({ onUpdate }: { onUpdate: () => void }) {
                     </View>
                   )}
                 </View>
-                <Text style={avModal.optionLabel}>
+                <Text style={[avModal.optionLabel, { color: V.silver }]}>
+                  {t("profile.initialsAvatar")}
+                </Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={[
+                  avModal.option,
+                  { borderColor: V.borderDim, backgroundColor: V.forestMid },
+                  !avatarUrl &&
+                    !isMaleAvatar &&
+                    !isFemaleAvatar && {
+                      borderColor: V.borderGreen,
+                      backgroundColor: V.forestLight,
+                    },
+                ]}
+                onPress={selectInitials}
+                activeOpacity={0.8}
+              >
+                <View
+                  style={[
+                    avModal.avatarWrapper,
+                    avModal.initialsWrapper,
+                    {
+                      backgroundColor: V.forestLight,
+                      borderColor: V.borderGreen,
+                    },
+                  ]}
+                >
+                  <Text
+                    style={[avModal.initialsText, { color: V.silverBright }]}
+                  >
+                    {initials}
+                  </Text>
+                  {!avatarUrl && !isMaleAvatar && !isFemaleAvatar && (
+                    <View
+                      style={[
+                        avModal.checkBadge,
+                        {
+                          backgroundColor: V.visited,
+                          borderColor: V.forestDeep,
+                        },
+                      ]}
+                    >
+                      <Ionicons
+                        name="checkmark"
+                        size={14}
+                        color={V.silverBright}
+                      />
+                    </View>
+                  )}
+                </View>
+                <Text style={[avModal.optionLabel, { color: V.silver }]}>
                   {t("profile.initialsAvatar")}
                 </Text>
               </TouchableOpacity>
@@ -564,7 +1314,9 @@ function AvatarSection({ onUpdate }: { onUpdate: () => void }) {
               style={avModal.cancelBtn}
               onPress={() => setShowAvatarModal(false)}
             >
-              <Text style={avModal.cancelText}>{t("common.cancel")}</Text>
+              <Text style={[avModal.cancelText, { color: V.silverDim }]}>
+                {t("common.cancel")}
+              </Text>
             </TouchableOpacity>
           </View>
         </TouchableOpacity>
@@ -587,13 +1339,11 @@ const av = StyleSheet.create({
     width: 96,
     height: 96,
     borderRadius: 48,
-    backgroundColor: V.forestLight,
     borderWidth: 2,
-    borderColor: V.borderGreen,
     justifyContent: "center",
     alignItems: "center",
   },
-  initials: { color: V.silverBright, fontSize: 36, fontWeight: "700" },
+  initials: { fontSize: 36, fontWeight: "700" },
   overlay: {
     position: "absolute",
     width: 96,
@@ -610,9 +1360,7 @@ const av = StyleSheet.create({
     width: 28,
     height: 28,
     borderRadius: 14,
-    backgroundColor: V.forestLight,
     borderWidth: 2,
-    borderColor: V.borderGreen,
     justifyContent: "center",
     alignItems: "center",
     zIndex: 10,
@@ -620,37 +1368,19 @@ const av = StyleSheet.create({
 });
 
 const avModal = StyleSheet.create({
-  overlay: {
-    flex: 1,
-    backgroundColor: V.overlay,
-    justifyContent: "flex-end",
-    alignItems: "center",
-  },
+  overlay: { flex: 1, justifyContent: "flex-end", alignItems: "center" },
   container: {
-    backgroundColor: V.forestDeep,
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
     borderTopWidth: 1.5,
-    borderColor: V.borderGreen,
     padding: 24,
     width: "100%",
     alignItems: "center",
     paddingBottom: 36,
   },
-  handle: {
-    width: 40,
-    height: 4,
-    borderRadius: 2,
-    backgroundColor: V.borderGreen,
-    marginBottom: 16,
-  },
-  title: {
-    fontSize: 18,
-    fontWeight: "700",
-    color: V.silverBright,
-    marginBottom: 4,
-  },
-  subtitle: { fontSize: 13, color: V.silverDim, marginBottom: 24 },
+  handle: { width: 40, height: 4, borderRadius: 2, marginBottom: 16 },
+  title: { fontSize: 18, fontWeight: "700", marginBottom: 4 },
+  subtitle: { fontSize: 13, marginBottom: 24 },
   avatarRow: {
     flexDirection: "row",
     flexWrap: "wrap",
@@ -663,10 +1393,7 @@ const avModal = StyleSheet.create({
     padding: 12,
     borderRadius: 16,
     borderWidth: 1.5,
-    borderColor: V.borderDim,
-    backgroundColor: V.forestMid,
   },
-  optionActive: { borderColor: V.borderGreen, backgroundColor: V.forestLight },
   avatarWrapper: {
     position: "relative",
     width: 88,
@@ -675,13 +1402,11 @@ const avModal = StyleSheet.create({
     overflow: "hidden",
   },
   initialsWrapper: {
-    backgroundColor: V.forestLight,
     justifyContent: "center",
     alignItems: "center",
     borderWidth: 1.5,
-    borderColor: V.borderGreen,
   },
-  initialsText: { color: V.silverBright, fontSize: 30, fontWeight: "700" },
+  initialsText: { fontSize: 30, fontWeight: "700" },
   checkBadge: {
     position: "absolute",
     bottom: 2,
@@ -689,20 +1414,13 @@ const avModal = StyleSheet.create({
     width: 22,
     height: 22,
     borderRadius: 11,
-    backgroundColor: V.visited,
     justifyContent: "center",
     alignItems: "center",
     borderWidth: 2,
-    borderColor: V.forestDeep,
   },
-  optionLabel: {
-    marginTop: 8,
-    fontSize: 13,
-    fontWeight: "600",
-    color: V.silver,
-  },
+  optionLabel: { marginTop: 8, fontSize: 13, fontWeight: "600" },
   cancelBtn: { paddingVertical: 12, paddingHorizontal: 32 },
-  cancelText: { color: V.silverDim, fontSize: 15, fontWeight: "600" },
+  cancelText: { fontSize: 15, fontWeight: "600" },
 });
 
 // ─── Followers / Following List Modal ─────────────────────────────────────────
@@ -720,6 +1438,9 @@ function FollowListModal({
   onUpdate?: () => void;
 }) {
   const { t } = useTranslation();
+  const { isDark } = useTheme();
+  const V = useMemo(() => getVara(isDark), [isDark]);
+  const fl = useMemo(() => makeFlStyles(V), [V]);
   const [list, setList] = useState<FollowUser[]>([]);
   const [loading, setLoading] = useState(false);
   const [processingId, setProcessingId] = useState<number | null>(null);
@@ -799,10 +1520,7 @@ function FollowListModal({
           )
         : await fetch(
             `${API_BASE_URL}/api/golden-friends/remove/${targetUserId}`,
-            {
-              method: "DELETE",
-              headers: { Authorization: `Bearer ${token}` },
-            },
+            { method: "DELETE", headers: { Authorization: `Bearer ${token}` } },
           );
       if (res.ok) {
         setList((prev) =>
@@ -835,9 +1553,7 @@ function FollowListModal({
         try {
           const checkFollow = await fetch(
             `${API_BASE_URL}/api/follow/is-following/${targetUserId}`,
-            {
-              headers: { Authorization: `Bearer ${token}` },
-            },
+            { headers: { Authorization: `Bearer ${token}` } },
           );
           if (checkFollow.ok) {
             const followData = await checkFollow.json();
@@ -871,10 +1587,7 @@ function FollowListModal({
       } else {
         const res = await fetch(
           `${API_BASE_URL}/api/block/unblock/${targetUserId}`,
-          {
-            method: "DELETE",
-            headers: { Authorization: `Bearer ${token}` },
-          },
+          { method: "DELETE", headers: { Authorization: `Bearer ${token}` } },
         );
         if (res.ok) {
           setList((prev) =>
@@ -903,7 +1616,6 @@ function FollowListModal({
         style={{ flex: 1, backgroundColor: V.forestDeep }}
         edges={["top"]}
       >
-        {/* Header */}
         <View style={fl.header}>
           <TouchableOpacity onPress={onClose}>
             <Ionicons name="close" size={28} color={V.silver} />
@@ -970,7 +1682,6 @@ function FollowListModal({
                     </Text>
                     <Text style={fl.username}>@{item.username}</Text>
                   </TouchableOpacity>
-
                   <View style={fl.actionButtons}>
                     <TouchableOpacity
                       style={[
@@ -992,7 +1703,6 @@ function FollowListModal({
                         />
                       )}
                     </TouchableOpacity>
-
                     <TouchableOpacity
                       style={[fl.blockBtn, item.isBlocked && fl.blockBtnActive]}
                       onPress={() =>
@@ -1021,74 +1731,12 @@ function FollowListModal({
   );
 }
 
-const fl = StyleSheet.create({
-  header: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    padding: 16,
-    borderBottomWidth: 1.5,
-    borderBottomColor: V.borderGreen,
-    backgroundColor: V.forestDeep,
-  },
-  title: { fontSize: 17, fontWeight: "600", color: V.silverBright },
-  row: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingVertical: 12,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: V.borderDim,
-  },
-  avatarContainer: { marginRight: 12 },
-  userInfo: { flex: 1 },
-  name: { fontSize: 15, fontWeight: "600", color: V.silverBright },
-  username: { fontSize: 13, color: V.visited, marginTop: 2 },
-  actionButtons: { flexDirection: "row", gap: 8 },
-  goldenBtn: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: V.forestMid,
-    borderWidth: 1.5,
-    borderColor: V.borderDim,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  goldenBtnActive: { backgroundColor: "#231C0A", borderColor: V.accentGold },
-  blockBtn: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: V.forestMid,
-    borderWidth: 1.5,
-    borderColor: V.borderDim,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  blockBtnActive: { borderColor: V.danger },
-  empty: {
-    flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 12,
-    paddingTop: 60,
-  },
-  emptyIconWrap: {
-    width: 88,
-    height: 88,
-    borderRadius: 44,
-    backgroundColor: V.forestMid,
-    borderWidth: 1.5,
-    borderColor: V.borderGreen,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  emptyText: { fontSize: 16, color: V.silverDim },
-});
-
 // ─── Activity Archive ─────────────────────────────────────────────────────────
 function ActivityArchive({ userId }: { userId: number | null }) {
   const { t } = useTranslation();
+  const { isDark } = useTheme();
+  const V = useMemo(() => getVara(isDark), [isDark]);
+  const ac = useMemo(() => makeAcStyles(V), [V]);
   const [data, setData] = useState<DailyActivity[]>([]);
   const [period, setPeriod] = useState<"daily" | "weekly" | "monthly">("daily");
   const [loading, setLoading] = useState(true);
@@ -1104,13 +1752,9 @@ function ActivityArchive({ userId }: { userId: number | null }) {
       const token = await AsyncStorage.getItem("token");
       const res = await fetch(
         `${API_BASE_URL}/api/activity/stats?period=${period}`,
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        },
+        { headers: { Authorization: `Bearer ${token}` } },
       );
-      if (res.ok) {
-        setData(await res.json());
-      }
+      if (res.ok) setData(await res.json());
     } catch {
       const mock: DailyActivity[] = Array.from({ length: 7 }, (_, i) => {
         const d = new Date();
@@ -1179,7 +1823,6 @@ function ActivityArchive({ userId }: { userId: number | null }) {
 
   return (
     <ScrollView contentContainerStyle={{ paddingBottom: 20 }}>
-      {/* Period Selector */}
       <View style={ac.periodSelector}>
         {(["daily", "weekly", "monthly"] as const).map((p) => (
           <TouchableOpacity
@@ -1200,7 +1843,6 @@ function ActivityArchive({ userId }: { userId: number | null }) {
         ))}
       </View>
 
-      {/* Summary Cards */}
       <View style={ac.summaryRow}>
         {[
           {
@@ -1241,7 +1883,6 @@ function ActivityArchive({ userId }: { userId: number | null }) {
         ))}
       </View>
 
-      {/* Followers Card */}
       <View style={ac.followersCard}>
         <Ionicons name="people" size={24} color={V.visited} />
         <View>
@@ -1291,93 +1932,6 @@ function ActivityArchive({ userId }: { userId: number | null }) {
     </ScrollView>
   );
 }
-
-const ac = StyleSheet.create({
-  periodSelector: {
-    flexDirection: "row",
-    justifyContent: "center",
-    gap: 10,
-    paddingVertical: 12,
-    marginHorizontal: 16,
-  },
-  periodBtn: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 20,
-    backgroundColor: V.forestMid,
-    borderWidth: 1,
-    borderColor: V.borderDim,
-  },
-  periodBtnActive: {
-    backgroundColor: V.forestLight,
-    borderColor: V.borderGreen,
-  },
-  periodBtnText: { fontSize: 13, color: V.silverDim },
-  periodBtnTextActive: { color: V.silverBright, fontWeight: "600" },
-  summaryRow: { flexDirection: "row", flexWrap: "wrap", gap: 8, padding: 16 },
-  summaryCard: {
-    flex: 1,
-    minWidth: (SCREEN_W - 56) / 2,
-    alignItems: "center",
-    padding: 14,
-    backgroundColor: V.forestMid,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: V.borderDim,
-    borderTopWidth: 3,
-    gap: 4,
-  },
-  summaryNum: { fontSize: 22, fontWeight: "800" },
-  summaryLabel: { fontSize: 12, color: V.silverDim },
-  followersCard: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 12,
-    backgroundColor: V.forestMid,
-    marginHorizontal: 16,
-    padding: 16,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: V.borderDim,
-    borderLeftWidth: 3,
-    borderLeftColor: V.visited,
-  },
-  followersNum: { fontSize: 24, fontWeight: "800", color: V.visited },
-  followersLabel: { fontSize: 12, color: V.silverDim },
-  sectionTitle: {
-    fontSize: 15,
-    fontWeight: "700",
-    color: V.silverBright,
-    paddingHorizontal: 16,
-    marginTop: 16,
-    marginBottom: 8,
-  },
-  chartSection: {
-    marginHorizontal: 16,
-    marginBottom: 20,
-    backgroundColor: V.forestMid,
-    borderRadius: 12,
-    padding: 12,
-    borderWidth: 1,
-    borderColor: V.borderDim,
-  },
-  chartTitle: {
-    fontSize: 13,
-    fontWeight: "600",
-    color: V.silver,
-    marginBottom: 10,
-  },
-  bars: { flexDirection: "row", alignItems: "flex-end", gap: 6, height: 90 },
-  barColumn: {
-    flex: 1,
-    alignItems: "center",
-    justifyContent: "flex-end",
-    gap: 4,
-  },
-  bar: { width: "100%", borderRadius: 4, minHeight: 2 },
-  barValue: { fontSize: 10, color: V.silverDim, fontWeight: "600" },
-  barDate: { fontSize: 9, color: V.silverDim, marginTop: 4 },
-});
 
 // ─── Video Preview Modal ──────────────────────────────────────────────────────
 function VideoPreviewModal({
@@ -1439,7 +1993,7 @@ function VideoPreviewModal({
       <SafeAreaView style={{ flex: 1, backgroundColor: "#000" }}>
         <View style={vpModal.header}>
           <TouchableOpacity onPress={onClose}>
-            <Ionicons name="close" size={28} color={V.silver} />
+            <Ionicons name="close" size={28} color="#c0c0c0" />
           </TouchableOpacity>
           <Text style={vpModal.title} numberOfLines={1}>
             {title}
@@ -1474,7 +2028,7 @@ const vpModal = StyleSheet.create({
   title: {
     fontSize: 16,
     fontWeight: "600",
-    color: V.silver,
+    color: "#c0c0c0",
     flex: 1,
     marginHorizontal: 12,
     textAlign: "center",
@@ -1491,6 +2045,9 @@ const vpModal = StyleSheet.create({
 // ─── Screen Time Countdown ────────────────────────────────────────────────────
 function ScreenTimeCountdown() {
   const { t } = useTranslation();
+  const { isDark } = useTheme();
+  const V = useMemo(() => getVara(isDark), [isDark]);
+  const sct = useMemo(() => makeSctStyles(V), [V]);
   const [remaining, setRemaining] = useState<number | null>(null);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
@@ -1525,9 +2082,7 @@ function ScreenTimeCountdown() {
         setRemaining(0);
         await handleScreenTimeExpired();
         if (intervalRef.current) clearInterval(intervalRef.current);
-      } else {
-        setRemaining(Math.floor(rem / 1000));
-      }
+      } else setRemaining(Math.floor(rem / 1000));
     }, 1000);
     return () => {
       if (intervalRef.current) clearInterval(intervalRef.current);
@@ -1574,33 +2129,32 @@ function ScreenTimeCountdown() {
   );
 }
 
-const sct = StyleSheet.create({
-  container: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-    backgroundColor: V.forestMid,
-    borderWidth: 1,
-    borderColor: V.borderGreen,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 20,
-    alignSelf: "center",
-    marginBottom: 8,
-  },
-  warning: { backgroundColor: "#2A1010", borderColor: "#5A3030" },
-  text: { fontSize: 13, color: V.visited, fontWeight: "600" },
-  warningText: { color: "#C05050" },
-});
-
 const getThumbnail = (item: any): string | null => {
   if (item.type === "image") return item.url || item.filePath || null;
   return null;
 };
 
+// ─── Empty Tab ────────────────────────────────────────────────────────────────
+function EmptyTab({ icon, text }: { icon: any; text: string }) {
+  const { isDark } = useTheme();
+  const V = useMemo(() => getVara(isDark), [isDark]);
+  const tab = useMemo(() => makeTabStyles(V), [V]);
+  return (
+    <View style={tab.empty}>
+      <View style={tab.emptyIconWrap}>
+        <Ionicons name={icon} size={44} color={V.borderGreen} />
+      </View>
+      <Text style={tab.emptyText}>{text}</Text>
+    </View>
+  );
+}
+
 // ─── Me Tab ───────────────────────────────────────────────────────────────────
 function MeTab({ userId }: { userId: number | null }) {
   const { t } = useTranslation();
+  const { isDark } = useTheme();
+  const V = useMemo(() => getVara(isDark), [isDark]);
+  const tab = useMemo(() => makeTabStyles(V), [V]);
   const [items, setItems] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
@@ -1640,9 +2194,7 @@ function MeTab({ userId }: { userId: number | null }) {
       } else {
         const fallback = await fetch(
           `${API_BASE_URL}/api/video/user/${userId}`,
-          {
-            headers: { Authorization: `Bearer ${token}` },
-          },
+          { headers: { Authorization: `Bearer ${token}` } },
         );
         if (fallback.ok) {
           const vids = await fallback.json();
@@ -1862,7 +2414,7 @@ function MeTab({ userId }: { userId: number | null }) {
         <SafeAreaView style={{ flex: 1, backgroundColor: "#000" }}>
           <View style={styles.mediaModalHeader}>
             <TouchableOpacity onPress={() => setShowMediaModal(false)}>
-              <Ionicons name="close" size={28} color={V.silver} />
+              <Ionicons name="close" size={28} color="#c0c0c0" />
             </TouchableOpacity>
             <Text style={styles.mediaModalTitle} numberOfLines={1}>
               {selectedMedia?.title || "Pregled"}
@@ -1892,7 +2444,7 @@ function MeTab({ userId }: { userId: number | null }) {
               />
             ) : (
               <View style={styles.mediaModalImage}>
-                <Text style={{ color: V.silver }}>Nepoznati medij</Text>
+                <Text style={{ color: "#c0c0c0" }}>Nepoznati medij</Text>
               </View>
             )}
           </View>
@@ -1905,6 +2457,9 @@ function MeTab({ userId }: { userId: number | null }) {
 // ─── Box Tab ──────────────────────────────────────────────────────────────────
 function BoxTab() {
   const { t } = useTranslation();
+  const { isDark } = useTheme();
+  const V = useMemo(() => getVara(isDark), [isDark]);
+  const tab = useMemo(() => makeTabStyles(V), [V]);
   const [items, setItems] = useState<BoxItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedVideo, setSelectedVideo] = useState<BoxItem | null>(null);
@@ -1930,10 +2485,7 @@ function BoxTab() {
     try {
       const res = await fetch(
         `${API_BASE_URL}/api/savedvideo/unsave?videoId=${videoId}&userId=${userId}`,
-        {
-          method: "DELETE",
-          headers: { Authorization: `Bearer ${token}` },
-        },
+        { method: "DELETE", headers: { Authorization: `Bearer ${token}` } },
       );
       if (res.ok) {
         setItems((p) => p.filter((i) => i.videoId !== videoId));
@@ -2026,6 +2578,9 @@ function BoxTab() {
 // ─── Wishlist Tab ─────────────────────────────────────────────────────────────
 function WishlistTab() {
   const { t } = useTranslation();
+  const { isDark } = useTheme();
+  const V = useMemo(() => getVara(isDark), [isDark]);
+  const tab = useMemo(() => makeTabStyles(V), [V]);
   const [items, setItems] = useState<WishlistItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<"all" | "yes" | "no">("all");
@@ -2059,10 +2614,7 @@ function WishlistTab() {
     try {
       const res = await fetch(
         `${API_BASE_URL}/api/wishlistvideo/remove?userId=${userId}&videoId=${videoId}`,
-        {
-          method: "DELETE",
-          headers: { Authorization: `Bearer ${token}` },
-        },
+        { method: "DELETE", headers: { Authorization: `Bearer ${token}` } },
       );
       if (res.ok) {
         setItems((p) => p.filter((i) => i.videoId !== videoId));
@@ -2218,6 +2770,9 @@ function WishlistTab() {
 // ─── Golden Friends Tab ───────────────────────────────────────────────────────
 function GoldenFriendsTab() {
   const { t } = useTranslation();
+  const { isDark } = useTheme();
+  const V = useMemo(() => getVara(isDark), [isDark]);
+  const tab = useMemo(() => makeTabStyles(V), [V]);
   const [friends, setFriends] = useState<GoldenFriend[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -2348,41 +2903,7 @@ function GoldenFriendsTab() {
   );
 }
 
-// ─── Settings Modal — Vara stil ───────────────────────────────────────────────
-const langStyles = StyleSheet.create({
-  currentLang: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    backgroundColor: V.forestMid,
-    borderWidth: 1,
-    borderColor: V.borderDim,
-    padding: 12,
-    borderRadius: 10,
-    marginBottom: 12,
-  },
-  currentLangLabel: { fontSize: 14, color: V.silverDim },
-  currentLangValue: { fontSize: 14, fontWeight: "700", color: V.visited },
-  langGrid: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
-  langBtn: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-    borderRadius: 20,
-    backgroundColor: V.forestMid,
-    borderWidth: 1.5,
-    borderColor: V.borderDim,
-    position: "relative",
-    paddingRight: 28,
-  },
-  langBtnActive: { backgroundColor: V.forestLight, borderColor: V.borderGreen },
-  langFlag: { fontSize: 18 },
-  langLabel: { fontSize: 13, fontWeight: "600", color: V.silver },
-  langLabelActive: { color: V.silverBright },
-});
-
+// ─── Settings Modal ───────────────────────────────────────────────────────────
 function SettingsModal({
   visible,
   profile,
@@ -2395,6 +2916,12 @@ function SettingsModal({
   onSaved: () => void;
 }) {
   const { t } = useTranslation();
+  const { isDark, setManualOverride } = useTheme();
+  const V = useMemo(() => getVara(isDark), [isDark]);
+  const sm = useMemo(() => makeSmStyles(V), [V]);
+  const langStyles = useMemo(() => makeLangStyles(V), [V]);
+  const themeStyles = useMemo(() => makeThemeStyles(V), [V]);
+
   const [isPublic, setIsPublic] = useState(profile?.isPublic ?? true);
   const [showUsernameOnProfile, setShowUsernameOnProfile] = useState(
     profile?.showUsername ?? true,
@@ -2408,6 +2935,42 @@ function SettingsModal({
   const [saving, setSaving] = useState(false);
   const { i18n } = useTranslation();
   const [currentLang, setCurrentLang] = useState(i18n.language || "hr");
+  const [manualTheme, setManualTheme] = useState<"light" | "auto" | "dark">(
+    "auto",
+  );
+
+  useEffect(() => {
+    AsyncStorage.getItem("vara_theme_override").then((val) => {
+      if (val === "light" || val === "dark" || val === "auto")
+        setManualTheme(val as "light" | "auto" | "dark");
+    });
+  }, [visible]);
+
+  const handleThemeChange = async (mode: "light" | "auto" | "dark") => {
+    setManualTheme(mode); // lokalni UI state (za vizualni odabir)
+    await setManualOverride(mode); // ← OVO ažurira provider i odmah mijenja temu
+  };
+
+  const currentHour = new Date().getHours();
+  const currentMinute = new Date().getMinutes();
+  const getZone = (h: number) => {
+    if (h >= 5 && h <= 6)
+      return { label: "Svitanje", emoji: "🌅", scheme: "light" as const };
+    if (h >= 7 && h <= 10)
+      return { label: "Jutro", emoji: "🌤", scheme: "light" as const };
+    if (h >= 11 && h <= 16)
+      return { label: "Dan", emoji: "☀️", scheme: "light" as const };
+    if (h >= 17 && h <= 19)
+      return { label: "Večer", emoji: "🌇", scheme: "light" as const };
+    if (h >= 20 && h <= 22)
+      return { label: "Noć", emoji: "🌙", scheme: "dark" as const };
+    return { label: "Duboka noć", emoji: "🌑", scheme: "dark" as const };
+  };
+  const {
+    label: autoZoneLabel,
+    emoji: autoZoneEmoji,
+    scheme: autoScheme,
+  } = getZone(currentHour);
 
   useEffect(() => {
     if (profile) {
@@ -2544,7 +3107,6 @@ function SettingsModal({
   return (
     <Modal visible={visible} animationType="slide" onRequestClose={onClose}>
       <SafeAreaView style={{ flex: 1, backgroundColor: V.forestDeep }}>
-        {/* Header */}
         <View style={sm.header}>
           <TouchableOpacity onPress={onClose}>
             <Ionicons name="close" size={28} color={V.silver} />
@@ -2565,11 +3127,11 @@ function SettingsModal({
             <Text style={sm.sectionTitle}>{t("profile.language")}</Text>
             <View style={langStyles.currentLang}>
               <Text style={langStyles.currentLangLabel}>
-                {t("profile.currentLanguageLabel")}:
-              </Text>
-              <Text style={langStyles.currentLangValue}>
-                {LANGUAGES.find((l) => l.code === currentLang)?.flag}{" "}
-                {LANGUAGES.find((l) => l.code === currentLang)?.label}
+                {"Trenutni jezik: "}
+                <Text style={langStyles.currentLangValue}>
+                  {LANGUAGES.find((l) => l.code === currentLang)?.flag}{" "}
+                  {LANGUAGES.find((l) => l.code === currentLang)?.label}
+                </Text>
               </Text>
             </View>
             <View style={langStyles.langGrid}>
@@ -2607,16 +3169,146 @@ function SettingsModal({
           {/* ─── TEMA ─────────────────────────────────────── */}
           <View style={sm.section}>
             <Text style={sm.sectionTitle}>{t("profile.theme")}</Text>
-            <Text style={[sm.rowSub, { marginBottom: 12 }]}>
-              {t("profile.themeDesc")}
-            </Text>
-            <ThemeToggle />
+            <View style={themeStyles.optionsRow}>
+              {/* SVJETLA */}
+              <TouchableOpacity
+                style={[
+                  themeStyles.themeCard,
+                  themeStyles.themeCardLight,
+                  manualTheme === "light" && themeStyles.themeCardActive,
+                ]}
+                onPress={() => handleThemeChange("light")}
+                activeOpacity={0.8}
+              >
+                <View style={themeStyles.previewLight}>
+                  <View style={themeStyles.previewBarLight} />
+                  <View
+                    style={[
+                      themeStyles.previewBarLight,
+                      { width: "60%", opacity: 0.5 },
+                    ]}
+                  />
+                  <View style={themeStyles.previewCircleLight} />
+                </View>
+                <Text style={themeStyles.themeLabelLight}>☀️</Text>
+                <Text style={themeStyles.themeTitleLight}>Svjetla</Text>
+                {manualTheme === "light" && (
+                  <View
+                    style={[
+                      themeStyles.checkDot,
+                      { backgroundColor: "#e0c060" },
+                    ]}
+                  >
+                    <Ionicons name="checkmark" size={12} color="#1a1a1a" />
+                  </View>
+                )}
+              </TouchableOpacity>
+
+              {/* AUTO */}
+              <TouchableOpacity
+                style={[
+                  themeStyles.themeCard,
+                  themeStyles.themeCardAuto,
+                  manualTheme === "auto" && themeStyles.themeCardActiveAuto,
+                ]}
+                onPress={() => handleThemeChange("auto")}
+                activeOpacity={0.8}
+              >
+                <View style={themeStyles.previewAuto}>
+                  <View style={themeStyles.previewBarAuto} />
+                  <View
+                    style={[
+                      themeStyles.previewBarAuto,
+                      { width: "70%", opacity: 0.6 },
+                    ]}
+                  />
+                  <View style={themeStyles.previewCircleAuto} />
+                </View>
+                <Text style={themeStyles.themeLabelAuto}>🕐</Text>
+                <Text style={themeStyles.themeTitleAuto}>Automatski</Text>
+                <Text style={themeStyles.themeSubAuto}>po dobu dana</Text>
+                {manualTheme === "auto" && (
+                  <View
+                    style={[
+                      themeStyles.checkDot,
+                      { backgroundColor: V.visited },
+                    ]}
+                  >
+                    <Ionicons name="checkmark" size={12} color="#fff" />
+                  </View>
+                )}
+              </TouchableOpacity>
+
+              {/* TAMNA */}
+              <TouchableOpacity
+                style={[
+                  themeStyles.themeCard,
+                  themeStyles.themeCardDark,
+                  manualTheme === "dark" && themeStyles.themeCardActiveDark,
+                ]}
+                onPress={() => handleThemeChange("dark")}
+                activeOpacity={0.8}
+              >
+                <View style={themeStyles.previewDark}>
+                  <View style={themeStyles.previewBarDark} />
+                  <View
+                    style={[
+                      themeStyles.previewBarDark,
+                      { width: "55%", opacity: 0.5 },
+                    ]}
+                  />
+                  <View style={themeStyles.previewCircleDark} />
+                </View>
+                <Text style={themeStyles.themeLabelDark}>🌙</Text>
+                <Text style={themeStyles.themeTitleDark}>Tamna</Text>
+                {manualTheme === "dark" && (
+                  <View
+                    style={[
+                      themeStyles.checkDot,
+                      { backgroundColor: "#7060c0" },
+                    ]}
+                  >
+                    <Ionicons name="checkmark" size={12} color="#fff" />
+                  </View>
+                )}
+              </TouchableOpacity>
+            </View>
+
+            {manualTheme === "auto" && (
+              <View style={themeStyles.autoInfoRow}>
+                <Text style={themeStyles.autoInfoEmoji}>{autoZoneEmoji}</Text>
+                <View style={{ flex: 1 }}>
+                  <Text style={themeStyles.autoInfoTitle}>{autoZoneLabel}</Text>
+                  <Text style={themeStyles.autoInfoSub}>
+                    {currentHour}:{String(currentMinute).padStart(2, "0")} —
+                    tema se automatski prilagođava
+                  </Text>
+                </View>
+                <View
+                  style={[
+                    themeStyles.autoSchemeDot,
+                    {
+                      backgroundColor:
+                        autoScheme === "dark" ? "#3a3060" : "#e8d880",
+                    },
+                  ]}
+                >
+                  <Text
+                    style={{
+                      fontSize: 10,
+                      color: autoScheme === "dark" ? "#c0b0ff" : "#6a5000",
+                    }}
+                  >
+                    {autoScheme === "dark" ? "TAMNA" : "SVJETLA"}
+                  </Text>
+                </View>
+              </View>
+            )}
           </View>
 
           {/* ─── PRIVATNOST ─────────────────────────────── */}
           <View style={sm.section}>
             <Text style={sm.sectionTitle}>{t("profile.privacy")}</Text>
-
             <View style={sm.row}>
               <View style={{ flex: 1 }}>
                 <Text style={sm.rowLabel}>{t("profile.publicProfile")}</Text>
@@ -2748,21 +3440,38 @@ function SettingsModal({
 
           {/* ─── OPASNA ZONA ──────────────────────────────── */}
           <View style={sm.section}>
-            <Text style={[sm.sectionTitle, { color: V.danger }]}>
-              {t("profile.dangerZone")}
+            <View style={sm.dangerHeader}>
+              <View style={sm.dangerHeaderLine} />
+              <Text style={sm.dangerHeaderText}>{t("profile.dangerZone")}</Text>
+              <View style={sm.dangerHeaderLine} />
+            </View>
+            <Text style={sm.dangerDesc}>
+              {t("profile.dangerZoneDesc") ?? "Ove radnje su nepovratne"}
             </Text>
-            <TouchableOpacity style={sm.dangerBtn} onPress={handleLogout}>
-              <Ionicons name="log-out-outline" size={20} color={V.danger} />
-              <Text style={sm.dangerBtnText}>{t("profile.logoutBtn")}</Text>
+
+            <TouchableOpacity style={sm.varaBtn} onPress={handleLogout}>
+              <View style={sm.varaBtnIcon}>
+                <Ionicons
+                  name="log-out-outline"
+                  size={18}
+                  color={V.silverDim}
+                />
+              </View>
+              <Text style={sm.varaBtnText}>{t("profile.logoutBtn")}</Text>
+              <Ionicons name="chevron-forward" size={16} color={V.silverDim} />
             </TouchableOpacity>
+
             <TouchableOpacity
-              style={[sm.dangerBtn, { marginTop: 8 }]}
+              style={[sm.varaBtn, sm.varaBtnDestructive]}
               onPress={handleDeleteAccount}
             >
-              <Ionicons name="trash-outline" size={20} color={V.danger} />
-              <Text style={sm.dangerBtnText}>
+              <View style={[sm.varaBtnIcon, sm.varaBtnIconDestructive]}>
+                <Ionicons name="trash-outline" size={18} color={V.accentGold} />
+              </View>
+              <Text style={sm.varaBtnTextDestructive}>
                 {t("profile.deleteAccountBtn")}
               </Text>
+              <Ionicons name="chevron-forward" size={16} color={V.accentGold} />
             </TouchableOpacity>
           </View>
         </ScrollView>
@@ -2770,222 +3479,6 @@ function SettingsModal({
     </Modal>
   );
 }
-
-const sm = StyleSheet.create({
-  header: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    padding: 16,
-    borderBottomWidth: 1.5,
-    borderBottomColor: V.borderGreen,
-    backgroundColor: V.forestDeep,
-  },
-  title: { fontSize: 17, fontWeight: "600", color: V.silverBright },
-  saveBtn: { color: V.visited, fontSize: 16, fontWeight: "600" },
-  section: { marginTop: 24, paddingHorizontal: 16 },
-  sectionTitle: {
-    fontSize: 12,
-    fontWeight: "700",
-    color: V.silverDim,
-    marginBottom: 12,
-    textTransform: "uppercase",
-    letterSpacing: 1,
-  },
-  row: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    paddingVertical: 12,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: V.borderDim,
-  },
-  rowLabel: { fontSize: 16, color: V.silverBright },
-  rowSub: { fontSize: 13, color: V.silverDim, marginTop: 2 },
-  currentValue: {
-    fontSize: 12,
-    color: V.visited,
-    marginTop: 4,
-    marginBottom: 8,
-  },
-  activeLimit: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-    backgroundColor: V.forestMid,
-    borderWidth: 1,
-    borderColor: V.borderGreen,
-    padding: 8,
-    borderRadius: 8,
-    marginVertical: 8,
-  },
-  activeLimitText: { fontSize: 13, color: V.visited, fontWeight: "600" },
-  timeRow: { flexDirection: "row", flexWrap: "wrap", gap: 8, marginTop: 12 },
-  timeBtn: {
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 20,
-    backgroundColor: V.forestMid,
-    borderWidth: 1,
-    borderColor: V.borderDim,
-  },
-  timeBtnActive: { backgroundColor: V.forestLight, borderColor: V.borderGreen },
-  timeBtnText: { fontSize: 13, color: V.silver },
-  timeBtnTextActive: { color: V.silverBright, fontWeight: "600" },
-  blockedUser: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    paddingVertical: 10,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: V.borderDim,
-  },
-  dangerBtn: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 10,
-    padding: 14,
-    borderRadius: 12,
-    borderWidth: 1.5,
-    borderColor: V.danger,
-    backgroundColor: V.forestMid,
-  },
-  dangerBtnText: { color: V.danger, fontSize: 15, fontWeight: "600" },
-});
-
-// ─── Empty Tab ────────────────────────────────────────────────────────────────
-function EmptyTab({ icon, text }: { icon: any; text: string }) {
-  return (
-    <View style={tab.empty}>
-      <View style={tab.emptyIconWrap}>
-        <Ionicons name={icon} size={44} color={V.borderGreen} />
-      </View>
-      <Text style={tab.emptyText}>{text}</Text>
-    </View>
-  );
-}
-
-const tab = StyleSheet.create({
-  addBtn: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: V.forestLight,
-    borderWidth: 1.5,
-    borderColor: V.borderGreen,
-    borderRadius: 12,
-    margin: 16,
-    paddingVertical: 12,
-    gap: 8,
-  },
-  addBtnText: { color: V.silverBright, fontSize: 15, fontWeight: "600" },
-  gridItem: { flex: 1 / 3, aspectRatio: 1, padding: 1 },
-  gridImg: { width: "100%", height: "100%" },
-  videoIcon: {
-    ...StyleSheet.absoluteFillObject,
-    justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: "rgba(0,0,0,0.25)",
-  },
-  gridDate: {
-    position: "absolute",
-    bottom: 4,
-    left: 4,
-    right: 4,
-    fontSize: 10,
-    color: V.silver,
-    textShadowColor: "#000",
-    textShadowOffset: { width: 0, height: 1 },
-    textShadowRadius: 3,
-  },
-  listItem: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingVertical: 12,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: V.borderDim,
-    gap: 12,
-  },
-  thumb: { width: 60, height: 60, borderRadius: 8 },
-  thumbContainer: {
-    position: "relative",
-    width: 60,
-    height: 60,
-    borderRadius: 8,
-    overflow: "hidden",
-  },
-  playIcon: {
-    position: "absolute",
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: "rgba(0,0,0,0.3)",
-  },
-  itemTitle: {
-    fontSize: 14,
-    fontWeight: "600",
-    color: V.silverBright,
-    marginBottom: 3,
-  },
-  itemMeta: { fontSize: 13, color: V.visited, marginBottom: 2 },
-  itemDate: { fontSize: 12, color: V.silverDim },
-  removeBtn: { padding: 8 },
-  empty: {
-    alignItems: "center",
-    justifyContent: "center",
-    paddingTop: 60,
-    gap: 14,
-  },
-  emptyIconWrap: {
-    width: 88,
-    height: 88,
-    borderRadius: 44,
-    backgroundColor: V.forestMid,
-    borderWidth: 1.5,
-    borderColor: V.borderGreen,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  emptyText: {
-    fontSize: 16,
-    color: V.silverDim,
-    textAlign: "center",
-    paddingHorizontal: 32,
-  },
-  filterRow: {
-    flexDirection: "row",
-    gap: 8,
-    paddingHorizontal: 16,
-    marginVertical: 12,
-  },
-  filterBtn: {
-    paddingHorizontal: 12,
-    paddingVertical: 7,
-    borderRadius: 20,
-    backgroundColor: V.forestMid,
-    borderWidth: 1,
-    borderColor: V.borderDim,
-  },
-  filterBtnActive: {
-    backgroundColor: V.forestLight,
-    borderColor: V.borderGreen,
-  },
-  filterBtnText: { fontSize: 13, color: V.silver },
-  filterBtnTextActive: { color: V.silverBright, fontWeight: "600" },
-  goingBadge: { fontSize: 13, color: V.visited, marginTop: 4 },
-  deleteOverlay: {
-    position: "absolute",
-    top: 4,
-    right: 4,
-    backgroundColor: "rgba(0,0,0,0.65)",
-    borderRadius: 12,
-    padding: 4,
-    zIndex: 1,
-  },
-});
 
 // ─── Session Tracking ─────────────────────────────────────────────────────────
 const trackSessionTime = async (minutes: number) => {
@@ -3006,6 +3499,8 @@ const trackSessionTime = async (minutes: number) => {
 // ─── Main Profile Screen ──────────────────────────────────────────────────────
 export default function ProfileScreen() {
   const { t } = useTranslation();
+  const { isDark } = useTheme();
+  const V = useMemo(() => getVara(isDark), [isDark]);
   const [profile, setProfile] = useState<ProfileData | null>(null);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<Tab>("me");
@@ -3013,7 +3508,6 @@ export default function ProfileScreen() {
   const [showFollowers, setShowFollowers] = useState(false);
   const [showFollowing, setShowFollowing] = useState(false);
 
-  // Session tracking
   useEffect(() => {
     let sessionStart = Date.now();
     let isTracking = false;
@@ -3131,76 +3625,109 @@ export default function ProfileScreen() {
     profile?.showUsername !== false ? `@${profile?.username}` : null;
 
   return (
-    <SafeAreaView style={styles.safeArea} edges={["top"]}>
-      <View style={styles.container}>
-        {/* ── Header ── */}
-        <View style={styles.header}>
-          <Text style={styles.headerTitle}>{t("profile.profileHeader")}</Text>
+    <SafeAreaView
+      style={[styles.safeArea, { backgroundColor: V.forestDeep }]}
+      edges={["top"]}
+    >
+      <View style={[styles.container, { backgroundColor: V.forestDeep }]}>
+        {/* Header */}
+        <View
+          style={[
+            styles.header,
+            { borderBottomColor: V.borderGreen, backgroundColor: V.forestDeep },
+          ]}
+        >
+          <Text style={[styles.headerTitle, { color: V.silverBright }]}>
+            {t("profile.profileHeader")}
+          </Text>
           <TouchableOpacity
-            style={styles.settingsBtn}
+            style={[
+              styles.settingsBtn,
+              { backgroundColor: V.forestMid, borderColor: V.borderGreen },
+            ]}
             onPress={() => setShowSettings(true)}
           >
             <Ionicons name="settings-outline" size={22} color={V.silver} />
           </TouchableOpacity>
         </View>
 
-        {/* Screen time countdown */}
         <ScreenTimeCountdown />
 
-        {/* ── Profile Info ── */}
-        <View style={styles.profileSection}>
+        {/* Profile Info */}
+        <View
+          style={[
+            styles.profileSection,
+            { borderBottomColor: V.borderDim, backgroundColor: V.forestDeep },
+          ]}
+        >
           <AvatarSection onUpdate={load} />
-
-          <Text style={styles.name}>
+          <Text style={[styles.name, { color: V.silverBright }]}>
             {profile?.firstName} {profile?.lastName}
           </Text>
-
           {displayUsername && (
-            <Text style={styles.usernameText}>{displayUsername}</Text>
+            <Text style={[styles.usernameText, { color: V.visited }]}>
+              {displayUsername}
+            </Text>
           )}
-
-          {/* Privacy badge */}
-          <View style={styles.privacyBadge}>
+          <View
+            style={[
+              styles.privacyBadge,
+              { backgroundColor: V.forestMid, borderColor: V.borderDim },
+            ]}
+          >
             <Ionicons
               name={profile?.isPublic ? "globe-outline" : "lock-closed-outline"}
               size={12}
               color={V.visited}
             />
-            <Text style={styles.privacyText}>
+            <Text style={[styles.privacyText, { color: V.visited }]}>
               {profile?.isPublic
                 ? t("profile.publicProfileLabel")
                 : t("profile.privateProfileLabel")}
             </Text>
           </View>
-
-          {/* Stats */}
           <View style={styles.statsRow}>
             <TouchableOpacity
               style={styles.stat}
               onPress={() => setShowFollowers(true)}
             >
-              <Text style={styles.statNum}>{profile?.followersCount ?? 0}</Text>
-              <Text style={styles.statLabel}>{t("profile.followers")}</Text>
+              <Text style={[styles.statNum, { color: V.silverBright }]}>
+                {profile?.followersCount ?? 0}
+              </Text>
+              <Text style={[styles.statLabel, { color: V.silverDim }]}>
+                {t("profile.followers")}
+              </Text>
             </TouchableOpacity>
-            <View style={styles.statDivider} />
+            <View
+              style={[styles.statDivider, { backgroundColor: V.borderDim }]}
+            />
             <TouchableOpacity
               style={styles.stat}
               onPress={() => setShowFollowing(true)}
             >
-              <Text style={styles.statNum}>{profile?.followingCount ?? 0}</Text>
-              <Text style={styles.statLabel}>{t("profile.following")}</Text>
+              <Text style={[styles.statNum, { color: V.silverBright }]}>
+                {profile?.followingCount ?? 0}
+              </Text>
+              <Text style={[styles.statLabel, { color: V.silverDim }]}>
+                {t("profile.following")}
+              </Text>
             </TouchableOpacity>
           </View>
         </View>
 
-        {/* ── Tab Bar ── */}
-        <View style={styles.tabBar}>
+        {/* Tab Bar */}
+        <View
+          style={[
+            styles.tabBar,
+            { borderBottomColor: V.borderGreen, backgroundColor: V.forestDeep },
+          ]}
+        >
           {TABS.map((t_) => (
             <TouchableOpacity
               key={t_.key}
               style={[
                 styles.tabBtn,
-                activeTab === t_.key && styles.tabBtnActive,
+                activeTab === t_.key && { borderBottomColor: V.visited },
               ]}
               onPress={() => setActiveTab(t_.key as Tab)}
             >
@@ -3212,7 +3739,11 @@ export default function ProfileScreen() {
               <Text
                 style={[
                   styles.tabBtnText,
-                  activeTab === t_.key && styles.tabBtnTextActive,
+                  { color: V.silverDim },
+                  activeTab === t_.key && {
+                    color: V.visited,
+                    fontWeight: "600",
+                  },
                 ]}
               >
                 {t_.label}
@@ -3221,35 +3752,15 @@ export default function ProfileScreen() {
           ))}
         </View>
 
-        {/* ── Tab Content ── */}
+        {/* Tab Content */}
         <View style={{ flex: 1 }}>
           {activeTab === "me" && <MeTab userId={profile?.id ?? null} />}
           {activeTab === "box" && <BoxTab />}
           {activeTab === "wishlist" && <WishlistTab />}
           {activeTab === "golden" && <GoldenFriendsTab />}
         </View>
-
-        {/* Admin Panel Link */}
-        <View
-          style={{
-            position: "absolute",
-            bottom: 20,
-            left: 0,
-            right: 0,
-            alignItems: "center",
-          }}
-        >
-          <TouchableOpacity
-            onPress={() => router.push("/admin/login")}
-            style={styles.adminBtn}
-          >
-            <Ionicons name="shield-outline" size={14} color={V.silver} />
-            <Text style={styles.adminBtnText}>Admin Panel</Text>
-          </TouchableOpacity>
-        </View>
       </View>
 
-      {/* Modali */}
       <SettingsModal
         visible={showSettings}
         profile={profile}
@@ -3277,13 +3788,11 @@ export default function ProfileScreen() {
   );
 }
 
-// ─── Glavni stilovi ───────────────────────────────────────────────────────────
+// ─── Statični stilovi (layout-only, bez boja) ─────────────────────────────────
 const styles = StyleSheet.create({
-  safeArea: { flex: 1, backgroundColor: V.forestDeep },
-  container: { flex: 1, backgroundColor: V.forestDeep },
+  safeArea: { flex: 1 },
+  container: { flex: 1 },
   center: { flex: 1, justifyContent: "center", alignItems: "center" },
-
-  // Header
   header: {
     flexDirection: "row",
     justifyContent: "space-between",
@@ -3291,65 +3800,41 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingVertical: 16,
     borderBottomWidth: 1.5,
-    borderBottomColor: V.borderGreen,
-    backgroundColor: V.forestDeep,
   },
-  headerTitle: { fontSize: 28, fontWeight: "bold", color: V.silverBright },
+  headerTitle: { fontSize: 28, fontWeight: "bold" },
   settingsBtn: {
     width: 40,
     height: 40,
     borderRadius: 8,
-    backgroundColor: V.forestMid,
     borderWidth: 1,
-    borderColor: V.borderGreen,
     justifyContent: "center",
     alignItems: "center",
   },
-
-  // Profile section
   profileSection: {
     alignItems: "center",
     paddingVertical: 20,
     paddingHorizontal: 20,
     borderBottomWidth: 1,
-    borderBottomColor: V.borderDim,
-    backgroundColor: V.forestDeep,
   },
-  name: {
-    fontSize: 22,
-    fontWeight: "700",
-    color: V.silverBright,
-    marginBottom: 2,
-  },
-  usernameText: { fontSize: 15, color: V.visited, marginBottom: 6 },
+  name: { fontSize: 22, fontWeight: "700", marginBottom: 2 },
+  usernameText: { fontSize: 15, marginBottom: 6 },
   privacyBadge: {
     flexDirection: "row",
     alignItems: "center",
     gap: 4,
-    backgroundColor: V.forestMid,
     borderWidth: 1,
-    borderColor: V.borderDim,
     paddingHorizontal: 10,
     paddingVertical: 4,
     borderRadius: 20,
     marginBottom: 16,
   },
-  privacyText: { fontSize: 12, color: V.visited, fontWeight: "500" },
-
-  // Stats
+  privacyText: { fontSize: 12, fontWeight: "500" },
   statsRow: { flexDirection: "row", alignItems: "center", gap: 32 },
   stat: { alignItems: "center" },
-  statNum: { fontSize: 22, fontWeight: "700", color: V.silverBright },
-  statLabel: { fontSize: 13, color: V.silverDim, marginTop: 2 },
-  statDivider: { width: 1, height: 36, backgroundColor: V.borderDim },
-
-  // Tab bar
-  tabBar: {
-    flexDirection: "row",
-    borderBottomWidth: 1.5,
-    borderBottomColor: V.borderGreen,
-    backgroundColor: V.forestDeep,
-  },
+  statNum: { fontSize: 22, fontWeight: "700" },
+  statLabel: { fontSize: 13, marginTop: 2 },
+  statDivider: { width: 1, height: 36 },
+  tabBar: { flexDirection: "row", borderBottomWidth: 1.5 },
   tabBtn: {
     flex: 1,
     alignItems: "center",
@@ -3358,25 +3843,7 @@ const styles = StyleSheet.create({
     borderBottomWidth: 2,
     borderBottomColor: "transparent",
   },
-  tabBtnActive: { borderBottomColor: V.visited },
-  tabBtnText: { fontSize: 11, color: V.silverDim },
-  tabBtnTextActive: { color: V.visited, fontWeight: "600" },
-
-  // Admin button
-  adminBtn: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-    backgroundColor: V.forestMid,
-    borderWidth: 1,
-    borderColor: V.borderGreen,
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 20,
-  },
-  adminBtnText: { color: V.silver, fontSize: 13, fontWeight: "600" },
-
-  // Media modal
+  tabBtnText: { fontSize: 11 },
   mediaModalHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
@@ -3389,7 +3856,7 @@ const styles = StyleSheet.create({
   mediaModalTitle: {
     fontSize: 16,
     fontWeight: "600",
-    color: V.silver,
+    color: "#c0c0c0",
     flex: 1,
     marginHorizontal: 12,
     textAlign: "center",

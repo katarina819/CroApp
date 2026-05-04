@@ -9,7 +9,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as ImagePicker from "expo-image-picker";
 import { router, useFocusEffect } from "expo-router";
 import { VideoView, useVideoPlayer } from "expo-video";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
   ActivityIndicator,
@@ -40,6 +40,27 @@ import {
 } from "../../utils/messagesApi";
 
 const { width: SCREEN_W, height: SCREEN_H } = Dimensions.get("window");
+
+function getM(dark: boolean) {
+  return {
+    bg: dark ? "#1a2e1a" : "#f0ede4",
+    bgCard: dark ? "#2a4230" : "#e4ead8",
+    bgCardHover: dark ? "#3a5a30" : "#ccdcb8",
+    border: dark ? "#3a5a30" : "#c0d0a8",
+    borderBright: dark ? "#4a7040" : "#5a8a40",
+    textPrimary: dark ? "#e8e8e8" : "#1a2a18",
+    textSecondary: dark ? "#c0c0c0" : "#3a4a35",
+    textMuted: dark ? "#a0a0a0" : "#5a6a55",
+    accent: dark ? "#5a8a48" : "#3a6a28",
+    accentBright: dark ? "#6a9a60" : "#2a5a20",
+    inputBg: dark ? "#2a4230" : "#e4ead8",
+    inputBorder: dark ? "#4a7040" : "#5a8a40",
+    placeholder: dark ? "#6a9a60" : "#7a8a75",
+    unreadBg: dark ? "#3a5a30" : "#ccdcb8",
+    errorBg: dark ? "#3a1a1a" : "#fde8e8",
+    errorBorder: dark ? "#5a2a2a" : "#f0b0b0",
+  } as const;
+}
 
 interface Story {
   id: number;
@@ -623,9 +644,7 @@ function StoryViewer({
         }}
       >
         <View style={sv.viewersModal}>
-          <View
-            style={[sv.viewersContent, { backgroundColor: colors.background }]}
-          >
+          <View style={sv.viewersContent}>
             <View style={sv.viewersHeader}>
               <Text style={sv.viewersTitle}>
                 {t("story.viewedBy")} ({viewers.length})
@@ -636,7 +655,7 @@ function StoryViewer({
                   resumeProgress();
                 }}
               >
-                <Ionicons name="close" size={24} color="#333" />
+                <Ionicons name="close" size={24} color="#e8e8e8" />
               </TouchableOpacity>
             </View>
 
@@ -695,9 +714,7 @@ function StoryViewer({
         }}
       >
         <View style={sv.viewersModal}>
-          <View
-            style={[sv.viewersContent, { backgroundColor: colors.background }]}
-          >
+          <View style={sv.viewersContent}>
             <View style={sv.viewersHeader}>
               <Text style={sv.viewersTitle}>
                 {t("story.likes")} ({likeCount})
@@ -708,7 +725,7 @@ function StoryViewer({
                   resumeProgress();
                 }}
               >
-                <Ionicons name="close" size={24} color="#333" />
+                <Ionicons name="close" size={24} color="#e8e8e8" />
               </TouchableOpacity>
             </View>
             <FlatList
@@ -722,7 +739,7 @@ function StoryViewer({
                       style={sv.viewerAvatar}
                     />
                   ) : (
-                    <Ionicons name="person-circle" size={40} color="#2D6418" />
+                    <Ionicons name="person-circle" size={40} color="#5a8a48" />
                   )}
                   <Text style={sv.viewerName}>{item.userName}</Text>
                   <Text style={sv.reactionType}>{item.reactionType}</Text>
@@ -758,9 +775,7 @@ function StoryViewer({
             activeOpacity={1}
             onPress={handleCloseComments}
           />
-          <View
-            style={[sv.commentsContent, { backgroundColor: colors.background }]}
-          >
+          <View style={sv.commentsContent}>
             <View
               style={[
                 sv.commentsHeader,
@@ -774,7 +789,7 @@ function StoryViewer({
                 {t("story.comments")} ({comments.length})
               </Text>
               <TouchableOpacity onPress={handleCloseComments}>
-                <Ionicons name="close" size={24} color="#333" />
+                <Ionicons name="close" size={24} color="#e8e8e8" />
               </TouchableOpacity>
             </View>
 
@@ -869,7 +884,7 @@ function StoryViewer({
                 <TextInput
                   style={sv.commentInput}
                   placeholder={t("story.writeComment")}
-                  placeholderTextColor="#999"
+                  placeholderTextColor="#6a9a60"
                   value={commentText}
                   onChangeText={setCommentText}
                   multiline
@@ -927,15 +942,15 @@ const sv = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: "#2D6418",
+    backgroundColor: "#3a5a30",
     justifyContent: "center",
     alignItems: "center",
     borderWidth: 2,
-    borderColor: "#fff",
+    borderColor: "#5a8a48",
     overflow: "hidden",
   },
   smallAvatarImg: { width: 40, height: 40 },
-  smallAvatarText: { color: "#fff", fontWeight: "700", fontSize: 16 },
+  smallAvatarText: { color: "#e8e8e8", fontWeight: "700", fontSize: 16 },
   storyUser: { color: "#fff", fontWeight: "700", fontSize: 15 },
   storyTime: { color: "rgba(255,255,255,0.7)", fontSize: 12 },
   closeBtn: { padding: 8 },
@@ -950,16 +965,18 @@ const sv = StyleSheet.create({
   interactionCount: { color: "#fff", fontSize: 12, fontWeight: "600" },
   reactionPickerOverlay: {
     flex: 1,
-    backgroundColor: "rgba(0,0,0,0.5)",
+    backgroundColor: "rgba(0,0,0,0.6)",
     justifyContent: "center",
     alignItems: "center",
   },
   reactionPickerContainer: {
     flexDirection: "row",
-    backgroundColor: "#fff",
+    backgroundColor: "#2a4230",
     borderRadius: 40,
     padding: 12,
     gap: 12,
+    borderWidth: 1.5,
+    borderColor: "#5a8a48",
   },
   reactionOption: { padding: 8 },
   reactionEmoji: { fontSize: 32 },
@@ -996,15 +1013,19 @@ const sv = StyleSheet.create({
     padding: 10,
     borderRadius: 22,
   },
+
+  // ── Viewers / Likes Modal ──
   viewersModal: {
     flex: 1,
-    backgroundColor: "rgba(0,0,0,0.5)",
+    backgroundColor: "rgba(0,0,0,0.65)",
     justifyContent: "flex-end",
   },
   viewersContent: {
-    backgroundColor: "#fff", // statička bijela (modal će dobiti dinamičku kroz inline style)
+    backgroundColor: "#1a2e1a",
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
+    borderTopWidth: 1.5,
+    borderColor: "#4a7040",
     padding: 20,
     minHeight: 200,
     maxHeight: "70%",
@@ -1014,112 +1035,48 @@ const sv = StyleSheet.create({
     justifyContent: "space-between",
     alignItems: "center",
     marginBottom: 16,
+    paddingBottom: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: "#3a5a30",
   },
-  viewersTitle: { fontSize: 18, fontWeight: "700", color: "#333" },
+  viewersTitle: { fontSize: 18, fontWeight: "700", color: "#e8e8e8" },
   viewerRow: {
     flexDirection: "row",
     alignItems: "center",
     gap: 12,
     marginBottom: 12,
+    paddingVertical: 4,
   },
   viewerAvatar: { width: 40, height: 40, borderRadius: 20 },
   viewerAvatarPlaceholder: {
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: "#2D6418",
+    backgroundColor: "#3a5a30",
     justifyContent: "center",
     alignItems: "center",
+    borderWidth: 1,
+    borderColor: "#5a8a48",
   },
-  viewerAvatarText: { color: "#fff", fontWeight: "700" },
-  viewerName: { fontSize: 15, color: "#333" },
+  viewerAvatarText: { color: "#e8e8e8", fontWeight: "700" },
+  viewerName: { fontSize: 15, color: "#e8e8e8" },
   reactionType: { marginLeft: "auto", fontSize: 18 },
-  noViewers: { color: "#999", textAlign: "center", marginTop: 20 },
+  noViewers: { color: "#6a9a60", textAlign: "center", marginTop: 20 },
+
+  // ── Comments Modal ──
   commentsKAV: {
     flex: 1,
     justifyContent: "flex-end",
-    backgroundColor: "rgba(0,0,0,0.5)",
+    backgroundColor: "rgba(0,0,0,0.65)",
   },
   commentsOverlay: { flex: 1 },
   commentsContent: {
-    backgroundColor: "#fff", // statička bijela (modal će dobiti dinamičku kroz inline style)
+    backgroundColor: "#1a2e1a",
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
+    borderTopWidth: 1.5,
+    borderColor: "#4a7040",
     height: "90%",
-  },
-  commentsList: { flex: 1, paddingHorizontal: 16 },
-  commentItem: {
-    paddingVertical: 16,
-    paddingHorizontal: 16,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: "#eee",
-    backgroundColor: "#fff",
-  },
-  commentHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 10,
-    marginBottom: 10,
-  },
-  commentAvatar: { width: 32, height: 32, borderRadius: 16 },
-  commentUserName: {
-    fontWeight: "700",
-    color: "#333",
-    fontSize: 15,
-  },
-  commentTime: { fontSize: 11, color: "#999", marginLeft: "auto" },
-  commentText: {
-    fontSize: 15,
-    color: "#444",
-    lineHeight: 22,
-    marginLeft: 42,
-  },
-  commentReactionsList: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 6,
-    marginTop: 6,
-    marginLeft: 40,
-  },
-  commentReactionBadge: {
-    backgroundColor: "#f0f0f0",
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 16,
-  },
-  commentReactionBadgeText: { fontSize: 14 },
-  commentReactionButtons: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 8,
-    marginTop: 8,
-    marginLeft: 40,
-  },
-  commentReactionBtn: {
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    backgroundColor: "#f0f0f0",
-    borderRadius: 16,
-  },
-  commentReactionBtnActive: {
-    backgroundColor: "#e0e0e0",
-    transform: [{ scale: 1.05 }],
-  },
-  commentReactionEmoji: { fontSize: 16 },
-  commentInputContainer: {
-    padding: 16,
-    borderTopWidth: 1,
-    borderTopColor: "#eee",
-    backgroundColor: "#fff",
-    paddingBottom: Platform.OS === "ios" ? 34 : 16,
-  },
-  commentInputWrapper: {
-    flexDirection: "row",
-    alignItems: "flex-end",
-    backgroundColor: "#f5f5f5",
-    borderRadius: 28,
-    paddingHorizontal: 16,
-    paddingVertical: 10,
   },
   commentsHeader: {
     flexDirection: "row",
@@ -1127,28 +1084,97 @@ const sv = StyleSheet.create({
     alignItems: "center",
     padding: 16,
     borderBottomWidth: 1,
-    borderBottomColor: "#eee",
-    backgroundColor: "#fff",
+    borderBottomColor: "#3a5a30",
+    backgroundColor: "#1a2e1a",
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
   },
-  commentsTitle: {
-    fontSize: 18,
-    fontWeight: "700",
-    color: "#333",
+  commentsTitle: { fontSize: 18, fontWeight: "700", color: "#e8e8e8" },
+  commentsList: { flex: 1, paddingHorizontal: 16 },
+  commentItem: {
+    paddingVertical: 14,
+    paddingHorizontal: 4,
+    borderBottomWidth: 1,
+    borderBottomColor: "#2a4230",
+    backgroundColor: "#1a2e1a",
+  },
+  commentHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+    marginBottom: 8,
+  },
+  commentAvatar: { width: 32, height: 32, borderRadius: 16 },
+  commentUserName: { fontWeight: "700", color: "#e8e8e8", fontSize: 14 },
+  commentTime: { fontSize: 11, color: "#6a9a60", marginLeft: "auto" },
+  commentText: {
+    fontSize: 14,
+    color: "#c0c0c0",
+    lineHeight: 20,
+    marginLeft: 42,
+  },
+  commentReactionsList: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 6,
+    marginTop: 6,
+    marginLeft: 42,
+  },
+  commentReactionBadge: {
+    backgroundColor: "#2a4230",
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: "#3a5a30",
+  },
+  commentReactionBadgeText: { fontSize: 14 },
+  commentReactionButtons: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 6,
+    marginTop: 8,
+    marginLeft: 42,
+  },
+  commentReactionBtn: {
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    backgroundColor: "#2a4230",
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: "#3a5a30",
+  },
+  commentReactionBtnActive: {
+    backgroundColor: "#3a5a30",
+    borderColor: "#5a8a48",
+  },
+  commentReactionEmoji: { fontSize: 16 },
+  commentInputContainer: {
+    padding: 16,
+    borderTopWidth: 1,
+    borderTopColor: "#3a5a30",
+    backgroundColor: "#1a2e1a",
+    paddingBottom: Platform.OS === "ios" ? 34 : 16,
+  },
+  commentInputWrapper: {
+    flexDirection: "row",
+    alignItems: "flex-end",
+    backgroundColor: "#2a4230",
+    borderRadius: 28,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderWidth: 1,
+    borderColor: "#4a7040",
   },
   commentInput: {
     flex: 1,
-    fontSize: 16,
-    color: "#333",
+    fontSize: 15,
+    color: "#e8e8e8",
     maxHeight: 120,
-    paddingVertical: 10,
+    paddingVertical: 8,
     minHeight: 44,
   },
-  commentSendBtn: {
-    padding: 10,
-    marginLeft: 8,
-  },
+  commentSendBtn: { padding: 10, marginLeft: 8 },
 });
 
 // ─── Stories Row ─────────────────────────────────────────────────────────────
@@ -1161,7 +1187,8 @@ function StoriesRow({
 }) {
   const { t } = useTranslation();
   const { colors, isDark } = useTheme();
-  const srs = getSrsStyles(colors);
+  const M = useMemo(() => getM(isDark), [isDark]); // ← DODATI
+  const srs = useMemo(() => getSrsStyles(colors, M), [M]);
   const [stories, setStories] = useState<Story[]>([]);
   const [viewing, setViewing] = useState<Story | null>(null);
 
@@ -1344,13 +1371,13 @@ function StoriesRow({
 
 // DODAJ OVU FUNKCIJU NEPOSREDNO ISPOD const srs = StyleSheet.create({ ... }) (ili prije StoriesRow komponente)
 // ZAMIJENI getSrsStyles funkciju:
-const getSrsStyles = (colors: any) =>
+const getSrsStyles = (colors: any, M: ReturnType<typeof getM>) =>
   StyleSheet.create({
     container: {
       borderBottomWidth: 1.5,
-      borderBottomColor: "#4a7040",
+      borderBottomColor: M.borderBright,
       paddingVertical: 12,
-      backgroundColor: "#1a2e1a",
+      backgroundColor: M.bg,
     },
     list: { paddingHorizontal: 12, gap: 12 },
     storyItem: { alignItems: "center", width: 72 },
@@ -1363,30 +1390,23 @@ const getSrsStyles = (colors: any) =>
       alignItems: "center",
       marginBottom: 4,
     },
-    myHasStory: {
-      borderWidth: 2.5,
-      borderColor: "#5a8a48",
-    },
-    noStory: {
-      borderWidth: 2,
-      borderColor: "#3a5a30",
-      borderStyle: "dashed",
-    },
+    myHasStory: { borderWidth: 2.5, borderColor: M.accent },
+    noStory: { borderWidth: 2, borderColor: M.border, borderStyle: "dashed" },
     viewedRing: {
       borderRadius: 32,
       borderWidth: 2,
-      borderColor: "#4a7040",
+      borderColor: M.borderBright,
     },
     img: { width: 64, height: 64, borderRadius: 32 },
     addBg: {
       width: 64,
       height: 64,
       borderRadius: 32,
-      backgroundColor: "#3a5a30",
+      backgroundColor: M.bgCard,
       justifyContent: "center",
       alignItems: "center",
     },
-    initials: { color: "#e8e8e8", fontSize: 22, fontWeight: "700" },
+    initials: { color: M.textPrimary, fontSize: 22, fontWeight: "700" },
     addIcon: {
       position: "absolute",
       bottom: -2,
@@ -1394,13 +1414,13 @@ const getSrsStyles = (colors: any) =>
       width: 22,
       height: 22,
       borderRadius: 11,
-      backgroundColor: "#5a8a48",
+      backgroundColor: M.accent,
       justifyContent: "center",
       alignItems: "center",
       borderWidth: 2,
-      borderColor: "#1a2e1a",
+      borderColor: M.bg,
     },
-    label: { fontSize: 12, color: "#8a9486", textAlign: "center" },
+    label: { fontSize: 12, color: M.textMuted, textAlign: "center" },
   });
 
 // ─── Add Story Modal ──────────────────────────────────────────────────────────
@@ -1415,7 +1435,8 @@ function AddStoryModal({
 }) {
   const { t } = useTranslation();
   const { colors, isDark } = useTheme();
-  const asm = getAsmStyles(colors);
+  const M = useMemo(() => getM(isDark), [isDark]); // ← DODATI
+  const asm = useMemo(() => getAsmStyles(colors, M), [M]);
   const [preview, setPreview] = useState<{
     uri: string;
     type: "image" | "video";
@@ -1553,7 +1574,7 @@ function AddStoryModal({
 }
 
 // ZAMIJENI getAsmStyles funkciju:
-const getAsmStyles = (colors: any) =>
+const getAsmStyles = (colors: any, M: ReturnType<typeof getM>) =>
   StyleSheet.create({
     header: {
       flexDirection: "row",
@@ -1562,46 +1583,47 @@ const getAsmStyles = (colors: any) =>
       padding: 16,
       paddingTop: Platform.OS === "ios" ? 54 : 36,
       borderBottomWidth: 1.5,
-      borderBottomColor: "#4a7040",
-      backgroundColor: "#1a2e1a",
+      borderBottomColor: M.borderBright,
+      backgroundColor: M.bg,
     },
-    title: { fontSize: 20, fontWeight: "800", color: "#e8e8e8" },
+    title: { fontSize: 20, fontWeight: "800", color: M.textPrimary },
     pickContainer: {
       flex: 1,
       justifyContent: "center",
       alignItems: "center",
       gap: 24,
-      backgroundColor: "#1a2e1a",
+      backgroundColor: M.bg,
     },
-    hint: { fontSize: 16, color: "#a0a0a0", marginBottom: 8 },
+    hint: { fontSize: 16, color: M.textMuted, marginBottom: 8 },
     pickBtn: {
       width: 160,
       alignItems: "center",
       padding: 28,
       borderRadius: 16,
       borderWidth: 1.5,
-      borderColor: "#5a8a48",
+      borderColor: M.accent,
       borderStyle: "dashed",
       gap: 10,
-      backgroundColor: "#2a4230",
+      backgroundColor: M.bgCard,
     },
-    pickLabel: { fontSize: 16, color: "#5a8a48", fontWeight: "600" },
+    pickLabel: { fontSize: 16, color: M.accent, fontWeight: "600" },
     preview: { flex: 1 },
     previewActions: {
       flexDirection: "row",
       gap: 12,
       padding: 16,
-      backgroundColor: "#1a2e1a",
+      backgroundColor: M.bg,
     },
     btn: { flex: 1, padding: 16, borderRadius: 12, alignItems: "center" },
-    btnText: { color: "#e8e8e8", fontSize: 16, fontWeight: "600" },
+    btnText: { color: M.textPrimary, fontSize: 16, fontWeight: "600" },
   });
 
 // ─── Main Messages Screen ─────────────────────────────────────────────────────
 export default function MessagesScreen() {
   const { t } = useTranslation();
   const { colors, isDark } = useTheme();
-  const styles = getStyles(colors, isDark);
+  const M = useMemo(() => getM(isDark), [isDark]); // ← DODATI
+  const styles = useMemo(() => getStyles(colors, isDark, M), [M]);
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -1895,21 +1917,21 @@ function ConversationItem({
 // Obriši postojeći const styles = StyleSheet.create({ ... }) i zamijeni s ovom funkcijom:
 
 // ZAMIJENI getStyles funkciju:
-const getStyles = (colors: any, isDark: boolean) =>
+const getStyles = (colors: any, isDark: boolean, M: ReturnType<typeof getM>) =>
   StyleSheet.create({
-    safeArea: { flex: 1, backgroundColor: "#1a2e1a" },
-    container: { flex: 1, backgroundColor: "#1a2e1a" },
+    safeArea: { flex: 1, backgroundColor: M.bg },
+    container: { flex: 1, backgroundColor: M.bg },
     header: {
       flexDirection: "row",
       alignItems: "center",
       paddingHorizontal: 20,
       paddingVertical: 16,
       borderBottomWidth: 1.5,
-      borderBottomColor: "#4a7040",
+      borderBottomColor: M.borderBright,
       gap: 10,
-      backgroundColor: "#1a2e1a",
+      backgroundColor: M.bg,
     },
-    headerTitle: { fontSize: 28, fontWeight: "bold", color: "#e8e8e8" },
+    headerTitle: { fontSize: 28, fontWeight: "bold", color: M.textPrimary },
     badge: {
       backgroundColor: "#ff3b30",
       borderRadius: 12,
@@ -1923,11 +1945,11 @@ const getStyles = (colors: any, isDark: boolean) =>
       flexDirection: "row",
       alignItems: "center",
       gap: 8,
-      backgroundColor: "#3a1a1a",
+      backgroundColor: M.errorBg,
       paddingHorizontal: 16,
       paddingVertical: 10,
       borderBottomWidth: 1,
-      borderBottomColor: "#5a2a2a",
+      borderBottomColor: M.errorBorder,
     },
     errorText: { fontSize: 13, color: "#ff3b30", flex: 1 },
     listContent: { paddingBottom: 24 },
@@ -1936,7 +1958,7 @@ const getStyles = (colors: any, isDark: boolean) =>
       flex: 1,
       justifyContent: "center",
       alignItems: "center",
-      backgroundColor: "#1a2e1a",
+      backgroundColor: M.bg,
     },
     emptyState: {
       flex: 1,
@@ -1946,62 +1968,67 @@ const getStyles = (colors: any, isDark: boolean) =>
       paddingTop: 60,
       gap: 12,
     },
-    emptyTitle: { fontSize: 20, fontWeight: "700", color: "#e8e8e8" },
+    emptyTitle: { fontSize: 20, fontWeight: "700", color: M.textPrimary },
     emptySubtitle: {
       fontSize: 14,
-      color: "#a0a0a0",
+      color: M.textMuted,
       textAlign: "center",
       lineHeight: 20,
     },
     newMsgBtn: {
       marginTop: 8,
-      backgroundColor: "#3a5a30",
+      backgroundColor: M.bgCardHover,
       paddingHorizontal: 24,
       paddingVertical: 12,
       borderRadius: 24,
       borderWidth: 1.5,
-      borderColor: "#5a8a48",
+      borderColor: M.accent,
     },
-    newMsgBtnText: { color: "#e8e8e8", fontWeight: "600", fontSize: 15 },
+    newMsgBtnText: { color: M.textPrimary, fontWeight: "600", fontSize: 15 },
     convItem: {
       flexDirection: "row",
       paddingHorizontal: 16,
       paddingVertical: 12,
       alignItems: "center",
       borderBottomWidth: 1,
-      borderBottomColor: "#2a4230",
-      backgroundColor: "#1a2e1a",
+      borderBottomColor: M.bgCard,
+      backgroundColor: M.bg,
       gap: 12,
     },
     convAvatar: {
       width: 56,
       height: 56,
       borderRadius: 28,
-      backgroundColor: "#3a5a30",
+      backgroundColor: M.bgCardHover,
       justifyContent: "center",
       alignItems: "center",
       marginRight: 12,
     },
-    convAvatarText: { color: "#e8e8e8", fontSize: 18, fontWeight: "700" },
+    convAvatarText: { color: M.textPrimary, fontSize: 18, fontWeight: "700" },
     convInfo: { flex: 1, gap: 4 },
     convNameRow: {
       flexDirection: "row",
       justifyContent: "space-between",
       alignItems: "center",
     },
-    convName: { fontSize: 15, fontWeight: "500", color: "#e8e8e8", flex: 1 },
-    convNameBold: { fontWeight: "700", color: "#ffffff" },
-    convTime: { fontSize: 12, color: "#6a9a60", marginLeft: 8 },
-    convTimeUnread: { color: "#5a8a48", fontWeight: "600" },
+    convName: {
+      fontSize: 15,
+      fontWeight: "500",
+      color: M.textPrimary,
+      flex: 1,
+    },
+    convNameBold: { fontWeight: "700", color: M.textPrimary },
+    convTime: { fontSize: 12, color: M.accentBright, marginLeft: 8 },
+    convTimeUnread: { color: M.accent, fontWeight: "600" },
     convMsgRow: {
       flexDirection: "row",
       alignItems: "center",
       justifyContent: "space-between",
     },
-    convLastMsg: { fontSize: 14, color: "#8a9486", flex: 1 },
-    convLastMsgUnread: { color: "#c0c0c0", fontWeight: "600" },
+    convLastMsg: { fontSize: 14, color: M.textMuted, flex: 1 },
+    convLastMsgUnread: { color: M.textSecondary, fontWeight: "600" },
     unreadBadge: {
-      backgroundColor: "#3a5a30",
+      backgroundColor: M.unreadBg,
       borderRadius: 12,
       paddingHorizontal: 7,
       paddingVertical: 2,
@@ -2009,7 +2036,7 @@ const getStyles = (colors: any, isDark: boolean) =>
       alignItems: "center",
       marginLeft: 8,
       borderWidth: 1,
-      borderColor: "#5a8a48",
+      borderColor: M.accent,
     },
-    unreadBadgeText: { color: "#e8e8e8", fontSize: 11, fontWeight: "700" },
+    unreadBadgeText: { color: M.textPrimary, fontSize: 11, fontWeight: "700" },
   });
