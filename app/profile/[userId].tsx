@@ -4,7 +4,7 @@ import { Ionicons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { router, useLocalSearchParams } from "expo-router";
 import { VideoView, useVideoPlayer } from "expo-video";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -23,9 +23,27 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { StoryBadge } from "../../app/StoryBadge";
+import { useTheme } from "../../components/AdaptiveThemeProvider";
 import { API_BASE_URL } from "../config/api";
 
 const { width: SCREEN_W } = Dimensions.get("window");
+
+function getVara(dark: boolean) {
+  return {
+    forestDeep: dark ? "#1a2e1a" : "#f0ede4",
+    forestMid: dark ? "#2a4230" : "#e4ead8",
+    forestLight: dark ? "#3a5a30" : "#ccdcb8",
+    borderGreen: dark ? "#4a7040" : "#5a8a40",
+    borderDim: dark ? "#3a5a30" : "#c0d0a8",
+    silver: dark ? "#c0c0c0" : "#3a4a35",
+    silverBright: dark ? "#e8e8e8" : "#1a2a18",
+    silverDim: dark ? "#a0a0a0" : "#5a6a55",
+    accentGold: "#B8A060",
+    visited: dark ? "#5a8a48" : "#3a6a28",
+    danger: dark ? "#8B3030" : "#7a2020",
+    overlay: dark ? "rgba(0,0,0,0.6)" : "rgba(0,0,0,0.4)",
+  } as const;
+}
 
 interface PublicProfile {
   id: number;
@@ -117,7 +135,9 @@ function VideoPreviewModal({
       <SafeAreaView style={{ flex: 1, backgroundColor: "#000" }}>
         <View style={vpModal.header}>
           <TouchableOpacity onPress={onClose}>
-            <Ionicons name="close" size={28} color="#fff" />
+            <Text style={{ color: "#c0c0c0", fontSize: 15, fontWeight: "600" }}>
+              Zatvori
+            </Text>
           </TouchableOpacity>
           <Text style={vpModal.title} numberOfLines={1}>
             {title}
@@ -187,19 +207,46 @@ function ImagePreviewModal({
       onRequestClose={onClose}
     >
       <SafeAreaView style={{ flex: 1, backgroundColor: "#000" }}>
-        <View style={styles.imageModalHeader}>
+        <View
+          style={{
+            flexDirection: "row",
+            justifyContent: "space-between",
+            alignItems: "center",
+            padding: 16,
+            backgroundColor: "#000",
+          }}
+        >
           <TouchableOpacity onPress={onClose}>
-            <Ionicons name="close" size={28} color="#fff" />
+            <Text style={{ color: "#c0c0c0", fontSize: 15, fontWeight: "600" }}>
+              Zatvori
+            </Text>
           </TouchableOpacity>
-          <Text style={styles.imageModalTitle} numberOfLines={1}>
+          <Text
+            style={{
+              fontSize: 16,
+              fontWeight: "600",
+              color: "#fff",
+              flex: 1,
+              marginHorizontal: 12,
+              textAlign: "center",
+            }}
+            numberOfLines={1}
+          >
             {title}
           </Text>
-          <View style={{ width: 28 }} />
+          <View style={{ width: 60 }} />
         </View>
-        <View style={styles.imageModalContent}>
+        <View
+          style={{
+            flex: 1,
+            justifyContent: "center",
+            alignItems: "center",
+            backgroundColor: "#000",
+          }}
+        >
           <Image
             source={{ uri: imageUrl }}
-            style={styles.imageModalImage}
+            style={{ width: "100%", height: "100%" }}
             resizeMode="contain"
           />
         </View>
@@ -209,6 +256,9 @@ function ImagePreviewModal({
 }
 
 export default function UserProfileScreen() {
+  const { isDark } = useTheme();
+  const V = useMemo(() => getVara(isDark), [isDark]);
+  const styles = useMemo(() => makeStyles(V), [V]);
   const { userId } = useLocalSearchParams<{ userId: string }>();
   const numericUserId = parseInt(userId ?? "0");
 
@@ -550,7 +600,7 @@ export default function UserProfileScreen() {
         }),
       });
       if (res.ok) {
-        Alert.alert("Poslano ✅", `Poruka poslana @${profile?.username}`);
+        Alert.alert("Poslano!", `Poruka je poslana @${profile?.username}`);
         setMessage("");
         setShowCompose(false);
       }
@@ -795,35 +845,27 @@ export default function UserProfileScreen() {
           behavior={Platform.OS === "ios" ? "padding" : "height"}
         >
           <SafeAreaView
-            style={{ flex: 1, backgroundColor: "#fff" }}
+            style={{ flex: 1, backgroundColor: V.forestDeep }}
             edges={["top"]}
           >
             <View style={styles.composeHeader}>
+              <Text style={styles.composeTitle}>Poruke</Text>
               <TouchableOpacity onPress={() => setShowCompose(false)}>
-                <Ionicons name="close" size={28} color="#333" />
-              </TouchableOpacity>
-              <Text style={styles.composeTitle}>
-                Poruka → @{profile?.username}
-              </Text>
-              <TouchableOpacity
-                style={[
-                  styles.composeSendBtn,
-                  (!message.trim() || sending) && styles.composeSendBtnDisabled,
-                ]}
-                onPress={handleSendMessage}
-                disabled={!message.trim() || sending}
-              >
-                {sending ? (
-                  <ActivityIndicator size="small" color="#fff" />
-                ) : (
-                  <Text style={styles.composeSendBtnText}>Pošalji</Text>
-                )}
+                <Text
+                  style={{
+                    color: V.silverDim,
+                    fontSize: 15,
+                    fontWeight: "600",
+                  }}
+                >
+                  Zatvori
+                </Text>
               </TouchableOpacity>
             </View>
             <TextInput
-              style={styles.composeInput}
+              style={[styles.composeInput, { flex: 1 }]}
               placeholder={`Napiši poruku za ${profile?.firstName}...`}
-              placeholderTextColor="#bbb"
+              placeholderTextColor={V.silverDim}
               value={message}
               onChangeText={setMessage}
               multiline
@@ -831,6 +873,50 @@ export default function UserProfileScreen() {
               autoFocus
               textAlignVertical="top"
             />
+            <View
+              style={{
+                flexDirection: "row",
+                alignItems: "center",
+                paddingHorizontal: 16,
+                paddingVertical: 12,
+                borderTopWidth: 1.5,
+                borderTopColor: V.borderGreen,
+                backgroundColor: V.forestDeep,
+                gap: 10,
+              }}
+            >
+              <TouchableOpacity
+                style={{
+                  flex: 1,
+                  paddingHorizontal: 18,
+                  height: 46,
+                  borderRadius: 23,
+                  backgroundColor:
+                    message.trim() && !sending ? V.visited : V.borderDim,
+                  borderWidth: 1.5,
+                  borderColor:
+                    message.trim() && !sending ? V.borderGreen : V.borderDim,
+                  justifyContent: "center",
+                  alignItems: "center",
+                }}
+                onPress={handleSendMessage}
+                disabled={!message.trim() || sending}
+              >
+                {sending ? (
+                  <ActivityIndicator size="small" color={V.silverBright} />
+                ) : (
+                  <Text
+                    style={{
+                      color: V.silverBright,
+                      fontSize: 15,
+                      fontWeight: "700",
+                    }}
+                  >
+                    Pošalji
+                  </Text>
+                )}
+              </TouchableOpacity>
+            </View>
           </SafeAreaView>
         </KeyboardAvoidingView>
       </Modal>
@@ -838,206 +924,427 @@ export default function UserProfileScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  safeArea: { flex: 1, backgroundColor: "#fff" },
-  center: { flex: 1, justifyContent: "center", alignItems: "center" },
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    padding: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: "#f0f0f0",
-  },
-  headerTitle: {
-    flex: 1,
-    fontSize: 17,
-    fontWeight: "600",
-    color: "#333",
-    marginHorizontal: 12,
-    textAlign: "center",
-  },
-  profileSection: {
-    alignItems: "center",
-    padding: 24,
-    borderBottomWidth: 1,
-    borderBottomColor: "#f0f0f0",
-  },
-  avatar: { width: 100, height: 100, borderRadius: 50 },
-  avatarPlaceholder: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
-    backgroundColor: "#667eea",
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  avatarInitials: { color: "#fff", fontSize: 38, fontWeight: "700" },
-  name: {
-    fontSize: 22,
-    fontWeight: "700",
-    color: "#1a1a1a",
-    marginTop: 12,
-    marginBottom: 4,
-  },
-  username: { fontSize: 15, color: "#667eea", marginBottom: 16 },
-  statsRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 24,
-    marginBottom: 20,
-  },
-  stat: { alignItems: "center" },
-  statNum: { fontSize: 20, fontWeight: "700", color: "#1a1a1a" },
-  statLabel: { fontSize: 12, color: "#999", marginTop: 2 },
-  statDivider: { width: 1, height: 32, backgroundColor: "#e0e0e0" },
-  actionRow: { flexDirection: "row", gap: 10, alignItems: "center" },
-  followBtn: {
-    backgroundColor: "#667eea",
-    borderRadius: 22,
-    paddingHorizontal: 28,
-    paddingVertical: 10,
-    minWidth: 100,
-    alignItems: "center",
-  },
-  followingBtn: {
-    backgroundColor: "#fff",
-    borderWidth: 1.5,
-    borderColor: "#667eea",
-  },
-  followBtnText: { color: "#fff", fontSize: 15, fontWeight: "700" },
-  followingBtnText: { color: "#667eea" },
-  msgBtn: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-    backgroundColor: "#f0f0ff",
-    borderRadius: 22,
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-  },
-  msgBtnText: { color: "#667eea", fontSize: 14, fontWeight: "600" },
-  goldenBtn: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: "#fff",
-    borderWidth: 2,
-    borderColor: "#FFD700",
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  goldenBtnActive: { backgroundColor: "#FFD700", borderColor: "#FFD700" },
-  blockedBanner: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-    backgroundColor: "#fff0f0",
-    borderRadius: 10,
-    padding: 10,
-    marginTop: 12,
-  },
-  blockedText: { fontSize: 12, color: "#ff4757", flex: 1 },
-  mediaSection: { padding: 16 },
-  mediaSectionTitle: {
-    fontSize: 16,
-    fontWeight: "700",
-    color: "#1a1a1a",
-    marginBottom: 12,
-  },
-  mediaGrid: { gap: 2 },
-  mediaItem: {
-    width: (SCREEN_W - 32) / 3,
-    aspectRatio: 1,
-    padding: 1,
-    position: "relative",
-  },
-  mediaThumb: { width: "100%", height: "100%", backgroundColor: "#f0f0f0" },
-  mediaPlaceholder: {
-    justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: "#f0f0ff",
-  },
-  playIcon: {
-    position: "absolute",
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: "rgba(0,0,0,0.2)",
-  },
-  likeBadge: {
-    position: "absolute",
-    bottom: 4,
-    right: 4,
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 2,
-    backgroundColor: "rgba(0,0,0,0.6)",
-    borderRadius: 10,
-    paddingHorizontal: 5,
-    paddingVertical: 2,
-  },
-  likeCount: { color: "#fff", fontSize: 10, fontWeight: "600" },
-  emptyMedia: { alignItems: "center", paddingTop: 40, gap: 12 },
-  emptyMediaText: { fontSize: 15, color: "#bbb" },
-  composeHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    padding: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: "#eee",
-  },
-  composeTitle: {
-    fontSize: 15,
-    fontWeight: "600",
-    color: "#333",
-    flex: 1,
-    marginHorizontal: 10,
-  },
-  composeSendBtn: {
-    backgroundColor: "#667eea",
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 20,
-  },
-  composeSendBtnDisabled: { backgroundColor: "#ccc" },
-  composeSendBtnText: { color: "#fff", fontWeight: "700" },
-  composeInput: {
-    flex: 1,
-    fontSize: 16,
-    color: "#333",
-    padding: 16,
-    lineHeight: 24,
-  },
-  imageModalHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    padding: 16,
-    backgroundColor: "#000",
-    borderBottomWidth: 1,
-    borderBottomColor: "#222",
-  },
-  imageModalTitle: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: "#fff",
-    flex: 1,
-    marginHorizontal: 12,
-    textAlign: "center",
-  },
-  imageModalContent: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: "#000",
-  },
-  imageModalImage: {
-    width: "100%",
-    height: "100%",
-  },
-});
+// const styles = StyleSheet.create({
+//   safeArea: { flex: 1, backgroundColor: "#fff" },
+//   center: { flex: 1, justifyContent: "center", alignItems: "center" },
+//   header: {
+//     flexDirection: "row",
+//     alignItems: "center",
+//     justifyContent: "space-between",
+//     padding: 16,
+//     borderBottomWidth: 1,
+//     borderBottomColor: "#f0f0f0",
+//   },
+//   headerTitle: {
+//     flex: 1,
+//     fontSize: 17,
+//     fontWeight: "600",
+//     color: "#333",
+//     marginHorizontal: 12,
+//     textAlign: "center",
+//   },
+//   profileSection: {
+//     alignItems: "center",
+//     padding: 24,
+//     borderBottomWidth: 1,
+//     borderBottomColor: "#f0f0f0",
+//   },
+//   avatar: { width: 100, height: 100, borderRadius: 50 },
+//   avatarPlaceholder: {
+//     width: 100,
+//     height: 100,
+//     borderRadius: 50,
+//     backgroundColor: "#667eea",
+//     justifyContent: "center",
+//     alignItems: "center",
+//   },
+//   avatarInitials: { color: "#fff", fontSize: 38, fontWeight: "700" },
+//   name: {
+//     fontSize: 22,
+//     fontWeight: "700",
+//     color: "#1a1a1a",
+//     marginTop: 12,
+//     marginBottom: 4,
+//   },
+//   username: { fontSize: 15, color: "#667eea", marginBottom: 16 },
+//   statsRow: {
+//     flexDirection: "row",
+//     alignItems: "center",
+//     gap: 24,
+//     marginBottom: 20,
+//   },
+//   stat: { alignItems: "center" },
+//   statNum: { fontSize: 20, fontWeight: "700", color: "#1a1a1a" },
+//   statLabel: { fontSize: 12, color: "#999", marginTop: 2 },
+//   statDivider: { width: 1, height: 32, backgroundColor: "#e0e0e0" },
+//   actionRow: { flexDirection: "row", gap: 10, alignItems: "center" },
+//   followBtn: {
+//     backgroundColor: "#667eea",
+//     borderRadius: 22,
+//     paddingHorizontal: 28,
+//     paddingVertical: 10,
+//     minWidth: 100,
+//     alignItems: "center",
+//   },
+//   followingBtn: {
+//     backgroundColor: "#fff",
+//     borderWidth: 1.5,
+//     borderColor: "#667eea",
+//   },
+//   followBtnText: { color: "#fff", fontSize: 15, fontWeight: "700" },
+//   followingBtnText: { color: "#667eea" },
+//   msgBtn: {
+//     flexDirection: "row",
+//     alignItems: "center",
+//     gap: 6,
+//     backgroundColor: "#f0f0ff",
+//     borderRadius: 22,
+//     paddingHorizontal: 16,
+//     paddingVertical: 10,
+//   },
+//   msgBtnText: { color: "#667eea", fontSize: 14, fontWeight: "600" },
+//   goldenBtn: {
+//     width: 44,
+//     height: 44,
+//     borderRadius: 22,
+//     backgroundColor: "#fff",
+//     borderWidth: 2,
+//     borderColor: "#FFD700",
+//     justifyContent: "center",
+//     alignItems: "center",
+//   },
+//   goldenBtnActive: { backgroundColor: "#FFD700", borderColor: "#FFD700" },
+//   blockedBanner: {
+//     flexDirection: "row",
+//     alignItems: "center",
+//     gap: 8,
+//     backgroundColor: "#fff0f0",
+//     borderRadius: 10,
+//     padding: 10,
+//     marginTop: 12,
+//   },
+//   blockedText: { fontSize: 12, color: "#ff4757", flex: 1 },
+//   mediaSection: { padding: 16 },
+//   mediaSectionTitle: {
+//     fontSize: 16,
+//     fontWeight: "700",
+//     color: "#1a1a1a",
+//     marginBottom: 12,
+//   },
+//   mediaGrid: { gap: 2 },
+//   mediaItem: {
+//     width: (SCREEN_W - 32) / 3,
+//     aspectRatio: 1,
+//     padding: 1,
+//     position: "relative",
+//   },
+//   mediaThumb: { width: "100%", height: "100%", backgroundColor: "#f0f0f0" },
+//   mediaPlaceholder: {
+//     justifyContent: "center",
+//     alignItems: "center",
+//     backgroundColor: "#f0f0ff",
+//   },
+//   playIcon: {
+//     position: "absolute",
+//     top: 0,
+//     left: 0,
+//     right: 0,
+//     bottom: 0,
+//     justifyContent: "center",
+//     alignItems: "center",
+//     backgroundColor: "rgba(0,0,0,0.2)",
+//   },
+//   likeBadge: {
+//     position: "absolute",
+//     bottom: 4,
+//     right: 4,
+//     flexDirection: "row",
+//     alignItems: "center",
+//     gap: 2,
+//     backgroundColor: "rgba(0,0,0,0.6)",
+//     borderRadius: 10,
+//     paddingHorizontal: 5,
+//     paddingVertical: 2,
+//   },
+//   likeCount: { color: "#fff", fontSize: 10, fontWeight: "600" },
+//   emptyMedia: { alignItems: "center", paddingTop: 40, gap: 12 },
+//   emptyMediaText: { fontSize: 15, color: "#bbb" },
+//   composeHeader: {
+//     flexDirection: "row",
+//     justifyContent: "space-between",
+//     alignItems: "center",
+//     padding: 16,
+//     borderBottomWidth: 1,
+//     borderBottomColor: "#eee",
+//   },
+//   composeTitle: {
+//     fontSize: 15,
+//     fontWeight: "600",
+//     color: "#333",
+//     flex: 1,
+//     marginHorizontal: 10,
+//   },
+//   composeSendBtn: {
+//     backgroundColor: "#667eea",
+//     paddingHorizontal: 16,
+//     paddingVertical: 8,
+//     borderRadius: 20,
+//   },
+//   composeSendBtnDisabled: { backgroundColor: "#ccc" },
+//   composeSendBtnText: { color: "#fff", fontWeight: "700" },
+//   composeInput: {
+//     flex: 1,
+//     fontSize: 16,
+//     color: "#333",
+//     padding: 16,
+//     lineHeight: 24,
+//   },
+//   imageModalHeader: {
+//     flexDirection: "row",
+//     justifyContent: "space-between",
+//     alignItems: "center",
+//     padding: 16,
+//     backgroundColor: "#000",
+//     borderBottomWidth: 1,
+//     borderBottomColor: "#222",
+//   },
+//   imageModalTitle: {
+//     fontSize: 16,
+//     fontWeight: "600",
+//     color: "#fff",
+//     flex: 1,
+//     marginHorizontal: 12,
+//     textAlign: "center",
+//   },
+//   imageModalContent: {
+//     flex: 1,
+//     justifyContent: "center",
+//     alignItems: "center",
+//     backgroundColor: "#000",
+//   },
+//   imageModalImage: {
+//     width: "100%",
+//     height: "100%",
+//   },
+// });
+
+// Izbaci statički const styles = StyleSheet.create({...}) s dna datoteke
+// i dodaj ovu funkciju:
+function makeStyles(V: ReturnType<typeof getVara>) {
+  return StyleSheet.create({
+    safeArea: { flex: 1, backgroundColor: V.forestDeep },
+    center: {
+      flex: 1,
+      justifyContent: "center",
+      alignItems: "center",
+      backgroundColor: V.forestDeep,
+    },
+    header: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      padding: 16,
+      borderBottomWidth: 1,
+      borderBottomColor: V.borderGreen,
+      backgroundColor: V.forestDeep,
+    },
+    headerTitle: {
+      flex: 1,
+      fontSize: 17,
+      fontWeight: "600",
+      color: V.silverBright,
+      marginHorizontal: 12,
+      textAlign: "center",
+    },
+    profileSection: {
+      alignItems: "center",
+      padding: 24,
+      borderBottomWidth: 1,
+      borderBottomColor: V.borderDim,
+      backgroundColor: V.forestDeep,
+    },
+    avatar: { width: 100, height: 100, borderRadius: 50 },
+    avatarPlaceholder: {
+      width: 100,
+      height: 100,
+      borderRadius: 50,
+      backgroundColor: V.forestLight,
+      justifyContent: "center",
+      alignItems: "center",
+    },
+    avatarInitials: { color: V.silverBright, fontSize: 38, fontWeight: "700" },
+    name: {
+      fontSize: 22,
+      fontWeight: "700",
+      color: V.silverBright,
+      marginTop: 12,
+      marginBottom: 4,
+    },
+    username: { fontSize: 15, color: V.visited, marginBottom: 16 },
+    statsRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 24,
+      marginBottom: 20,
+    },
+    stat: { alignItems: "center" },
+    statNum: { fontSize: 20, fontWeight: "700", color: V.silverBright },
+    statLabel: { fontSize: 12, color: V.silverDim, marginTop: 2 },
+    statDivider: { width: 1, height: 32, backgroundColor: V.borderDim },
+    actionRow: { flexDirection: "row", gap: 10, alignItems: "center" },
+    followBtn: {
+      backgroundColor: V.visited,
+      borderRadius: 22,
+      paddingHorizontal: 28,
+      paddingVertical: 10,
+      minWidth: 100,
+      alignItems: "center",
+    },
+    followingBtn: {
+      backgroundColor: "transparent",
+      borderWidth: 1.5,
+      borderColor: V.visited,
+    },
+    followBtnText: { color: V.silverBright, fontSize: 15, fontWeight: "700" },
+    followingBtnText: { color: V.visited },
+    msgBtn: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 6,
+      backgroundColor: V.forestMid,
+      borderRadius: 22,
+      paddingHorizontal: 16,
+      paddingVertical: 10,
+      borderWidth: 1,
+      borderColor: V.borderGreen,
+    },
+    msgBtnText: { color: V.visited, fontSize: 14, fontWeight: "600" },
+    goldenBtn: {
+      width: 44,
+      height: 44,
+      borderRadius: 22,
+      backgroundColor: V.forestMid,
+      borderWidth: 2,
+      borderColor: V.accentGold,
+      justifyContent: "center",
+      alignItems: "center",
+    },
+    goldenBtnActive: {
+      backgroundColor: V.accentGold,
+      borderColor: V.accentGold,
+    },
+    blockedBanner: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 8,
+      backgroundColor: V.forestMid,
+      borderRadius: 10,
+      padding: 10,
+      marginTop: 12,
+      borderWidth: 1,
+      borderColor: V.danger,
+    },
+    blockedText: { fontSize: 12, color: V.danger, flex: 1 },
+    mediaSection: { padding: 16, backgroundColor: V.forestDeep },
+    mediaSectionTitle: {
+      fontSize: 16,
+      fontWeight: "700",
+      color: V.silverBright,
+      marginBottom: 12,
+    },
+    mediaGrid: { gap: 2 },
+    mediaItem: {
+      width: (SCREEN_W - 32) / 3,
+      aspectRatio: 1,
+      padding: 1,
+      position: "relative",
+    },
+    mediaThumb: { width: "100%", height: "100%", backgroundColor: V.forestMid },
+    mediaPlaceholder: {
+      justifyContent: "center",
+      alignItems: "center",
+      backgroundColor: V.forestMid,
+    },
+    playIcon: {
+      position: "absolute",
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
+      justifyContent: "center",
+      alignItems: "center",
+      backgroundColor: "rgba(0,0,0,0.2)",
+    },
+    likeBadge: {
+      position: "absolute",
+      bottom: 4,
+      right: 4,
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 2,
+      backgroundColor: "rgba(0,0,0,0.6)",
+      borderRadius: 10,
+      paddingHorizontal: 5,
+      paddingVertical: 2,
+    },
+    likeCount: { color: "#fff", fontSize: 10, fontWeight: "600" },
+    emptyMedia: { alignItems: "center", paddingTop: 40, gap: 12 },
+    emptyMediaText: { fontSize: 15, color: V.silverDim },
+    // Compose modal
+    composeHeader: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "center",
+      padding: 16,
+      borderBottomWidth: 1,
+      borderBottomColor: V.borderDim,
+      backgroundColor: V.forestDeep,
+    },
+    composeTitle: {
+      fontSize: 15,
+      fontWeight: "600",
+      color: V.silverBright,
+      flex: 1,
+      marginHorizontal: 10,
+    },
+    composeSendBtn: {
+      backgroundColor: V.visited,
+      paddingHorizontal: 16,
+      paddingVertical: 8,
+      borderRadius: 20,
+    },
+    composeSendBtnDisabled: { backgroundColor: V.borderDim },
+    composeSendBtnText: { color: V.silverBright, fontWeight: "700" },
+    composeInput: {
+      flex: 1,
+      fontSize: 16,
+      color: V.silverBright,
+      padding: 16,
+      lineHeight: 24,
+      backgroundColor: V.forestDeep,
+    },
+    // Image/Video modal
+    imageModalHeader: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "center",
+      padding: 16,
+      backgroundColor: "#000",
+    },
+    imageModalTitle: {
+      fontSize: 16,
+      fontWeight: "600",
+      color: "#fff",
+      flex: 1,
+      marginHorizontal: 12,
+      textAlign: "center",
+    },
+    imageModalContent: {
+      flex: 1,
+      justifyContent: "center",
+      alignItems: "center",
+      backgroundColor: "#000",
+    },
+    imageModalImage: { width: "100%", height: "100%" },
+  });
+}

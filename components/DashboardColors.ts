@@ -1,0 +1,26 @@
+export function getDashColors(isDark: boolean) {
+  return {
+    bg: isDark ? "#1a2e1a" : "#f0ede4",
+    card: isDark ? "#2a4230" : "#e4ead8",
+    cardHover: isDark ? "#3a5a30" : "#ccdcb8",
+    border: isDark ? "#4a7040" : "#5a8a40",
+    borderDim: isDark ? "#3a5a30" : "#c0d0a8",
+    text: isDark ? "#e8e8e8" : "#1a2a18",
+    textSub: isDark ? "#c0c0c0" : "#3a4a35",
+    textDim: isDark ? "#a0a0a0" : "#5a6a55",
+    accent: isDark ? "#5a8a48" : "#3a6a28",
+    gold: "#B8A060",
+    inputBg: isDark ? "#2a4230" : "#e4ead8",
+    inputBorder: isDark ? "#4a7040" : "#5a8a40",
+    danger: isDark ? "#8B3030" : "#7a2020",
+    overlay: isDark ? "rgba(0,0,0,0.6)" : "rgba(0,0,0,0.4)",
+    headerText: isDark ? "#e8e8e8" : "#1a2a18",
+    headerSub: isDark ? "#b0b0b0" : "#5a6a55",
+    chip: isDark ? "#2a4230" : "#e4ead8",
+    chipActive: isDark ? "#3a5a30" : "#ccdcb8",
+    chipBorder: isDark ? "#3a5a30" : "#c0d0a8",
+    chipBorderActive: isDark ? "#5a8a48" : "#3a6a28",
+    msgBubble: isDark ? "#2a4230" : "#e4ead8",
+    msgBubbleMine: isDark ? "#3a5a30" : "#ccdcb8",
+  } as const;
+}

@@ -26,7 +26,7 @@ import {
   Modal,
   Platform,
   ScrollView,
-  Share,
+  StyleSheet,
   Switch,
   Text,
   TextInput,
@@ -34,16 +34,9 @@ import {
   View,
 } from "react-native";
 import MapView, { Circle, Marker, Region } from "react-native-maps";
-import {
-  ag,
-  dm,
-  mapLegend,
-  pb,
-  planStyles,
-  pm,
-  pr,
-  s,
-} from "../../styles/varaTheme";
+import { useTheme } from "../../components/AdaptiveThemeProvider";
+import { PlanMyDayModal } from "../../components/PlanMyDayModal";
+import { ag, dm, pb, pr, s } from "../../styles/varaTheme";
 import { API_BASE_URL } from "../config/api";
 import {
   clearPlacesCache,
@@ -53,6 +46,88 @@ import {
   placeCategories,
   searchPlaces,
 } from "../services/locationService";
+
+// ─── Tema palete ──────────────────────────────────────────────────────────────
+const PALETTE = {
+  vara: {
+    // Trenutna Vara zelena (nepromijenjena)
+    bg: "#1a2e1a",
+    card: "#2a4230",
+    section: "#3a5a30",
+    border: "#4a7040",
+    borderDim: "#3a5a30",
+    text: "#e8e8e8",
+    textSub: "#c0c0c0",
+    textDim: "#a0a0a0",
+    accent: "#5a8a48",
+    gold: "#B8A060",
+    danger: "#8B3030",
+    inputBg: "#2a4230",
+    overlay: "rgba(0,0,0,0.6)",
+    headerBorder: "#4a7040",
+  },
+  light: {
+    bg: "#f5f0e8",
+    card: "#fffdf5",
+    section: "#e8dfc8",
+    border: "#c8a840",
+    borderDim: "#e0d090",
+    text: "#2a2010",
+    textSub: "#5a4a20",
+    textDim: "#8a7a50",
+    accent: "#5a8a20",
+    gold: "#9a7820",
+    danger: "#8B3030",
+    inputBg: "#fffdf5",
+    overlay: "rgba(80,60,0,0.25)",
+    headerBorder: "#c8a840",
+  },
+  dark: {
+    bg: "#0a0414",
+    card: "#160d28",
+    section: "#221040",
+    border: "#5040a0",
+    borderDim: "#3a2870",
+    text: "#e0d8ff",
+    textSub: "#b0a0e0",
+    textDim: "#7060a0",
+    accent: "#7868d0",
+    gold: "#c0a840",
+    danger: "#c04060",
+    inputBg: "#160d28",
+    overlay: "rgba(0,0,0,0.75)",
+    headerBorder: "#5040a0",
+  },
+} as const;
+
+type PaletteKey = keyof typeof PALETTE;
+
+function getDashColors(isDark: boolean) {
+  return {
+    bg: isDark ? "#1a2e1a" : "#f0ede4",
+    card: isDark ? "#2a4230" : "#e4ead8",
+    cardHover: isDark ? "#3a5a30" : "#ccdcb8",
+    border: isDark ? "#4a7040" : "#5a8a40",
+    borderDim: isDark ? "#3a5a30" : "#c0d0a8",
+    text: isDark ? "#e8e8e8" : "#1a2a18",
+    textSub: isDark ? "#c0c0c0" : "#3a4a35",
+    textDim: isDark ? "#a0a0a0" : "#5a6a55",
+    accent: isDark ? "#5a8a48" : "#3a6a28",
+    gold: "#B8A060",
+    inputBg: isDark ? "#2a4230" : "#e4ead8",
+    inputBorder: isDark ? "#4a7040" : "#5a8a40",
+    danger: isDark ? "#8B3030" : "#7a2020",
+    overlay: isDark ? "rgba(0,0,0,0.6)" : "rgba(0,0,0,0.4)",
+    headerText: isDark ? "#e8e8e8" : "#1a2a18",
+    headerSub: isDark ? "#b0b0b0" : "#5a6a55",
+    chip: isDark ? "#2a4230" : "#e4ead8",
+    chipActive: isDark ? "#3a5a30" : "#ccdcb8",
+    chipBorder: isDark ? "#3a5a30" : "#c0d0a8",
+    chipBorderActive: isDark ? "#5a8a48" : "#3a6a28",
+    msgBubble: isDark ? "#2a4230" : "#e4ead8",
+    msgBubbleMine: isDark ? "#3a5a30" : "#ccdcb8",
+  } as const;
+}
 
 const visitedIcon = require("../../assets/images/posmjesta.png");
 const planIcon = require("../../assets/images/put.png");
@@ -167,7 +242,7 @@ const STORAGE_GROUPS = "cromap_groups_v4";
 const STORAGE_NOTIFS = "cromap_notif_prefs_v4";
 
 // Početni limit rezultata na karti
-const INITIAL_RESULTS_LIMIT = 10;
+const INITIAL_RESULTS_LIMIT = 20;
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 interface PlaceReview {
@@ -212,6 +287,172 @@ interface NotifPrefs {
   categories: string[];
 }
 
+interface VenueItem {
+  name: string;
+  address?: string;
+  latitude: number;
+  longitude: number;
+}
+
+interface DayRoute {
+  label: string;
+  color: string;
+  stops: { venue: VenueItem; type: string; order: number }[];
+  coordinates: { latitude: number; longitude: number }[];
+}
+
+const ROUTE_COLORS = ["#667eea", "#ff6b6b", "#00b894", "#fdcb6e", "#a29bfe"];
+const ROUTE_LABELS = ["A", "B", "C", "D", "E"];
+
+// ZAMIJENI stari CATEGORY_HOURS tip i konstantu s ovim:
+
+interface HourRange {
+  open: number;
+  close: number;
+  days?: number[]; // 0=ned, 1=pon, 2=uto, 3=sri, 4=čet, 5=pet, 6=sub
+  // ako nije navedeno → vrijedi svaki dan
+}
+
+const CATEGORY_HOURS: Record<string, HourRange[]> = {
+  // ── HRANA & PIĆE ──────────────────────────────────────────────
+  cafe: [
+    { open: 7, close: 22, days: [1, 2, 3, 4, 5] }, // pon–pet
+    { open: 8, close: 22, days: [6] }, // sub
+    { open: 9, close: 21, days: [0] },
+  ],
+  restaurant: [
+    { open: 11, close: 23, days: [1, 2, 3, 4, 5] },
+    { open: 11, close: 23, days: [6, 0] }, // sub+ned — većina radi
+  ],
+  club: [
+    { open: 23, close: 28, days: [4, 5, 6] }, // čet, pet, sub (ned ujutro)
+    // Nedjelja i pon–sri: zatvoreno → nema range-a
+  ],
+
+  // ── PRIRODA & SPORT ───────────────────────────────────────────
+  beach: [{ open: 6, close: 21 }], // svi dani
+  park: [{ open: 6, close: 22 }], // svi dani
+  mountain: [{ open: 5, close: 20 }],
+  nationalPark: [{ open: 7, close: 20 }],
+  cave: [
+    { open: 9, close: 18, days: [1, 2, 3, 4, 5, 6] },
+    { open: 10, close: 16, days: [0] }, // ned kraće
+  ],
+  paintball: [
+    { open: 9, close: 21, days: [1, 2, 3, 4, 5] },
+    { open: 10, close: 21, days: [6, 0] },
+  ],
+
+  // ── KULTURA & ZABAVA ──────────────────────────────────────────
+  museum: [
+    { open: 9, close: 20, days: [1, 2, 3, 4, 5] }, // pon–pet
+    { open: 10, close: 18, days: [6] }, // sub
+    { open: 10, close: 14, days: [0] }, // ned samo prijepodne (ili zatvoreno)
+    // Ako želiš da ned = zatvoreno, izbriši zadnji red
+  ],
+  theater: [
+    { open: 19, close: 23, days: [1, 2, 3, 4, 5, 6] }, // ned uglavnom ne radi
+  ],
+  cinema: [
+    { open: 14, close: 23, days: [1, 2, 3, 4, 5] },
+    { open: 11, close: 24, days: [6, 0] }, // sub+ned od podneva
+  ],
+  landmark: [{ open: 8, close: 21 }], // vanjski — uvijek
+  escapeRoom: [
+    { open: 10, close: 23, days: [1, 2, 3, 4, 5] },
+    { open: 10, close: 23, days: [6, 0] },
+  ],
+
+  // ── KUPOVINA & USLUGE ─────────────────────────────────────────
+  market: [
+    { open: 7, close: 14, days: [1, 2, 3, 4, 5, 6] }, // pon–sub
+    // ned = zatvoreno
+  ],
+  opg: [
+    { open: 8, close: 18, days: [1, 2, 3, 4, 5, 6] },
+    { open: 9, close: 14, days: [0] },
+  ],
+
+  // ── WELLBEING ─────────────────────────────────────────────────
+  spa: [
+    { open: 9, close: 21, days: [1, 2, 3, 4, 5] },
+    { open: 10, close: 20, days: [6, 0] },
+  ],
+
+  // ── SMJEŠTAJ ─────────────────────────────────────────────────
+  accommodation: [{ open: 0, close: 24 }],
+};
+
+/**
+ * Vraća true ako je kategorija trenutno otvorena (prema tipičnim satima).
+ * @param type  - ključ kategorije (npr. "cafe", "club")
+ * @param nowH  - trenutni sat + minute kao decimalni broj (npr. 14.5 = 14:30)
+ */
+// ZAMIJENI staru isCategoryOpenNow s ovom:
+
+function isCategoryOpenNow(
+  type: string,
+  nowH: number,
+  dayOfWeek?: number,
+): boolean {
+  const ranges = CATEGORY_HOURS[type];
+  if (!ranges) return true; // nepoznata kategorija → prikaži
+
+  const day = dayOfWeek ?? new Date().getDay(); // 0=ned, 1=pon ... 6=sub
+
+  return ranges.some(({ open, close, days }) => {
+    // provjeri dan — ako days nije naveden, vrijedi svaki dan
+    if (days !== undefined && !days.includes(day)) return false;
+
+    if (close <= 24) {
+      return nowH >= open && nowH < close;
+    } else {
+      // prelazi ponoć (npr. club 23–28 = 23:00–04:00)
+      return nowH >= open || nowH < close - 24;
+    }
+  });
+}
+
+/**
+ * Vraća decimalni sat od trenutne lokalne naredbe korisnika.
+ * Npr. 14:30 → 14.5
+ */
+function getCurrentHour(): number {
+  const now = new Date();
+  return now.getHours() + now.getMinutes() / 60;
+}
+
+// ── Svaka doba dana ima svoje kategorije i minimalni raspon otvorenosti ───────
+// TIME_CATS je već definiran u kodu — ne trebate ga mijenjati.
+// Dodajemo samo ovu "idealnu" mapu za prikaz u filtru (informativno):
+const TOD_HOURS: Record<string, { label: string; from: number; to: number }> = {
+  jutro: { label: "06:00 – 12:00", from: 6, to: 12 },
+  poslijepodne: { label: "12:00 – 18:00", from: 12, to: 18 },
+  vecer: { label: "18:00 – 24:00", from: 18, to: 24 },
+};
+
+const ACTIVITY_DURATION: Record<string, number> = {
+  cafe: 45, // kava/doručak ~45 min
+  restaurant: 75, // ručak/večera ~75 min
+  museum: 90,
+  landmark: 50,
+  beach: 150,
+  park: 45,
+  cinema: 110, // film ~100min + dolazak
+  theater: 120,
+  escapeRoom: 75,
+  paintball: 90,
+  spa: 120,
+  club: 180,
+  market: 40,
+  nationalPark: 180,
+  cave: 60,
+  opg: 60,
+  mountain: 240,
+  accommodation: 0,
+};
+const TRAVEL_MIN = 15;
+
 // ─── Category meta ────────────────────────────────────────────────────────────
 const EMOJIS: Record<string, string> = {
   restaurant: "🍽️",
@@ -233,6 +474,329 @@ const EMOJIS: Record<string, string> = {
   cave: "🕳️",
   spa: "💧",
 };
+
+const BOTTOM_NAV_HEIGHT = Platform.OS === "ios" ? 82 : 66;
+
+const UI_STYLES = StyleSheet.create({
+  // ── TOP BAR ────────────────────────────────────────────────────────────────
+  topBar: {
+    position: "absolute",
+    top: Platform.OS === "ios" ? 54 : 36,
+    left: 12,
+    right: 12,
+    gap: 8,
+  },
+  searchCard: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#fff",
+    borderRadius: 18,
+    paddingLeft: 14,
+    paddingRight: 6,
+    paddingVertical: 5,
+    gap: 6,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.14,
+    shadowRadius: 8,
+    elevation: 7,
+  },
+  searchPrefixIcon: {
+    fontSize: 16,
+    color: "#999",
+  },
+  searchInput: {
+    flex: 1,
+    fontSize: 15,
+    color: "#333",
+    paddingVertical: 7,
+  },
+  searchGoBtn: {
+    backgroundColor: "#3a6a28",
+    borderRadius: 13,
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+  },
+  searchGoBtnText: {
+    color: "#fff",
+    fontWeight: "700",
+    fontSize: 13,
+    letterSpacing: 0.3,
+  },
+  searchClearBtn: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: "#f0f0f0",
+    justifyContent: "center",
+    alignItems: "center",
+    marginLeft: 2,
+  },
+  searchClearText: {
+    color: "#888",
+    fontSize: 14,
+    fontWeight: "700",
+  },
+  locationBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "rgba(42,66,48,0.92)",
+    borderRadius: 14,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    alignSelf: "flex-start",
+    borderWidth: 1,
+    borderColor: "#5a8a48",
+    gap: 5,
+  },
+  locationBadgeText: {
+    color: "#e0f0d0",
+    fontSize: 12,
+    fontWeight: "600",
+  },
+
+  // ── DOBA DANA CHIPS ────────────────────────────────────────────────────────
+  todRow: {
+    flexDirection: "row",
+    gap: 6,
+    alignItems: "center",
+  },
+  todChip: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    backgroundColor: "rgba(255,255,255,0.93)",
+    borderRadius: 20,
+    paddingHorizontal: 12,
+    paddingVertical: 7,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.12,
+    shadowRadius: 4,
+    elevation: 4,
+  },
+  todChipActive: {
+    backgroundColor: "#1a3020",
+    borderWidth: 1.5,
+    borderColor: "#5a8a48",
+  },
+  todChipIcon: {
+    width: 22,
+    height: 22,
+  },
+  todChipLabel: {
+    fontSize: 12,
+    fontWeight: "700",
+    color: "#444",
+    letterSpacing: 0.2,
+  },
+  todChipLabelActive: {
+    color: "#c0e0a0",
+  },
+  filterActiveBadge: {
+    backgroundColor: "#3a6a28",
+    borderRadius: 14,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    marginLeft: 2,
+    borderWidth: 1,
+    borderColor: "#5a8a48",
+  },
+  filterActiveBadgeText: {
+    color: "#e0f0d0",
+    fontSize: 11,
+    fontWeight: "700",
+  },
+
+  // ── MAP CONTROLS (desno, samo kontrole karte) ─────────────────────────────
+  mapCtrlPanel: {
+    position: "absolute",
+    right: 12,
+    top: Platform.OS === "ios" ? 202 : 178,
+    backgroundColor: "#fff",
+    borderRadius: 18,
+    paddingVertical: 6,
+    paddingHorizontal: 6,
+    gap: 0,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.16,
+    shadowRadius: 8,
+    elevation: 8,
+    borderWidth: 1,
+    borderColor: "rgba(0,0,0,0.06)",
+  },
+  mapCtrlBtn: {
+    width: 46,
+    height: 46,
+    borderRadius: 12,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  mapCtrlBtnActive: {
+    backgroundColor: "rgba(90,138,72,0.14)",
+  },
+  mapCtrlBtnVisited: {
+    backgroundColor: "rgba(52,199,89,0.14)",
+  },
+  mapCtrlIcon: {
+    width: 28,
+    height: 28,
+  },
+  mapCtrlDivider: {
+    height: 1,
+    backgroundColor: "#eeeeee",
+    marginHorizontal: 6,
+    marginVertical: 3,
+  },
+  mapCtrlActiveDot: {
+    position: "absolute",
+    top: 7,
+    right: 7,
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: "#34c759",
+    borderWidth: 1.5,
+    borderColor: "#fff",
+  },
+
+  // ── INFO BAR (loading / broj rezultata) ───────────────────────────────────
+  infoBar: {
+    position: "absolute",
+    bottom: 70,
+    left: 16,
+    right: 16,
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "rgba(20,40,20,0.86)",
+    borderRadius: 22,
+    paddingVertical: 9,
+    paddingHorizontal: 18,
+    gap: 10,
+    justifyContent: "space-between",
+    borderWidth: 1,
+    borderColor: "rgba(90,138,72,0.4)",
+  },
+  infoBarText: {
+    color: "#d0e8c0",
+    fontSize: 13,
+    fontWeight: "600",
+    flex: 1,
+  },
+  infoShowMoreBtn: {
+    backgroundColor: "#3a6a28",
+    borderRadius: 14,
+    paddingHorizontal: 13,
+    paddingVertical: 6,
+    borderWidth: 1,
+    borderColor: "#5a8a48",
+  },
+  infoShowMoreText: {
+    color: "#e0f0d0",
+    fontSize: 12,
+    fontWeight: "700",
+  },
+
+  // ── BOTTOM NAVIGATION BAR ─────────────────────────────────────────────────
+  bottomNav: {
+    position: "absolute",
+    bottom: 0,
+    left: 0,
+    right: 0,
+    backgroundColor: "#131f14",
+    borderTopWidth: 1.5,
+    borderTopColor: "#3a5a30",
+    flexDirection: "row",
+    paddingBottom: Platform.OS === "ios" ? 26 : 10,
+    paddingTop: 10,
+    paddingHorizontal: 0,
+  },
+  navItem: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 4,
+    paddingHorizontal: 2,
+    minHeight: 44,
+  },
+  navIconWrap: {
+    position: "relative",
+    width: 32,
+    height: 32,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  navIcon: {
+    width: 26,
+    height: 26,
+  },
+  navLabel: {
+    fontSize: 9,
+    color: "#7a9a70",
+    fontWeight: "600",
+    textAlign: "center",
+    letterSpacing: 0.1,
+  },
+  navLabelActive: {
+    color: "#a0d080",
+    fontWeight: "700",
+  },
+  navBadge: {
+    position: "absolute",
+    top: -4,
+    right: -6,
+    minWidth: 16,
+    height: 16,
+    borderRadius: 8,
+    backgroundColor: "#cc3830",
+    justifyContent: "center",
+    alignItems: "center",
+    borderWidth: 1.5,
+    borderColor: "#131f14",
+    paddingHorizontal: 3,
+  },
+  navBadgeText: {
+    color: "#fff",
+    fontSize: 9,
+    fontWeight: "800",
+  },
+
+  // Filteri gumb u bottom nav — ima poseban stil kad je aktivan
+  navFilterBtn: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 4,
+    paddingHorizontal: 2,
+    minHeight: 44,
+  },
+  navFilterIconWrap: {
+    width: 32,
+    height: 32,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  navFilterBadge: {
+    position: "absolute",
+    top: -4,
+    right: -6,
+    minWidth: 16,
+    height: 16,
+    borderRadius: 8,
+    backgroundColor: "#3a6a28",
+    justifyContent: "center",
+    alignItems: "center",
+    borderWidth: 1.5,
+    borderColor: "#131f14",
+    paddingHorizontal: 3,
+  },
+  navFilterBadgeText: {
+    color: "#d0f0a0",
+    fontSize: 9,
+    fontWeight: "800",
+  },
+});
 
 const BADGE_T = [10, 20, 30, 40, 50];
 const BADGE_NAMES: Record<string, Record<number, string>> = {
@@ -387,6 +951,93 @@ async function backendDeleteVisit(id: string) {
   }
 }
 
+function fmtTime(startMin: number, durMin: number) {
+  const fmt = (m: number) => {
+    const h = Math.floor(m / 60) % 24;
+    const mm = m % 60;
+    return `${String(h).padStart(2, "0")}:${String(mm).padStart(2, "0")}`;
+  };
+  return `${fmt(startMin)}–${fmt(startMin + durMin)}`;
+}
+
+// ─── Generiraj 5 ruta A–E ─────────────────────────────────────────────────────
+function generateDayRoutes(venues: Record<string, VenueItem[]>): DayRoute[] {
+  // Tipični redoslijed aktivnosti kroz dan
+  const STOP_SEQUENCE = [
+    "cafe", // Doručak / jutarnja kava
+    "landmark", // Razgledavanje
+    "park", // Šetnja
+    "restaurant", // Ručak
+    "museum", // Poslijepodnevna aktivnost
+    "beach", // Plaža / opuštanje
+    "cafe", // Poslijepodnevna kava (drugi indeks)
+    "restaurant", // Večera
+    "club", // Noćni izlazak
+  ];
+
+  const catKeys = Object.keys(venues).filter((k) => venues[k].length > 0);
+
+  const routes: DayRoute[] = [];
+  for (let r = 0; r < 5; r++) {
+    const stops: DayRoute["stops"] = [];
+
+    for (let si = 0; si < STOP_SEQUENCE.length; si++) {
+      const type = STOP_SEQUENCE[si];
+      const list = venues[type];
+      if (!list || list.length === 0) continue;
+      // Svaka ruta uzima drugačiji item po modulo indeksu
+      const item = list[(r + si) % list.length];
+      stops.push({ venue: item, type, order: stops.length + 1 });
+    }
+
+    // Fallback: ako ima premalo standardnih, dodaj ostale kategorije
+    if (stops.length < 3) {
+      catKeys.forEach((type) => {
+        if (stops.length >= 6) return;
+        const list = venues[type];
+        const item = list[r % list.length];
+        if (!stops.find((s) => s.venue.name === item.name)) {
+          stops.push({ venue: item, type, order: stops.length + 1 });
+        }
+      });
+    }
+
+    // Reassign order
+    stops.forEach((s, i) => (s.order = i + 1));
+
+    routes.push({
+      label: ROUTE_LABELS[r],
+      color: ROUTE_COLORS[r],
+      stops,
+      coordinates: stops.map((s) => ({
+        latitude: s.venue.latitude,
+        longitude: s.venue.longitude,
+      })),
+    });
+  }
+  return routes.filter((r) => r.stops.length > 0);
+}
+
+function buildSmartSchedule(
+  route: DayRoute,
+  companions: CompanionType,
+  preference: PreferenceType,
+): { time: string; type: string; venue: VenueItem }[] {
+  const schedule: { time: string; type: string; venue: VenueItem }[] = [];
+  let cursor = 8 * 60; // 08:00
+
+  for (const stop of route.stops) {
+    const dur = ACTIVITY_DURATION[stop.type] ?? 60;
+    schedule.push({
+      time: fmtTime(cursor, dur),
+      type: stop.type,
+      venue: stop.venue,
+    });
+    cursor += dur + TRAVEL_MIN;
+  }
+  return schedule;
+}
+
 // ─── badge helpers ────────────────────────────────────────────────────────────
 async function checkBadges(
   placeType: string,
@@ -417,25 +1068,83 @@ async function checkBadges(
 // ══════════════════════════════════════════════════════════════════════════════
 
 function UserLocationMarker() {
+  const pulse = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    const anim = Animated.loop(
+      Animated.sequence([
+        Animated.timing(pulse, {
+          toValue: 1,
+          duration: 1500,
+          useNativeDriver: true,
+        }),
+        Animated.timing(pulse, {
+          toValue: 0,
+          duration: 1500,
+          useNativeDriver: true,
+        }),
+      ]),
+    );
+    anim.start();
+    return () => anim.stop();
+  }, []);
+
+  const outerOpacity = pulse.interpolate({
+    inputRange: [0, 1],
+    outputRange: [0.6, 0.1],
+  });
+  const outerScale = pulse.interpolate({
+    inputRange: [0, 1],
+    outputRange: [1, 1.8],
+  });
+
   return (
     <View
       style={{
-        width: 96,
-        height: 96,
+        width: 48,
+        height: 48,
         alignItems: "center",
         justifyContent: "center",
-        backgroundColor: "transparent",
       }}
     >
-      <Image
-        source={putnikIcon}
+      {/* Pulsirajući vanjski krug */}
+      <Animated.View
         style={{
-          width: 96,
-          height: 96,
-          resizeMode: "contain",
+          position: "absolute",
+          width: 44,
+          height: 44,
+          borderRadius: 22,
+          backgroundColor: "#007AFF",
+          opacity: outerOpacity,
+          transform: [{ scale: outerScale }],
         }}
-        fadeDuration={0}
       />
+      {/* Bijeli rub */}
+      <View
+        style={{
+          width: 26,
+          height: 26,
+          borderRadius: 13,
+          backgroundColor: "#fff",
+          justifyContent: "center",
+          alignItems: "center",
+          elevation: 4,
+          shadowColor: "#000",
+          shadowOffset: { width: 0, height: 2 },
+          shadowOpacity: 0.3,
+          shadowRadius: 3,
+        }}
+      >
+        {/* Plava unutarnja točka */}
+        <View
+          style={{
+            width: 18,
+            height: 18,
+            borderRadius: 9,
+            backgroundColor: "#007AFF",
+          }}
+        />
+      </View>
     </View>
   );
 }
@@ -510,7 +1219,6 @@ function PlaceMarker({
       tracksViewChanges={isVisited}
     >
       <View style={{ alignItems: "center", width: 60, height: 74 }}>
-        {/* Vibrirajući prsten */}
         {isVisited && (
           <Animated.View
             style={{
@@ -526,10 +1234,7 @@ function PlaceMarker({
             }}
           />
         )}
-
-        {/* Marker krug s ikonom */}
         {iconSource ? (
-          // Android zahtijeva ImageBackground za borderRadius + sadržaj
           <ImageBackground
             source={iconSource}
             style={{
@@ -548,7 +1253,6 @@ function PlaceMarker({
             resizeMode="contain"
             fadeDuration={0}
           >
-            {/* Poluprozirna pozadina u boji kategorije */}
             <View
               style={{
                 position: "absolute",
@@ -561,7 +1265,6 @@ function PlaceMarker({
             />
           </ImageBackground>
         ) : (
-          // Fallback — emoji ako nema ikone
           <View
             style={{
               width: 50,
@@ -572,18 +1275,11 @@ function PlaceMarker({
               alignItems: "center",
               borderWidth: 2.5,
               borderColor: "#fff",
-              shadowColor: "#000",
-              shadowOffset: { width: 0, height: 3 },
-              shadowOpacity: 0.4,
-              shadowRadius: 4,
-              elevation: 7,
             }}
           >
             <Text style={{ fontSize: 22 }}>{EMOJIS[place.type] || "📍"}</Text>
           </View>
         )}
-
-        {/* Zelena kvačica za posjećena */}
         {isVisited && (
           <View
             style={{
@@ -606,8 +1302,6 @@ function PlaceMarker({
             </Text>
           </View>
         )}
-
-        {/* Pin */}
         <View
           style={{
             width: 5,
@@ -615,6 +1309,86 @@ function PlaceMarker({
             backgroundColor: color,
             borderBottomLeftRadius: 5,
             borderBottomRightRadius: 5,
+            marginTop: -2,
+          }}
+        />
+      </View>
+    </Marker>
+  );
+}
+
+function PlaceMarkerPlan({
+  venue,
+  type,
+  order,
+  color,
+  onPress,
+  isVisited,
+}: {
+  venue: VenueItem;
+  type: string;
+  order: number;
+  color: string;
+  onPress: () => void;
+  isVisited: boolean;
+}) {
+  const icon = CATEGORY_ICONS[type];
+  return (
+    <Marker
+      coordinate={{ latitude: venue.latitude, longitude: venue.longitude }}
+      onPress={onPress}
+      tracksViewChanges={false}
+    >
+      <View style={{ alignItems: "center", width: 56, height: 70 }}>
+        <View
+          style={{
+            width: 46,
+            height: 46,
+            borderRadius: 23,
+            backgroundColor: isVisited ? "#34c75922" : color + "22",
+            borderWidth: 2.5,
+            borderColor: isVisited ? "#34c759" : color,
+            justifyContent: "center",
+            alignItems: "center",
+            overflow: "hidden",
+          }}
+        >
+          {icon ? (
+            <Image
+              source={icon}
+              style={{ width: 32, height: 32 }}
+              resizeMode="contain"
+            />
+          ) : (
+            <Text style={{ fontSize: 20 }}>{EMOJIS[type] || "📍"}</Text>
+          )}
+        </View>
+        <View
+          style={{
+            position: "absolute",
+            top: -4,
+            right: -2,
+            width: 20,
+            height: 20,
+            borderRadius: 10,
+            backgroundColor: isVisited ? "#34c759" : color,
+            justifyContent: "center",
+            alignItems: "center",
+            borderWidth: 1.5,
+            borderColor: "#fff",
+          }}
+        >
+          <Text style={{ color: "#fff", fontSize: 10, fontWeight: "900" }}>
+            {order}
+          </Text>
+        </View>
+        <View
+          style={{
+            width: 4,
+            height: 10,
+            backgroundColor: isVisited ? "#34c759" : color,
+            borderBottomLeftRadius: 4,
+            borderBottomRightRadius: 4,
             marginTop: -2,
           }}
         />
@@ -1103,6 +1877,8 @@ function NotificationSettingsModal({
   }[];
 }) {
   const { t } = useTranslation();
+  const { isDark } = useTheme();
+  const DC = getDashColors(isDark);
   const getAllCategories = useCallback(() => {
     return Object.entries(placeCategories).map(([id, c]) => ({
       id,
@@ -1131,7 +1907,7 @@ function NotificationSettingsModal({
       transparent={false}
       onRequestClose={onClose}
     >
-      <View style={{ flex: 1, backgroundColor: "#1a2e1a" }}>
+      <View style={{ flex: 1, backgroundColor: DC.bg }}>
         {/* Header */}
         <View
           style={{
@@ -1141,15 +1917,17 @@ function NotificationSettingsModal({
             padding: 20,
             paddingTop: Platform.OS === "ios" ? 54 : 36,
             borderBottomWidth: 1.5,
-            borderBottomColor: "#4a7040",
-            backgroundColor: "#1a2e1a",
+            borderBottomColor: DC.border,
+            backgroundColor: DC.bg,
           }}
         >
-          <Text style={{ fontSize: 20, fontWeight: "800", color: "#e8e8e8" }}>
+          <Text style={{ fontSize: 20, fontWeight: "800", color: DC.text }}>
             {t("map.notifSettings")}
           </Text>
           <TouchableOpacity onPress={onClose}>
-            <Text style={{ fontSize: 14, color: "#b0b0b0", fontWeight: "600" }}>
+            <Text
+              style={{ fontSize: 14, color: DC.textDim, fontWeight: "600" }}
+            >
               {t("common.close")}
             </Text>
           </TouchableOpacity>
@@ -1157,14 +1935,14 @@ function NotificationSettingsModal({
 
         <ScrollView
           contentContainerStyle={{ paddingBottom: 40 }}
-          style={{ backgroundColor: "#1a2e1a" }}
+          style={{ backgroundColor: DC.bg }}
         >
           {/* App notifikacije toggle */}
           <View
             style={{
               padding: 16,
               borderBottomWidth: 1,
-              borderBottomColor: "#3a5a30",
+              borderBottomColor: DC.borderDim,
             }}
           >
             <View
@@ -1172,17 +1950,15 @@ function NotificationSettingsModal({
                 flexDirection: "row",
                 justifyContent: "space-between",
                 alignItems: "center",
-                backgroundColor: "#2a4230",
+                backgroundColor: DC.card,
                 borderRadius: 12,
                 padding: 14,
                 borderWidth: 1,
-                borderColor: "#3a5a30",
+                borderColor: DC.borderDim,
                 marginBottom: 10,
               }}
             >
-              <Text
-                style={{ fontSize: 15, fontWeight: "700", color: "#e8e8e8" }}
-              >
+              <Text style={{ fontSize: 15, fontWeight: "700", color: DC.text }}>
                 {t("map.appNotifications")}
               </Text>
               <Switch
@@ -1199,16 +1975,14 @@ function NotificationSettingsModal({
                 flexDirection: "row",
                 justifyContent: "space-between",
                 alignItems: "center",
-                backgroundColor: "#2a4230",
+                backgroundColor: DC.card,
                 borderRadius: 12,
                 padding: 14,
                 borderWidth: 1,
-                borderColor: "#3a5a30",
+                borderColor: DC.borderDim,
               }}
             >
-              <Text
-                style={{ fontSize: 15, fontWeight: "700", color: "#e8e8e8" }}
-              >
+              <Text style={{ fontSize: 15, fontWeight: "700", color: DC.text }}>
                 {t("map.emailNotifications")}
               </Text>
               <Switch
@@ -1223,17 +1997,17 @@ function NotificationSettingsModal({
               <TextInput
                 style={{
                   marginTop: 10,
-                  backgroundColor: "#2a4230",
+                  backgroundColor: DC.card,
                   borderRadius: 10,
                   borderWidth: 1,
-                  borderColor: "#4a7040",
+                  borderColor: DC.border,
                   paddingHorizontal: 14,
                   paddingVertical: 10,
                   fontSize: 15,
-                  color: "#e8e8e8",
+                  color: DC.text,
                 }}
                 placeholder={t("auth.emailPlaceholder")}
-                placeholderTextColor="#8a8a8a"
+                placeholderTextColor={DC.textDim}
                 value={p.email}
                 onChangeText={(v) => setP((x) => ({ ...x, email: v }))}
                 keyboardType="email-address"
@@ -1259,7 +2033,7 @@ function NotificationSettingsModal({
               }}
             >
               <Text
-                style={{ fontSize: 14, fontWeight: "700", color: "#c0c0c0" }}
+                style={{ fontSize: 14, fontWeight: "700", color: DC.textSub }}
               >
                 {t("profile.notifications")}
               </Text>
@@ -1270,7 +2044,7 @@ function NotificationSettingsModal({
                   <Text
                     style={{
                       fontSize: 13,
-                      color: "#5a8a48",
+                      color: DC.accent,
                       fontWeight: "600",
                     }}
                   >
@@ -1289,14 +2063,14 @@ function NotificationSettingsModal({
                     style={{
                       width: CELL_W,
                       height: 130,
-                      backgroundColor: on ? cat.color : "#2a4230",
+                      backgroundColor: on ? cat.color : DC.card,
                       borderRadius: 12,
                       justifyContent: "center",
                       alignItems: "center",
                       paddingHorizontal: 4,
                       paddingVertical: 8,
                       borderWidth: on ? 2 : 1,
-                      borderColor: on ? cat.color : "#3a5a30",
+                      borderColor: on ? cat.color : DC.borderDim,
                     }}
                     onPress={() => toggle(cat.id)}
                   >
@@ -1315,7 +2089,7 @@ function NotificationSettingsModal({
                       style={{
                         fontSize: 11,
                         fontWeight: "600",
-                        color: on ? "#fff" : "#c0c0c0",
+                        color: on ? "#fff" : DC.textSub,
                         textAlign: "center",
                       }}
                       numberOfLines={2}
@@ -1360,10 +2134,10 @@ function NotificationSettingsModal({
             style={{
               margin: 16,
               marginTop: 20,
-              backgroundColor: "#3a5a30",
+              backgroundColor: DC.cardHover,
               borderRadius: 12,
               borderWidth: 1.5,
-              borderColor: "#5a8a48",
+              borderColor: DC.border,
               paddingVertical: 16,
               alignItems: "center",
             }}
@@ -1376,7 +2150,7 @@ function NotificationSettingsModal({
               );
             }}
           >
-            <Text style={{ color: "#e8e8e8", fontSize: 16, fontWeight: "700" }}>
+            <Text style={{ color: DC.text, fontSize: 16, fontWeight: "700" }}>
               {t("common.save")}
             </Text>
           </TouchableOpacity>
@@ -1409,6 +2183,8 @@ export function ActivityGroupsModal({
   userLocation: { latitude: number; longitude: number } | null;
 }) {
   const { t } = useTranslation();
+  const { isDark } = useTheme();
+  const DC = getDashColors(isDark);
   const [groups, setGroups] = useState<ActivityGroup[]>([]);
   const [showCreate, setShowCreate] = useState(false);
   const [selectedGroup, setSelectedGroup] = useState<ActivityGroup | null>(
@@ -1927,19 +2703,21 @@ export function ActivityGroupsModal({
       {/* JEDAN Modal, tri različita "ekrana" unutar njega */}
       {selectedGroup ? (
         <KeyboardAvoidingView
-          style={{ flex: 1, backgroundColor: "#1a2e1a" }}
+          style={{ flex: 1, backgroundColor: DC.bg }}
           behavior={Platform.OS === "ios" ? "padding" : "height"}
           keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 0}
         >
           {/* Header */}
-          <View style={ag.chatHeader}>
+          <View style={[ag.chatHeader, { backgroundColor: DC.card }]}>
             <TouchableOpacity
               onPress={() => {
                 setSelectedGroup(null);
                 setChatMsg("");
               }}
             >
-              <Text style={ag.chatHeaderBack}>Natrag</Text>
+              <Text style={[ag.chatHeaderBack, { color: DC.accent }]}>
+                Natrag
+              </Text>
             </TouchableOpacity>
             <View style={{ flex: 1 }}>
               <Text style={ag.chatHeaderTitle} numberOfLines={1}>
@@ -1956,17 +2734,17 @@ export function ActivityGroupsModal({
               <TouchableOpacity
                 onPress={() => setShowDeleteConfirm(selectedGroup.id)}
                 style={{
-                  backgroundColor: "#2a4230",
+                  backgroundColor: DC.card,
                   borderRadius: 8,
                   paddingHorizontal: 12,
                   paddingVertical: 6,
                   borderWidth: 1.5,
-                  borderColor: "#4a7040",
+                  borderColor: DC.border,
                 }}
               >
                 <Text
                   style={{
-                    color: "#e8e8e8",
+                    color: DC.text,
                     fontSize: 13,
                     fontWeight: "800",
                     letterSpacing: 0.3,
@@ -1979,20 +2757,16 @@ export function ActivityGroupsModal({
               <TouchableOpacity
                 onPress={() => leaveGroup(selectedGroup.id)}
                 style={{
-                  backgroundColor: "#2a4230",
+                  backgroundColor: DC.card,
                   borderRadius: 8,
                   paddingHorizontal: 12,
                   paddingVertical: 6,
                   borderWidth: 1,
-                  borderColor: "#3a5a30",
+                  borderColor: DC.borderDim,
                 }}
               >
                 <Text
-                  style={{
-                    color: "#a0c080",
-                    fontSize: 13,
-                    fontWeight: "700",
-                  }}
+                  style={{ color: DC.accent, fontSize: 13, fontWeight: "700" }}
                 >
                   {t("groups.leave")}
                 </Text>
@@ -2006,7 +2780,7 @@ export function ActivityGroupsModal({
             showsHorizontalScrollIndicator={false}
             style={[
               ag.membersRow,
-              { backgroundColor: "#2a4230", borderBottomColor: "#3a5a30" },
+              { backgroundColor: DC.card, borderBottomColor: DC.borderDim },
             ]}
             contentContainerStyle={{
               paddingHorizontal: 12,
@@ -2027,7 +2801,7 @@ export function ActivityGroupsModal({
                   <View
                     style={[
                       ag.memberAvatar,
-                      isMe && { borderWidth: 2, borderColor: "#5a8a48" },
+                      isMe && { borderWidth: 2, borderColor: DC.border },
                     ]}
                   >
                     {avatarUrl ? (
@@ -2043,7 +2817,7 @@ export function ActivityGroupsModal({
                     )}
                   </View>
                   <Text
-                    style={[ag.memberName, { color: "#c0c0c0" }]}
+                    style={[ag.memberName, { color: DC.textSub }]}
                     numberOfLines={1}
                   >
                     {m.split(" ")[0]}
@@ -2052,7 +2826,7 @@ export function ActivityGroupsModal({
                     <Text
                       style={{
                         fontSize: 9,
-                        color: "#5a8a48",
+                        color: DC.accent,
                         fontWeight: "700",
                         marginTop: 1,
                       }}
@@ -2070,12 +2844,12 @@ export function ActivityGroupsModal({
                 <View
                   style={[
                     ag.memberAvatarEmpty,
-                    { backgroundColor: "#3a5a30", borderColor: "#4a7040" },
+                    { backgroundColor: DC.cardHover, borderColor: DC.border },
                   ]}
                 >
-                  <Text style={{ color: "#5a8a48", fontSize: 18 }}>+</Text>
+                  <Text style={{ color: DC.accent, fontSize: 18 }}>+</Text>
                 </View>
-                <Text style={{ fontSize: 10, color: "#6a9a60", marginTop: 2 }}>
+                <Text style={{ fontSize: 10, color: DC.textDim, marginTop: 2 }}>
                   {t("groups.freeSpots")}
                 </Text>
               </View>
@@ -2087,7 +2861,7 @@ export function ActivityGroupsModal({
             ref={flatRef}
             data={selectedGroup.messages || []}
             keyExtractor={(_, i) => i.toString()}
-            style={{ backgroundColor: "#1a2e1a" }}
+            style={{ backgroundColor: DC.bg }}
             contentContainerStyle={{ padding: 16, paddingBottom: 8 }}
             renderItem={({ item }) => {
               if (!item || typeof item !== "object") return null;
@@ -2102,7 +2876,7 @@ export function ActivityGroupsModal({
                     <Text
                       style={{
                         fontSize: 12,
-                        color: "#6a9a60",
+                        color: DC.textDim,
                         fontStyle: "italic",
                       }}
                     >
@@ -2122,7 +2896,7 @@ export function ActivityGroupsModal({
                 >
                   {!isMe && (
                     <View
-                      style={[ag.msgAvatar, { backgroundColor: "#3a5a30" }]}
+                      style={[ag.msgAvatar, { backgroundColor: DC.cardHover }]}
                     >
                       {avatarUrl ? (
                         <Image
@@ -2133,7 +2907,7 @@ export function ActivityGroupsModal({
                       ) : (
                         <Text
                           style={{
-                            color: "#e8e8e8",
+                            color: DC.text,
                             fontSize: 12,
                             fontWeight: "700",
                           }}
@@ -2145,7 +2919,7 @@ export function ActivityGroupsModal({
                   )}
                   <View style={{ maxWidth: "70%" }}>
                     {!isMe && (
-                      <Text style={[ag.msgSender, { color: "#5a8a48" }]}>
+                      <Text style={[ag.msgSender, { color: DC.accent }]}>
                         {name}
                       </Text>
                     )}
@@ -2155,14 +2929,14 @@ export function ActivityGroupsModal({
                         isMe
                           ? ag.bubbleMine
                           : {
-                              backgroundColor: "#2a4230",
+                              backgroundColor: DC.card,
                               borderBottomLeftRadius: 4,
                             },
                       ]}
                     >
                       <Text
                         style={{
-                          color: isMe ? "#fff" : "#e8e8e8",
+                          color: isMe ? "#fff" : DC.text,
                           fontSize: 14,
                         }}
                       >
@@ -2173,7 +2947,7 @@ export function ActivityGroupsModal({
                       style={[
                         ag.msgTime,
                         isMe ? { textAlign: "right" } : {},
-                        { color: "#6a9a60" },
+                        { color: DC.textDim },
                       ]}
                     >
                       {time}
@@ -2190,8 +2964,8 @@ export function ActivityGroupsModal({
               style={[
                 ag.inputRow,
                 {
-                  backgroundColor: "#2a4230", // ← tamna pozadina
-                  borderTopColor: "#3a5a30",
+                  backgroundColor: DC.card,
+                  borderTopColor: DC.borderDim,
                   borderTopWidth: 1,
                   paddingBottom: Platform.OS === "ios" ? 34 : 16,
                 },
@@ -2201,14 +2975,14 @@ export function ActivityGroupsModal({
                 style={[
                   ag.input,
                   {
-                    backgroundColor: "#3a5a30",
-                    color: "#e8e8e8",
+                    backgroundColor: DC.cardHover,
+                    color: DC.text,
                     borderWidth: 1,
-                    borderColor: "#4a7040",
+                    borderColor: DC.border,
                   },
                 ]}
                 placeholder={t("groups.sendMessage")}
-                placeholderTextColor="#6a9a60"
+                placeholderTextColor={DC.textDim}
                 value={chatMsg}
                 onChangeText={setChatMsg}
                 returnKeyType="send"
@@ -2217,7 +2991,7 @@ export function ActivityGroupsModal({
               <TouchableOpacity
                 style={[
                   ag.sendBtn,
-                  !chatMsg.trim() && { backgroundColor: "#3a5a30" },
+                  !chatMsg.trim() && { backgroundColor: DC.cardHover },
                 ]}
                 onPress={() => sendGroupMessage(selectedGroup.id)}
                 disabled={!chatMsg.trim()}
@@ -2230,23 +3004,23 @@ export function ActivityGroupsModal({
               style={{
                 padding: 16,
                 borderTopWidth: 1,
-                borderTopColor: "#3a5a30",
-                backgroundColor: "#2a4230",
+                borderTopColor: DC.borderDim,
+                backgroundColor: DC.card,
               }}
             >
               <TouchableOpacity
                 style={{
-                  backgroundColor: "#3a5a30",
+                  backgroundColor: DC.cardHover,
                   borderRadius: 14,
                   paddingVertical: 14,
                   alignItems: "center",
                   borderWidth: 1.5,
-                  borderColor: "#5a8a48",
+                  borderColor: DC.border,
                 }}
                 onPress={() => joinGroup(selectedGroup.id)}
               >
                 <Text
-                  style={{ color: "#e8e8e8", fontSize: 16, fontWeight: "700" }}
+                  style={{ color: DC.text, fontSize: 16, fontWeight: "700" }}
                 >
                   {t("groups.joinGroup")}
                 </Text>
@@ -2364,7 +3138,7 @@ export function ActivityGroupsModal({
       ) : showCreate ? (
         // ─── Forma za kreiranje ───────────────────────────────────────────────
         <KeyboardAvoidingView
-          style={{ flex: 1, backgroundColor: "#1a2e1a" }}
+          style={{ flex: 1, backgroundColor: DC.bg }}
           behavior={Platform.OS === "ios" ? "padding" : "height"}
         >
           {/* Header */}
@@ -2375,8 +3149,8 @@ export function ActivityGroupsModal({
               padding: 20,
               paddingTop: Platform.OS === "ios" ? 54 : 36,
               borderBottomWidth: 1.5,
-              borderBottomColor: "#4a7040",
-              backgroundColor: "#1a2e1a",
+              borderBottomColor: DC.border,
+              backgroundColor: DC.bg,
             }}
           >
             <Text
@@ -2384,14 +3158,14 @@ export function ActivityGroupsModal({
                 flex: 1,
                 fontSize: 20,
                 fontWeight: "800",
-                color: "#e8e8e8",
+                color: DC.text,
               }}
             >
               Nova aktivnost
             </Text>
             <TouchableOpacity onPress={() => setShowCreate(false)}>
               <Text
-                style={{ fontSize: 16, color: "#5a8a48", fontWeight: "700" }}
+                style={{ fontSize: 16, color: DC.accent, fontWeight: "700" }}
               >
                 Natrag
               </Text>
@@ -2401,21 +3175,21 @@ export function ActivityGroupsModal({
           <ScrollView
             contentContainerStyle={{ paddingBottom: 40 }}
             keyboardShouldPersistTaps="handled"
-            style={{ backgroundColor: "#1a2e1a" }}
+            style={{ backgroundColor: DC.bg }}
           >
             {/* ── VRSTA AKTIVNOSTI ── */}
             <View
               style={{
                 padding: 16,
                 borderBottomWidth: 1,
-                borderBottomColor: "#3a5a30",
+                borderBottomColor: DC.borderDim,
               }}
             >
               <Text
                 style={{
                   fontSize: 14,
                   fontWeight: "700",
-                  color: "#c0c0c0",
+                  color: DC.textSub,
                   marginBottom: 10,
                 }}
               >
@@ -2433,14 +3207,14 @@ export function ActivityGroupsModal({
                       style={{
                         width: CELL_W,
                         height: 130,
-                        backgroundColor: active ? bgColor : "#2a4230",
+                        backgroundColor: active ? bgColor : DC.card,
                         borderRadius: 12,
                         justifyContent: "center",
                         alignItems: "center",
                         paddingHorizontal: 4,
                         paddingVertical: 8,
                         borderWidth: active ? 2 : 1,
-                        borderColor: active ? bgColor : "#3a5a30",
+                        borderColor: active ? bgColor : DC.borderDim,
                       }}
                       onPress={() =>
                         setNewGroup((p) => ({
@@ -2465,7 +3239,7 @@ export function ActivityGroupsModal({
                         style={{
                           fontSize: 11,
                           fontWeight: "600",
-                          color: active ? "#fff" : "#c0c0c0",
+                          color: active ? "#fff" : DC.textSub,
                           textAlign: "center",
                         }}
                         numberOfLines={2}
@@ -2483,14 +3257,14 @@ export function ActivityGroupsModal({
               style={{
                 padding: 16,
                 borderBottomWidth: 1,
-                borderBottomColor: "#3a5a30",
+                borderBottomColor: DC.borderDim,
               }}
             >
               <Text
                 style={{
                   fontSize: 14,
                   fontWeight: "700",
-                  color: "#c0c0c0",
+                  color: DC.textSub,
                   marginBottom: 10,
                 }}
               >
@@ -2498,17 +3272,17 @@ export function ActivityGroupsModal({
               </Text>
               <TextInput
                 style={{
-                  backgroundColor: "#2a4230",
+                  backgroundColor: DC.card,
                   borderRadius: 10,
                   borderWidth: 1,
-                  borderColor: "#4a7040",
+                  borderColor: DC.border,
                   paddingHorizontal: 14,
                   paddingVertical: 10,
                   fontSize: 15,
-                  color: "#e8e8e8",
+                  color: DC.text,
                 }}
                 placeholder={t("groups.activityPlaceholder")}
-                placeholderTextColor="#8a8a8a"
+                placeholderTextColor={DC.textDim}
                 value={newGroup.activity}
                 onChangeText={(v) =>
                   setNewGroup((p) => ({ ...p, activity: v }))
@@ -2522,14 +3296,14 @@ export function ActivityGroupsModal({
               style={{
                 padding: 16,
                 borderBottomWidth: 1,
-                borderBottomColor: "#3a5a30",
+                borderBottomColor: DC.borderDim,
               }}
             >
               <Text
                 style={{
                   fontSize: 14,
                   fontWeight: "700",
-                  color: "#c0c0c0",
+                  color: DC.textSub,
                   marginBottom: 10,
                 }}
               >
@@ -2537,17 +3311,17 @@ export function ActivityGroupsModal({
               </Text>
               <TextInput
                 style={{
-                  backgroundColor: "#2a4230",
+                  backgroundColor: DC.card,
                   borderRadius: 10,
                   borderWidth: 1,
-                  borderColor: "#4a7040",
+                  borderColor: DC.border,
                   paddingHorizontal: 14,
                   paddingVertical: 10,
                   fontSize: 15,
-                  color: "#e8e8e8",
+                  color: DC.text,
                 }}
                 placeholder={t("groups.locationPlaceholder")}
-                placeholderTextColor="#8a8a8a"
+                placeholderTextColor={DC.textDim}
                 value={newGroup.locationName}
                 onChangeText={(v) =>
                   setNewGroup((p) => ({ ...p, locationName: v }))
@@ -2561,14 +3335,14 @@ export function ActivityGroupsModal({
               style={{
                 padding: 16,
                 borderBottomWidth: 1,
-                borderBottomColor: "#3a5a30",
+                borderBottomColor: DC.borderDim,
               }}
             >
               <Text
                 style={{
                   fontSize: 14,
                   fontWeight: "700",
-                  color: "#c0c0c0",
+                  color: DC.textSub,
                   marginBottom: 10,
                 }}
               >
@@ -2576,19 +3350,19 @@ export function ActivityGroupsModal({
               </Text>
               <TextInput
                 style={{
-                  backgroundColor: "#2a4230",
+                  backgroundColor: DC.card,
                   borderRadius: 10,
                   borderWidth: 1,
-                  borderColor: "#4a7040",
+                  borderColor: DC.border,
                   paddingHorizontal: 14,
                   paddingVertical: 10,
                   fontSize: 15,
-                  color: "#e8e8e8",
+                  color: DC.text,
                   minHeight: 80,
                   textAlignVertical: "top",
                 }}
                 placeholder={t("groups.descriptionPlaceholder")}
-                placeholderTextColor="#8a8a8a"
+                placeholderTextColor={DC.textDim}
                 value={newGroup.description}
                 onChangeText={(v) =>
                   setNewGroup((p) => ({ ...p, description: v }))
@@ -2603,14 +3377,14 @@ export function ActivityGroupsModal({
               style={{
                 padding: 16,
                 borderBottomWidth: 1,
-                borderBottomColor: "#3a5a30",
+                borderBottomColor: DC.borderDim,
               }}
             >
               <Text
                 style={{
                   fontSize: 14,
                   fontWeight: "700",
-                  color: "#c0c0c0",
+                  color: DC.textSub,
                   marginBottom: 10,
                 }}
               >
@@ -2625,10 +3399,10 @@ export function ActivityGroupsModal({
                       style={{
                         paddingHorizontal: 16,
                         paddingVertical: 9,
-                        backgroundColor: active ? "#3a5a30" : "#2a4230",
+                        backgroundColor: active ? DC.cardHover : DC.card,
                         borderRadius: 8,
                         borderWidth: 1,
-                        borderColor: active ? "#5a8a48" : "#3a5a30",
+                        borderColor: active ? DC.border : DC.borderDim,
                       }}
                       onPress={() =>
                         setNewGroup((p) => ({ ...p, maxPeople: String(n) }))
@@ -2637,7 +3411,7 @@ export function ActivityGroupsModal({
                       <Text
                         style={{
                           fontSize: 13,
-                          color: active ? "#e8e8e8" : "#b0b0b0",
+                          color: active ? DC.text : DC.textDim,
                           fontWeight: active ? "700" : "400",
                         }}
                       >
@@ -2653,18 +3427,16 @@ export function ActivityGroupsModal({
             <TouchableOpacity
               style={{
                 margin: 16,
-                backgroundColor: "#3a5a30",
+                backgroundColor: DC.cardHover,
                 borderRadius: 12,
                 borderWidth: 1.5,
-                borderColor: "#5a8a48",
+                borderColor: DC.border,
                 paddingVertical: 16,
                 alignItems: "center",
               }}
               onPress={createGroup}
             >
-              <Text
-                style={{ color: "#e8e8e8", fontSize: 16, fontWeight: "700" }}
-              >
+              <Text style={{ color: DC.text, fontSize: 16, fontWeight: "700" }}>
                 {t("groups.postActivity")}
               </Text>
             </TouchableOpacity>
@@ -2672,7 +3444,7 @@ export function ActivityGroupsModal({
         </KeyboardAvoidingView>
       ) : (
         // ─── Lista grupa ──────────────────────────────────────────────────────
-        <View style={{ flex: 1, backgroundColor: "#1a2e1a" }}>
+        <View style={{ flex: 1, backgroundColor: DC.bg }}>
           {/* Header — bez +Nova aktivnost gumba */}
           <View
             style={{
@@ -2682,16 +3454,16 @@ export function ActivityGroupsModal({
               padding: 20,
               paddingTop: Platform.OS === "ios" ? 54 : 36,
               borderBottomWidth: 1.5,
-              borderBottomColor: "#4a7040",
-              backgroundColor: "#1a2e1a",
+              borderBottomColor: DC.border,
+              backgroundColor: DC.bg,
             }}
           >
-            <Text style={{ fontSize: 20, fontWeight: "800", color: "#e8e8e8" }}>
+            <Text style={{ fontSize: 20, fontWeight: "800", color: DC.text }}>
               Zajedničke aktivnosti
             </Text>
             <TouchableOpacity onPress={onClose}>
               <Text
-                style={{ fontSize: 14, color: "#b0b0b0", fontWeight: "600" }}
+                style={{ fontSize: 14, color: DC.textDim, fontWeight: "600" }}
               >
                 Zatvori
               </Text>
@@ -2708,15 +3480,13 @@ export function ActivityGroupsModal({
               }}
             >
               <Text style={{ fontSize: 64 }}>🤝</Text>
-              <Text
-                style={{ fontSize: 18, fontWeight: "700", color: "#e8e8e8" }}
-              >
+              <Text style={{ fontSize: 18, fontWeight: "700", color: DC.text }}>
                 {t("groups.noActivities")}
               </Text>
               <Text
                 style={{
                   fontSize: 14,
-                  color: "#a0a0a0",
+                  color: DC.textDim,
                   textAlign: "center",
                   paddingHorizontal: 40,
                 }}
@@ -2731,9 +3501,9 @@ export function ActivityGroupsModal({
               contentContainerStyle={{
                 padding: 16,
                 paddingBottom: 100,
-                backgroundColor: "#1a2e1a",
+                backgroundColor: DC.bg,
               }}
-              style={{ backgroundColor: "#1a2e1a" }}
+              style={{ backgroundColor: DC.bg }}
               renderItem={({ item: g }) => {
                 if (!g || typeof g !== "object") return null;
 
@@ -2779,14 +3549,14 @@ export function ActivityGroupsModal({
                 return (
                   <TouchableOpacity
                     style={{
-                      backgroundColor: "#2a4230",
+                      backgroundColor: DC.card,
                       borderRadius: 16,
                       padding: 16,
                       marginBottom: 12,
                       borderLeftWidth: 4,
                       borderLeftColor: color,
                       borderWidth: 1,
-                      borderColor: "#3a5a30",
+                      borderColor: DC.borderDim,
                     }}
                     onPress={() => {
                       setSelectedGroup(g);
@@ -2805,7 +3575,7 @@ export function ActivityGroupsModal({
                           style={{
                             fontSize: 16,
                             fontWeight: "800",
-                            color: "#e8e8e8",
+                            color: DC.text,
                           }}
                           numberOfLines={1}
                         >
@@ -2814,7 +3584,7 @@ export function ActivityGroupsModal({
                         <Text
                           style={{
                             fontSize: 13,
-                            color: "#5a8a48",
+                            color: DC.accent,
                             marginTop: 2,
                           }}
                         >
@@ -2824,7 +3594,7 @@ export function ActivityGroupsModal({
                           <Text
                             style={{
                               fontSize: 13,
-                              color: "#a0a0a0",
+                              color: DC.textDim,
                               marginTop: 4,
                             }}
                             numberOfLines={2}
@@ -2905,7 +3675,7 @@ export function ActivityGroupsModal({
                         <Text
                           style={{
                             fontSize: 12,
-                            color: "#c0c0c0",
+                            color: DC.textSub,
                             fontWeight: "600",
                             marginLeft: 4,
                           }}
@@ -2920,24 +3690,24 @@ export function ActivityGroupsModal({
                           alignItems: "center",
                         }}
                       >
-                        <Text style={{ fontSize: 11, color: "#888" }}>
+                        <Text style={{ fontSize: 11, color: DC.textDim }}>
                           {timeStr}
                         </Text>
                         {isCreator ? (
                           <View
                             style={{
-                              backgroundColor: "#1a2e1a",
+                              backgroundColor: DC.bg,
                               borderRadius: 12,
                               paddingHorizontal: 10,
                               paddingVertical: 4,
                               borderWidth: 1,
-                              borderColor: "#5a8a48",
+                              borderColor: DC.border,
                             }}
                           >
                             <Text
                               style={{
                                 fontSize: 11,
-                                color: "#5a8a48",
+                                color: DC.accent,
                                 fontWeight: "700",
                               }}
                             >
@@ -2966,32 +3736,32 @@ export function ActivityGroupsModal({
                         ) : isFull ? (
                           <View
                             style={{
-                              backgroundColor: "#1a2e1a",
+                              backgroundColor: DC.bg,
                               borderRadius: 12,
                               paddingHorizontal: 10,
                               paddingVertical: 4,
                             }}
                           >
-                            <Text style={{ fontSize: 11, color: "#888" }}>
+                            <Text style={{ fontSize: 11, color: DC.textDim }}>
                               {t("groups.full")}
                             </Text>
                           </View>
                         ) : (
                           <TouchableOpacity
                             style={{
-                              backgroundColor: "#3a5a30",
+                              backgroundColor: DC.cardHover,
                               borderRadius: 12,
                               paddingHorizontal: 12,
                               paddingVertical: 5,
                               borderWidth: 1,
-                              borderColor: "#5a8a48",
+                              borderColor: DC.border,
                             }}
                             onPress={() => joinGroup(g.id)}
                           >
                             <Text
                               style={{
                                 fontSize: 12,
-                                color: "#e8e8e8",
+                                color: DC.text,
                                 fontWeight: "700",
                               }}
                             >
@@ -3014,12 +3784,12 @@ export function ActivityGroupsModal({
               bottom: 80,
               left: 20,
               right: 20,
-              backgroundColor: "#3a5a30",
+              backgroundColor: DC.cardHover,
               borderRadius: 14,
               paddingVertical: 16,
               alignItems: "center",
               borderWidth: 1.5,
-              borderColor: "#5a8a48",
+              borderColor: DC.border,
               shadowColor: "#000",
               shadowOffset: { width: 0, height: 4 },
               shadowOpacity: 0.3,
@@ -3028,8 +3798,8 @@ export function ActivityGroupsModal({
             }}
             onPress={() => setShowCreate(true)}
           >
-            <Text style={{ color: "#e8e8e8", fontSize: 16, fontWeight: "700" }}>
-              + Dodaj novu aktivnost
+            <Text style={{ color: DC.text, fontSize: 16, fontWeight: "700" }}>
+              Dodaj novu aktivnost
             </Text>
           </TouchableOpacity>
         </View>
@@ -3044,7 +3814,7 @@ export function ActivityGroupsModal({
             left: 0,
             right: 0,
             bottom: 0,
-            backgroundColor: "rgba(0,0,0,0.6)",
+            backgroundColor: DC.overlay,
             justifyContent: "center",
             alignItems: "center",
             zIndex: 999,
@@ -3052,12 +3822,12 @@ export function ActivityGroupsModal({
         >
           <View
             style={{
-              backgroundColor: "#1a2e1a",
+              backgroundColor: DC.bg,
               borderRadius: 20,
               padding: 28,
               marginHorizontal: 24,
               borderWidth: 1.5,
-              borderColor: "#4a7040",
+              borderColor: DC.border,
             }}
           >
             <Text
@@ -3067,7 +3837,7 @@ export function ActivityGroupsModal({
               style={{
                 fontSize: 17,
                 fontWeight: "800",
-                color: "#e8e8e8",
+                color: DC.text,
                 textAlign: "center",
                 marginBottom: 8,
               }}
@@ -3077,7 +3847,7 @@ export function ActivityGroupsModal({
             <Text
               style={{
                 fontSize: 13,
-                color: "#a0a0a0",
+                color: DC.textDim,
                 textAlign: "center",
                 marginBottom: 24,
                 lineHeight: 20,
@@ -3087,35 +3857,39 @@ export function ActivityGroupsModal({
             </Text>
             <TouchableOpacity
               style={{
-                backgroundColor: "#2a3020",
+                backgroundColor: isDark ? "#2a3020" : "#e8f0d8",
                 borderRadius: 12,
                 paddingVertical: 14,
                 alignItems: "center",
                 borderWidth: 1.5,
-                borderColor: "#4a6030",
+                borderColor: isDark ? "#4a6030" : "#5a8a40",
                 marginBottom: 10,
               }}
               onPress={() => confirmDeleteGroup(showDeleteConfirm)}
             >
               <Text
-                style={{ color: "#c8d8a0", fontSize: 15, fontWeight: "700" }}
+                style={{
+                  color: isDark ? "#c8d8a0" : "#2a5a10",
+                  fontSize: 15,
+                  fontWeight: "700",
+                }}
               >
                 {t("common.delete")}
               </Text>
             </TouchableOpacity>
             <TouchableOpacity
               style={{
-                backgroundColor: "#2a4230",
+                backgroundColor: DC.card,
                 borderRadius: 12,
                 paddingVertical: 14,
                 alignItems: "center",
                 borderWidth: 1,
-                borderColor: "#3a5a30",
+                borderColor: DC.borderDim,
               }}
               onPress={() => setShowDeleteConfirm(null)}
             >
               <Text
-                style={{ color: "#c0c0c0", fontSize: 15, fontWeight: "600" }}
+                style={{ color: DC.textSub, fontSize: 15, fontWeight: "600" }}
               >
                 {t("common.cancel")}
               </Text>
@@ -3532,7 +4306,7 @@ async function fetchVenuesNearCity(
   for (const p of places) {
     if (!venues[p.type]) venues[p.type] = [];
     // Min 5, max 15 opcija po kategoriji
-    if (venues[p.type].length < 20) {
+    if (venues[p.type].length < 5) {
       venues[p.type].push({
         name: p.name,
         address: p.address,
@@ -3640,15 +4414,15 @@ function buildPlanWithVenues(
   plan += `\n`;
 
   // ✅ NOVA SEKCIJA: sve pronađene opcije po kategoriji
-  plan += `\n${"━".repeat(40)}\n`;
-  plan += `📋 PRONAĐENE OPCIJE PO KATEGORIJAMA (u radijusu ${activityRadius} km)\n`;
-  plan += `${"━".repeat(40)}\n`;
+  // plan += `\n${"━".repeat(40)}\n`;
+  // plan += `📋 PRONAĐENE OPCIJE PO KATEGORIJAMA (u radijusu ${activityRadius} km)\n`;
+  // plan += `${"━".repeat(40)}\n`;
 
-  for (const [type, list] of Object.entries(venues)) {
-    if (!list.length) continue;
-    plan += `\n${catLabels[type] || type}:\n`;
-    plan += `${getAll(type)}\n`;
-  }
+  // for (const [type, list] of Object.entries(venues)) {
+  //   if (!list.length) continue;
+  //   plan += `\n${catLabels[type] || type}:\n`;
+  //   plan += `${getAll(type)}\n`;
+  // }
 
   plan += `\n${"━".repeat(40)}\n`;
   plan += `📆 DNEVNI RASPORED\n`;
@@ -3659,77 +4433,126 @@ function buildPlanWithVenues(
     plan += `📆 DAN ${d}\n`;
     plan += `${"─".repeat(36)}\n\n`;
 
-    // Jutro
-    plan += `🌅 JUTRO (8:00 – 12:00)\n`;
-    const cafe = get("cafe", d - 1);
-    if (cafe) plan += `  ☕ Doručak: ${cafe}\n`;
-    else plan += `  ☕ Doručak u lokalnom kafiću (~10-15 EUR/os.)\n`;
+    let cursor = 8 * 60; // 08:00
+    const fmt = (m: number) => {
+      const h = Math.floor(m / 60) % 24;
+      const mm = m % 60;
+      return `${String(h).padStart(2, "0")}:${String(mm).padStart(2, "0")}`;
+    };
+    const slot = (dur: number) => {
+      const s = `${fmt(cursor)}–${fmt(cursor + dur)}`;
+      cursor += dur + 15; // 15 min putovanje između
+      return s;
+    };
 
+    // 08:00 – Doručak/kava
+    // 08:00 – Doručak/kava
+    plan += `🌅 JUTRO\n`;
+    const cafe = get("cafe", d - 1);
+    if (cafe) plan += `  ☕ ${slot(45)} Doručak: ${cafe}\n`;
+    else plan += `  ☕ ${slot(45)} Doručak u lokalnom kafiću\n`;
+
+    // ~09:00 Jutarnja aktivnost 1
     if (preference !== "zatvoreno") {
       const landmark = get("landmark", d - 1);
+      if (landmark) plan += `  🏰 ${slot(50)} Razgledavanje: ${landmark}\n`;
+    }
+
+    // ~10:00 Jutarnja aktivnost 2
+    if (preference !== "zatvoreno") {
       const park = get("park", d - 1);
-      if (landmark) plan += `  🏰 Razgledavanje: ${landmark}\n`;
-      if (park && d % 2 === 0) plan += `  🌳 Šetnja: ${park}\n`;
+      if (park) plan += `  🌳 ${slot(45)} Šetnja: ${park}\n`;
     }
-    if (preference === "zatvoreno" || preference === "kombinirano") {
+
+    // ~11:00 Jutarnja aktivnost 3 (zatvoreno/kombinirano)
+    if (preference !== "otvoreno") {
       const museum = get("museum", d - 1);
-      if (museum) plan += `  🏛️ Muzej: ${museum}\n`;
+      if (museum) plan += `  🏛️ ${slot(75)} Muzej: ${museum}\n`;
+      else {
+        const cafe2 = get("cafe", d % 2 === 0 ? d : d + 1);
+        if (cafe2) plan += `  ☕ ${slot(30)} Kava/odmor: ${cafe2}\n`;
+      }
     }
 
-    // Poslijepodne
-    plan += `\n☀️ POSLIJEPODNE (12:00 – 18:00)\n`;
+    // Ručak — bez forsiranog skoka, samo minimalni floor od 12:00
+    if (cursor < 12 * 60) cursor = 12 * 60;
+    plan += `\n☀️ POSLIJEPODNE\n`;
     const rest1 = get("restaurant", (d - 1) * 2);
-    if (rest1) plan += `  🍽️ Ručak: ${rest1} (~20-35 EUR/os.)\n`;
-    else plan += `  🍽️ Ručak u lokalnom restoranu (~20-35 EUR/os.)\n`;
+    if (rest1) plan += `  🍽️ ${slot(75)} Ručak: ${rest1} (~20-35 EUR/os.)\n`;
+    else
+      plan += `  🍽️ ${slot(75)} Ručak u lokalnom restoranu (~20-35 EUR/os.)\n`;
 
+    // ~13:30 Kratki odmor/kava poslije ručka (max 30 min)
+    const cafeAfterLunch = get("cafe", (d + 2) % 3);
+    if (cafeAfterLunch && companions !== "solo")
+      plan += `  ☕ ${slot(30)} Kava poslije ručka: ${cafeAfterLunch}\n`;
+
+    // ~14:00-14:30 Poslijepodnevna aktivnost 1
     if (preference !== "zatvoreno") {
       const beach = get("beach", d - 1);
-      const nationalPark = get("nationalPark", d - 1);
+      const natPark = get("nationalPark", d - 1);
       const cave = get("cave", d - 1);
-      if (beach) plan += `  🏖️ Plaža: ${beach}\n`;
-      if (nationalPark && !beach) plan += `  🏞️ Nac. park: ${nationalPark}\n`;
-      if (cave && d % 3 === 0) plan += `  🕳️ Špilja: ${cave}\n`;
+      if (beach) plan += `  🏖️ ${slot(120)} Plaža: ${beach}\n`;
+      else if (natPark) plan += `  🏞️ ${slot(120)} Nac. park: ${natPark}\n`;
+      else if (cave) plan += `  🕳️ ${slot(75)} Špilja: ${cave}\n`;
+      else {
+        // fallback — šetnja ili park
+        const park2 = get("park", d % 3);
+        if (park2) plan += `  🌳 ${slot(60)} Popodnevna šetnja: ${park2}\n`;
+      }
     }
 
+    // ~15:30-16:00 Poslijepodnevna aktivnost 2
     if (preference !== "otvoreno") {
-      const cinema = get("cinema", d - 1);
       const escapeRoom = get("escapeRoom", d - 1);
+      const cinema = get("cinema", d - 1);
       const spa = get("spa", d - 1);
-      if (escapeRoom && companions !== "solo")
-        plan += `  🔐 Escape room: ${escapeRoom} (~20-30 EUR/os.)\n`;
-      if (cinema && d % 2 === 0 && !escapeRoom)
-        plan += `  🎬 Kino: ${cinema}\n`;
-      if (spa && companions === "partner") plan += `  💧 Spa/toplice: ${spa}\n`;
-    }
-
-    // Paintball / aktivno
-    if (
-      (companions === "prijatelji" || companions === "misovito") &&
-      d % 2 !== 0
-    ) {
       const paintball = get("paintball", 0);
-      if (paintball) plan += `  🎯 Paintball: ${paintball} (~25-40 EUR/os.)\n`;
+
+      if (escapeRoom && companions !== "solo")
+        plan += `  🔐 ${slot(75)} Escape room: ${escapeRoom} (~20-30 EUR/os.)\n`;
+      else if (cinema) plan += `  🎬 ${slot(110)} Kino: ${cinema}\n`;
+      else if (spa && companions === "partner")
+        plan += `  💧 ${slot(90)} Spa/toplice: ${spa}\n`;
+      else if (
+        paintball &&
+        (companions === "prijatelji" || companions === "misovito")
+      )
+        plan += `  🎯 ${slot(90)} Paintball: ${paintball} (~25-40 EUR/os.)\n`;
     }
 
-    // Večer
-    plan += `\n🌙 VEČER (18:00 – 22:00)\n`;
-    const rest2 = get("restaurant", (d - 1) * 2 + 1);
-    if (rest2) plan += `  🍷 Večera: ${rest2} (~30-55 EUR/os.)\n`;
-    else plan += `  🍷 Večera (~30-55 EUR/os.)\n`;
+    // Ako je ostalo slobodnog vremena, popuni tržnicom ili OPG-om
+    const market = get("market", d - 1);
+    const opg = get("opg", d - 1);
+    if (market && cursor < 17 * 60)
+      plan += `  🛒 ${slot(40)} Tržnica/suveniri: ${market}\n`;
+    if (opg && companions === "obitelj" && cursor < 17 * 60)
+      plan += `  🌾 ${slot(60)} OPG posjet: ${opg}\n`;
 
+    // Slobodno popodne/odmor u smještaju — ako je cursor < 18:00
+    if (cursor < 17 * 60 + 30) {
+      plan += `  🏨 ${slot(Math.max(30, 17 * 60 + 30 - cursor))} Odmor u smještaju\n`;
+    }
+
+    // Večera — floor 18:30 (ne 19:00 jer gubimo čitav sat)
+    if (cursor < 18 * 60 + 30) cursor = 18 * 60 + 30;
+    plan += `\n🌙 VEČER\n`;
+    const rest2 = get("restaurant", (d - 1) * 2 + 1);
+    if (rest2) plan += `  🍷 ${slot(75)} Večera: ${rest2} (~30-55 EUR/os.)\n`;
+    else plan += `  🍷 ${slot(75)} Večera (~30-55 EUR/os.)\n`;
+
+    // ~20:00 Noćna aktivnost
     if (companions !== "obitelj" && companions !== "solo") {
       const club = get("club", d - 1);
       const theater = get("theater", d - 1);
-      if (theater && d % 3 === 0) plan += `  🎭 Kazalište: ${theater}\n`;
-      else if (club) plan += `  🎵 Noćni klub: ${club}\n`;
+      if (theater && d % 3 === 0)
+        plan += `  🎭 ${slot(120)} Kazalište: ${theater}\n`;
+      else if (club) plan += `  🎵 ${slot(180)} Noćni klub: ${club}\n`;
+    } else if (companions === "obitelj") {
+      // Obitelji — večernja šetnja ili kava
+      const park3 = get("park", (d + 1) % 3);
+      if (park3) plan += `  🌃 ${slot(45)} Večernja šetnja: ${park3}\n`;
     }
-
-    // OPG i tržnica
-    const market = get("market", d - 1);
-    const opg = get("opg", d - 1);
-    if (market && d === Math.floor(days / 2))
-      plan += `\n  🛒 Tržnica (za uspomene / lokalne proizvode): ${market}\n`;
-    if (opg && companions === "obitelj") plan += `  🌾 OPG: ${opg}\n`;
 
     plan += `\n💰 Procijenjeni troškovi dana: ~${dayBudget} EUR (~${perPerson} EUR/os.)\n`;
   }
@@ -4313,1799 +5136,1995 @@ function venueToPlace(
 
 // PLAN MY DAY MODAL
 
-export function PlanMyDayModal({
-  visible,
-  userLocation,
-  onClose,
-  onMarkVisited,
-  visits = [],
-}: {
-  visible: boolean;
-  userLocation: { latitude: number; longitude: number } | null;
-  onClose: () => void;
-  onMarkVisited?: (place: Place) => Promise<void>;
-  visits?: VisitRecord[];
-}) {
-  const { t } = useTranslation();
-  const getAllCategories = useCallback(() => {
-    return Object.entries(placeCategories).map(([id, c]) => ({
-      id,
-      name: t(`categories.${id}`, { defaultValue: id }),
-      icon: EMOJIS[id] || "📍",
-      color: c.color,
-    }));
-  }, [t]);
-
-  const LOADING_MESSAGES = [
-    { icon: "🌍", text: t("plan.loading1") },
-    { icon: "📍", text: t("plan.loading2") },
-    { icon: "🍽️", text: t("plan.loading3") },
-    { icon: "🏖️", text: t("plan.loading4") },
-    { icon: "🗺️", text: t("plan.loading5") },
-    { icon: "✨", text: t("plan.loading6") },
-  ];
-
-  const [step, setStep] = useState<PlanStep>("form");
-  const [destination, setDestination] = useState("");
-  const [mapMarkerLimit, setMapMarkerLimit] = useState(10);
-  const [postalCode, setPostalCode] = useState("");
-  const [accommodationAddress, setAccommodationAddress] = useState("");
-  const [period, setPeriod] = useState<PlanPeriod>("vikend");
-  const [people, setPeople] = useState("2");
-  const [companions, setCompanions] = useState<CompanionType>("prijatelji");
-  const [budget, setBudget] = useState("500");
-  const [activityRadius, setActivityRadius] = useState(3);
-  const [transport, setTransport] = useState<TransportType>("auto");
-  const [preference, setPreference] = useState<PreferenceType>("kombinirano");
-  const [interests, setInterests] = useState<string[]>([]);
-  const [result, setResult] = useState("");
-  const [loadingStep, setLoadingStep] = useState(0);
-
-  // ── Modal za detalje mjesta (klik na marker ili na karticu) ──────────────
-  const [selectedPlaceForDetail, setSelectedPlaceForDetail] =
-    useState<Place | null>(null);
-  const [showDetailModal, setShowDetailModal] = useState(false);
-
-  // ── Lokalni popis posjeta unutar plana ──────────────────────────────────
-  // (sinkronizira se s parent visits propsima + lokalnim optimističnim updateom)
-  const [localVisitedIds, setLocalVisitedIds] = useState<Set<string>>(
-    new Set(),
-  );
-
-  const mapRef = useRef<MapView>(null);
-  const loadingInterval = useRef<ReturnType<typeof setInterval> | null>(null);
-  const [selectedVenues, setSelectedVenues] = useState<Record<string, number>>(
-    {},
-  );
-  const [allVenues, setAllVenues] = useState<
-    Record<
-      string,
-      { name: string; address?: string; latitude: number; longitude: number }[]
-    >
-  >({});
-  const [accommodationCoords, setAccommodationCoords] = useState<{
-    latitude: number;
-    longitude: number;
-  } | null>(null);
-
-  // Sinkroniziraj parent visits u lokalni set
-  useEffect(() => {
-    const ids = new Set<string>(visits.map((v) => v.placeId));
-    setLocalVisitedIds(ids);
-  }, [visits]);
-
-  const reset = () => {
-    setStep("form");
-    setResult("");
-    setDestination("");
-    setPostalCode("");
-    setAccommodationAddress("");
-    setInterests([]);
-    setAllVenues({});
-    setSelectedVenues({});
-    setMapMarkerLimit(10);
-    setAccommodationCoords(null);
-    if (loadingInterval.current) clearInterval(loadingInterval.current);
-  };
-
-  const handleClose = () => {
-    reset();
-    onClose();
-  };
-
-  const toggleInterest = (id: string) =>
-    setInterests((p) =>
-      p.includes(id) ? p.filter((x) => x !== id) : [...p, id],
-    );
-
-  // ── Označi posjet iz plana ────────────────────────────────────────────────
-  const handleMarkVisitedFromPlan = async (
-    venue: {
-      name: string;
-      address?: string;
-      latitude: number;
-      longitude: number;
-    },
-    type: string,
-  ) => {
-    const placeId = `plan_${type}_${venue.name.replace(/\s+/g, "_").toLowerCase()}`;
-    const place: Place = {
-      id: placeId,
-      name: venue.name,
-      latitude: venue.latitude,
-      longitude: venue.longitude,
-      type: type as Place["type"],
-      address: venue.address,
-    };
-
-    if (localVisitedIds.has(placeId)) {
-      Alert.alert("ℹ️ Već posjećeno", `"${venue.name}" je već u vašoj arhivi.`);
-      return;
-    }
-
-    // Optimistički update
-    setLocalVisitedIds((prev) => new Set([...prev, placeId]));
-
-    if (onMarkVisited) {
-      await onMarkVisited(place);
-    }
-  };
-
-  const isVenueVisited = (
-    venue: { name: string; latitude: number; longitude: number },
-    type: string,
-  ) => {
-    const placeId = `plan_${type}_${venue.name.replace(/\s+/g, "_").toLowerCase()}`;
-    // Provjeri i po ID-u i po imenu (za mjesta dodana s glavne karte)
-    return (
-      localVisitedIds.has(placeId) ||
-      visits.some(
-        (v) =>
-          v.placeName.toLowerCase() === venue.name.toLowerCase() &&
-          v.placeType === type,
-      )
-    );
-  };
-
-  const generate = async () => {
-    if (!destination.trim()) {
-      Alert.alert(t("plan.destination"), t("plan.destinationRequired"));
-      return;
-    }
-    setLoadingStep(0);
-    setStep("loading");
-
-    loadingInterval.current = setInterval(() => {
-      setLoadingStep((prev) => (prev + 1) % LOADING_MESSAGES.length);
-    }, 2200);
-
-    try {
-      const query = [destination.trim(), postalCode.trim(), "Hrvatska"]
-        .filter(Boolean)
-        .join(" ");
-
-      const { geocoded, venues } = await fetchVenuesNearCity(
-        query,
-        activityRadius,
-        interests,
-      );
-
-      setAllVenues(venues);
-
-      if (accommodationAddress.trim() && geocoded) {
-        const accommodationResult = await geocodeCity(
-          `${accommodationAddress}, ${destination}`,
-        );
-        setAccommodationCoords(
-          accommodationResult
-            ? {
-                latitude: accommodationResult.latitude,
-                longitude: accommodationResult.longitude,
-              }
-            : { latitude: geocoded.latitude, longitude: geocoded.longitude },
-        );
-      } else if (geocoded) {
-        setAccommodationCoords({
-          latitude: geocoded.latitude,
-          longitude: geocoded.longitude,
-        });
-      }
-
-      if (loadingInterval.current) clearInterval(loadingInterval.current);
-      setLoadingStep(5);
-
-      const token = await AsyncStorage.getItem("token");
-      let text = "";
-
-      const venueStr = Object.entries(venues)
-        .map(([type, items]) => {
-          const label = type;
-          return `${label} (${items.length} opcija): ${items
-            .map(
-              (i, idx) =>
-                `${idx + 1}. ${i.name}${i.address ? ` (${i.address})` : ""}`,
-            )
-            .join(", ")}`;
-        })
-        .join("\n");
-
-      const prompt = `Napravi detaljan plan putovanja na hrvatskom jeziku:
-📍 Destinacija: ${destination}${postalCode ? ` (${postalCode})` : ""}
-🏨 Smještaj: ${accommodationAddress || "nije određen"}
-📅 Trajanje: ${period}
-👥 Putnici: ${people} osoba (${companions})
-💰 Budžet: ${budget} EUR
-🚗 Prijevoz: ${transport}
-🌿 Preferencija: ${preference}
-📏 Radijus od smještaja: ${activityRadius} km
-
-Pronađena stvarna mjesta — za svaku kategoriju odaberi MIN 5 konkretnih:
-${venueStr || "Nema pronađenih mjesta, koristi opće prijedloge"}
-
-Plan napiši po danima, OBAVEZNO koristi konkretna imena mjesta, adrese, procjene troška. Piši na hrvatskom.`;
-
-      try {
-        const resp = await fetch(`${API_BASE_URL}/api/ai/plan`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({ prompt }),
-        });
-        if (resp.ok) {
-          const data = await resp.json();
-          text = data.result || data.text || "";
-        }
-      } catch {
-        /* AI nije dostupan, idemo na template */
-      }
-
-      if (!text) {
-        text = buildPlanWithVenues(
-          destination,
-          postalCode,
-          accommodationAddress,
-          period,
-          people,
-          companions,
-          budget,
-          activityRadius,
-          transport,
-          preference,
-          interests,
-          venues,
-        );
-      }
-
-      setResult(text);
-      setStep("result");
-    } catch (e) {
-      if (loadingInterval.current) clearInterval(loadingInterval.current);
-      Alert.alert(t("common.error"), t("plan.planError"));
-      setStep("form");
-    }
-  };
-
-  const copyPlan = () => {
-    Share.share({ message: result }).catch(() =>
-      Alert.alert(t("common.error"), t("plan.shareFailed")),
-    );
-  };
-
-  const PERIOD_OPTIONS: { key: PlanPeriod; labelKey: string }[] = [
-    { key: "dan", labelKey: "plan.day1" },
-    { key: "vikend", labelKey: "plan.weekend" },
-    { key: "tjedan", labelKey: "plan.week" },
-    { key: "2tjedna", labelKey: "plan.twoWeeks" },
-    { key: "godisnji", labelKey: "plan.vacation" },
-  ];
-  const COMPANION_OPTIONS: {
-    key: CompanionType;
-    labelKey: string;
-    icon: string;
-    image: any;
-  }[] = [
-    { key: "solo", labelKey: "plan.solo", icon: "🧑", image: soloIcon },
-    {
-      key: "partner",
-      labelKey: "plan.partner",
-      icon: "💑",
-      image: partnerIcon,
-    },
-    {
-      key: "prijatelji",
-      labelKey: "plan.friends",
-      icon: "👫",
-      image: prijateljIcon,
-    },
-    { key: "obitelj", labelKey: "plan.family", icon: "👨‍👩‍👧", image: obiteljIcon },
-    {
-      key: "misovito",
-      labelKey: "plan.mixed",
-      icon: "🎉",
-      image: mjesovitIcon,
-    },
-  ];
-  const TRANSPORT_OPTIONS: {
-    key: TransportType;
-    labelKey: string;
-    icon: string;
-    image: any;
-  }[] = [
-    { key: "auto", labelKey: "plan.car", icon: "🚗", image: autoIcon },
-    { key: "javni", labelKey: "plan.public", icon: "🚌", image: javniIcon },
-    {
-      key: "pjesice",
-      labelKey: "plan.walking",
-      icon: "🚶",
-      image: pjesiceIcon,
-    },
-    { key: "bicikl", labelKey: "plan.bicycle", icon: "🚲", image: biciklIcon },
-  ];
-  const PREF_OPTIONS: {
-    key: PreferenceType;
-    labelKey: string;
-    icon: string;
-    image: any;
-  }[] = [
-    {
-      key: "otvoreno",
-      labelKey: "plan.outdoors",
-      icon: "🌞",
-      image: otvorenIcon,
-    },
-    {
-      key: "zatvoreno",
-      labelKey: "plan.indoors",
-      icon: "🏠",
-      image: zatvorenoIcon,
-    },
-    {
-      key: "kombinirano",
-      labelKey: "plan.combined",
-      icon: "🌤️",
-      image: kombiniranoIcon,
-    },
-  ];
-
-  // Statistike za header u result viewu
-  const totalVenues = Object.values(allVenues).reduce(
-    (sum, arr) => sum + arr.length,
-    0,
-  );
-  const visitedCount = Object.entries(allVenues).reduce(
-    (sum, [type, venues]) => {
-      return sum + venues.filter((v) => isVenueVisited(v, type)).length;
-    },
-    0,
-  );
-
-  return (
-    <Modal
-      visible={visible}
-      animationType="slide"
-      transparent={false}
-      onRequestClose={handleClose}
-    >
-      <View style={{ flex: 1, backgroundColor: "#1a2e1a" }}>
-        {/* ── Header ────────────────────────────────────────────────── */}
-        {/* NOVO */}
-        <View
-          style={{
-            flexDirection: "row",
-            justifyContent: "space-between",
-            alignItems: "center",
-            padding: 20,
-            paddingTop: Platform.OS === "ios" ? 54 : 36,
-            borderBottomWidth: 1.5,
-            borderBottomColor: "#4a7040",
-            backgroundColor: "#1a2e1a",
-          }}
-        >
-          {step === "result" ? (
-            <TouchableOpacity onPress={() => setStep("form")}>
-              <Text
-                style={{ fontSize: 16, color: "#5a8a48", fontWeight: "700" }}
-              >
-                Novi plan
-              </Text>
-            </TouchableOpacity>
-          ) : (
-            <Text style={{ fontSize: 20, fontWeight: "800", color: "#e8e8e8" }}>
-              {step === "loading" ? t("map.generatingPlan") : t("map.planTrip")}
-            </Text>
-          )}
-
-          {step === "result" && (
-            <Text style={{ fontSize: 18, fontWeight: "800", color: "#e8e8e8" }}>
-              {t("map.tripPlan")}
-            </Text>
-          )}
-
-          {step === "result" ? (
-            <TouchableOpacity onPress={copyPlan}>
-              <Text
-                style={{ fontSize: 14, color: "#b0b0b0", fontWeight: "600" }}
-              >
-                📋 {t("common.copy")}
-              </Text>
-            </TouchableOpacity>
-          ) : step === "loading" ? (
-            <View style={{ width: 60 }} />
-          ) : (
-            <TouchableOpacity onPress={handleClose}>
-              <Text
-                style={{ fontSize: 14, color: "#b0b0b0", fontWeight: "600" }}
-              >
-                {t("common.close")}
-              </Text>
-            </TouchableOpacity>
-          )}
-        </View>
-
-        {/* ── LOADING ───────────────────────────────────────────────── */}
-        {step === "loading" && (
-          <View style={[pm.loadingContainer, { backgroundColor: "#1a2e1a" }]}>
-            <ActivityIndicator size="large" color="#667eea" />
-            <Text style={pm.loadingIcon}>
-              {LOADING_MESSAGES[loadingStep].icon}
-            </Text>
-            <Text style={pm.loadingText}>
-              {LOADING_MESSAGES[loadingStep].text}
-            </Text>
-            <ProgressBar step={loadingStep} total={LOADING_MESSAGES.length} />
-            <Text style={pm.loadingHint}>
-              {t("plan.fetchingPlacesFrom", { destination })}
-            </Text>
-          </View>
-        )}
-
-        {/* ── RESULT ───────────────────────────────────────────────── */}
-        {step === "result" && (
-          <ScrollView
-            contentContainerStyle={{ padding: 20, paddingBottom: 60 }}
-          >
-            {/* Progress */}
-            <View style={planStyles.progressCard}>
-              <View style={planStyles.progressHeader}>
-                <Text style={planStyles.progressTitle}>
-                  📊 Napredak putovanja
-                </Text>
-                <Text style={planStyles.progressCount}>
-                  {visitedCount} / {totalVenues} posjećeno
-                </Text>
-              </View>
-              <View style={planStyles.progressTrack}>
-                <View
-                  style={[
-                    planStyles.progressFill,
-                    {
-                      width:
-                        totalVenues > 0
-                          ? `${Math.round((visitedCount / totalVenues) * 100)}%`
-                          : "0%",
-                    },
-                  ]}
-                />
-              </View>
-              {visitedCount > 0 && (
-                <Text style={planStyles.progressHint}>
-                  🏆 Odlično! Posjetili ste {visitedCount} preporučenih mjesta.
-                </Text>
-              )}
-            </View>
-
-            {/* KARTA — s korisnikovom lokacijom i svim kategorijama */}
-            <View style={mapLegend.header}>
-              <View style={{ flex: 1 }}>
-                <Text style={mapLegend.headerTitle}>
-                  {t("map.destinationMap")}
-                </Text>
-                <Text style={mapLegend.headerSub}>
-                  {accommodationAddress
-                    ? `🏨 ${accommodationAddress}`
-                    : "Tapnite marker za detalje"}
-                </Text>
-              </View>
-              {accommodationCoords && (
-                <TouchableOpacity
-                  style={mapLegend.recenterBtn}
-                  onPress={() =>
-                    mapRef.current?.animateToRegion(
-                      {
-                        latitude: accommodationCoords.latitude,
-                        longitude: accommodationCoords.longitude,
-                        latitudeDelta: 0.05,
-                        longitudeDelta: 0.05,
-                      },
-                      800,
-                    )
-                  }
-                >
-                  <Text style={{ fontSize: 18 }}>🎯</Text>
-                </TouchableOpacity>
-              )}
-            </View>
-
-            {(() => {
-              const allMapVenues: {
-                venue: {
-                  name: string;
-                  address?: string;
-                  latitude: number;
-                  longitude: number;
-                };
-                type: string;
-              }[] = [];
-              Object.entries(allVenues).forEach(([type, options]) => {
-                options.forEach((venue) => allMapVenues.push({ venue, type }));
-              });
-              const visibleVenues = allMapVenues.slice(0, mapMarkerLimit);
-              const hasMoreMarkers = allMapVenues.length > mapMarkerLimit;
-              const moreCount = Math.min(
-                allMapVenues.length - mapMarkerLimit,
-                10,
-              );
-
-              return (
-                <>
-                  <MapView
-                    ref={mapRef}
-                    style={{ height: 360, borderRadius: 16, marginBottom: 0 }}
-                    initialRegion={{
-                      latitude: accommodationCoords?.latitude || 45.815,
-                      longitude: accommodationCoords?.longitude || 15.9819,
-                      latitudeDelta: 0.06,
-                      longitudeDelta: 0.06,
-                    }}
-                  >
-                    {/* Korisnikova stvarna lokacija */}
-                    {userLocation && (
-                      <Marker
-                        coordinate={userLocation}
-                        anchor={{ x: 0.5, y: 0.5 }}
-                        tracksViewChanges={false}
-                      >
-                        <UserLocationMarker />
-                      </Marker>
-                    )}
-
-                    {/* Marker smještaja */}
-                    {accommodationCoords && (
-                      <Marker
-                        coordinate={accommodationCoords}
-                        title="🏨 Vaš smještaj"
-                        description={accommodationAddress || "Adresa smještaja"}
-                        pinColor="#667eea"
-                      />
-                    )}
-
-                    {/* Vidljivi markeri s ikonama kategorija */}
-                    {visibleVenues.map(({ venue, type }, idx) => {
-                      const placeObj = venueToPlace(venue, type);
-                      const visited = isVenueVisited(venue, type);
-                      return (
-                        <PlaceMarker
-                          key={`plan_marker_${type}_${idx}`}
-                          place={placeObj}
-                          isVisited={visited}
-                          onPress={() => {
-                            setSelectedPlaceForDetail(placeObj);
-                            setShowDetailModal(true);
-                          }}
-                        />
-                      );
-                    })}
-                  </MapView>
-
-                  {/* Info traka ispod karte: prikazano X od Y + dodaj još */}
-                  <View
-                    style={{
-                      backgroundColor: "#2a4230",
-                      borderBottomLeftRadius: 12,
-                      borderBottomRightRadius: 12,
-                      paddingHorizontal: 14,
-                      paddingVertical: 10,
-                      marginBottom: 8,
-                      flexDirection: "row",
-                      alignItems: "center",
-                      justifyContent: "space-between",
-                      borderWidth: 1,
-                      borderTopWidth: 0,
-                      borderColor: "#3a5a30",
-                    }}
-                  >
-                    <Text style={{ fontSize: 12, color: "#6a9a60", flex: 1 }}>
-                      📍 Prikazano{" "}
-                      {Math.min(mapMarkerLimit, allMapVenues.length)} od{" "}
-                      {allMapVenues.length} mjesta
-                    </Text>
-                    {hasMoreMarkers ? (
-                      <View style={{ flexDirection: "row", gap: 6 }}>
-                        <TouchableOpacity
-                          style={{
-                            backgroundColor: "#3a5a30",
-                            borderRadius: 8,
-                            paddingHorizontal: 10,
-                            paddingVertical: 5,
-                            borderWidth: 1,
-                            borderColor: "#5a8a48",
-                          }}
-                          onPress={() => {
-                            const newLimit = mapMarkerLimit + 5;
-                            setMapMarkerLimit(newLimit);
-                            const newVisible = allMapVenues.slice(0, newLimit);
-                            if (mapRef.current && newVisible.length > 0) {
-                              mapRef.current.fitToCoordinates(
-                                [
-                                  ...newVisible.map(({ venue }) => ({
-                                    latitude: venue.latitude,
-                                    longitude: venue.longitude,
-                                  })),
-                                  ...(accommodationCoords
-                                    ? [accommodationCoords]
-                                    : []),
-                                ],
-                                {
-                                  edgePadding: {
-                                    top: 60,
-                                    right: 40,
-                                    bottom: 60,
-                                    left: 40,
-                                  },
-                                  animated: true,
-                                },
-                              );
-                            }
-                          }}
-                        >
-                          <Text
-                            style={{
-                              color: "#e8e8e8",
-                              fontSize: 11,
-                              fontWeight: "700",
-                            }}
-                          >
-                            +5
-                          </Text>
-                        </TouchableOpacity>
-                        <TouchableOpacity
-                          style={{
-                            backgroundColor: "#3a5a30",
-                            borderRadius: 8,
-                            paddingHorizontal: 10,
-                            paddingVertical: 5,
-                            borderWidth: 1,
-                            borderColor: "#5a8a48",
-                          }}
-                          onPress={() => {
-                            const newLimit = mapMarkerLimit + 10;
-                            setMapMarkerLimit(newLimit);
-                            const newVisible = allMapVenues.slice(0, newLimit);
-                            if (mapRef.current && newVisible.length > 0) {
-                              mapRef.current.fitToCoordinates(
-                                [
-                                  ...newVisible.map(({ venue }) => ({
-                                    latitude: venue.latitude,
-                                    longitude: venue.longitude,
-                                  })),
-                                  ...(accommodationCoords
-                                    ? [accommodationCoords]
-                                    : []),
-                                ],
-                                {
-                                  edgePadding: {
-                                    top: 60,
-                                    right: 40,
-                                    bottom: 60,
-                                    left: 40,
-                                  },
-                                  animated: true,
-                                },
-                              );
-                            }
-                          }}
-                        >
-                          <Text
-                            style={{
-                              color: "#e8e8e8",
-                              fontSize: 11,
-                              fontWeight: "700",
-                            }}
-                          >
-                            +10
-                          </Text>
-                        </TouchableOpacity>
-                        {allMapVenues.length - mapMarkerLimit > 10 && (
-                          <TouchableOpacity
-                            style={{
-                              backgroundColor: "#1a3a20",
-                              borderRadius: 8,
-                              paddingHorizontal: 10,
-                              paddingVertical: 5,
-                              borderWidth: 1,
-                              borderColor: "#4a7040",
-                            }}
-                            onPress={() => {
-                              setMapMarkerLimit(allMapVenues.length);
-                              if (mapRef.current && allMapVenues.length > 0) {
-                                mapRef.current.fitToCoordinates(
-                                  allMapVenues.map(({ venue }) => ({
-                                    latitude: venue.latitude,
-                                    longitude: venue.longitude,
-                                  })),
-                                  {
-                                    edgePadding: {
-                                      top: 60,
-                                      right: 40,
-                                      bottom: 60,
-                                      left: 40,
-                                    },
-                                    animated: true,
-                                  },
-                                );
-                              }
-                            }}
-                          >
-                            <Text
-                              style={{
-                                color: "#6a9a60",
-                                fontSize: 11,
-                                fontWeight: "700",
-                              }}
-                            >
-                              Svi ({allMapVenues.length})
-                            </Text>
-                          </TouchableOpacity>
-                        )}
-                      </View>
-                    ) : (
-                      <Text
-                        style={{
-                          fontSize: 11,
-                          color: "#5a8a48",
-                          fontWeight: "600",
-                        }}
-                      >
-                        ✓ Sve prikazano
-                      </Text>
-                    )}
-                  </View>
-                </>
-              );
-            })()}
-
-            {/* Legenda kategorija */}
-            <View style={mapLegend.legendContainer}>
-              <Text style={mapLegend.legendTitle}>KATEGORIJE NA KARTI</Text>
-              <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-                <View style={mapLegend.legendRow}>
-                  {userLocation && (
-                    <View
-                      style={[
-                        mapLegend.chip,
-                        {
-                          backgroundColor: "#34c75922",
-                          borderColor: "#34c759",
-                        },
-                      ]}
-                    >
-                      <View
-                        style={[mapLegend.dot, { backgroundColor: "#34c759" }]}
-                      />
-                      <Text style={mapLegend.chipText}>📍 Vaša lokacija</Text>
-                    </View>
-                  )}
-                  {accommodationCoords && (
-                    <View
-                      style={[
-                        mapLegend.chip,
-                        {
-                          backgroundColor: "#667eea22",
-                          borderColor: "#667eea",
-                        },
-                      ]}
-                    >
-                      <View
-                        style={[mapLegend.dot, { backgroundColor: "#667eea" }]}
-                      />
-                      <Text style={mapLegend.chipText}>🏨 Smještaj</Text>
-                    </View>
-                  )}
-                  {Object.entries(allVenues).map(([type, options]) => {
-                    const cat =
-                      placeCategories[type as keyof typeof placeCategories];
-                    if (!cat || !options.length) return null;
-                    const visitedInCat = options.filter((v) =>
-                      isVenueVisited(v, type),
-                    ).length;
-                    return (
-                      <View
-                        key={type}
-                        style={[
-                          mapLegend.chip,
-                          {
-                            backgroundColor: cat.color + "22",
-                            borderColor: cat.color,
-                          },
-                        ]}
-                      >
-                        <View
-                          style={[
-                            mapLegend.dot,
-                            { backgroundColor: cat.color },
-                          ]}
-                        />
-                        <View
-                          style={{
-                            flexDirection: "row",
-                            alignItems: "center",
-                            gap: 4,
-                          }}
-                        >
-                          {CATEGORY_ICONS[type] ? (
-                            <Image
-                              source={CATEGORY_ICONS[type]}
-                              style={{ width: 16, height: 16 }}
-                              resizeMode="contain"
-                            />
-                          ) : (
-                            <Text style={{ fontSize: 11 }}>{EMOJIS[type]}</Text>
-                          )}
-                          <Text style={mapLegend.chipText}>
-                            {t(`categories.${type}`, { defaultValue: type })} (
-                            {options.length})
-                            {visitedInCat > 0 ? ` ✓${visitedInCat}` : ""}
-                          </Text>
-                        </View>
-                      </View>
-                    );
-                  })}
-                </View>
-              </ScrollView>
-              <Text style={{ fontSize: 11, color: "#6a9a60", marginTop: 6 }}>
-                💡 Tapnite marker → slike, radno vrijeme, ocjena, označi posjet
-              </Text>
-            </View>
-
-            {/* PO KATEGORIJAMA: min 5 opcija, korisnik bira */}
-            <View style={{ marginTop: 8, marginBottom: 8 }}>
-              <Text style={planStyles.sectionHeader}>
-                🗂️ Odaberite svoja mjesta po kategorijama
-              </Text>
-              <Text style={planStyles.sectionSub}>
-                Tapnite karticu za detalje · Tapnite "Označi posjet" kada
-                posjetite
-              </Text>
-            </View>
-
-            {Object.entries(allVenues).map(([type, options]) => {
-              const cat = placeCategories[type as keyof typeof placeCategories];
-              const color = cat?.color || "#667eea";
-              const visitedInCat = options.filter((v) =>
-                isVenueVisited(v, type),
-              ).length;
-              // Prikaži sve opcije, minimum 5 ako ih ima
-              const displayOptions = options;
-
-              return (
-                <View
-                  key={type}
-                  style={[
-                    planStyles.categorySection,
-                    { borderTopColor: color },
-                  ]}
-                >
-                  {/* Naslov kategorije */}
-                  <View style={planStyles.categoryHeader}>
-                    <View
-                      style={[
-                        planStyles.categoryDot,
-                        {
-                          backgroundColor: color + "22",
-                          borderWidth: 1,
-                          borderColor: color,
-                        },
-                      ]}
-                    >
-                      {CATEGORY_ICONS[type] ? (
-                        <Image
-                          source={CATEGORY_ICONS[type]}
-                          style={{ width: 56, height: 56 }} // ← povećano
-                          resizeMode="contain"
-                        />
-                      ) : (
-                        <Text style={{ fontSize: 28 }}>
-                          {EMOJIS[type] || "📍"}
-                        </Text>
-                      )}
-                    </View>
-                    <View style={{ flex: 1 }}>
-                      <Text style={planStyles.categoryTitle}>
-                        {t(`categories.${type}`, { defaultValue: type })}
-                      </Text>
-                      <Text style={planStyles.categorySub}>
-                        {displayOptions.length} prijedloga
-                        {visitedInCat > 0
-                          ? ` · ✓ ${visitedInCat} posjećeno`
-                          : ""}
-                        {displayOptions.length < 5 ? " (OSM podaci)" : ""}
-                      </Text>
-                    </View>
-                    {visitedInCat > 0 && (
-                      <View
-                        style={[
-                          planStyles.categoryDot,
-                          {
-                            backgroundColor: color + "22",
-                            borderWidth: 1,
-                            borderColor: color,
-                            width: 64, // ← povećano
-                            height: 64, // ← povećano
-                            borderRadius: 32, // ← povećano
-                          },
-                        ]}
-                      >
-                        <Text style={[planStyles.catBadgeText, { color }]}>
-                          {visitedInCat}/{displayOptions.length}
-                        </Text>
-                      </View>
-                    )}
-                  </View>
-
-                  {/* Info ako nema dovoljno opcija */}
-                  {displayOptions.length < 5 && (
-                    <View
-                      style={{
-                        backgroundColor: "#2a4230",
-                        marginHorizontal: 12,
-                        marginBottom: 8,
-                        borderRadius: 8,
-                        padding: 10,
-                        borderWidth: 1,
-                        borderColor: "#3a5a30",
-                      }}
-                    >
-                      <Text style={{ fontSize: 12, color: "#6a9a60" }}>
-                        ℹ️ Pronađeno {displayOptions.length} mjesta u radijusu{" "}
-                        {activityRadius} km. Povećajte radijus za više opcija.
-                      </Text>
-                    </View>
-                  )}
-
-                  {/* Venue kartice */}
-                  {displayOptions.map((venue, idx) => {
-                    const visited = isVenueVisited(venue, type);
-                    const dist = accommodationCoords
-                      ? haversineKm(
-                          accommodationCoords.latitude,
-                          accommodationCoords.longitude,
-                          venue.latitude,
-                          venue.longitude,
-                        )
-                      : null;
-                    const placeObj = venueToPlace(venue, type);
-
-                    return (
-                      <View
-                        key={idx}
-                        style={[
-                          planStyles.venueCard,
-                          visited && planStyles.venueCardVisited,
-                        ]}
-                      >
-                        {/* Broj opcije */}
-                        <View
-                          style={{
-                            width: 28,
-                            height: 28,
-                            borderRadius: 14,
-                            backgroundColor: visited
-                              ? "#34c75922"
-                              : color + "22",
-                            justifyContent: "center",
-                            alignItems: "center",
-                            borderWidth: 1,
-                            borderColor: visited ? "#34c759" : color,
-                            marginRight: 2,
-                          }}
-                        >
-                          <Text
-                            style={{
-                              fontSize: 11,
-                              fontWeight: "800",
-                              color: visited ? "#34c759" : color,
-                            }}
-                          >
-                            {idx + 1}
-                          </Text>
-                        </View>
-
-                        {/* Info */}
-                        <TouchableOpacity
-                          style={{ flex: 1 }}
-                          onPress={() => {
-                            setSelectedPlaceForDetail(placeObj);
-                            setShowDetailModal(true);
-                          }}
-                          activeOpacity={0.75}
-                        >
-                          <View
-                            style={{
-                              flexDirection: "row",
-                              alignItems: "flex-start",
-                              gap: 6,
-                            }}
-                          >
-                            {CATEGORY_ICONS[type] ? (
-                              <Image
-                                source={CATEGORY_ICONS[type]}
-                                style={{ width: 40, height: 40 }} // ← povećano
-                                resizeMode="contain"
-                              />
-                            ) : (
-                              <Text style={{ fontSize: 28 }}>
-                                {EMOJIS[type] || "📍"}
-                              </Text>
-                            )}
-                            <View style={{ flex: 1 }}>
-                              <Text
-                                style={[
-                                  planStyles.venueName,
-                                  visited && { color: "#34c759" },
-                                ]}
-                                numberOfLines={1}
-                              >
-                                {visited && "✓ "}
-                                {venue.name}
-                              </Text>
-                              {venue.address ? (
-                                <Text
-                                  style={planStyles.venueAddress}
-                                  numberOfLines={1}
-                                >
-                                  📍 {venue.address}
-                                </Text>
-                              ) : null}
-                              <View
-                                style={{
-                                  flexDirection: "row",
-                                  gap: 8,
-                                  marginTop: 3,
-                                }}
-                              >
-                                {dist !== null && (
-                                  <Text
-                                    style={[
-                                      planStyles.venueDist,
-                                      { color: dist < 1 ? "#34c759" : color },
-                                    ]}
-                                  >
-                                    {dist < 1
-                                      ? `${Math.round(dist * 1000)} m`
-                                      : `${dist.toFixed(1)} km`}
-                                  </Text>
-                                )}
-                                <Text style={planStyles.venueDetailHint}>
-                                  Tapni za slike i detalje
-                                </Text>
-                              </View>
-                            </View>
-                          </View>
-                        </TouchableOpacity>
-
-                        {/* Označi posjet gumb */}
-                        <TouchableOpacity
-                          style={[
-                            planStyles.visitToggleBtn,
-                            visited
-                              ? planStyles.visitToggleBtnVisited
-                              : { borderColor: color },
-                            { minWidth: 52, maxWidth: 52 }, // ← fiksiraj širinu
-                          ]}
-                          onPress={() => handleMarkVisitedFromPlan(venue, type)}
-                          disabled={visited}
-                        >
-                          {visited ? (
-                            <Text
-                              style={[
-                                planStyles.visitToggleTextVisited,
-                                { fontSize: 9 },
-                              ]}
-                            >
-                              ✓{"\n"}Bilo
-                            </Text>
-                          ) : (
-                            <Text
-                              style={[
-                                planStyles.visitToggleText,
-                                { color, fontSize: 9 },
-                              ]}
-                            >
-                              Označi{"\n"}posjet
-                            </Text>
-                          )}
-                        </TouchableOpacity>
-                      </View>
-                    );
-                  })}
-                </View>
-              );
-            })}
-
-            {/* Generirani plan */}
-            <View style={{ marginTop: 20 }}>
-              <Text style={planStyles.sectionHeader}>
-                📋 Generirani plan putovanja
-              </Text>
-              <Text style={planStyles.sectionSub}>
-                Konkretna mjesta iz gornjih kategorija integrirana u dnevni
-                raspored
-              </Text>
-            </View>
-            <PlanRenderer text={result} />
-
-            <View style={{ gap: 10, marginTop: 20 }}>
-              <TouchableOpacity style={pm.btnPrimary} onPress={copyPlan}>
-                <Text style={pm.btnPrimaryText}>📋 Kopiraj cijeli plan</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={pm.btnSecondary}
-                onPress={() => setStep("form")}
-              >
-                <Text style={pm.btnSecondaryText}> Generiraj novi plan</Text>
-              </TouchableOpacity>
-            </View>
-          </ScrollView>
-        )}
-
-        {/* ── FORM ─────────────────────────────────────────────────── */}
-        {step === "form" && (
-          <KeyboardAvoidingView
-            style={{ flex: 1 }}
-            behavior={Platform.OS === "ios" ? "padding" : "height"}
-          >
-            <ScrollView
-              contentContainerStyle={{ paddingBottom: 40 }}
-              keyboardShouldPersistTaps="handled"
-              style={{ backgroundColor: "#1a2e1a" }}
-            >
-              {/* ── DESTINACIJA ── */}
-              <View
-                style={{
-                  padding: 16,
-                  borderBottomWidth: 1,
-                  borderBottomColor: "#3a5a30",
-                }}
-              >
-                <Text
-                  style={{
-                    fontSize: 14,
-                    fontWeight: "700",
-                    color: "#c0c0c0",
-                    marginBottom: 10,
-                  }}
-                >
-                  {t("map.destination")}
-                </Text>
-                <TextInput
-                  style={{
-                    backgroundColor: "#2a4230",
-                    borderRadius: 10,
-                    borderWidth: 1,
-                    borderColor: "#4a7040",
-                    paddingHorizontal: 14,
-                    paddingVertical: 10,
-                    fontSize: 15,
-                    color: "#e8e8e8",
-                    marginBottom: 8,
-                  }}
-                  placeholder={t("plan.destinationPlaceholder")}
-                  placeholderTextColor="#8a8a8a"
-                  value={destination}
-                  onChangeText={setDestination}
-                />
-                <TextInput
-                  style={{
-                    backgroundColor: "#2a4230",
-                    borderRadius: 10,
-                    borderWidth: 1,
-                    borderColor: "#4a7040",
-                    paddingHorizontal: 14,
-                    paddingVertical: 10,
-                    fontSize: 15,
-                    color: "#e8e8e8",
-                  }}
-                  placeholder={t("plan.postalCode")}
-                  placeholderTextColor="#8a8a8a"
-                  value={postalCode}
-                  onChangeText={setPostalCode}
-                  keyboardType="numeric"
-                />
-                <TextInput
-                  style={{
-                    marginTop: 8,
-                    backgroundColor: "#2a4230",
-                    borderRadius: 10,
-                    borderWidth: 1,
-                    borderColor: "#4a7040",
-                    paddingHorizontal: 14,
-                    paddingVertical: 10,
-                    fontSize: 15,
-                    color: "#e8e8e8",
-                  }}
-                  placeholder={t("plan.accommodation")}
-                  placeholderTextColor="#8a8a8a"
-                  value={accommodationAddress}
-                  onChangeText={setAccommodationAddress}
-                />
-              </View>
-
-              {/* ── TRAJANJE ── */}
-              <View
-                style={{
-                  padding: 16,
-                  borderBottomWidth: 1,
-                  borderBottomColor: "#3a5a30",
-                }}
-              >
-                <Text
-                  style={{
-                    fontSize: 14,
-                    fontWeight: "700",
-                    color: "#c0c0c0",
-                    marginBottom: 10,
-                  }}
-                >
-                  {t("map.duration")}
-                </Text>
-                <View
-                  style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}
-                >
-                  {PERIOD_OPTIONS.map((o) => {
-                    const active = period === o.key;
-                    return (
-                      <TouchableOpacity
-                        key={o.key}
-                        style={{
-                          paddingHorizontal: 16,
-                          paddingVertical: 9,
-                          backgroundColor: active ? "#3a5a30" : "#2a4230",
-                          borderRadius: 8,
-                          borderWidth: 1,
-                          borderColor: active ? "#5a8a48" : "#3a5a30",
-                        }}
-                        onPress={() => setPeriod(o.key)}
-                      >
-                        <Text
-                          style={{
-                            fontSize: 13,
-                            color: active ? "#e8e8e8" : "#b0b0b0",
-                            fontWeight: active ? "700" : "400",
-                          }}
-                        >
-                          {t(o.labelKey)}
-                        </Text>
-                      </TouchableOpacity>
-                    );
-                  })}
-                </View>
-              </View>
-
-              {/* ── PUTNICI ── */}
-              <View
-                style={{
-                  padding: 16,
-                  borderBottomWidth: 1,
-                  borderBottomColor: "#3a5a30",
-                }}
-              >
-                <Text
-                  style={{
-                    fontSize: 14,
-                    fontWeight: "700",
-                    color: "#c0c0c0",
-                    marginBottom: 10,
-                  }}
-                >
-                  {t("map.travelers")}
-                </Text>
-                <Text
-                  style={{ fontSize: 13, color: "#a0a0a0", marginBottom: 8 }}
-                >
-                  {t("plan.numberOfPeople")}
-                </Text>
-                <View
-                  style={{
-                    flexDirection: "row",
-                    flexWrap: "wrap",
-                    gap: 8,
-                    marginBottom: 14,
-                  }}
-                >
-                  {["1", "2", "3", "4", "5+"].map((n) => {
-                    const val = n === "5+" ? "6" : n;
-                    const active = people === val;
-                    return (
-                      <TouchableOpacity
-                        key={n}
-                        style={{
-                          paddingHorizontal: 16,
-                          paddingVertical: 9,
-                          backgroundColor: active ? "#3a5a30" : "#2a4230",
-                          borderRadius: 8,
-                          borderWidth: 1,
-                          borderColor: active ? "#5a8a48" : "#3a5a30",
-                        }}
-                        onPress={() => setPeople(val)}
-                      >
-                        <Text
-                          style={{
-                            fontSize: 13,
-                            color: active ? "#e8e8e8" : "#b0b0b0",
-                            fontWeight: active ? "700" : "400",
-                          }}
-                        >
-                          {n}
-                        </Text>
-                      </TouchableOpacity>
-                    );
-                  })}
-                </View>
-                <Text
-                  style={{ fontSize: 13, color: "#a0a0a0", marginBottom: 8 }}
-                >
-                  {t("plan.travelWith")}
-                </Text>
-                <View
-                  style={{ flexDirection: "row", flexWrap: "wrap", gap: 4 }}
-                >
-                  {COMPANION_OPTIONS.map((o) => {
-                    const active = companions === o.key;
-                    return (
-                      <TouchableOpacity
-                        key={o.key}
-                        style={{
-                          paddingHorizontal: 10,
-                          paddingVertical: 10,
-                          backgroundColor: active ? "#3a5a30" : "#2a4230",
-                          borderRadius: 12,
-                          borderWidth: active ? 2 : 1,
-                          borderColor: active ? "#5a8a48" : "#3a5a30",
-                          alignItems: "center",
-                          width: CELL_W,
-                          height: 130,
-                          justifyContent: "center",
-                        }}
-                        onPress={() => setCompanions(o.key)}
-                      >
-                        <Image
-                          source={o.image}
-                          style={{ width: 96, height: 96, marginBottom: 4 }}
-                          resizeMode="contain"
-                        />
-                        <Text
-                          style={{
-                            fontSize: 11,
-                            fontWeight: "600",
-                            color: active ? "#fff" : "#c0c0c0",
-                            textAlign: "center",
-                          }}
-                          numberOfLines={2}
-                        >
-                          {t(o.labelKey)}
-                        </Text>
-                      </TouchableOpacity>
-                    );
-                  })}
-                </View>
-              </View>
-
-              {/* ── BUDŽET ── */}
-              <View
-                style={{
-                  padding: 16,
-                  borderBottomWidth: 1,
-                  borderBottomColor: "#3a5a30",
-                }}
-              >
-                <Text
-                  style={{
-                    fontSize: 14,
-                    fontWeight: "700",
-                    color: "#c0c0c0",
-                    marginBottom: 10,
-                  }}
-                >
-                  💰 {t("map.budgetTitle")}
-                </Text>
-                <View
-                  style={{
-                    flexDirection: "row",
-                    flexWrap: "wrap",
-                    gap: 8,
-                  }}
-                >
-                  {["200", "500", "1000", "2000", "5000"].map((b) => {
-                    const active = budget === b;
-                    return (
-                      <TouchableOpacity
-                        key={b}
-                        style={{
-                          paddingHorizontal: 16,
-                          paddingVertical: 9,
-                          backgroundColor: active ? "#3a5a30" : "#2a4230",
-                          borderRadius: 8,
-                          borderWidth: 1,
-                          borderColor: active ? "#5a8a48" : "#3a5a30",
-                        }}
-                        onPress={() => setBudget(b)}
-                      >
-                        <Text
-                          style={{
-                            fontSize: 13,
-                            color: active ? "#e8e8e8" : "#b0b0b0",
-                            fontWeight: active ? "700" : "400",
-                          }}
-                        >
-                          {b} €
-                        </Text>
-                      </TouchableOpacity>
-                    );
-                  })}
-                </View>
-              </View>
-
-              {/* ── RADIJUS AKTIVNOSTI ── */}
-              <View
-                style={{
-                  padding: 16,
-                  borderBottomWidth: 1,
-                  borderBottomColor: "#3a5a30",
-                }}
-              >
-                <Text
-                  style={{
-                    fontSize: 14,
-                    fontWeight: "700",
-                    color: "#c0c0c0",
-                    marginBottom: 10,
-                  }}
-                >
-                  {t("map.activityRadius")}
-                </Text>
-                <View
-                  style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}
-                >
-                  {[1, 2, 3, 5, 10, 20].map((r) => {
-                    const active = activityRadius === r;
-                    return (
-                      <TouchableOpacity
-                        key={r}
-                        style={{
-                          paddingHorizontal: 16,
-                          paddingVertical: 9,
-                          backgroundColor: active ? "#3a5a30" : "#2a4230",
-                          borderRadius: 8,
-                          borderWidth: 1,
-                          borderColor: active ? "#5a8a48" : "#3a5a30",
-                        }}
-                        onPress={() => setActivityRadius(r)}
-                      >
-                        <Text
-                          style={{
-                            fontSize: 13,
-                            color: active ? "#e8e8e8" : "#b0b0b0",
-                            fontWeight: active ? "700" : "400",
-                          }}
-                        >
-                          {r} km
-                        </Text>
-                      </TouchableOpacity>
-                    );
-                  })}
-                </View>
-              </View>
-
-              {/* ── PRIJEVOZ ── */}
-              <View
-                style={{
-                  padding: 16,
-                  borderBottomWidth: 1,
-                  borderBottomColor: "#3a5a30",
-                }}
-              >
-                <Text
-                  style={{
-                    fontSize: 14,
-                    fontWeight: "700",
-                    color: "#c0c0c0",
-                    marginBottom: 10,
-                  }}
-                >
-                  🚗 Prijevoz
-                </Text>
-                <View
-                  style={{ flexDirection: "row", flexWrap: "wrap", gap: 4 }}
-                >
-                  {TRANSPORT_OPTIONS.map((o) => {
-                    const active = transport === o.key;
-                    return (
-                      <TouchableOpacity
-                        key={o.key}
-                        style={{
-                          paddingHorizontal: 10,
-                          paddingVertical: 10,
-                          backgroundColor: active ? "#3a5a30" : "#2a4230",
-                          borderRadius: 12,
-                          borderWidth: active ? 2 : 1,
-                          borderColor: active ? "#5a8a48" : "#3a5a30",
-                          alignItems: "center",
-                          width: CELL_W,
-                          height: 130,
-                          justifyContent: "center",
-                        }}
-                        onPress={() => setTransport(o.key)}
-                      >
-                        <Image
-                          source={o.image}
-                          style={{ width: 96, height: 96, marginBottom: 4 }}
-                          resizeMode="contain"
-                        />
-                        <Text
-                          style={{
-                            fontSize: 11,
-                            fontWeight: "600",
-                            color: active ? "#fff" : "#c0c0c0",
-                            textAlign: "center",
-                          }}
-                          numberOfLines={2}
-                        >
-                          {t(o.labelKey)}
-                        </Text>
-                      </TouchableOpacity>
-                    );
-                  })}
-                </View>
-              </View>
-
-              {/* ── AKTIVNOSTI PREFERENCE ── */}
-              <View
-                style={{
-                  padding: 16,
-                  borderBottomWidth: 1,
-                  borderBottomColor: "#3a5a30",
-                }}
-              >
-                <Text
-                  style={{
-                    fontSize: 14,
-                    fontWeight: "700",
-                    color: "#c0c0c0",
-                    marginBottom: 10,
-                  }}
-                >
-                  {t("map.activities")}
-                </Text>
-                <View
-                  style={{ flexDirection: "row", flexWrap: "wrap", gap: 4 }}
-                >
-                  {PREF_OPTIONS.map((o) => {
-                    const active = preference === o.key;
-                    return (
-                      <TouchableOpacity
-                        key={o.key}
-                        style={{
-                          paddingHorizontal: 10,
-                          paddingVertical: 10,
-                          backgroundColor: active ? "#3a5a30" : "#2a4230",
-                          borderRadius: 12,
-                          borderWidth: active ? 2 : 1,
-                          borderColor: active ? "#5a8a48" : "#3a5a30",
-                          alignItems: "center",
-                          width: CELL_W,
-                          height: 130,
-                          justifyContent: "center",
-                        }}
-                        onPress={() => setPreference(o.key)}
-                      >
-                        <Image
-                          source={o.image}
-                          style={{ width: 96, height: 96, marginBottom: 4 }}
-                          resizeMode="contain"
-                        />
-                        <Text
-                          style={{
-                            fontSize: 11,
-                            fontWeight: "600",
-                            color: active ? "#fff" : "#c0c0c0",
-                            textAlign: "center",
-                          }}
-                          numberOfLines={2}
-                        >
-                          {t(o.labelKey)}
-                        </Text>
-                      </TouchableOpacity>
-                    );
-                  })}
-                </View>
-              </View>
-
-              {/* ── INTERESI — IDENTIČNO KATEGORIJAMA U FILTRU ── */}
-              <View
-                style={{
-                  paddingHorizontal: 16,
-                  paddingTop: 12,
-                  paddingBottom: 4,
-                }}
-              >
-                <View
-                  style={{
-                    flexDirection: "row",
-                    justifyContent: "space-between",
-                    alignItems: "center",
-                    marginBottom: 8,
-                  }}
-                >
-                  <Text
-                    style={{
-                      fontSize: 14,
-                      fontWeight: "700",
-                      color: "#c0c0c0",
-                    }}
-                  >
-                    {t("map.interestsOptional")}
-                  </Text>
-                  {interests.length > 0 && (
-                    <TouchableOpacity onPress={() => setInterests([])}>
-                      <Text
-                        style={{
-                          fontSize: 13,
-                          color: "#5a8a48",
-                          fontWeight: "600",
-                        }}
-                      >
-                        {t("plan.clearInterests")}
-                      </Text>
-                    </TouchableOpacity>
-                  )}
-                </View>
-                <View
-                  style={{ flexDirection: "row", flexWrap: "wrap", gap: 4 }}
-                >
-                  {getAllCategories().map((cat) => {
-                    const active = interests.includes(cat.id);
-                    return (
-                      <TouchableOpacity
-                        key={cat.id}
-                        style={{
-                          width: CELL_W,
-                          height: 130,
-                          backgroundColor: active ? cat.color : "#2a4230",
-                          borderRadius: 12,
-                          justifyContent: "center",
-                          alignItems: "center",
-                          paddingHorizontal: 4,
-                          paddingVertical: 8,
-                          borderWidth: active ? 2 : 1,
-                          borderColor: active ? cat.color : "#3a5a30",
-                        }}
-                        onPress={() => toggleInterest(cat.id)}
-                      >
-                        {CATEGORY_ICONS[cat.id] ? (
-                          <Image
-                            source={CATEGORY_ICONS[cat.id]}
-                            style={{ width: 96, height: 96, marginBottom: 4 }}
-                            resizeMode="contain"
-                          />
-                        ) : (
-                          <Text style={{ fontSize: 56, marginBottom: 4 }}>
-                            {cat.icon}
-                          </Text>
-                        )}
-                        <Text
-                          style={{
-                            fontSize: 11,
-                            fontWeight: "600",
-                            color: active ? "#fff" : "#c0c0c0",
-                            textAlign: "center",
-                          }}
-                          numberOfLines={2}
-                        >
-                          {cat.name}
-                        </Text>
-                      </TouchableOpacity>
-                    );
-                  })}
-                </View>
-              </View>
-
-              {/* ── GENERIRAJ GUMB ── */}
-              <TouchableOpacity
-                style={{
-                  margin: 16,
-                  backgroundColor: "#3a5a30",
-                  borderRadius: 12,
-                  borderWidth: 1.5,
-                  borderColor: "#5a8a48",
-                  paddingVertical: 16,
-                  alignItems: "center",
-                }}
-                onPress={generate}
-              >
-                <Text
-                  style={{ color: "#e8e8e8", fontSize: 16, fontWeight: "700" }}
-                >
-                  {t("map.generatePlan")}
-                </Text>
-              </TouchableOpacity>
-              <Text
-                style={{
-                  textAlign: "center",
-                  fontSize: 12,
-                  color: "#a0a0a0",
-                  marginBottom: 24,
-                  paddingHorizontal: 20,
-                }}
-              >
-                {t("plan.generateHint", {
-                  destination: destination || t("plan.destination"),
-                })}
-              </Text>
-            </ScrollView>
-          </KeyboardAvoidingView>
-        )}
-
-        {/* ══════════════════════════════════════════════════════════════
-            PlaceDetailModal — MORA BITI IZVAN ScrollViewa, na root razini!
-            Otvara se i kad kliknete marker na karti i kad kliknete karticu.
-            Ima iste mogućnosti kao na glavnoj karti:
-              • Google slike
-              • Radno vrijeme
-              • Ocjena (zvjezdice + komentar)
-              • Označi posjet → arhiva + značka
-        ════════════════════════════════════════════════════════════════ */}
-        <PlaceDetailModal
-          place={selectedPlaceForDetail}
-          visible={showDetailModal}
-          onClose={() => {
-            setShowDetailModal(false);
-            setSelectedPlaceForDetail(null);
-          }}
-          onMarkVisited={async (p) => {
-            if (onMarkVisited) await onMarkVisited(p);
-            setLocalVisitedIds((prev) => new Set([...prev, p.id]));
-            setShowDetailModal(false);
-            setSelectedPlaceForDetail(null);
-          }}
-          onHidePlace={() => {
-            setShowDetailModal(false);
-            setSelectedPlaceForDetail(null);
-          }}
-          isVisited={
-            selectedPlaceForDetail
-              ? localVisitedIds.has(selectedPlaceForDetail.id) ||
-                visits.some(
-                  (v) =>
-                    v.placeName.toLowerCase() ===
-                      (selectedPlaceForDetail.name || "").toLowerCase() &&
-                    v.placeType === selectedPlaceForDetail.type,
-                )
-              : false
-          }
-          notifPrefs={{
-            appEnabled: false,
-            emailEnabled: false,
-            email: "",
-            categories: [],
-          }}
-          onToggleNotif={() => {}}
-        />
-      </View>
-    </Modal>
-  );
-}
+// export function PlanMyDayModal({
+//   visible,
+//   userLocation,
+//   onClose,
+//   onMarkVisited,
+//   visits = [],
+// }: {
+//   visible: boolean;
+//   userLocation: { latitude: number; longitude: number } | null;
+//   onClose: () => void;
+//   onMarkVisited?: (place: Place) => Promise<void>;
+//   visits?: VisitRecord[];
+// }) {
+//   const { t } = useTranslation();
+//   const { isDark } = useTheme();
+//   const DC = getDashColors(isDark);
+//   const getAllCategories = useCallback(() => {
+//     return Object.entries(placeCategories).map(([id, c]) => ({
+//       id,
+//       name: t(`categories.${id}`, { defaultValue: id }),
+//       icon: EMOJIS[id] || "📍",
+//       color: c.color,
+//     }));
+//   }, [t]);
+
+//   const LOADING_MESSAGES = [
+//     { icon: "🌍", text: t("plan.loading1") },
+//     { icon: "📍", text: t("plan.loading2") },
+//     { icon: "🍽️", text: t("plan.loading3") },
+//     { icon: "🏖️", text: t("plan.loading4") },
+//     { icon: "🗺️", text: t("plan.loading5") },
+//     { icon: "✨", text: t("plan.loading6") },
+//   ];
+
+//   const [step, setStep] = useState<PlanStep>("form");
+//   const [destination, setDestination] = useState("");
+//   const [mapMarkerLimit, setMapMarkerLimit] = useState(10);
+//   const [postalCode, setPostalCode] = useState("");
+//   const [accommodationAddress, setAccommodationAddress] = useState("");
+//   const [period, setPeriod] = useState<PlanPeriod>("vikend");
+//   const [people, setPeople] = useState("2");
+//   const [companions, setCompanions] = useState<CompanionType>("prijatelji");
+//   const [budget, setBudget] = useState("500");
+//   const [activityRadius, setActivityRadius] = useState(3);
+//   const [transport, setTransport] = useState<TransportType>("auto");
+//   const [preference, setPreference] = useState<PreferenceType>("kombinirano");
+//   const [interests, setInterests] = useState<string[]>([]);
+//   const [result, setResult] = useState("");
+//   const [dayRoutes, setDayRoutes] = useState<DayRoute[]>([]);
+//   const [activeRoute, setActiveRoute] = useState(0);
+//   const [planRating, setPlanRating] = useState(0);
+//   const [chosenRoute, setChosenRoute] = useState<string | null>(null);
+//   const [ratingSaved, setRatingSaved] = useState(false);
+//   const [savingRating, setSavingRating] = useState(false);
+//   const [loadingStep, setLoadingStep] = useState(0);
+
+//   // ── Modal za detalje mjesta (klik na marker ili na karticu) ──────────────
+//   const [selectedPlaceForDetail, setSelectedPlaceForDetail] =
+//     useState<Place | null>(null);
+//   const [showDetailModal, setShowDetailModal] = useState(false);
+
+//   // ── Lokalni popis posjeta unutar plana ──────────────────────────────────
+//   // (sinkronizira se s parent visits propsima + lokalnim optimističnim updateom)
+//   const [localVisitedIds, setLocalVisitedIds] = useState<Set<string>>(
+//     new Set(),
+//   );
+
+//   const mapRef = useRef<MapView>(null);
+//   const loadingInterval = useRef<ReturnType<typeof setInterval> | null>(null);
+//   const [selectedVenues, setSelectedVenues] = useState<Record<string, number>>(
+//     {},
+//   );
+//   const [allVenues, setAllVenues] = useState<
+//     Record<
+//       string,
+//       { name: string; address?: string; latitude: number; longitude: number }[]
+//     >
+//   >({});
+//   const [accommodationCoords, setAccommodationCoords] = useState<{
+//     latitude: number;
+//     longitude: number;
+//   } | null>(null);
+
+//   // Sinkroniziraj parent visits u lokalni set
+//   useEffect(() => {
+//     const ids = new Set<string>(visits.map((v) => v.placeId));
+//     setLocalVisitedIds(ids);
+//   }, [visits]);
+
+//   const reset = () => {
+//     setStep("form");
+//     setResult("");
+//     setDestination("");
+//     setPostalCode("");
+//     setAccommodationAddress("");
+//     setInterests([]);
+//     setAllVenues({});
+//     setSelectedVenues({});
+//     setMapMarkerLimit(10);
+//     setAccommodationCoords(null);
+//     if (loadingInterval.current) clearInterval(loadingInterval.current);
+//   };
+
+//   const handleClose = () => {
+//     reset();
+//     onClose();
+//   };
+
+//   const toggleInterest = (id: string) =>
+//     setInterests((p) =>
+//       p.includes(id) ? p.filter((x) => x !== id) : [...p, id],
+//     );
+
+//   // ── Označi posjet iz plana ────────────────────────────────────────────────
+//   const handleMarkVisitedFromPlan = async (
+//     venue: {
+//       name: string;
+//       address?: string;
+//       latitude: number;
+//       longitude: number;
+//     },
+//     type: string,
+//   ) => {
+//     const placeId = `plan_${type}_${venue.name.replace(/\s+/g, "_").toLowerCase()}`;
+//     const place: Place = {
+//       id: placeId,
+//       name: venue.name,
+//       latitude: venue.latitude,
+//       longitude: venue.longitude,
+//       type: type as Place["type"],
+//       address: venue.address,
+//     };
+
+//     if (localVisitedIds.has(placeId)) {
+//       Alert.alert("ℹ️ Već posjećeno", `"${venue.name}" je već u vašoj arhivi.`);
+//       return;
+//     }
+
+//     // Optimistički update
+//     setLocalVisitedIds((prev) => new Set([...prev, placeId]));
+
+//     if (onMarkVisited) {
+//       await onMarkVisited(place);
+//     }
+//   };
+
+//   const isVenueVisited = (
+//     venue: { name: string; latitude: number; longitude: number },
+//     type: string,
+//   ) => {
+//     const placeId = `plan_${type}_${venue.name.replace(/\s+/g, "_").toLowerCase()}`;
+//     // Provjeri i po ID-u i po imenu (za mjesta dodana s glavne karte)
+//     return (
+//       localVisitedIds.has(placeId) ||
+//       visits.some(
+//         (v) =>
+//           v.placeName.toLowerCase() === venue.name.toLowerCase() &&
+//           v.placeType === type,
+//       )
+//     );
+//   };
+
+//   const generate = async () => {
+//     if (!destination.trim()) {
+//       Alert.alert(t("plan.destination"), t("plan.destinationRequired"));
+//       return;
+//     }
+//     setLoadingStep(0);
+//     setStep("loading");
+
+//     loadingInterval.current = setInterval(() => {
+//       setLoadingStep((prev) => (prev + 1) % LOADING_MESSAGES.length);
+//     }, 2200);
+
+//     try {
+//       const query = [destination.trim(), postalCode.trim(), "Hrvatska"]
+//         .filter(Boolean)
+//         .join(" ");
+
+//       const { geocoded, venues } = await fetchVenuesNearCity(
+//         query,
+//         activityRadius,
+//         interests,
+//       );
+
+//       setAllVenues(venues);
+//       const routes = generateDayRoutes(venues);
+//       setDayRoutes(routes);
+//       setActiveRoute(0);
+
+//       if (accommodationAddress.trim() && geocoded) {
+//         const accommodationResult = await geocodeCity(
+//           `${accommodationAddress}, ${destination}`,
+//         );
+//         setAccommodationCoords(
+//           accommodationResult
+//             ? {
+//                 latitude: accommodationResult.latitude,
+//                 longitude: accommodationResult.longitude,
+//               }
+//             : { latitude: geocoded.latitude, longitude: geocoded.longitude },
+//         );
+//       } else if (geocoded) {
+//         setAccommodationCoords({
+//           latitude: geocoded.latitude,
+//           longitude: geocoded.longitude,
+//         });
+//       }
+
+//       if (loadingInterval.current) clearInterval(loadingInterval.current);
+//       setLoadingStep(5);
+
+//       const token = await AsyncStorage.getItem("token");
+//       let text = "";
+
+//       const venueStr = Object.entries(venues)
+//         .map(([type, items]) => {
+//           const label = type;
+//           return `${label} (${items.length} opcija): ${items
+//             .map(
+//               (i, idx) =>
+//                 `${idx + 1}. ${i.name}${i.address ? ` (${i.address})` : ""}`,
+//             )
+//             .join(", ")}`;
+//         })
+//         .join("\n");
+
+//       const prompt = `Napravi detaljan plan putovanja na hrvatskom jeziku:
+// 📍 Destinacija: ${destination}${postalCode ? ` (${postalCode})` : ""}
+// 🏨 Smještaj: ${accommodationAddress || "nije određen"}
+// 📅 Trajanje: ${period}
+// 👥 Putnici: ${people} osoba (${companions})
+// 💰 Budžet: ${budget} EUR
+// 🚗 Prijevoz: ${transport}
+// 🌿 Preferencija: ${preference}
+// 📏 Radijus od smještaja: ${activityRadius} km
+
+// Pronađena stvarna mjesta — za svaku kategoriju odaberi MIN 5 konkretnih:
+// ${venueStr || "Nema pronađenih mjesta, koristi opće prijedloge"}
+
+// Plan napiši po danima, OBAVEZNO koristi konkretna imena mjesta, adrese, procjene troška. Piši na hrvatskom.`;
+
+//       try {
+//         const resp = await fetch(`${API_BASE_URL}/api/ai/plan`, {
+//           method: "POST",
+//           headers: {
+//             "Content-Type": "application/json",
+//             Authorization: `Bearer ${token}`,
+//           },
+//           body: JSON.stringify({ prompt }),
+//         });
+//         if (resp.ok) {
+//           const data = await resp.json();
+//           text = data.result || data.text || "";
+//         }
+//       } catch {
+//         /* AI nije dostupan, idemo na template */
+//       }
+
+//       if (!text) {
+//         text = buildPlanWithVenues(
+//           destination,
+//           postalCode,
+//           accommodationAddress,
+//           period,
+//           people,
+//           companions,
+//           budget,
+//           activityRadius,
+//           transport,
+//           preference,
+//           interests,
+//           venues,
+//         );
+//       }
+
+//       setResult(text);
+//       setStep("result");
+//     } catch (e) {
+//       if (loadingInterval.current) clearInterval(loadingInterval.current);
+//       Alert.alert(t("common.error"), t("plan.planError"));
+//       setStep("form");
+//     }
+//   };
+
+//   const copyPlan = () => {
+//     Share.share({ message: result }).catch(() =>
+//       Alert.alert(t("common.error"), t("plan.shareFailed")),
+//     );
+//   };
+
+//   const PERIOD_OPTIONS: { key: PlanPeriod; labelKey: string }[] = [
+//     { key: "dan", labelKey: "plan.day1" },
+//     { key: "vikend", labelKey: "plan.weekend" },
+//     { key: "tjedan", labelKey: "plan.week" },
+//     { key: "2tjedna", labelKey: "plan.twoWeeks" },
+//     { key: "godisnji", labelKey: "plan.vacation" },
+//   ];
+//   const COMPANION_OPTIONS: {
+//     key: CompanionType;
+//     labelKey: string;
+//     icon: string;
+//     image: any;
+//   }[] = [
+//     { key: "solo", labelKey: "plan.solo", icon: "🧑", image: soloIcon },
+//     {
+//       key: "partner",
+//       labelKey: "plan.partner",
+//       icon: "💑",
+//       image: partnerIcon,
+//     },
+//     {
+//       key: "prijatelji",
+//       labelKey: "plan.friends",
+//       icon: "👫",
+//       image: prijateljIcon,
+//     },
+//     { key: "obitelj", labelKey: "plan.family", icon: "👨‍👩‍👧", image: obiteljIcon },
+//     {
+//       key: "misovito",
+//       labelKey: "plan.mixed",
+//       icon: "🎉",
+//       image: mjesovitIcon,
+//     },
+//   ];
+//   const TRANSPORT_OPTIONS: {
+//     key: TransportType;
+//     labelKey: string;
+//     icon: string;
+//     image: any;
+//   }[] = [
+//     { key: "auto", labelKey: "plan.car", icon: "🚗", image: autoIcon },
+//     { key: "javni", labelKey: "plan.public", icon: "🚌", image: javniIcon },
+//     {
+//       key: "pjesice",
+//       labelKey: "plan.walking",
+//       icon: "🚶",
+//       image: pjesiceIcon,
+//     },
+//     { key: "bicikl", labelKey: "plan.bicycle", icon: "🚲", image: biciklIcon },
+//   ];
+//   const PREF_OPTIONS: {
+//     key: PreferenceType;
+//     labelKey: string;
+//     icon: string;
+//     image: any;
+//   }[] = [
+//     {
+//       key: "otvoreno",
+//       labelKey: "plan.outdoors",
+//       icon: "🌞",
+//       image: otvorenIcon,
+//     },
+//     {
+//       key: "zatvoreno",
+//       labelKey: "plan.indoors",
+//       icon: "🏠",
+//       image: zatvorenoIcon,
+//     },
+//     {
+//       key: "kombinirano",
+//       labelKey: "plan.combined",
+//       icon: "🌤️",
+//       image: kombiniranoIcon,
+//     },
+//   ];
+
+//   // Statistike za header u result viewu
+//   const totalVenues = Object.values(allVenues).reduce(
+//     (sum, arr) => sum + arr.length,
+//     0,
+//   );
+//   const visitedCount = Object.entries(allVenues).reduce(
+//     (sum, [type, venues]) => {
+//       return sum + venues.filter((v) => isVenueVisited(v, type)).length;
+//     },
+//     0,
+//   );
+
+//   return (
+//     <Modal
+//       visible={visible}
+//       animationType="slide"
+//       transparent={false}
+//       onRequestClose={handleClose}
+//     >
+//       <View style={{ flex: 1, backgroundColor: DC.bg }}>
+//         {/* ── Header ────────────────────────────────────────────────── */}
+//         {/* NOVO */}
+//         <View
+//           style={{
+//             flexDirection: "row",
+//             justifyContent: "space-between",
+//             alignItems: "center",
+//             padding: 20,
+//             paddingTop: Platform.OS === "ios" ? 54 : 36,
+//             borderBottomWidth: 1.5,
+//             borderBottomColor: DC.border,
+//             backgroundColor: DC.bg,
+//           }}
+//         >
+//           {step === "result" ? (
+//             <TouchableOpacity onPress={() => setStep("form")}>
+//               <Text
+//                 style={{ fontSize: 16, color: DC.accent, fontWeight: "700" }}
+//               >
+//                 Novi plan
+//               </Text>
+//             </TouchableOpacity>
+//           ) : (
+//             <Text style={{ fontSize: 20, fontWeight: "800", color: DC.text }}>
+//               {step === "loading" ? t("map.generatingPlan") : t("map.planTrip")}
+//             </Text>
+//           )}
+
+//           {step === "result" && (
+//             <Text style={{ fontSize: 18, fontWeight: "800", color: DC.text }}>
+//               {t("map.tripPlan")}
+//             </Text>
+//           )}
+
+//           {step === "result" ? (
+//             <TouchableOpacity onPress={copyPlan}>
+//               <Text
+//                 style={{ fontSize: 14, color: DC.textDim, fontWeight: "600" }}
+//               >
+//                 📋 {t("common.copy")}
+//               </Text>
+//             </TouchableOpacity>
+//           ) : step === "loading" ? (
+//             <View style={{ width: 60 }} />
+//           ) : (
+//             <TouchableOpacity onPress={handleClose}>
+//               <Text
+//                 style={{ fontSize: 14, color: DC.textDim, fontWeight: "600" }}
+//               >
+//                 {t("common.close")}
+//               </Text>
+//             </TouchableOpacity>
+//           )}
+//         </View>
+
+//         {/* ── LOADING ───────────────────────────────────────────────── */}
+//         {step === "loading" && (
+//           <View style={[pm.loadingContainer, { backgroundColor: DC.bg }]}>
+//             <ActivityIndicator size="large" color="#667eea" />
+//             <Text style={pm.loadingIcon}>
+//               {LOADING_MESSAGES[loadingStep].icon}
+//             </Text>
+//             <Text style={pm.loadingText}>
+//               {LOADING_MESSAGES[loadingStep].text}
+//             </Text>
+//             <ProgressBar step={loadingStep} total={LOADING_MESSAGES.length} />
+//             <Text style={pm.loadingHint}>
+//               {t("plan.fetchingPlacesFrom", { destination })}
+//             </Text>
+//           </View>
+//         )}
+
+//         {/* ── RESULT ───────────────────────────────────────────────── */}
+//         {step === "result" && (
+//           <ScrollView
+//             contentContainerStyle={{ padding: 20, paddingBottom: 60 }}
+//           >
+//             {/* Progress */}
+//             {/* <View style={planStyles.progressCard}>
+//               <View style={planStyles.progressHeader}>
+//                 <Text style={planStyles.progressTitle}>
+//                   📊 Napredak putovanja
+//                 </Text>
+//                 <Text style={planStyles.progressCount}>
+//                   {visitedCount} / {totalVenues} posjećeno
+//                 </Text>
+//               </View>
+//               <View style={planStyles.progressTrack}>
+//                 <View
+//                   style={[
+//                     planStyles.progressFill,
+//                     {
+//                       width:
+//                         totalVenues > 0
+//                           ? `${Math.round((visitedCount / totalVenues) * 100)}%`
+//                           : "0%",
+//                     },
+//                   ]}
+//                 />
+//               </View>
+//               {visitedCount > 0 && (
+//                 <Text style={planStyles.progressHint}>
+//                   🏆 Odlično! Posjetili ste {visitedCount} preporučenih mjesta.
+//                 </Text>
+//               )}
+//             </View> */}
+
+//             {/* KARTA — s korisnikovom lokacijom i svim kategorijama */}
+//             <View style={mapLegend.header}>
+//               <View style={{ flex: 1 }}>
+//                 <Text style={mapLegend.headerTitle}>
+//                   {t("map.destinationMap")}
+//                 </Text>
+//                 <Text style={mapLegend.headerSub}>
+//                   {accommodationAddress
+//                     ? `🏨 ${accommodationAddress}`
+//                     : "Tapnite marker za detalje"}
+//                 </Text>
+//               </View>
+//               {accommodationCoords && (
+//                 <TouchableOpacity
+//                   style={mapLegend.recenterBtn}
+//                   onPress={() =>
+//                     mapRef.current?.animateToRegion(
+//                       {
+//                         latitude: accommodationCoords.latitude,
+//                         longitude: accommodationCoords.longitude,
+//                         latitudeDelta: 0.05,
+//                         longitudeDelta: 0.05,
+//                       },
+//                       800,
+//                     )
+//                   }
+//                 >
+//                   <Text style={{ fontSize: 18 }}>🎯</Text>
+//                 </TouchableOpacity>
+//               )}
+//             </View>
+
+//             {(() => {
+//               const allMapVenues: {
+//                 venue: {
+//                   name: string;
+//                   address?: string;
+//                   latitude: number;
+//                   longitude: number;
+//                 };
+//                 type: string;
+//               }[] = [];
+//               Object.entries(allVenues).forEach(([type, options]) => {
+//                 options.forEach((venue) => allMapVenues.push({ venue, type }));
+//               });
+//               const visibleVenues = allMapVenues.slice(0, mapMarkerLimit);
+//               const hasMoreMarkers = allMapVenues.length > mapMarkerLimit;
+//               const moreCount = Math.min(
+//                 allMapVenues.length - mapMarkerLimit,
+//                 10,
+//               );
+
+//               return (
+//                 <>
+//                   <MapView
+//                     ref={mapRef}
+//                     style={{ height: 480, borderRadius: 16, marginBottom: 0 }}
+//                     initialRegion={{
+//                       latitude: accommodationCoords?.latitude || 45.815,
+//                       longitude: accommodationCoords?.longitude || 15.9819,
+//                       latitudeDelta: 0.06,
+//                       longitudeDelta: 0.06,
+//                     }}
+//                   >
+//                     {userLocation && (
+//                       <Marker
+//                         coordinate={userLocation}
+//                         anchor={{ x: 0.5, y: 0.5 }}
+//                         tracksViewChanges={false}
+//                       >
+//                         <UserLocationMarker />
+//                       </Marker>
+//                     )}
+//                     {accommodationCoords && (
+//                       <Marker
+//                         coordinate={accommodationCoords}
+//                         title="🏨 Vaš smještaj"
+//                         description={accommodationAddress || "Adresa smještaja"}
+//                         pinColor="#667eea"
+//                       />
+//                     )}
+
+//                     {/* RUTE PO DANIMA — svaki dan ima svoju boju, markeri s rednim brojem */}
+//                     {(() => {
+//                       const DAYS_COUNT = Math.min(
+//                         {
+//                           dan: 1,
+//                           vikend: 2,
+//                           tjedan: 7,
+//                           "2tjedna": 14,
+//                           godisnji: 10,
+//                         }[period] || 1,
+//                         7,
+//                       );
+//                       const DAY_COLORS = [
+//                         "#e74c3c",
+//                         "#2ecc71",
+//                         "#3498db",
+//                         "#f39c12",
+//                         "#9b59b6",
+//                         "#1abc9c",
+//                         "#e67e22",
+//                       ];
+
+//                       return Array.from({
+//                         length: Math.min(DAYS_COUNT, DAY_COLORS.length),
+//                       }).map((_, dayIdx) => {
+//                         const color = DAY_COLORS[dayIdx];
+//                         // Rotiramo mjesta po danu kroz kategorije
+//                         const STOP_TYPES = [
+//                           "cafe",
+//                           "landmark",
+//                           "park",
+//                           "restaurant",
+//                           "museum",
+//                           "beach",
+//                           "club",
+//                         ];
+//                         const dayStops: {
+//                           venue: {
+//                             name: string;
+//                             latitude: number;
+//                             longitude: number;
+//                             address?: string;
+//                           };
+//                           type: string;
+//                         }[] = [];
+
+//                         for (let si = 0; si < STOP_TYPES.length; si++) {
+//                           const type = STOP_TYPES[si];
+//                           const list = allVenues[type];
+//                           if (!list || list.length === 0) continue;
+//                           const item = list[(dayIdx + si) % list.length];
+//                           if (
+//                             !dayStops.find((s) => s.venue.name === item.name)
+//                           ) {
+//                             dayStops.push({ venue: item, type });
+//                             if (dayStops.length >= 4) break; // max 4 stopa po danu na karti
+//                           }
+//                         }
+
+//                         return dayStops.map(({ venue, type }, stopIdx) => {
+//                           const visited = isVenueVisited(venue, type);
+//                           return (
+//                             <Marker
+//                               key={`day${dayIdx}_stop${stopIdx}_${venue.name}`}
+//                               coordinate={{
+//                                 latitude: venue.latitude,
+//                                 longitude: venue.longitude,
+//                               }}
+//                               tracksViewChanges={false}
+//                               onPress={() => {
+//                                 mapRef.current?.animateToRegion(
+//                                   {
+//                                     latitude: venue.latitude,
+//                                     longitude: venue.longitude,
+//                                     latitudeDelta: 0.02,
+//                                     longitudeDelta: 0.02,
+//                                   },
+//                                   500,
+//                                 );
+//                                 setSelectedPlaceForDetail({
+//                                   id: `plan_${type}_${dayIdx}_${venue.name}`,
+//                                   name: venue.name,
+//                                   latitude: venue.latitude,
+//                                   longitude: venue.longitude,
+//                                   type: type as Place["type"],
+//                                   address: venue.address,
+//                                 });
+//                                 setShowDetailModal(true);
+//                               }}
+//                             >
+//                               <View
+//                                 style={{
+//                                   alignItems: "center",
+//                                   width: 52,
+//                                   height: 66,
+//                                 }}
+//                               >
+//                                 {/* Krug s bojom dana i rednim brojem stopa */}
+//                                 <View
+//                                   style={{
+//                                     width: 42,
+//                                     height: 42,
+//                                     borderRadius: 21,
+//                                     backgroundColor: visited
+//                                       ? "#34c75922"
+//                                       : color + "dd",
+//                                     borderWidth: 2.5,
+//                                     borderColor: visited ? "#34c759" : "#fff",
+//                                     justifyContent: "center",
+//                                     alignItems: "center",
+//                                     shadowColor: "#000",
+//                                     shadowOffset: { width: 0, height: 2 },
+//                                     shadowOpacity: 0.35,
+//                                     shadowRadius: 4,
+//                                     elevation: 6,
+//                                   }}
+//                                 >
+//                                   {CATEGORY_ICONS[type] ? (
+//                                     <Image
+//                                       source={CATEGORY_ICONS[type]}
+//                                       style={{ width: 26, height: 26 }}
+//                                       resizeMode="contain"
+//                                     />
+//                                   ) : (
+//                                     <Text style={{ fontSize: 18 }}>
+//                                       {EMOJIS[type] || "📍"}
+//                                     </Text>
+//                                   )}
+//                                 </View>
+//                                 {/* Dan badge */}
+//                                 <View
+//                                   style={{
+//                                     position: "absolute",
+//                                     top: -4,
+//                                     right: -2,
+//                                     width: 18,
+//                                     height: 18,
+//                                     borderRadius: 9,
+//                                     backgroundColor: color,
+//                                     justifyContent: "center",
+//                                     alignItems: "center",
+//                                     borderWidth: 1.5,
+//                                     borderColor: "#fff",
+//                                   }}
+//                                 >
+//                                   <Text
+//                                     style={{
+//                                       color: "#fff",
+//                                       fontSize: 9,
+//                                       fontWeight: "900",
+//                                     }}
+//                                   >
+//                                     D{dayIdx + 1}
+//                                   </Text>
+//                                 </View>
+//                                 {/* Redni broj stopa */}
+//                                 <View
+//                                   style={{
+//                                     position: "absolute",
+//                                     bottom: 14,
+//                                     left: -2,
+//                                     width: 16,
+//                                     height: 16,
+//                                     borderRadius: 8,
+//                                     backgroundColor: "#fff",
+//                                     justifyContent: "center",
+//                                     alignItems: "center",
+//                                     borderWidth: 1,
+//                                     borderColor: color,
+//                                   }}
+//                                 >
+//                                   <Text
+//                                     style={{
+//                                       color: color,
+//                                       fontSize: 8,
+//                                       fontWeight: "900",
+//                                     }}
+//                                   >
+//                                     {stopIdx + 1}
+//                                   </Text>
+//                                 </View>
+//                                 {/* Pin */}
+//                                 <View
+//                                   style={{
+//                                     width: 4,
+//                                     height: 10,
+//                                     backgroundColor: visited
+//                                       ? "#34c759"
+//                                       : color,
+//                                     borderBottomLeftRadius: 4,
+//                                     borderBottomRightRadius: 4,
+//                                     marginTop: -2,
+//                                   }}
+//                                 />
+//                               </View>
+//                             </Marker>
+//                           );
+//                         });
+//                       });
+//                     })()}
+//                   </MapView>
+
+//                   {/* Info traka ispod karte: prikazano X od Y + dodaj još */}
+//                   <View
+//                     style={{
+//                       backgroundColor: DC.card,
+//                       borderBottomLeftRadius: 12,
+//                       borderBottomRightRadius: 12,
+//                       paddingHorizontal: 14,
+//                       paddingVertical: 10,
+//                       marginBottom: 8,
+//                       flexDirection: "row",
+//                       alignItems: "center",
+//                       justifyContent: "space-between",
+//                       borderWidth: 1,
+//                       borderTopWidth: 0,
+//                       borderColor: DC.borderDim,
+//                     }}
+//                   >
+//                     <Text style={{ fontSize: 12, color: DC.accent, flex: 1 }}>
+//                       📍 Prikazano{" "}
+//                       {Math.min(mapMarkerLimit, allMapVenues.length)} od{" "}
+//                       {allMapVenues.length} mjesta
+//                     </Text>
+//                     {hasMoreMarkers ? (
+//                       <View style={{ flexDirection: "row", gap: 6 }}>
+//                         <TouchableOpacity
+//                           style={{
+//                             backgroundColor: DC.cardHover,
+//                             borderRadius: 8,
+//                             paddingHorizontal: 10,
+//                             paddingVertical: 5,
+//                             borderWidth: 1,
+//                             borderColor: DC.border,
+//                           }}
+//                           onPress={() => {
+//                             const newLimit = mapMarkerLimit + 5;
+//                             setMapMarkerLimit(newLimit);
+//                             const newVisible = allMapVenues.slice(0, newLimit);
+//                             if (mapRef.current && newVisible.length > 0) {
+//                               mapRef.current.fitToCoordinates(
+//                                 [
+//                                   ...newVisible.map(({ venue }) => ({
+//                                     latitude: venue.latitude,
+//                                     longitude: venue.longitude,
+//                                   })),
+//                                   ...(accommodationCoords
+//                                     ? [accommodationCoords]
+//                                     : []),
+//                                 ],
+//                                 {
+//                                   edgePadding: {
+//                                     top: 60,
+//                                     right: 40,
+//                                     bottom: 60,
+//                                     left: 40,
+//                                   },
+//                                   animated: true,
+//                                 },
+//                               );
+//                             }
+//                           }}
+//                         >
+//                           <Text
+//                             style={{
+//                               color: DC.text,
+//                               fontSize: 11,
+//                               fontWeight: "700",
+//                             }}
+//                           >
+//                             +5
+//                           </Text>
+//                         </TouchableOpacity>
+//                         <TouchableOpacity
+//                           style={{
+//                             backgroundColor: DC.cardHover,
+//                             borderRadius: 8,
+//                             paddingHorizontal: 10,
+//                             paddingVertical: 5,
+//                             borderWidth: 1,
+//                             borderColor: DC.border,
+//                           }}
+//                           onPress={() => {
+//                             const newLimit = mapMarkerLimit + 10;
+//                             setMapMarkerLimit(newLimit);
+//                             const newVisible = allMapVenues.slice(0, newLimit);
+//                             if (mapRef.current && newVisible.length > 0) {
+//                               mapRef.current.fitToCoordinates(
+//                                 [
+//                                   ...newVisible.map(({ venue }) => ({
+//                                     latitude: venue.latitude,
+//                                     longitude: venue.longitude,
+//                                   })),
+//                                   ...(accommodationCoords
+//                                     ? [accommodationCoords]
+//                                     : []),
+//                                 ],
+//                                 {
+//                                   edgePadding: {
+//                                     top: 60,
+//                                     right: 40,
+//                                     bottom: 60,
+//                                     left: 40,
+//                                   },
+//                                   animated: true,
+//                                 },
+//                               );
+//                             }
+//                           }}
+//                         >
+//                           <Text
+//                             style={{
+//                               color: DC.text,
+//                               fontSize: 11,
+//                               fontWeight: "700",
+//                             }}
+//                           >
+//                             +10
+//                           </Text>
+//                         </TouchableOpacity>
+//                         {allMapVenues.length - mapMarkerLimit > 10 && (
+//                           <TouchableOpacity
+//                             style={{
+//                               backgroundColor: DC.bg,
+//                               borderRadius: 8,
+//                               paddingHorizontal: 10,
+//                               paddingVertical: 5,
+//                               borderWidth: 1,
+//                               borderColor: DC.borderDim,
+//                             }}
+//                             onPress={() => {
+//                               setMapMarkerLimit(allMapVenues.length);
+//                               if (mapRef.current && allMapVenues.length > 0) {
+//                                 mapRef.current.fitToCoordinates(
+//                                   allMapVenues.map(({ venue }) => ({
+//                                     latitude: venue.latitude,
+//                                     longitude: venue.longitude,
+//                                   })),
+//                                   {
+//                                     edgePadding: {
+//                                       top: 60,
+//                                       right: 40,
+//                                       bottom: 60,
+//                                       left: 40,
+//                                     },
+//                                     animated: true,
+//                                   },
+//                                 );
+//                               }
+//                             }}
+//                           >
+//                             <Text
+//                               style={{
+//                                 color: DC.accent,
+//                                 fontSize: 11,
+//                                 fontWeight: "700",
+//                               }}
+//                             >
+//                               Svi ({allMapVenues.length})
+//                             </Text>
+//                           </TouchableOpacity>
+//                         )}
+//                       </View>
+//                     ) : (
+//                       <Text
+//                         style={{
+//                           fontSize: 11,
+//                           color: DC.accent,
+//                           fontWeight: "600",
+//                         }}
+//                       >
+//                         ✓ Sve prikazano
+//                       </Text>
+//                     )}
+//                   </View>
+//                 </>
+//               );
+//             })()}
+
+//             {/* Legenda kategorija */}
+//             {/* Legenda dana */}
+//             <View style={mapLegend.legendContainer}>
+//               <Text style={mapLegend.legendTitle}>RUTE PO DANIMA</Text>
+//               <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+//                 <View style={mapLegend.legendRow}>
+//                   {userLocation && (
+//                     <View
+//                       style={[
+//                         mapLegend.chip,
+//                         {
+//                           backgroundColor: "#34c75922",
+//                           borderColor: "#34c759",
+//                         },
+//                       ]}
+//                     >
+//                       <View
+//                         style={[mapLegend.dot, { backgroundColor: "#34c759" }]}
+//                       />
+//                       <Text style={mapLegend.chipText}>📍 Vaša lokacija</Text>
+//                     </View>
+//                   )}
+//                   {accommodationCoords && (
+//                     <View
+//                       style={[
+//                         mapLegend.chip,
+//                         {
+//                           backgroundColor: "#667eea22",
+//                           borderColor: "#667eea",
+//                         },
+//                       ]}
+//                     >
+//                       <View
+//                         style={[mapLegend.dot, { backgroundColor: "#667eea" }]}
+//                       />
+//                       <Text style={mapLegend.chipText}>🏨 Smještaj</Text>
+//                     </View>
+//                   )}
+//                   {(() => {
+//                     const DAY_COLORS = [
+//                       "#e74c3c",
+//                       "#2ecc71",
+//                       "#3498db",
+//                       "#f39c12",
+//                       "#9b59b6",
+//                       "#1abc9c",
+//                       "#e67e22",
+//                     ];
+//                     const DAYS_COUNT = Math.min(
+//                       {
+//                         dan: 1,
+//                         vikend: 2,
+//                         tjedan: 7,
+//                         "2tjedna": 14,
+//                         godisnji: 10,
+//                       }[period] || 1,
+//                       7,
+//                     );
+//                     return Array.from({
+//                       length: Math.min(DAYS_COUNT, DAY_COLORS.length),
+//                     }).map((_, i) => (
+//                       <View
+//                         key={i}
+//                         style={[
+//                           mapLegend.chip,
+//                           {
+//                             backgroundColor: DAY_COLORS[i] + "33",
+//                             borderColor: DAY_COLORS[i],
+//                           },
+//                         ]}
+//                       >
+//                         <View
+//                           style={[
+//                             mapLegend.dot,
+//                             { backgroundColor: DAY_COLORS[i] },
+//                           ]}
+//                         />
+//                         <Text
+//                           style={[
+//                             mapLegend.chipText,
+//                             { color: DAY_COLORS[i], fontWeight: "700" },
+//                           ]}
+//                         >
+//                           Dan {i + 1}
+//                         </Text>
+//                       </View>
+//                     ));
+//                   })()}
+//                 </View>
+//               </ScrollView>
+//               <Text style={{ fontSize: 11, color: DC.accent, marginTop: 6 }}>
+//                 💡 Tapnite marker → slike, radno vrijeme, ocjena, označi posjet
+//                 · D1 = Dan 1, D2 = Dan 2...
+//               </Text>
+//             </View>
+
+//             {/* PO KATEGORIJAMA: min 5 opcija, korisnik bira */}
+//             <View style={{ marginTop: 8, marginBottom: 8 }}>
+//               <Text style={planStyles.sectionHeader}>
+//                 🗂️ Odaberite svoja mjesta po kategorijama
+//               </Text>
+//               <Text style={planStyles.sectionSub}>
+//                 Tapnite karticu za detalje · Tapnite "Označi posjet" kada
+//                 posjetite
+//               </Text>
+//             </View>
+
+//             {Object.entries(allVenues).map(([type, options]) => {
+//               const cat = placeCategories[type as keyof typeof placeCategories];
+//               const color = cat?.color || "#667eea";
+//               const visitedInCat = options.filter((v) =>
+//                 isVenueVisited(v, type),
+//               ).length;
+//               // Prikaži sve opcije, minimum 5 ako ih ima
+//               const displayOptions = options;
+
+//               return (
+//                 <View
+//                   key={type}
+//                   style={[
+//                     planStyles.categorySection,
+//                     { borderTopColor: color },
+//                   ]}
+//                 >
+//                   {/* Naslov kategorije */}
+//                   <View style={planStyles.categoryHeader}>
+//                     <View
+//                       style={[
+//                         planStyles.categoryDot,
+//                         {
+//                           backgroundColor: color + "22",
+//                           borderWidth: 1,
+//                           borderColor: color,
+//                         },
+//                       ]}
+//                     >
+//                       {CATEGORY_ICONS[type] ? (
+//                         <Image
+//                           source={CATEGORY_ICONS[type]}
+//                           style={{ width: 56, height: 56 }} // ← povećano
+//                           resizeMode="contain"
+//                         />
+//                       ) : (
+//                         <Text style={{ fontSize: 28 }}>
+//                           {EMOJIS[type] || "📍"}
+//                         </Text>
+//                       )}
+//                     </View>
+//                     <View style={{ flex: 1 }}>
+//                       <Text style={planStyles.categoryTitle}>
+//                         {t(`categories.${type}`, { defaultValue: type })}
+//                       </Text>
+//                       <Text style={planStyles.categorySub}>
+//                         {displayOptions.length} prijedloga
+//                         {visitedInCat > 0
+//                           ? ` · ✓ ${visitedInCat} posjećeno`
+//                           : ""}
+//                         {displayOptions.length < 5 ? " (OSM podaci)" : ""}
+//                       </Text>
+//                     </View>
+//                     {visitedInCat > 0 && (
+//                       <View
+//                         style={[
+//                           planStyles.categoryDot,
+//                           {
+//                             backgroundColor: color + "22",
+//                             borderWidth: 1,
+//                             borderColor: color,
+//                             width: 64, // ← povećano
+//                             height: 64, // ← povećano
+//                             borderRadius: 32, // ← povećano
+//                           },
+//                         ]}
+//                       >
+//                         <Text style={[planStyles.catBadgeText, { color }]}>
+//                           {visitedInCat}/{displayOptions.length}
+//                         </Text>
+//                       </View>
+//                     )}
+//                   </View>
+
+//                   {/* Info ako nema dovoljno opcija */}
+//                   {displayOptions.length < 5 && (
+//                     <View
+//                       style={{
+//                         backgroundColor: DC.card,
+//                         marginHorizontal: 12,
+//                         marginBottom: 8,
+//                         borderRadius: 8,
+//                         padding: 10,
+//                         borderWidth: 1,
+//                         borderColor: DC.borderDim,
+//                       }}
+//                     >
+//                       <Text style={{ fontSize: 12, color: DC.accent }}>
+//                         ℹ️ Pronađeno {displayOptions.length} mjesta u radijusu{" "}
+//                         {activityRadius} km. Povećajte radijus za više opcija.
+//                       </Text>
+//                     </View>
+//                   )}
+
+//                   {/* Venue kartice */}
+//                   {displayOptions.map((venue, idx) => {
+//                     const visited = isVenueVisited(venue, type);
+//                     const dist = accommodationCoords
+//                       ? haversineKm(
+//                           accommodationCoords.latitude,
+//                           accommodationCoords.longitude,
+//                           venue.latitude,
+//                           venue.longitude,
+//                         )
+//                       : null;
+//                     const placeObj = venueToPlace(venue, type);
+
+//                     return (
+//                       <View
+//                         key={idx}
+//                         style={[
+//                           planStyles.venueCard,
+//                           visited && planStyles.venueCardVisited,
+//                         ]}
+//                       >
+//                         {/* Broj opcije */}
+//                         <View
+//                           style={{
+//                             width: 28,
+//                             height: 28,
+//                             borderRadius: 14,
+//                             backgroundColor: visited
+//                               ? "#34c75922"
+//                               : color + "22",
+//                             justifyContent: "center",
+//                             alignItems: "center",
+//                             borderWidth: 1,
+//                             borderColor: visited ? "#34c759" : color,
+//                             marginRight: 2,
+//                           }}
+//                         >
+//                           <Text
+//                             style={{
+//                               fontSize: 11,
+//                               fontWeight: "800",
+//                               color: visited ? "#34c759" : color,
+//                             }}
+//                           >
+//                             {idx + 1}
+//                           </Text>
+//                         </View>
+
+//                         {/* Info */}
+//                         <TouchableOpacity
+//                           style={{ flex: 1 }}
+//                           onPress={() => {
+//                             setSelectedPlaceForDetail(placeObj);
+//                             setShowDetailModal(true);
+//                           }}
+//                           activeOpacity={0.75}
+//                         >
+//                           <View
+//                             style={{
+//                               flexDirection: "row",
+//                               alignItems: "flex-start",
+//                               gap: 6,
+//                             }}
+//                           >
+//                             {CATEGORY_ICONS[type] ? (
+//                               <Image
+//                                 source={CATEGORY_ICONS[type]}
+//                                 style={{ width: 40, height: 40 }} // ← povećano
+//                                 resizeMode="contain"
+//                               />
+//                             ) : (
+//                               <Text style={{ fontSize: 28 }}>
+//                                 {EMOJIS[type] || "📍"}
+//                               </Text>
+//                             )}
+//                             <View style={{ flex: 1 }}>
+//                               <Text
+//                                 style={[
+//                                   planStyles.venueName,
+//                                   visited && { color: "#34c759" },
+//                                 ]}
+//                                 numberOfLines={1}
+//                               >
+//                                 {visited && "✓ "}
+//                                 {venue.name}
+//                               </Text>
+//                               {venue.address ? (
+//                                 <Text
+//                                   style={planStyles.venueAddress}
+//                                   numberOfLines={1}
+//                                 >
+//                                   📍 {venue.address}
+//                                 </Text>
+//                               ) : null}
+//                               <View
+//                                 style={{
+//                                   flexDirection: "row",
+//                                   gap: 8,
+//                                   marginTop: 3,
+//                                 }}
+//                               >
+//                                 {dist !== null && (
+//                                   <Text
+//                                     style={[
+//                                       planStyles.venueDist,
+//                                       { color: dist < 1 ? "#34c759" : color },
+//                                     ]}
+//                                   >
+//                                     {dist < 1
+//                                       ? `${Math.round(dist * 1000)} m`
+//                                       : `${dist.toFixed(1)} km`}
+//                                   </Text>
+//                                 )}
+//                                 <Text style={planStyles.venueDetailHint}>
+//                                   Tapni za slike i detalje
+//                                 </Text>
+//                               </View>
+//                             </View>
+//                           </View>
+//                         </TouchableOpacity>
+
+//                         {/* Označi posjet gumb */}
+//                         <TouchableOpacity
+//                           style={[
+//                             planStyles.visitToggleBtn,
+//                             visited
+//                               ? planStyles.visitToggleBtnVisited
+//                               : { borderColor: color },
+//                             { minWidth: 52, maxWidth: 52 }, // ← fiksiraj širinu
+//                           ]}
+//                           onPress={() => handleMarkVisitedFromPlan(venue, type)}
+//                           disabled={visited}
+//                         >
+//                           {visited ? (
+//                             <Text
+//                               style={[
+//                                 planStyles.visitToggleTextVisited,
+//                                 { fontSize: 9 },
+//                               ]}
+//                             >
+//                               ✓{"\n"}Bilo
+//                             </Text>
+//                           ) : (
+//                             <Text
+//                               style={[
+//                                 planStyles.visitToggleText,
+//                                 { color, fontSize: 9 },
+//                               ]}
+//                             >
+//                               Označi{"\n"}posjet
+//                             </Text>
+//                           )}
+//                         </TouchableOpacity>
+//                       </View>
+//                     );
+//                   })}
+//                 </View>
+//               );
+//             })}
+
+//             {/* Generirani plan */}
+//             <View style={{ marginTop: 20 }}>
+//               <Text style={planStyles.sectionHeader}>
+//                 📋 Generirani plan putovanja
+//               </Text>
+//               <Text style={planStyles.sectionSub}>
+//                 Konkretna mjesta iz gornjih kategorija integrirana u dnevni
+//                 raspored
+//               </Text>
+//             </View>
+//             <PlanRenderer text={result} />
+
+//             <View style={{ gap: 10, marginTop: 20 }}>
+//               <TouchableOpacity style={pm.btnPrimary} onPress={copyPlan}>
+//                 <Text style={pm.btnPrimaryText}>📋 Kopiraj cijeli plan</Text>
+//               </TouchableOpacity>
+//               <TouchableOpacity
+//                 style={pm.btnSecondary}
+//                 onPress={() => setStep("form")}
+//               >
+//                 <Text style={pm.btnSecondaryText}> Generiraj novi plan</Text>
+//               </TouchableOpacity>
+//             </View>
+//           </ScrollView>
+//         )}
+
+//         {/* ── FORM ─────────────────────────────────────────────────── */}
+//         {step === "form" && (
+//           <KeyboardAvoidingView
+//             style={{ flex: 1 }}
+//             behavior={Platform.OS === "ios" ? "padding" : "height"}
+//           >
+//             <ScrollView
+//               contentContainerStyle={{ paddingBottom: 40 }}
+//               keyboardShouldPersistTaps="handled"
+//               style={{ backgroundColor: DC.bg }}
+//             >
+//               {/* ── DESTINACIJA ── */}
+//               <View
+//                 style={{
+//                   padding: 16,
+//                   borderBottomWidth: 1,
+//                   borderBottomColor: DC.borderDim,
+//                 }}
+//               >
+//                 <Text
+//                   style={{
+//                     fontSize: 14,
+//                     fontWeight: "700",
+//                     color: DC.textSub,
+//                     marginBottom: 10,
+//                   }}
+//                 >
+//                   {t("map.destination")}
+//                 </Text>
+//                 <TextInput
+//                   style={{
+//                     backgroundColor: DC.card,
+//                     borderRadius: 10,
+//                     borderWidth: 1,
+//                     borderColor: DC.border,
+//                     paddingHorizontal: 14,
+//                     paddingVertical: 10,
+//                     fontSize: 15,
+//                     color: DC.text,
+//                     marginBottom: 8,
+//                   }}
+//                   placeholder={t("plan.destinationPlaceholder")}
+//                   placeholderTextColor={DC.textDim}
+//                   value={destination}
+//                   onChangeText={setDestination}
+//                 />
+//                 <TextInput
+//                   style={{
+//                     backgroundColor: DC.card,
+//                     borderRadius: 10,
+//                     borderWidth: 1,
+//                     borderColor: DC.border,
+//                     paddingHorizontal: 14,
+//                     paddingVertical: 10,
+//                     fontSize: 15,
+//                     color: DC.text,
+//                   }}
+//                   placeholder={t("plan.postalCode")}
+//                   placeholderTextColor={DC.textDim}
+//                   value={postalCode}
+//                   onChangeText={setPostalCode}
+//                   keyboardType="numeric"
+//                 />
+//                 <TextInput
+//                   style={{
+//                     marginTop: 8,
+//                     backgroundColor: DC.card,
+//                     borderRadius: 10,
+//                     borderWidth: 1,
+//                     borderColor: DC.border,
+//                     paddingHorizontal: 14,
+//                     paddingVertical: 10,
+//                     fontSize: 15,
+//                     color: DC.text,
+//                   }}
+//                   placeholder={t("plan.accommodation")}
+//                   placeholderTextColor={DC.textDim}
+//                   value={accommodationAddress}
+//                   onChangeText={setAccommodationAddress}
+//                 />
+//               </View>
+
+//               {/* ── TRAJANJE ── */}
+//               <View
+//                 style={{
+//                   padding: 16,
+//                   borderBottomWidth: 1,
+//                   borderBottomColor: DC.borderDim,
+//                 }}
+//               >
+//                 <Text
+//                   style={{
+//                     fontSize: 14,
+//                     fontWeight: "700",
+//                     color: DC.textSub,
+//                     marginBottom: 10,
+//                   }}
+//                 >
+//                   {t("map.duration")}
+//                 </Text>
+//                 <View
+//                   style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}
+//                 >
+//                   {PERIOD_OPTIONS.map((o) => {
+//                     const active = period === o.key;
+//                     return (
+//                       <TouchableOpacity
+//                         key={o.key}
+//                         style={{
+//                           paddingHorizontal: 16,
+//                           paddingVertical: 9,
+//                           backgroundColor: active ? DC.cardHover : DC.card,
+//                           borderRadius: 8,
+//                           borderWidth: 1,
+//                           borderColor: active ? DC.border : DC.borderDim,
+//                         }}
+//                         onPress={() => setPeriod(o.key)}
+//                       >
+//                         <Text
+//                           style={{
+//                             fontSize: 13,
+//                             color: active ? DC.text : DC.textDim,
+//                             fontWeight: active ? "700" : "400",
+//                           }}
+//                         >
+//                           {t(o.labelKey)}
+//                         </Text>
+//                       </TouchableOpacity>
+//                     );
+//                   })}
+//                 </View>
+//               </View>
+
+//               {/* ── PUTNICI ── */}
+//               <View
+//                 style={{
+//                   padding: 16,
+//                   borderBottomWidth: 1,
+//                   borderBottomColor: DC.borderDim,
+//                 }}
+//               >
+//                 <Text
+//                   style={{
+//                     fontSize: 14,
+//                     fontWeight: "700",
+//                     color: DC.textSub,
+//                     marginBottom: 10,
+//                   }}
+//                 >
+//                   {t("map.travelers")}
+//                 </Text>
+//                 <Text
+//                   style={{ fontSize: 13, color: DC.textDim, marginBottom: 8 }}
+//                 >
+//                   {t("plan.numberOfPeople")}
+//                 </Text>
+//                 <View
+//                   style={{
+//                     flexDirection: "row",
+//                     flexWrap: "wrap",
+//                     gap: 8,
+//                     marginBottom: 14,
+//                   }}
+//                 >
+//                   {["1", "2", "3", "4", "5+"].map((n) => {
+//                     const val = n === "5+" ? "6" : n;
+//                     const active = people === val;
+//                     return (
+//                       <TouchableOpacity
+//                         key={n}
+//                         style={{
+//                           paddingHorizontal: 16,
+//                           paddingVertical: 9,
+//                           backgroundColor: active ? DC.cardHover : DC.card,
+//                           borderRadius: 8,
+//                           borderWidth: 1,
+//                           borderColor: active ? DC.border : DC.borderDim,
+//                         }}
+//                         onPress={() => setPeople(val)}
+//                       >
+//                         <Text
+//                           style={{
+//                             fontSize: 13,
+//                             color: active ? DC.text : DC.textDim,
+//                             fontWeight: active ? "700" : "400",
+//                           }}
+//                         >
+//                           {n}
+//                         </Text>
+//                       </TouchableOpacity>
+//                     );
+//                   })}
+//                 </View>
+//                 <Text
+//                   style={{ fontSize: 13, color: DC.textDim, marginBottom: 8 }}
+//                 >
+//                   {t("plan.travelWith")}
+//                 </Text>
+//                 <View
+//                   style={{ flexDirection: "row", flexWrap: "wrap", gap: 4 }}
+//                 >
+//                   {COMPANION_OPTIONS.map((o) => {
+//                     const active = companions === o.key;
+//                     return (
+//                       <TouchableOpacity
+//                         key={o.key}
+//                         style={{
+//                           paddingHorizontal: 10,
+//                           paddingVertical: 10,
+//                           backgroundColor: active ? DC.cardHover : DC.card,
+//                           borderRadius: 12,
+//                           borderWidth: active ? 2 : 1,
+//                           borderColor: active ? DC.border : DC.borderDim,
+//                           alignItems: "center",
+//                           width: CELL_W,
+//                           height: 130,
+//                           justifyContent: "center",
+//                         }}
+//                         onPress={() => setCompanions(o.key)}
+//                       >
+//                         <Image
+//                           source={o.image}
+//                           style={{ width: 96, height: 96, marginBottom: 4 }}
+//                           resizeMode="contain"
+//                         />
+//                         <Text
+//                           style={{
+//                             fontSize: 11,
+//                             fontWeight: "600",
+//                             color: active ? "#fff" : DC.textSub,
+//                             textAlign: "center",
+//                           }}
+//                           numberOfLines={2}
+//                         >
+//                           {t(o.labelKey)}
+//                         </Text>
+//                       </TouchableOpacity>
+//                     );
+//                   })}
+//                 </View>
+//               </View>
+
+//               {/* ── BUDŽET ── */}
+//               <View
+//                 style={{
+//                   padding: 16,
+//                   borderBottomWidth: 1,
+//                   borderBottomColor: DC.borderDim,
+//                 }}
+//               >
+//                 <Text
+//                   style={{
+//                     fontSize: 14,
+//                     fontWeight: "700",
+//                     color: DC.textSub,
+//                     marginBottom: 10,
+//                   }}
+//                 >
+//                   {t("map.budgetTitle")}
+//                 </Text>
+//                 <View
+//                   style={{
+//                     flexDirection: "row",
+//                     flexWrap: "wrap",
+//                     gap: 8,
+//                   }}
+//                 >
+//                   {["200", "500", "1000", "2000", "5000"].map((b) => {
+//                     const active = budget === b;
+//                     return (
+//                       <TouchableOpacity
+//                         key={b}
+//                         style={{
+//                           paddingHorizontal: 16,
+//                           paddingVertical: 9,
+//                           backgroundColor: active ? DC.cardHover : DC.card,
+//                           borderRadius: 8,
+//                           borderWidth: 1,
+//                           borderColor: active ? DC.border : DC.borderDim,
+//                         }}
+//                         onPress={() => setBudget(b)}
+//                       >
+//                         <Text
+//                           style={{
+//                             fontSize: 13,
+//                             color: active ? DC.text : DC.textDim,
+//                             fontWeight: active ? "700" : "400",
+//                           }}
+//                         >
+//                           {b} €
+//                         </Text>
+//                       </TouchableOpacity>
+//                     );
+//                   })}
+//                 </View>
+//               </View>
+
+//               {/* ── RADIJUS AKTIVNOSTI ── */}
+//               <View
+//                 style={{
+//                   padding: 16,
+//                   borderBottomWidth: 1,
+//                   borderBottomColor: DC.borderDim,
+//                 }}
+//               >
+//                 <Text
+//                   style={{
+//                     fontSize: 14,
+//                     fontWeight: "700",
+//                     color: DC.textSub,
+//                     marginBottom: 10,
+//                   }}
+//                 >
+//                   {t("map.activityRadius")}
+//                 </Text>
+//                 <View
+//                   style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}
+//                 >
+//                   {[1, 2, 3, 5, 10, 20].map((r) => {
+//                     const active = activityRadius === r;
+//                     return (
+//                       <TouchableOpacity
+//                         key={r}
+//                         style={{
+//                           paddingHorizontal: 16,
+//                           paddingVertical: 9,
+//                           backgroundColor: active ? DC.cardHover : DC.card,
+//                           borderRadius: 8,
+//                           borderWidth: 1,
+//                           borderColor: active ? DC.border : DC.borderDim,
+//                         }}
+//                         onPress={() => setActivityRadius(r)}
+//                       >
+//                         <Text
+//                           style={{
+//                             fontSize: 13,
+//                             color: active ? DC.text : DC.textDim,
+//                             fontWeight: active ? "700" : "400",
+//                           }}
+//                         >
+//                           {r} km
+//                         </Text>
+//                       </TouchableOpacity>
+//                     );
+//                   })}
+//                 </View>
+//               </View>
+
+//               {/* ── PRIJEVOZ ── */}
+//               <View
+//                 style={{
+//                   padding: 16,
+//                   borderBottomWidth: 1,
+//                   borderBottomColor: DC.borderDim,
+//                 }}
+//               >
+//                 <Text
+//                   style={{
+//                     fontSize: 14,
+//                     fontWeight: "700",
+//                     color: DC.textSub,
+//                     marginBottom: 10,
+//                   }}
+//                 >
+//                   Prijevoz
+//                 </Text>
+//                 <View
+//                   style={{ flexDirection: "row", flexWrap: "wrap", gap: 4 }}
+//                 >
+//                   {TRANSPORT_OPTIONS.map((o) => {
+//                     const active = transport === o.key;
+//                     return (
+//                       <TouchableOpacity
+//                         key={o.key}
+//                         style={{
+//                           paddingHorizontal: 10,
+//                           paddingVertical: 10,
+//                           backgroundColor: active ? DC.cardHover : DC.card,
+//                           borderRadius: 12,
+//                           borderWidth: active ? 2 : 1,
+//                           borderColor: active ? DC.border : DC.borderDim,
+//                           alignItems: "center",
+//                           width: CELL_W,
+//                           height: 130,
+//                           justifyContent: "center",
+//                         }}
+//                         onPress={() => setTransport(o.key)}
+//                       >
+//                         <Image
+//                           source={o.image}
+//                           style={{ width: 96, height: 96, marginBottom: 4 }}
+//                           resizeMode="contain"
+//                         />
+//                         <Text
+//                           style={{
+//                             fontSize: 11,
+//                             fontWeight: "600",
+//                             color: active ? "#fff" : DC.textSub,
+//                             textAlign: "center",
+//                           }}
+//                           numberOfLines={2}
+//                         >
+//                           {t(o.labelKey)}
+//                         </Text>
+//                       </TouchableOpacity>
+//                     );
+//                   })}
+//                 </View>
+//               </View>
+
+//               {/* ── AKTIVNOSTI PREFERENCE ── */}
+//               <View
+//                 style={{
+//                   padding: 16,
+//                   borderBottomWidth: 1,
+//                   borderBottomColor: DC.borderDim,
+//                 }}
+//               >
+//                 <Text
+//                   style={{
+//                     fontSize: 14,
+//                     fontWeight: "700",
+//                     color: DC.textSub,
+//                     marginBottom: 10,
+//                   }}
+//                 >
+//                   {t("map.activities")}
+//                 </Text>
+//                 <View
+//                   style={{ flexDirection: "row", flexWrap: "wrap", gap: 4 }}
+//                 >
+//                   {PREF_OPTIONS.map((o) => {
+//                     const active = preference === o.key;
+//                     return (
+//                       <TouchableOpacity
+//                         key={o.key}
+//                         style={{
+//                           paddingHorizontal: 10,
+//                           paddingVertical: 10,
+//                           backgroundColor: active ? DC.cardHover : DC.card,
+//                           borderRadius: 12,
+//                           borderWidth: active ? 2 : 1,
+//                           borderColor: active ? DC.border : DC.borderDim,
+//                           alignItems: "center",
+//                           width: CELL_W,
+//                           height: 130,
+//                           justifyContent: "center",
+//                         }}
+//                         onPress={() => setPreference(o.key)}
+//                       >
+//                         <Image
+//                           source={o.image}
+//                           style={{ width: 96, height: 96, marginBottom: 4 }}
+//                           resizeMode="contain"
+//                         />
+//                         <Text
+//                           style={{
+//                             fontSize: 11,
+//                             fontWeight: "600",
+//                             color: active ? "#fff" : DC.textSub,
+//                             textAlign: "center",
+//                           }}
+//                           numberOfLines={2}
+//                         >
+//                           {t(o.labelKey)}
+//                         </Text>
+//                       </TouchableOpacity>
+//                     );
+//                   })}
+//                 </View>
+//               </View>
+
+//               {/* ── INTERESI — IDENTIČNO KATEGORIJAMA U FILTRU ── */}
+//               <View
+//                 style={{
+//                   paddingHorizontal: 16,
+//                   paddingTop: 12,
+//                   paddingBottom: 4,
+//                 }}
+//               >
+//                 <View
+//                   style={{
+//                     flexDirection: "row",
+//                     justifyContent: "space-between",
+//                     alignItems: "center",
+//                     marginBottom: 8,
+//                   }}
+//                 >
+//                   <Text
+//                     style={{
+//                       fontSize: 14,
+//                       fontWeight: "700",
+//                       color: DC.textSub,
+//                     }}
+//                   >
+//                     {t("map.interestsOptional")}
+//                   </Text>
+//                   {interests.length > 0 && (
+//                     <TouchableOpacity onPress={() => setInterests([])}>
+//                       <Text
+//                         style={{
+//                           fontSize: 13,
+//                           color: DC.accent,
+//                           fontWeight: "600",
+//                         }}
+//                       >
+//                         {t("plan.clearInterests")}
+//                       </Text>
+//                     </TouchableOpacity>
+//                   )}
+//                 </View>
+//                 <View
+//                   style={{ flexDirection: "row", flexWrap: "wrap", gap: 4 }}
+//                 >
+//                   {getAllCategories().map((cat) => {
+//                     const active = interests.includes(cat.id);
+//                     return (
+//                       <TouchableOpacity
+//                         key={cat.id}
+//                         style={{
+//                           width: CELL_W,
+//                           height: 130,
+//                           backgroundColor: active ? cat.color : DC.card,
+//                           borderRadius: 12,
+//                           justifyContent: "center",
+//                           alignItems: "center",
+//                           paddingHorizontal: 4,
+//                           paddingVertical: 8,
+//                           borderWidth: active ? 2 : 1,
+//                           borderColor: active ? cat.color : DC.borderDim,
+//                         }}
+//                         onPress={() => toggleInterest(cat.id)}
+//                       >
+//                         {CATEGORY_ICONS[cat.id] ? (
+//                           <Image
+//                             source={CATEGORY_ICONS[cat.id]}
+//                             style={{ width: 96, height: 96, marginBottom: 4 }}
+//                             resizeMode="contain"
+//                           />
+//                         ) : (
+//                           <Text style={{ fontSize: 56, marginBottom: 4 }}>
+//                             {cat.icon}
+//                           </Text>
+//                         )}
+//                         <Text
+//                           style={{
+//                             fontSize: 11,
+//                             fontWeight: "600",
+//                             color: active ? "#fff" : DC.textSub,
+//                             textAlign: "center",
+//                           }}
+//                           numberOfLines={2}
+//                         >
+//                           {cat.name}
+//                         </Text>
+//                       </TouchableOpacity>
+//                     );
+//                   })}
+//                 </View>
+//               </View>
+
+//               {/* ── GENERIRAJ GUMB ── */}
+//               <TouchableOpacity
+//                 style={{
+//                   margin: 16,
+//                   backgroundColor: DC.cardHover,
+//                   borderRadius: 12,
+//                   borderWidth: 1.5,
+//                   borderColor: DC.border,
+//                   paddingVertical: 16,
+//                   alignItems: "center",
+//                 }}
+//                 onPress={generate}
+//               >
+//                 <Text
+//                   style={{ color: DC.text, fontSize: 16, fontWeight: "700" }}
+//                 >
+//                   {t("map.generatePlan")}
+//                 </Text>
+//               </TouchableOpacity>
+//               <Text
+//                 style={{
+//                   textAlign: "center",
+//                   fontSize: 12,
+//                   color: DC.textDim,
+//                   marginBottom: 24,
+//                   paddingHorizontal: 20,
+//                 }}
+//               >
+//                 {t("plan.generateHint", {
+//                   destination: destination || t("plan.destination"),
+//                 })}
+//               </Text>
+//             </ScrollView>
+//           </KeyboardAvoidingView>
+//         )}
+
+//         {/* ══════════════════════════════════════════════════════════════
+//             PlaceDetailModal — MORA BITI IZVAN ScrollViewa, na root razini!
+//             Otvara se i kad kliknete marker na karti i kad kliknete karticu.
+//             Ima iste mogućnosti kao na glavnoj karti:
+//               • Google slike
+//               • Radno vrijeme
+//               • Ocjena (zvjezdice + komentar)
+//               • Označi posjet → arhiva + značka
+//         ════════════════════════════════════════════════════════════════ */}
+//         <PlaceDetailModal
+//           place={selectedPlaceForDetail}
+//           visible={showDetailModal}
+//           onClose={() => {
+//             setShowDetailModal(false);
+//             setSelectedPlaceForDetail(null);
+//           }}
+//           onMarkVisited={async (p) => {
+//             if (onMarkVisited) await onMarkVisited(p);
+//             setLocalVisitedIds((prev) => new Set([...prev, p.id]));
+//             setShowDetailModal(false);
+//             setSelectedPlaceForDetail(null);
+//           }}
+//           onHidePlace={() => {
+//             setShowDetailModal(false);
+//             setSelectedPlaceForDetail(null);
+//           }}
+//           isVisited={
+//             selectedPlaceForDetail
+//               ? localVisitedIds.has(selectedPlaceForDetail.id) ||
+//                 visits.some(
+//                   (v) =>
+//                     v.placeName.toLowerCase() ===
+//                       (selectedPlaceForDetail.name || "").toLowerCase() &&
+//                     v.placeType === selectedPlaceForDetail.type,
+//                 )
+//               : false
+//           }
+//           notifPrefs={{
+//             appEnabled: false,
+//             emailEnabled: false,
+//             email: "",
+//             categories: [],
+//           }}
+//           onToggleNotif={() => {}}
+//         />
+//       </View>
+//     </Modal>
+//   );
+// }
+
 // const mapLegend = StyleSheet.create({
 //   header: {
 //     flexDirection: "row",
@@ -6346,6 +7365,8 @@ function VisitArchiveModal({
   onDeleteVisit: (id: string) => void;
 }) {
   const { t } = useTranslation();
+  const { isDark } = useTheme();
+  const DC = getDashColors(isDark);
   const [filter, setFilter] = useState<string | null>(null);
   const filtered = filter
     ? visits.filter((v) => v.placeType === filter)
@@ -6359,7 +7380,7 @@ function VisitArchiveModal({
       transparent={false}
       onRequestClose={onClose}
     >
-      <View style={{ flex: 1, backgroundColor: "#1a2e1a" }}>
+      <View style={{ flex: 1, backgroundColor: DC.bg }}>
         {/* Header */}
         <View
           style={{
@@ -6369,15 +7390,17 @@ function VisitArchiveModal({
             padding: 20,
             paddingTop: Platform.OS === "ios" ? 54 : 36,
             borderBottomWidth: 1.5,
-            borderBottomColor: "#4a7040",
-            backgroundColor: "#1a2e1a",
+            borderBottomColor: DC.border,
+            backgroundColor: DC.bg,
           }}
         >
-          <Text style={{ fontSize: 20, fontWeight: "800", color: "#e8e8e8" }}>
-            📋 {t("map.visitArchive", { count: visits.length })}
+          <Text style={{ fontSize: 20, fontWeight: "800", color: DC.text }}>
+            {t("map.visitArchive", { count: visits.length })}
           </Text>
           <TouchableOpacity onPress={onClose}>
-            <Text style={{ fontSize: 14, color: "#b0b0b0", fontWeight: "600" }}>
+            <Text
+              style={{ fontSize: 14, color: DC.textDim, fontWeight: "600" }}
+            >
               {t("common.close")}
             </Text>
           </TouchableOpacity>
@@ -6391,8 +7414,8 @@ function VisitArchiveModal({
             style={{
               maxHeight: 56,
               borderBottomWidth: 1,
-              borderBottomColor: "#3a5a30",
-              backgroundColor: "#1a2e1a",
+              borderBottomColor: DC.borderDim,
+              backgroundColor: DC.bg,
             }}
             contentContainerStyle={{
               paddingHorizontal: 12,
@@ -6404,10 +7427,10 @@ function VisitArchiveModal({
               style={{
                 paddingHorizontal: 14,
                 paddingVertical: 6,
-                backgroundColor: !filter ? "#3a5a30" : "#2a4230",
+                backgroundColor: !filter ? DC.cardHover : DC.card,
                 borderRadius: 8,
                 borderWidth: 1,
-                borderColor: !filter ? "#5a8a48" : "#3a5a30",
+                borderColor: !filter ? DC.border : DC.borderDim,
               }}
               onPress={() => setFilter(null)}
             >
@@ -6415,7 +7438,7 @@ function VisitArchiveModal({
                 style={{
                   fontSize: 13,
                   fontWeight: "600",
-                  color: !filter ? "#e8e8e8" : "#a0a0a0",
+                  color: !filter ? DC.text : DC.textDim,
                 }}
               >
                 {t("common.all")}
@@ -6435,7 +7458,9 @@ function VisitArchiveModal({
                       : "#2a4230",
                     borderRadius: 8,
                     borderWidth: 1,
-                    borderColor: active ? cat?.color || "#5a8a48" : "#3a5a30",
+                    borderColor: active
+                      ? cat?.color || DC.border
+                      : DC.borderDim,
                   }}
                   onPress={() => setFilter(active ? null : type)}
                 >
@@ -6443,7 +7468,7 @@ function VisitArchiveModal({
                     style={{
                       fontSize: 13,
                       fontWeight: "600",
-                      color: active ? "#fff" : "#a0a0a0",
+                      color: active ? "#fff" : DC.textDim,
                     }}
                   >
                     {EMOJIS[type]}{" "}
@@ -6463,17 +7488,17 @@ function VisitArchiveModal({
               alignItems: "center",
               justifyContent: "center",
               gap: 16,
-              backgroundColor: "#1a2e1a",
+              backgroundColor: DC.bg,
             }}
           >
             <Text style={{ fontSize: 64 }}>🗺️</Text>
-            <Text style={{ fontSize: 18, fontWeight: "700", color: "#e8e8e8" }}>
+            <Text style={{ fontSize: 18, fontWeight: "700", color: DC.text }}>
               {visits.length === 0 ? t("map.noPlaces") : t("common.noResults")}
             </Text>
             <Text
               style={{
                 fontSize: 14,
-                color: "#a0a0a0",
+                color: DC.textDim,
                 textAlign: "center",
                 paddingHorizontal: 40,
               }}
@@ -6487,7 +7512,7 @@ function VisitArchiveModal({
           <FlatList
             data={filtered}
             keyExtractor={(item) => item.id}
-            style={{ backgroundColor: "#1a2e1a" }}
+            style={{ backgroundColor: DC.bg }}
             contentContainerStyle={{ padding: 16, paddingBottom: 40 }}
             renderItem={({ item }) => {
               const cat =
@@ -6498,13 +7523,13 @@ function VisitArchiveModal({
                   style={{
                     flexDirection: "row",
                     alignItems: "center",
-                    backgroundColor: "#2a4230",
+                    backgroundColor: DC.card,
                     borderRadius: 14,
                     padding: 14,
                     marginBottom: 10,
                     gap: 12,
                     borderWidth: 1,
-                    borderColor: "#3a5a30",
+                    borderColor: DC.borderDim,
                     borderLeftWidth: 4,
                     borderLeftColor: color,
                   }}
@@ -6537,7 +7562,7 @@ function VisitArchiveModal({
                       style={{
                         fontSize: 15,
                         fontWeight: "700",
-                        color: "#e8e8e8",
+                        color: DC.text,
                       }}
                       numberOfLines={1}
                     >
@@ -6547,7 +7572,7 @@ function VisitArchiveModal({
                       <Text
                         style={{
                           fontSize: 12,
-                          color: "#8a9486",
+                          color: DC.textDim,
                           marginTop: 2,
                         }}
                         numberOfLines={1}
@@ -6558,7 +7583,7 @@ function VisitArchiveModal({
                     <Text
                       style={{
                         fontSize: 12,
-                        color: "#5a8a48",
+                        color: DC.accent,
                         marginTop: 4,
                         fontWeight: "600",
                       }}
@@ -6579,9 +7604,9 @@ function VisitArchiveModal({
                     style={{
                       padding: 8,
                       borderRadius: 8,
-                      backgroundColor: "#3a2020",
+                      backgroundColor: isDark ? "#3a2020" : "#f0d8d8",
                       borderWidth: 1,
-                      borderColor: "#5a3030",
+                      borderColor: isDark ? "#5a3030" : "#d0a0a0",
                     }}
                     onPress={() =>
                       Alert.alert(
@@ -6628,6 +7653,8 @@ function BadgesModal({
   }[];
 }) {
   const { t } = useTranslation();
+  const { isDark } = useTheme();
+  const DC = getDashColors(isDark);
   const [badges, setBadges] = useState<Badge[]>([]);
 
   useEffect(() => {
@@ -6649,7 +7676,7 @@ function BadgesModal({
       transparent={false}
       onRequestClose={onClose}
     >
-      <View style={{ flex: 1, backgroundColor: "#1a2e1a" }}>
+      <View style={{ flex: 1, backgroundColor: DC.bg }}>
         {/* Header */}
         <View
           style={{
@@ -6659,15 +7686,17 @@ function BadgesModal({
             padding: 20,
             paddingTop: Platform.OS === "ios" ? 54 : 36,
             borderBottomWidth: 1.5,
-            borderBottomColor: "#4a7040",
-            backgroundColor: "#1a2e1a",
+            borderBottomColor: DC.border,
+            backgroundColor: DC.bg,
           }}
         >
-          <Text style={{ fontSize: 20, fontWeight: "800", color: "#e8e8e8" }}>
+          <Text style={{ fontSize: 20, fontWeight: "800", color: DC.text }}>
             {t("map.badges")}
           </Text>
           <TouchableOpacity onPress={onClose}>
-            <Text style={{ fontSize: 14, color: "#b0b0b0", fontWeight: "600" }}>
+            <Text
+              style={{ fontSize: 14, color: DC.textDim, fontWeight: "600" }}
+            >
               {t("common.close")}
             </Text>
           </TouchableOpacity>
@@ -6685,36 +7714,36 @@ function BadgesModal({
           <View
             style={{
               flex: 1,
-              backgroundColor: "#2a4230",
+              backgroundColor: DC.card,
               borderRadius: 14,
               padding: 14,
               alignItems: "center",
               borderWidth: 1,
-              borderColor: "#3a5a30",
+              borderColor: DC.borderDim,
             }}
           >
-            <Text style={{ fontSize: 28, fontWeight: "900", color: "#5a8a48" }}>
+            <Text style={{ fontSize: 28, fontWeight: "900", color: DC.accent }}>
               {totalVisits}
             </Text>
-            <Text style={{ fontSize: 12, color: "#a0a0a0", marginTop: 2 }}>
+            <Text style={{ fontSize: 12, color: DC.textDim, marginTop: 2 }}>
               Ukupno posjeta
             </Text>
           </View>
           <View
             style={{
               flex: 1,
-              backgroundColor: "#2a4230",
+              backgroundColor: DC.card,
               borderRadius: 14,
               padding: 14,
               alignItems: "center",
               borderWidth: 1,
-              borderColor: "#3a5a30",
+              borderColor: DC.borderDim,
             }}
           >
             <Text style={{ fontSize: 28, fontWeight: "900", color: "#f0c040" }}>
               {totalBadges}
             </Text>
-            <Text style={{ fontSize: 12, color: "#a0a0a0", marginTop: 2 }}>
+            <Text style={{ fontSize: 12, color: DC.textDim, marginTop: 2 }}>
               Zarađenih značaka
             </Text>
           </View>
@@ -6722,7 +7751,7 @@ function BadgesModal({
 
         <ScrollView
           contentContainerStyle={{ padding: 16, paddingBottom: 40 }}
-          style={{ backgroundColor: "#1a2e1a" }}
+          style={{ backgroundColor: DC.bg }}
         >
           {getAllCategories().map((cat) => {
             const count = counts[cat.id] || 0;
@@ -6739,13 +7768,13 @@ function BadgesModal({
               <View
                 key={cat.id}
                 style={{
-                  backgroundColor: "#2a4230",
+                  backgroundColor: DC.card,
                   borderRadius: 16,
                   marginBottom: 12,
                   borderWidth: 1,
-                  borderColor: hasAnyBadge ? cat.color + "88" : "#3a5a30",
+                  borderColor: hasAnyBadge ? cat.color + "88" : DC.borderDim,
                   borderLeftWidth: 4,
-                  borderLeftColor: hasAnyBadge ? cat.color : "#3a5a30",
+                  borderLeftColor: hasAnyBadge ? cat.color : DC.borderDim,
                   overflow: "hidden",
                 }}
               >
@@ -6757,7 +7786,7 @@ function BadgesModal({
                     padding: 14,
                     gap: 12,
                     borderBottomWidth: 1,
-                    borderBottomColor: "#3a5a30",
+                    borderBottomColor: DC.borderDim,
                   }}
                 >
                   {/* Category icon */}
@@ -6772,7 +7801,9 @@ function BadgesModal({
                       justifyContent: "center",
                       alignItems: "center",
                       borderWidth: 1,
-                      borderColor: hasAnyBadge ? cat.color + "66" : "#3a5a30",
+                      borderColor: hasAnyBadge
+                        ? cat.color + "66"
+                        : DC.borderDim,
                     }}
                   >
                     {CATEGORY_ICONS[cat.id] ? (
@@ -6792,7 +7823,7 @@ function BadgesModal({
                       style={{
                         fontSize: 15,
                         fontWeight: "800",
-                        color: "#e8e8e8",
+                        color: DC.text,
                       }}
                     >
                       {cat.name}
@@ -6800,7 +7831,7 @@ function BadgesModal({
                     <Text
                       style={{
                         fontSize: 13,
-                        color: "#5a8a48",
+                        color: DC.accent,
                         marginTop: 2,
                         fontWeight: "600",
                       }}
@@ -6814,7 +7845,7 @@ function BadgesModal({
                     </Text>
                     {next && (
                       <Text
-                        style={{ fontSize: 11, color: "#6a9a60", marginTop: 1 }}
+                        style={{ fontSize: 11, color: DC.accent, marginTop: 1 }}
                       >
                         Sljedeća značka za {next - count} više
                       </Text>
@@ -6864,7 +7895,7 @@ function BadgesModal({
                     <View
                       style={{
                         height: 6,
-                        backgroundColor: "#1a2e1a",
+                        backgroundColor: DC.bg,
                         borderRadius: 3,
                         overflow: "hidden",
                       }}
@@ -6881,7 +7912,7 @@ function BadgesModal({
                     <Text
                       style={{
                         fontSize: 10,
-                        color: "#6a9a60",
+                        color: DC.accent,
                         marginTop: 4,
                         textAlign: "right",
                       }}
@@ -6911,16 +7942,16 @@ function BadgesModal({
                           borderRadius: 10,
                           paddingHorizontal: 10,
                           paddingVertical: 6,
-                          backgroundColor: isEarned ? cat.color : "#1a2e1a",
+                          backgroundColor: isEarned ? cat.color : DC.bg,
                           borderWidth: 1,
-                          borderColor: isEarned ? cat.color : "#3a5a30",
+                          borderColor: isEarned ? cat.color : DC.borderDim,
                           alignItems: "center",
                           minWidth: 52,
                         }}
                       >
                         <Text
                           style={{
-                            color: isEarned ? "#fff" : "#555",
+                            color: isEarned ? "#fff" : DC.textDim,
                             fontSize: 12,
                             fontWeight: "800",
                           }}
@@ -6957,7 +7988,7 @@ const CELL_W = (SW - 32 - 4) / 2;
 const TIME_CATS: Record<string, string[]> = {
   jutro: ["cafe", "park", "landmark", "museum", "market"],
   poslijepodne: ["restaurant", "museum", "beach", "cinema", "opg", "market"],
-  vecer: ["club", "theater", "restaurant", "spa"],
+  vecer: ["club", "cafe", "theater", "restaurant", "spa"],
 };
 
 // const visitedIcon = require("../../assets/images/posmjesta.png");
@@ -6969,8 +8000,821 @@ const TIME_CATS: Record<string, string[]> = {
 // const locationPinIcon = require("../../assets/images/igla.png"); // Za crvenu iglu (trenutna lokacija)
 // const radiusIcon = require("../../assets/images/radijus.png"); // Za radijus na karti
 
+function MapCtrlTooltip({
+  label,
+  children,
+}: {
+  label: string;
+  children: React.ReactNode;
+}) {
+  const [show, setShow] = React.useState(false);
+  return (
+    <View style={{ position: "relative" }}>
+      <TouchableOpacity
+        onPress={() => setShow(false)}
+        onLongPress={() => setShow(true)}
+        delayLongPress={300}
+      >
+        {children}
+      </TouchableOpacity>
+      {show && (
+        <View
+          style={{
+            position: "absolute",
+            right: 52,
+            top: 10,
+            backgroundColor: "rgba(20,40,20,0.92)",
+            borderRadius: 10,
+            paddingHorizontal: 10,
+            paddingVertical: 6,
+            borderWidth: 1,
+            borderColor: "#5a8a48",
+            zIndex: 999,
+          }}
+          pointerEvents="none"
+        >
+          <Text
+            style={{
+              color: "#d0f0a0",
+              fontSize: 12,
+              fontWeight: "700",
+              // whiteSpace: "nowrap",
+            }}
+          >
+            {label}
+          </Text>
+          {/* Mali trokut desno */}
+          <View
+            style={{
+              position: "absolute",
+              right: -6,
+              top: 10,
+              width: 0,
+              height: 0,
+              borderTopWidth: 5,
+              borderBottomWidth: 5,
+              borderLeftWidth: 6,
+              borderTopColor: "transparent",
+              borderBottomColor: "transparent",
+              borderLeftColor: "#5a8a48",
+            }}
+          />
+        </View>
+      )}
+    </View>
+  );
+}
+
+// Google Places Nearby Search — vraća sve tipove odjednom
+const GOOGLE_TYPE_MAP: Partial<Record<Place["type"], string[]>> = {
+  restaurant: ["restaurant", "food", "meal_delivery", "meal_takeaway"],
+  cafe: ["cafe"],
+  club: ["night_club"],
+  cinema: ["movie_theater"],
+  museum: ["museum"],
+  // theater namjerno izostavljen — Google Places vraća hotele s "theater room"
+  spa: ["spa"],
+  park: ["park"],
+  accommodation: ["lodging"],
+  landmark: ["tourist_attraction", "place_of_worship"],
+  opg: ["farm"],
+};
+
+async function fetchGoogleNearby(
+  latitude: number,
+  longitude: number,
+  radiusM: number,
+  types: string[],
+): Promise<Place[]> {
+  if (!GOOGLE_KEY) return [];
+  const radiusCapped = Math.min(radiusM, 50000);
+
+  const promises: Promise<Place[]>[] = [];
+
+  for (const type of types) {
+    const googleTypes = GOOGLE_TYPE_MAP[type as Place["type"]];
+    if (!googleTypes) continue;
+
+    for (const googleType of googleTypes) {
+      promises.push(
+        (async (): Promise<Place[]> => {
+          try {
+            const ctrl = new AbortController();
+            const tid = setTimeout(() => ctrl.abort(), 10000);
+            // ← KLJUČNA PROMJENA: za "food" tip dodaj keyword=fast_food
+            const extraParam =
+              googleType === "food" ? "&keyword=fast_food" : "";
+            const res = await fetch(
+              `https://maps.googleapis.com/maps/api/place/nearbysearch/json?location=${latitude},${longitude}&radius=${radiusCapped}&type=${googleType}${extraParam}&key=${GOOGLE_KEY}`,
+              { signal: ctrl.signal },
+            );
+            clearTimeout(tid);
+            if (!res.ok) return [];
+            const data = await res.json();
+            if (data.status !== "OK" || !data.results?.length) return [];
+
+            // ========== SPREMI REZULTATE U VARIJABLU ==========
+            let results = data.results.map(
+              (item: any): Place => ({
+                id: `google_${item.place_id}`,
+                name: item.name,
+                latitude: item.geometry.location.lat,
+                longitude: item.geometry.location.lng,
+                type: type as Place["type"],
+                rating: item.rating,
+                address: item.vicinity,
+                distance: haversineKm(
+                  latitude,
+                  longitude,
+                  item.geometry.location.lat,
+                  item.geometry.location.lng,
+                ),
+                openNow: item.opening_hours?.open_now ?? null, // ← DODAJTE OVO
+              }),
+            );
+
+            // FILTER ZA THEATER
+            if (type === "theater") {
+              const forbidden = [
+                "hotel",
+                "hostel",
+                "apartment",
+                "soba",
+                "rooms",
+                "villa",
+                "inn",
+                "motel",
+                "resort",
+                "lodging",
+                "accommodation",
+              ];
+              results = results.filter((p: Place) => {
+                const n = p.name.toLowerCase();
+                return !forbidden.some((bad) => n.includes(bad));
+              });
+            }
+
+            // FILTER ZA SPA — blokiraj sve što nije stvarna toplica/terme/wellness
+            if (type === "spa") {
+              const SPA_GOOGLE_BLOCK = [
+                "ambulanta",
+                "liječnik",
+                "doktor",
+                "medicina",
+                "medical",
+                "obiteljske",
+                "dežurna",
+                "fizioterapi",
+                "physio",
+                "rehabilitaci",
+                "beauty",
+                "kozmetik",
+                "kozmetičk",
+                "estetik",
+                "estetica",
+                "estetska",
+                "salon",
+                "nail",
+                "manikur",
+                "pedikur",
+                "fitness",
+                "gym",
+                "teretana",
+                "crossfit",
+                "osobni trening",
+                "treninzi",
+                "centar kulture",
+                "kulture tijela",
+                "njegu tijela",
+                "njegu",
+                "sport i njegu",
+                "sport centar",
+                "tensegrity",
+                "wellar",
+                "studio",
+                "apartman",
+                "apartment",
+                "hotel",
+                "hostel",
+                "nekretnin",
+                "obrt",
+                "d.o.o",
+                "ljekarnica",
+                "apoteka",
+              ];
+              results = results.filter((p: Place) => {
+                const n = p.name.toLowerCase();
+                return !SPA_GOOGLE_BLOCK.some((bad) => n.includes(bad));
+              });
+            }
+
+            // FILTER ZA CLUB — blokiraj sve što nije stvarni noćni klub
+            if (type === "club") {
+              const CLUB_BLOCK = [
+                // saloni za pse i kućne ljubimce
+                "salon za pse",
+                "dog salon",
+                "pet salon",
+                "grooming",
+                "ljubimac",
+                "kućni ljubimac",
+                "njega pasa",
+                "uređivanje pasa",
+                "šišanje pasa",
+                "frizerski salon",
+                "frizersk",
+                "frizer",
+                "hair salon",
+                "hair studio",
+                "brijačnica",
+                "barber",
+                // automati, gaming
+                "automat",
+                "gaming",
+                "slot",
+                "tombola",
+                // kladionice i kockarnice
+                "kladionica",
+                "sportska kladionica",
+                "mozzart",
+                "winbet",
+                "superbet",
+                "lvbet",
+                "admiral",
+                "casino",
+                "kockarnica",
+                "bet",
+                "betting",
+                // beauty i wellness koji nisu klubovi
+                "kozmetik",
+                "beauty",
+                "estetik",
+                "nail",
+                "manikur",
+                "pedikur",
+                "spa",
+                "wellness",
+                "masaž",
+                "tattoo",
+                "piercing",
+                // fitness koji nisu klubovi
+                "fitness",
+                "gym",
+                "teretana",
+                "crossfit",
+                // ostalo što nije klub
+                "hotel",
+                "hostel",
+                "apartman",
+                "smještaj",
+                "restoran",
+                "kafić",
+                "trgovin",
+                "shop",
+                "prodavao",
+                "obrt",
+                "d.o.o",
+                "nekretnin",
+                "auto",
+                "servis",
+                "pranje",
+              ];
+
+              const CLUB_WHITELIST = [
+                "nightclub",
+                "night club",
+                "noćni klub",
+                "disco",
+                "discotheque",
+                "disko",
+                "club",
+                "klub",
+                "lounge",
+                "bar",
+                "pub",
+              ];
+
+              results = results.filter((p: Place) => {
+                const n = p.name.toLowerCase();
+                // Blokira po denylist
+                if (CLUB_BLOCK.some((bad) => n.includes(bad))) return false;
+                return true;
+              });
+            }
+
+            // FILTER ZA OPG — blokiraj smještaj i sve što nije farma/OPG
+            if (type === "opg") {
+              const OPG_KEYWORDS = [
+                "opg",
+                "farma",
+                "farm",
+                "pčelar",
+                "voćar",
+                "vinar",
+                "maslin",
+                "seljack",
+                "poljoprivred",
+              ];
+              const OPG_BLOCK = [
+                "hotel",
+                "hostel",
+                "apartman",
+                "apartment",
+                "apartments",
+                "soba",
+                "sobe",
+                "rooms",
+                "room",
+                "guest house",
+                "guest",
+                "guesthouse",
+                "prenočište",
+                "smještaj",
+                "accommodation",
+                "lodging",
+                "villa",
+                "vila",
+                "resort",
+                "inn",
+                "motel",
+                "studio",
+                "suite",
+                "bed",
+                "breakfast",
+                "b&b",
+                "camp",
+                "glamping",
+                "pansion",
+                "pension",
+                "osijek",
+                "zagreb",
+                "split",
+                "rijeka", // grad = nije OPG
+              ];
+              results = results.filter((p: Place) => {
+                const n = p.name.toLowerCase();
+                if (OPG_BLOCK.some((bad) => n.includes(bad))) return false;
+                return OPG_KEYWORDS.some((kw) => n.includes(kw));
+              });
+            }
+
+            // FILTER ZA CAFE — blokiraj automobile i servise
+            if (type === "cafe") {
+              const CAR_BRANDS = [
+                "bmw",
+                "audi",
+                "mercedes",
+                "volkswagen",
+                "vw",
+                "opel",
+                "ford",
+                "toyota",
+                "renault",
+                "peugeot",
+                "hyundai",
+                "kia",
+                "škoda",
+                "skoda",
+                "seat",
+                "fiat",
+                "citroen",
+                "nissan",
+              ];
+              const CAR_WORDS = [
+                "auto",
+                "servis",
+                "automobil",
+                "car dealer",
+                "salon automobila",
+              ];
+              results = results.filter((p: Place) => {
+                const n = p.name.toLowerCase();
+                return (
+                  !CAR_BRANDS.some((brand) => n.includes(brand)) &&
+                  !CAR_WORDS.some((word) => n.includes(word))
+                );
+              });
+            }
+
+            // FILTER ZA LANDMARK — blokiraj smještaj, gradove, događanja
+            if (type === "landmark") {
+              const LANDMARK_GOOGLE_BLOCK = [
+                "hotel",
+                "hostel",
+                "apartman",
+                "apartment",
+                "apartments",
+                "soba",
+                "sobe",
+                "rooms",
+                "room",
+                "guest house",
+                "guest",
+                "guesthouse",
+                "prenočište",
+                "smještaj",
+                "accommodation",
+                "lodging",
+                "villa",
+                "vila",
+                "resort",
+                "inn",
+                "motel",
+                "studio",
+                "suite",
+                "perla",
+                "waldinger",
+                "advent",
+                "festival",
+                "sajam",
+                "wine walk",
+                "wine & walk",
+                "winterland",
+                "muzej",
+                "museum",
+                "arhiv",
+                "osijek",
+                "zagreb",
+                "split",
+                "rijeka",
+                "varaždin",
+                "dubrovnik",
+                "pula",
+                "zadar",
+                "farm stay",
+                "lacković",
+                "biljski krokodil",
+                "sakuntala", // ← DODANO: park s historic tagom
+                "centar nekretnina", // ← DODANO
+                "centar nekretnine", // ← DODANO
+                "nekretnin", // ← DODANO
+                "park sakuntala", // ← DODANO: alternativni naziv
+              ];
+              results = results.filter((p: Place) => {
+                const n = p.name.toLowerCase();
+                return !LANDMARK_GOOGLE_BLOCK.some((bad) => n.includes(bad));
+              });
+            }
+
+            // ← DODAJ OVDJE — CINEMA filter
+            if (type === "cinema") {
+              const CINEMA_BLOCK = [
+                "grad ",
+                "općina",
+                "opcina",
+                "municipality",
+                "city of",
+                "hotel",
+                "hostel",
+                "apartman",
+                "apartment",
+                "dvorac",
+                "castle",
+                "crkva",
+                "church",
+                "katedrala",
+                "cathedral",
+                "muzej",
+                "museum",
+                "knjižnica",
+                "knjiznica",
+                "library",
+                "škola",
+                "skola",
+                "school",
+                "bolnica",
+                "hospital",
+                "dom kulture",
+                "kulturni centar",
+                "kulturni dom",
+                "centar za kulturu",
+                "zgrada",
+                "building",
+                "trg",
+                "square",
+                "park",
+                "tvrđava",
+                "tvrdjava",
+                "fortress",
+                "palace",
+                "palača",
+                "palaca",
+                "vila",
+                "villa",
+                "nekretnin",
+              ];
+              const CINEMA_WHITELIST = [
+                "kino",
+                "cinema",
+                "cinestar",
+                "multiplex",
+                "kinoplex",
+                "cinemacity",
+                "kinodvor",
+                "art kino",
+                "filmski",
+                "imax",
+              ];
+              results = results.filter((p: Place) => {
+                const n = p.name.toLowerCase();
+                if (CINEMA_BLOCK.some((bad) => n.includes(bad))) return false;
+                return CINEMA_WHITELIST.some((kw) => n.includes(kw));
+              });
+            }
+
+            // ========== VRAĆAMO FILTRIRANE REZULTATE ==========
+            return results;
+          } catch {
+            return [];
+          }
+        })(),
+      );
+    }
+  }
+
+  const all = await Promise.all(promises);
+  return all.flat();
+}
+
+function QuickCategoryBar({
+  allPlaces,
+  selectedTypes,
+  focusedType,
+  onToggle,
+  DC,
+  t,
+}: {
+  allPlaces: Place[];
+  selectedTypes: string[];
+  focusedType: string | null;
+  onToggle: (type: string) => void;
+  DC: ReturnType<typeof getDashColors>;
+  t: (key: string, opts?: any) => string;
+}) {
+  // Broji koliko mjesta ima po kategoriji u trenutnim rezultatima
+  const countByType = useMemo(() => {
+    const map: Record<string, number> = {};
+    allPlaces.forEach((p) => {
+      map[p.type] = (map[p.type] || 0) + 1;
+    });
+    return map;
+  }, [allPlaces]);
+
+  // Prikaži samo kategorije koje su odabrane ILI imaju rezultata
+  const visibleCats = useMemo(() => {
+    // Prikaži samo kategorije koje IMAJU rezultata na karti
+    return Object.keys(countByType)
+      .filter((id) => countByType[id] > 0)
+      .filter((id) => placeCategories[id as keyof typeof placeCategories]);
+  }, [countByType]);
+
+  if (visibleCats.length === 0) return null;
+
+  return (
+    <ScrollView
+      horizontal
+      showsHorizontalScrollIndicator={false}
+      style={{
+        position: "absolute",
+        bottom: 16,
+        left: 0,
+        right: 0,
+      }}
+      contentContainerStyle={{
+        paddingHorizontal: 10,
+        paddingVertical: 6,
+        gap: 6,
+      }}
+    >
+      {visibleCats.map((catId) => {
+        const isOn = selectedTypes.includes(catId);
+        const isFocused = focusedType === catId;
+        const count = countByType[catId] || 0;
+        const cat = placeCategories[catId as keyof typeof placeCategories];
+        const color = cat?.color || "#667eea";
+        const icon = CATEGORY_ICONS[catId];
+
+        return (
+          <TouchableOpacity
+            key={catId}
+            style={{
+              flexDirection: "row",
+              alignItems: "center",
+              gap: 5,
+              backgroundColor: isFocused
+                ? color
+                : isOn
+                  ? "rgba(20,40,20,0.92)"
+                  : "rgba(255,255,255,0.92)",
+              borderRadius: 20,
+              paddingHorizontal: 10,
+              paddingVertical: 6,
+
+              borderColor: isFocused
+                ? color
+                : isOn
+                  ? color
+                  : "rgba(0,0,0,0.08)",
+              borderWidth: isFocused ? 2.5 : 1.5,
+              shadowColor: "#000",
+              shadowOffset: { width: 0, height: 2 },
+              shadowOpacity: 0.15,
+              shadowRadius: 4,
+              elevation: 4,
+            }}
+            onPress={() => onToggle(catId)}
+          >
+            {icon ? (
+              <Image
+                source={icon}
+                style={{ width: 18, height: 18 }}
+                resizeMode="contain"
+              />
+            ) : (
+              <Text style={{ fontSize: 14 }}>{EMOJIS[catId] || "📍"}</Text>
+            )}
+            <Text
+              style={{
+                fontSize: 11,
+                fontWeight: "700",
+                color: isFocused ? "#fff" : isOn ? "#c0e8a0" : "#333",
+              }}
+            >
+              {t(`categories.${catId}`, { defaultValue: catId })}
+            </Text>
+            {count > 0 && (
+              <View
+                style={{
+                  backgroundColor: isOn ? color : "rgba(0,0,0,0.12)",
+                  borderRadius: 10,
+                  paddingHorizontal: 5,
+                  paddingVertical: 1,
+                  minWidth: 18,
+                  alignItems: "center",
+                }}
+              >
+                <Text
+                  style={{
+                    fontSize: 10,
+                    fontWeight: "800",
+                    color: isOn ? "#fff" : "#444",
+                  }}
+                >
+                  {count > 99 ? "99+" : count}
+                </Text>
+              </View>
+            )}
+          </TouchableOpacity>
+        );
+      })}
+    </ScrollView>
+  );
+}
+
+// ─── OSM opening hours parser ─────────────────────────────────────────────────
+const DAY_MAP: Record<string, number> = {
+  mo: 0,
+  tu: 1,
+  we: 2,
+  th: 3,
+  fr: 4,
+  sa: 5,
+  su: 6,
+};
+
+function parseTimeStr(s: string): number {
+  const [h, m] = s.split(":").map(Number);
+  return h * 60 + (m || 0);
+}
+
+function dayInSpec(spec: string, curDay: number): boolean {
+  if (!spec.trim()) return true;
+  for (const part of spec.split(",").map((p) => p.trim())) {
+    const rangeM = part.match(/^(\w+)\s*-\s*(\w+)$/);
+    if (rangeM) {
+      const s = DAY_MAP[rangeM[1]];
+      const e = DAY_MAP[rangeM[2]];
+      if (s !== undefined && e !== undefined && curDay >= s && curDay <= e)
+        return true;
+    } else {
+      if (DAY_MAP[part] === curDay) return true;
+    }
+  }
+  return false;
+}
+
+function parseOpeningHours(oh: string, now: Date): boolean | null {
+  try {
+    const s = oh.toLowerCase().trim();
+    if (s === "24/7") return true;
+
+    const jsDay = now.getDay();
+    const curDay = jsDay === 0 ? 6 : jsDay - 1; // 0=Mo...6=Su u OSM
+    const curMin = now.getHours() * 60 + now.getMinutes();
+
+    // Google Places format (sadrži am/pm/closed)
+    const isGoogleFormat = /\b(am|pm|closed|zatvoreno)\b/i.test(s);
+    if (isGoogleFormat) {
+      const DAY_NAMES: Record<string, number> = {
+        monday: 0,
+        tuesday: 1,
+        wednesday: 2,
+        thursday: 3,
+        friday: 4,
+        saturday: 5,
+        sunday: 6,
+        ponedjeljak: 0,
+        utorak: 1,
+        srijeda: 2,
+        četvrtak: 3,
+        petak: 4,
+        subota: 5,
+        nedjelja: 6,
+      };
+      const lines = s
+        .split(/[\n,]+/)
+        .map((l) => l.trim())
+        .filter(Boolean);
+      for (const line of lines) {
+        const dayMatch = line.match(/^(\w+):\s*(.*)/);
+        if (!dayMatch) continue;
+        const dayNum = DAY_NAMES[dayMatch[1].toLowerCase()];
+        if (dayNum === undefined || dayNum !== curDay) continue;
+        const timeStr = dayMatch[2].trim();
+        if (timeStr === "closed" || timeStr === "zatvoreno") return false;
+        const timeMatch = timeStr.match(
+          /(\d{1,2}:\d{2})\s*(am|pm)\s*[–\-]\s*(\d{1,2}:\d{2})\s*(am|pm)/i,
+        );
+        if (timeMatch) {
+          const toMin = (t: string, ampm: string): number => {
+            const [h, m] = t.split(":").map(Number);
+            let hours = h;
+            if (ampm.toLowerCase() === "pm" && h !== 12) hours += 12;
+            if (ampm.toLowerCase() === "am" && h === 12) hours = 0;
+            return hours * 60 + m;
+          };
+          const openMin = toMin(timeMatch[1], timeMatch[2]);
+          let closeMin = toMin(timeMatch[3], timeMatch[4]);
+          if (closeMin <= openMin) closeMin += 24 * 60;
+          return curMin >= openMin && curMin < closeMin;
+        }
+        return null;
+      }
+      return false; // dan nije pronađen u Google formatu → zatvoreno
+    }
+
+    // OSM format
+    const rules = s
+      .split(";")
+      .map((r) => r.trim())
+      .filter(Boolean);
+    let dayWasMentioned = false;
+    let hasParseable = false;
+
+    for (const rule of rules) {
+      const m = rule.match(
+        /^([a-z,\-\s]*?)\s*(?:(\d{1,2}:\d{2})\s*-\s*(\d{1,2}:\d{2})|(off))$/,
+      );
+      if (!m) continue;
+      hasParseable = true;
+
+      const daySpec = m[1].trim();
+      const isOff = !!m[4];
+      const openMin = m[2] ? parseTimeStr(m[2]) : null;
+      const closeMin = m[3] ? parseTimeStr(m[3]) : null;
+
+      if (daySpec && !dayInSpec(daySpec, curDay)) continue;
+
+      dayWasMentioned = true;
+
+      if (isOff) return false;
+
+      if (openMin !== null && closeMin !== null) {
+        let close = closeMin;
+        if (close <= openMin) close += 24 * 60;
+        const cur =
+          curMin < openMin && close > 24 * 60 ? curMin + 24 * 60 : curMin;
+        if (cur >= openMin && cur < close) return true;
+        return false; // ← DODAJTE OVO: dan je matchiran ali sati ne odgovaraju
+      }
+    }
+
+    // ← KLJUČNI FIX: parseable pravila postoje ali dan NIJE MATCHIRAN
+    // To znači da su navedeni samo određeni dani (npr. Mo-Sa) i
+    // današnji dan nije među njima → zatvoreno
+    if (hasParseable && !dayWasMentioned) return false;
+
+    return null;
+  } catch {
+    return null;
+  }
+}
+
 export default function DashboardScreen() {
   const { t } = useTranslation();
+  const { isDark } = useTheme();
+  const themeMode: PaletteKey = isDark ? "dark" : "vara";
+  const DC = getDashColors(isDark);
   const getAllCategories = useCallback(() => {
     return Object.entries(placeCategories).map(([id, c]) => ({
       id,
@@ -7017,6 +8861,9 @@ export default function DashboardScreen() {
   const [showPlanMyDay, setShowPlanMyDay] = useState(false);
   const [showGroups, setShowGroups] = useState(false);
   const [showNotifSettings, setShowNotifSettings] = useState(false);
+  const [showOstalo, setShowOstalo] = useState(false);
+  const [showMapCtrlPanel, setShowMapCtrlPanel] = useState(true);
+  const [focusedType, setFocusedType] = useState<string | null>(null);
 
   const [selectedPlace, setSelectedPlace] = useState<Place | null>(null);
   const [showPlaceDetail, setShowPlaceDetail] = useState(false);
@@ -7133,8 +8980,71 @@ export default function DashboardScreen() {
   });
 
   const activeSearchLoc = searchLocation || userLocation;
-  // Rezultati koji se prikazuju na karti (ograničeni na displayLimit)
-  const places = allPlaces.slice(0, displayLimit);
+
+  // DODAJ novu helper funkciju (iznad timeFilteredPlaces):
+  function isCategoryOpenInWindow(
+    type: string,
+    windowFrom: number,
+    windowTo: number,
+    dayOfWeek: number,
+  ): boolean {
+    const ranges = CATEGORY_HOURS[type];
+    if (!ranges) return true;
+    const day = dayOfWeek;
+
+    return ranges.some(({ open, close, days }) => {
+      if (days !== undefined && !days.includes(day)) return false;
+
+      if (close <= 24) {
+        // Normalni interval — provjeri preklapanje s [windowFrom, windowTo]
+        return windowFrom < close && windowTo > open;
+      } else {
+        // Prelazi ponoć (npr. club 23–28 = 23:00–04:00)
+        // Interval [23, 28] prekriva se s [18, 24] ako je 23 < 24
+        return windowFrom < close - 24 || windowTo > open;
+      }
+    });
+  }
+
+  // Filtriranje prema trenutnom vremenu (kada je aktivna doba-dana opcija)
+  // PRONAĐI i ZAMIJENI cijeli timeFilteredPlaces useMemo:
+  const timeFilteredPlaces = useMemo(() => {
+    const now = new Date();
+    const nowH = now.getHours() + now.getMinutes() / 60;
+    const dayOfWeek = now.getDay();
+
+    // Samo club i theater se ne blokiraju po openNow (otvaraju se tek navečer)
+    const LATE_OPEN_TYPES = new Set(["club", "theater"]);
+
+    return allPlaces.filter((p) => {
+      if (!activeTimeOfDay) return true;
+
+      // 1. Google openNow — pouzdan signal, koristi ga za sve kategorije
+      //    IZNIMKA: club i theater jer Google kaže "closed" i poslijepodne
+      //    iako zapravo rade navečer
+      if (p.openNow === false && !LATE_OPEN_TYPES.has(p.type)) return false;
+
+      // 2. OSM/Google opening_hours string — najprecizniji izvor
+      if (p.openingHours) {
+        const isOpen = parseOpeningHours(p.openingHours, now);
+        if (isOpen === false) return false;
+        if (isOpen === true) return true;
+      }
+
+      // 3. Google kaže otvoreno → prihvati
+      if (p.openNow === true) return true;
+
+      // 4. Nema podataka o radnom vremenu → provjeri kategorijski fallback
+      const tod = TOD_HOURS[activeTimeOfDay];
+      if (tod) {
+        return isCategoryOpenInWindow(p.type, tod.from, tod.to, dayOfWeek);
+      }
+
+      return isCategoryOpenNow(p.type, nowH, dayOfWeek);
+    });
+  }, [allPlaces, activeTimeOfDay]);
+
+  const places = timeFilteredPlaces;
 
   const initialRegion: Region = {
     latitude: 45.815,
@@ -7160,16 +9070,22 @@ export default function DashboardScreen() {
     requestLocationPermission();
   }, []);
 
+  // PRONAĐI useEffect koji resetira displayLimit:
   useEffect(() => {
-    if (activeSearchLoc && selectedTypes.length > 0 && !showOnlyVisited) {
-      // Reset limit svaki put kad se promijene filteri/lokacija
-      setDisplayLimit(INITIAL_RESULTS_LIMIT);
-      const t = setTimeout(() => loadPlacesInRadius(), 400);
-      return () => clearTimeout(t);
-    } else if (!showOnlyVisited) {
+    if (!activeSearchLoc || selectedTypes.length === 0 || showOnlyVisited) {
       setAllPlaces([]);
+      return;
     }
-  }, [activeSearchLoc, radius, selectedTypes, showOnlyVisited]);
+
+    const timer = setTimeout(loadPlacesInRadius, 400);
+    return () => clearTimeout(timer);
+  }, [
+    activeSearchLoc?.latitude,
+    activeSearchLoc?.longitude,
+    radius,
+    selectedTypes.join(","),
+    showOnlyVisited,
+  ]);
 
   // ── BRZA LOKACIJA ──────────────────────────────────────────────────────────
   // Korak 1: Balanced (brzo ~1-3s) → odmah centrira kartu
@@ -7270,6 +9186,7 @@ export default function DashboardScreen() {
     setSearchLocationName("");
     setCityQuery("");
     clearPlacesCache();
+    setAllPlaces([]); // ← NOVO: očisti stare rezultate
     if (userLocation) {
       const region = {
         ...userLocation,
@@ -7285,37 +9202,438 @@ export default function DashboardScreen() {
     if (!activeSearchLoc || selectedTypes.length === 0) return;
     setIsLoadingPlaces(true);
     try {
-      const raw = await getPlacesInRadius(
+      // 1. Pokušaj Google Places Nearby Search (precizniji, ima McDonald's itd.)
+      let filtered: Place[] = [];
+
+      if (GOOGLE_KEY) {
+        const googlePlaces = await fetchGoogleNearby(
+          activeSearchLoc.latitude,
+          activeSearchLoc.longitude,
+          radius * 1000,
+          selectedTypes,
+        );
+        filtered = googlePlaces;
+      }
+
+      // 2. OSM Overpass kao dodatak/fallback
+      const osmPlaces = await getPlacesInRadius(
         activeSearchLoc.latitude,
         activeSearchLoc.longitude,
         radius,
         selectedTypes as any,
       );
-      const seen = new Set<string>();
-      const deduped = raw.filter((p) => {
-        if (seen.has(p.id)) return false;
-        seen.add(p.id);
-        return true;
-      });
-      const filtered = deduped.filter(
-        (p) =>
-          !hiddenPlaceIds.includes(p.id) &&
-          haversineKm(
-            activeSearchLoc.latitude,
-            activeSearchLoc.longitude,
+
+      // 3. Spoji oba izvora, dedupliciraj
+      // 3. Spoji oba izvora, dedupliciraj (nova logika - po imenu + udaljenosti)
+      // 3. Spoji oba izvora, dedupliciraj
+      const combined = [...filtered, ...osmPlaces];
+      const seen = new Map<string, Place>();
+      const deduped: Place[] = [];
+
+      for (const p of combined) {
+        if (hiddenPlaceIds.includes(p.id)) continue;
+
+        const dist = haversineKm(
+          activeSearchLoc.latitude,
+          activeSearchLoc.longitude,
+          p.latitude,
+          p.longitude,
+        );
+        if (dist > radius * 1.1) continue;
+
+        // Normalizacija — ukloni prefikse "hotel ", "hostel " itd. za bolji dedup
+        const normalizeAccommodationName = (name: string): string => {
+          return name
+            .toLowerCase()
+            .trim()
+            .replace(
+              /^(hotel|hostel|apartman|apartments|motel|villa|resort)\s+/i,
+              "",
+            )
+            .replace(
+              /\s+(hotel|hostel|apartman|apartments|motel|villa|resort)$/i,
+              "",
+            );
+        };
+
+        const museumKeywords = ["muzej", "museum", "galerija", "gallery"];
+        const normalizeName = (name: string, type: string): string => {
+          const n = name.toLowerCase().trim();
+          if (type === "accommodation") return normalizeAccommodationName(name);
+          if (type === "museum") {
+            return n
+              .replace(/^(muzej|museum|galerija|gallery)\s+/i, "")
+              .replace(/\s+(muzej|museum|galerija|gallery)$/i, "")
+              .replace(/\s+of\s+/gi, " ") // "Museum of Slavonia" → "slavonia"
+              .replace(/\s+slavonije$/i, " slavonia") // HR→EN normalizacija
+              .replace(/\s+grada\s+/gi, " ") // "Muzej grada Osijeka" → "osijeka"
+              .replace(/\s+likovnih\s+/gi, " ")
+              .trim();
+          }
+          return n;
+        };
+
+        const nameKey = normalizeName(p.name, p.type);
+
+        const existing = seen.get(nameKey);
+
+        if (existing) {
+          const distBetween = haversineKm(
+            existing.latitude,
+            existing.longitude,
             p.latitude,
             p.longitude,
-          ) <= radius,
-      );
-      setAllPlaces(filtered);
-      setDisplayLimit(INITIAL_RESULTS_LIMIT);
+          );
+          if (distBetween < 0.2) continue;
+        }
 
-      // Centriraj kartu na prvih 10
-      const forMap = filtered.slice(0, INITIAL_RESULTS_LIMIT);
-      if (forMap.length > 0 && mapRef.current) {
+        // ── Dodatna provjera za muzeje: isti tip + unutar 150m = duplikat
+        // čak i ako se nazivi razlikuju (HR vs EN prijevodi)
+        if (
+          p.type === "museum" ||
+          p.type === "landmark" ||
+          p.type === "theater"
+        ) {
+          const nearDuplicate = deduped.find((existing) => {
+            if (existing.type !== p.type) return false;
+            return (
+              haversineKm(
+                existing.latitude,
+                existing.longitude,
+                p.latitude,
+                p.longitude,
+              ) < 0.15
+            ); // 150 metara — isti objekt, drugačiji jezik
+          });
+          if (nearDuplicate) continue;
+        }
+
+        seen.set(nameKey, p);
+        deduped.push(p);
+      }
+
+      // ── STROGI POST-FILTER ZA THEATER ──────────────────────────────
+      const THEATER_HARD_BLOCK = [
+        "hotel",
+        "hostel",
+        "apartman",
+        "apartment",
+        "apartments",
+        "soba",
+        "sobe",
+        "rooms",
+        "room",
+        "guest",
+        "guesthouse",
+        "villa",
+        "vila",
+        "resort",
+        "inn",
+        "motel",
+        "lodging",
+        "accommodation",
+        "smještaj",
+        "bed",
+        "breakfast",
+        "b&b",
+        "studio",
+        "suite",
+        "camp",
+        "glamping",
+        "pansion",
+        "pension",
+        "nekretnin",
+        "centar nekretnina",
+      ];
+
+      const theaterFiltered = deduped.filter((p) => {
+        if (p.type !== "theater") return true;
+        const n = p.name.toLowerCase().trim();
+        const isRealTheater =
+          n.includes("kazalište") ||
+          n.includes("kazaliste") ||
+          n.includes("teatar") ||
+          n.includes("theatre") ||
+          n.includes("theater") ||
+          n.includes("hnk") ||
+          n.includes("dječje") ||
+          n.includes("narodno");
+        if (!isRealTheater) return false;
+        return !THEATER_HARD_BLOCK.some((bad) => n.includes(bad));
+      });
+
+      // ── POST-FILTER ZA CLUB ─────────────────────────────────────────
+      const CLUB_HARD_BLOCK = [
+        "salon za pse",
+        "dog salon",
+        "pet salon",
+        "grooming",
+        "ljubimac",
+        "kućni ljubimac",
+        "njega pasa",
+        "uređivanje pasa",
+        "šišanje pasa",
+        "frizerski salon",
+        "frizersk",
+        "frizer",
+        "hair salon",
+        "brijačnica",
+        "barber",
+        "automat",
+        "gaming",
+        "slot",
+        "tombola",
+        "kladionica",
+        "mozzart",
+        "winbet",
+        "superbet",
+        "lvbet",
+        "admiral",
+        "casino",
+        "kockarnica",
+        "kozmetik",
+        "beauty",
+        "estetik",
+        "nail",
+        "manikur",
+        "pedikur",
+        "fitness",
+        "gym",
+        "teretana",
+        "nekretnin",
+        "d.o.o",
+        "obrt",
+      ];
+
+      const finalFiltered = theaterFiltered.filter((p) => {
+        if (p.type !== "club") return true;
+        const n = p.name.toLowerCase().trim();
+        return !CLUB_HARD_BLOCK.some((bad) => n.includes(bad));
+      });
+
+      const LANDMARK_BLOCK = [
+        "hostel",
+        "hotel",
+        "sobe",
+        "rooms",
+        "guest house",
+        "guest",
+        "guesthouse",
+        "apartman",
+        "apartment",
+        "apartments",
+        "studio",
+        "perla",
+        "waldinger",
+        "prenočište",
+        "smještaj",
+        "accommodation",
+        "lodging",
+        "villa",
+        "vila",
+        "resort",
+        "inn",
+        "motel",
+        "advent",
+        "festival",
+        "sajam",
+        "wine & walk",
+        "wine walk",
+        "winterland",
+        "muzej",
+        "museum",
+        "arhiv",
+        "archive",
+        "shell museum",
+        "water world",
+        "osijek",
+        "zagreb",
+        "split",
+        "rijeka",
+        "varaždin",
+        "farm stay",
+        "lacković",
+        "biljski krokodil",
+        "krokodil",
+        "sakuntala", // ← DODANO
+        "centar nekretnina", // ← DODANO
+        "centar nekretnine", // ← DODANO
+        "nekretnin", // ← DODANO
+      ];
+
+      const fullyFiltered = finalFiltered.filter((p) => {
+        if (p.type !== "landmark") return true;
+        const n = p.name.toLowerCase();
+        return !LANDMARK_BLOCK.some((bad) => n.includes(bad));
+      });
+
+      const MUSEUM_BLOCK = [
+        "bridge bench",
+        "bench",
+        "war scarred",
+        "scarred building",
+        "katakomba",
+        "catacomb", // ← vraćeno: blokira "Catacombs Osijek" u muzejima
+        "catacombs", // ← vraćeno: Google Places vraća pod museum tipom
+        "most",
+        "bridge",
+        "shell museum",
+        "water world",
+        "školjaka",
+        "skoljaka",
+        "building",
+        "ruin",
+        "ruins",
+        "atrakcija",
+      ];
+      const museumFiltered = fullyFiltered.filter((p) => {
+        if (p.type !== "museum") return true;
+        const n = p.name.toLowerCase();
+        return !MUSEUM_BLOCK.some((bad) => n.includes(bad));
+      });
+
+      const PARK_HARD_BLOCK = [
+        "fićo",
+        "red fić",
+        "konoba",
+        "restoran",
+        "caffe",
+        "bar",
+        "podgorje",
+        "suvara",
+        "kraševo",
+        "krasevo",
+        "bikana",
+        "čimen",
+        "cimen",
+        "južni blok",
+        "juzni blok",
+        "removac",
+        "removač",
+        "blok",
+        "naselje",
+        "zaselak",
+        "zaselje",
+        "ulica",
+        "trg",
+        "cesta",
+        "sa morem",
+        "predio",
+        "predjel",
+        "zona",
+        "četvrt",
+        "cetvrt",
+        "kvart",
+      ];
+      const parkFiltered = museumFiltered.filter((p) => {
+        if (p.type !== "park") return true;
+        const n = p.name.toLowerCase();
+        return !PARK_HARD_BLOCK.some((bad) => n.includes(bad));
+      });
+
+      const LANDMARK_EMPLOYMENT_BLOCK = [
+        "employment service",
+        "zapošljavanj",
+        "zavod za zaposl",
+        "hzz",
+        "porezna uprava",
+        "ured za",
+        "državni ured",
+      ];
+      const landmarkExtra = parkFiltered.filter((p) => {
+        if (p.type !== "landmark") return true;
+        const n = p.name.toLowerCase();
+        return !LANDMARK_EMPLOYMENT_BLOCK.some((bad) => n.includes(bad));
+      });
+
+      // ── POST-FILTER ZA SPA — mora biti ZADNJI, nakon museumFiltered ──
+      const SPA_HARD_BLOCK = [
+        // Medicinsko
+        "ambulanta",
+        "liječnik",
+        "doktor",
+        "medicina",
+        "medical",
+        "obiteljske",
+        "dežurna",
+        "fizioterapi",
+        "physio",
+        "rehabilitaci",
+        // Kozmetika — i s dijakriticima
+        "beauty",
+        "kozmetik",
+        "kozmetičk",
+        "estetik",
+        "estetica",
+        "estetska",
+        "salon",
+        "nail",
+        "manikur",
+        "pedikur",
+        // Fitness
+        "fitness",
+        "gym",
+        "teretana",
+        "crossfit",
+        "osobni trening",
+        "treninzi",
+        "pump",
+        // Tijelo/njega
+        "njegu",
+        "kulture tijela",
+        "centar kulture",
+        "sport i njegu",
+        "tensegrity",
+        "wellar",
+        "body service",
+        "body care",
+        // Studio/smještaj
+        "studio",
+        "apartman",
+        "apartment",
+        "hotel",
+        "hostel",
+        // Poslovno
+        "obrt",
+        "d.o.o",
+        "nekretnin",
+        "ljekarnica",
+        "apoteka",
+        "wellness centar",
+      ];
+
+      const spaFiltered = museumFiltered.filter((p) => {
+        if (p.type !== "spa") return true;
+        const n = p.name.toLowerCase();
+        return !SPA_HARD_BLOCK.some((bad) => n.includes(bad));
+      });
+
+      // ← DODAJ OVDJE
+      const CINEMA_WHITELIST = [
+        "kino",
+        "cinema",
+        "cinestar",
+        "multiplex",
+        "kinoplex",
+        "cinemacity",
+        "kinodvor",
+        "art kino",
+        "filmski",
+        "imax",
+      ];
+      const cinemaFiltered = landmarkExtra.filter((p) => {
+        if (p.type !== "cinema") return true;
+        const n = p.name.toLowerCase();
+        return CINEMA_WHITELIST.some((kw) => n.includes(kw));
+      });
+
+      cinemaFiltered.sort((a, b) => (a.distance ?? 0) - (b.distance ?? 0));
+      setAllPlaces(cinemaFiltered); // ← landmarkExtra → cinemaFiltered
+
+      if (finalFiltered.length > 0 && mapRef.current) {
         mapRef.current.fitToCoordinates(
           [
-            ...forMap.map((p) => ({
+            ...finalFiltered.map((p) => ({
               latitude: p.latitude,
               longitude: p.longitude,
             })),
@@ -7384,10 +9702,11 @@ export default function DashboardScreen() {
     if (activeTimeOfDay === tod) {
       setActiveTimeOfDay(null);
       setSelectedTypes([]);
-    } else {
-      setActiveTimeOfDay(tod);
-      setSelectedTypes(TIME_CATS[tod] || []);
+      return;
     }
+    setActiveTimeOfDay(tod);
+    setSelectedTypes(TIME_CATS[tod] || []);
+    setDisplayLimit(50); // ← povećaj limit kod TOD filtera
   };
 
   const handleMarkVisited = async (place: Place) => {
@@ -7456,15 +9775,46 @@ export default function DashboardScreen() {
 
   const isVisited = (placeId: string) =>
     visits.some((v) => v.placeId === placeId);
-  const ageFilteredPlaces =
-    ageAllowedCats && !showOnlyVisited
-      ? places.filter((p) => ageAllowedCats.includes(p.type))
-      : places;
-  const placesForMap = showOnlyVisited ? [] : ageFilteredPlaces;
+  const ageFilteredPlaces = useMemo(() => {
+    if (showOnlyVisited) return [];
+
+    let result = places; // places = timeFilteredPlaces, već filtriran po radnom vremenu
+
+    if (ageAllowedCats) {
+      result = result.filter((p) => ageAllowedCats.includes(p.type));
+    }
+
+    // ✅ FIX: uklonjena dupla provjera — timeFilteredPlaces to već radi
+    // if (activeTimeOfDay) { result = result.filter(...) }  ← OBRIŠI OVO
+
+    return result;
+  }, [places, ageAllowedCats, showOnlyVisited]);
+
+  // PRONAĐI i ZAMIJENI placesForMap useMemo:
+  const placesForMap = useMemo(() => {
+    let base = focusedType
+      ? ageFilteredPlaces.filter((p) => p.type === focusedType)
+      : ageFilteredPlaces;
+
+    // Ako su odabrani tipovi, stavi ih na početak liste
+    if (selectedTypes.length > 0 && !focusedType) {
+      base = [
+        ...base.filter((p) => selectedTypes.includes(p.type)),
+        ...base.filter((p) => !selectedTypes.includes(p.type)),
+      ];
+    }
+
+    return base.slice(0, displayLimit);
+  }, [ageFilteredPlaces, displayLimit, focusedType, selectedTypes]);
 
   // Ima li još rezultata koji nisu prikazani
-  const hasMore = allPlaces.length > displayLimit;
-  const showMoreCount = Math.min(allPlaces.length - displayLimit, 10);
+  // Ukupno relevantnih mjesta (nakon age/time filtera, s eventualnim focus tipom)
+  const totalFiltered = focusedType
+    ? ageFilteredPlaces.filter((p) => p.type === focusedType).length
+    : ageFilteredPlaces.length;
+
+  // Ima li još rezultata koji nisu prikazani
+  const hasMore = totalFiltered > placesForMap.length;
 
   const handleZoomIn = () => {
     if (mapRef.current) {
@@ -7495,14 +9845,19 @@ export default function DashboardScreen() {
   };
 
   return (
-    <View style={s.container}>
+    <View style={[s.container, { flex: 1, backgroundColor: "#1a2e1a" }]}>
       <MapView
         ref={mapRef}
-        style={s.map}
+        style={[s.map, StyleSheet.absoluteFillObject]}
         region={mapRegion || initialRegion}
         onRegionChangeComplete={setMapRegion}
         showsUserLocation={false}
         showsMyLocationButton={false}
+        showsCompass={false}
+        showsScale={false}
+        showsTraffic={false}
+        showsPointsOfInterests={false}
+        toolbarEnabled={false}
         loadingEnabled
         loadingIndicatorColor="#667eea"
         zoomControlEnabled={false}
@@ -7520,7 +9875,7 @@ export default function DashboardScreen() {
           <Marker
             coordinate={userLocation}
             anchor={{ x: 0.5, y: 0.5 }}
-            tracksViewChanges={true}
+            tracksViewChanges={true} // ← MORA biti true za animated markere
           >
             <UserLocationMarker />
           </Marker>
@@ -7563,6 +9918,29 @@ export default function DashboardScreen() {
         })()}
       </MapView>
 
+      {/* Brza traka kategorija — samo kad ima rezultata */}
+      {(allPlaces.length > 0 || selectedTypes.length > 0) && (
+        <QuickCategoryBar
+          allPlaces={ageFilteredPlaces}
+          selectedTypes={selectedTypes}
+          focusedType={focusedType}
+          // ZAMIJENI QuickCategoryBar onToggle u DashboardScreen:
+          onToggle={(type) => {
+            const newFocused = focusedType === type ? null : type;
+            setFocusedType(newFocused);
+            // Ako fokusiramo kategoriju, pokaži sve njene markere
+            if (newFocused) {
+              const countInCat = ageFilteredPlaces.filter(
+                (p) => p.type === newFocused,
+              ).length;
+              setDisplayLimit(Math.max(displayLimit, countInCat));
+            }
+          }}
+          DC={DC}
+          t={t}
+        />
+      )}
+
       {/* Top bar */}
       <View style={s.topBar}>
         <View style={s.citySearchRow}>
@@ -7596,7 +9974,7 @@ export default function DashboardScreen() {
               <Text
                 style={{ color: "#ff4757", fontSize: 12, fontWeight: "700" }}
               >
-                ✕ {t("map.myLocationShort")}
+                {t("map.myLocationShort")}
               </Text>
             </TouchableOpacity>
           )}
@@ -7608,8 +9986,25 @@ export default function DashboardScreen() {
             </Text>
           </View>
         )}
-        <View style={{ flexDirection: "row", gap: 8, alignItems: "center" }}>
-          {/* Filter gumb */}
+        <View style={{ flexDirection: "row", gap: 6, alignItems: "center" }}>
+          {/* ☰ Ostalo — LIJEVO, uz Filtri */}
+          <TouchableOpacity
+            style={[
+              s.topBtn,
+              showOstalo && {
+                backgroundColor: "#2a4230",
+                borderWidth: 1.5,
+                borderColor: "#5a8a48",
+              },
+            ]}
+            onPress={() => setShowOstalo((v) => !v)}
+          >
+            <Text style={[s.topBtnText, showOstalo && { color: "#c0e0a0" }]}>
+              ☰
+            </Text>
+          </TouchableOpacity>
+
+          {/* Filtri */}
           <TouchableOpacity
             style={s.topBtn}
             onPress={() => setShowFilterPanel(true)}
@@ -7620,7 +10015,7 @@ export default function DashboardScreen() {
             </Text>
           </TouchableOpacity>
 
-          {/* Jutro - slika umjesto emojija */}
+          {/* Jutro */}
           <TouchableOpacity
             style={[s.todBtn, activeTimeOfDay === "jutro" && s.todBtnA]}
             onPress={() => applyTimeOfDay("jutro")}
@@ -7632,7 +10027,7 @@ export default function DashboardScreen() {
             />
           </TouchableOpacity>
 
-          {/* Poslijepodne - slika umjesto emojija */}
+          {/* Poslijepodne */}
           <TouchableOpacity
             style={[s.todBtn, activeTimeOfDay === "poslijepodne" && s.todBtnA]}
             onPress={() => applyTimeOfDay("poslijepodne")}
@@ -7644,7 +10039,7 @@ export default function DashboardScreen() {
             />
           </TouchableOpacity>
 
-          {/* Večer - slika umjesto emojija */}
+          {/* Večer */}
           <TouchableOpacity
             style={[s.todBtn, activeTimeOfDay === "vecer" && s.todBtnA]}
             onPress={() => applyTimeOfDay("vecer")}
@@ -7656,154 +10051,465 @@ export default function DashboardScreen() {
             />
           </TouchableOpacity>
         </View>
-      </View>
-
-      {/* Side panel - zamijenjene ikone */}
-      <View style={s.sidePanel}>
-        {/* ZOOM IN - NOVA IKONA */}
-        <TouchableOpacity style={s.sideBtn} onPress={handleZoomIn}>
-          <Image source={zoomInIcon} style={s.sideIcon} resizeMode="contain" />
-        </TouchableOpacity>
-
-        {/* ZOOM OUT - NOVA IKONA */}
-        <TouchableOpacity style={s.sideBtn} onPress={handleZoomOut}>
-          <Image source={zoomOutIcon} style={s.sideIcon} resizeMode="contain" />
-        </TouchableOpacity>
-        {/* My location - NOVA CRVENA IGLA */}
-        <TouchableOpacity style={s.sideBtn} onPress={getCurrentLocation}>
-          <Image
-            source={locationPinIcon}
-            style={s.sideIcon}
-            resizeMode="contain"
-          />
-        </TouchableOpacity>
-
-        {/* Toggle radius circle */}
-        <TouchableOpacity
-          style={s.sideBtn}
-          onPress={() => setShowRadiusCircle((v) => !v)}
+        {/* <TouchableOpacity
+          style={[
+            s.topBtn,
+            showOstalo && {
+              backgroundColor: "#2a4230",
+              borderWidth: 1.5,
+              borderColor: "#5a8a48",
+            },
+          ]}
+          onPress={() => setShowOstalo((v) => !v)}
         >
-          <Image
-            source={radiusIcon}
-            style={s.sideIcon} // Samo style, bez tintColor
-            resizeMode="contain"
-          />
-        </TouchableOpacity>
-
-        {/* Visited places */}
-        <TouchableOpacity
-          style={[s.sideBtn, showOnlyVisited && s.sideBtnActive]}
-          onPress={() => setShowOnlyVisited((v) => !v)}
-        >
-          <Image
-            source={visitedIcon}
-            style={[s.sideIcon, showOnlyVisited && s.sideIconActive]}
-            resizeMode="contain"
-          />
-        </TouchableOpacity>
-
-        {/* Plan my day */}
-        <TouchableOpacity
-          style={s.sideBtn}
-          onPress={() => setShowPlanMyDay(true)}
-        >
-          <Image source={planIcon} style={s.sideIcon} resizeMode="contain" />
-        </TouchableOpacity>
-
-        {/* Activity groups */}
-        <TouchableOpacity style={s.sideBtn} onPress={() => setShowGroups(true)}>
-          <Image source={groupsIcon} style={s.sideIcon} resizeMode="contain" />
-        </TouchableOpacity>
-
-        {/* Archive */}
-        <TouchableOpacity
-          style={s.sideBtn}
-          onPress={() => setShowArchive(true)}
-        >
-          <Image source={archiveIcon} style={s.sideIcon} resizeMode="contain" />
-        </TouchableOpacity>
-
-        {/* Badges */}
-        <TouchableOpacity style={s.sideBtn} onPress={() => setShowBadges(true)}>
-          <Image source={badgesIcon} style={s.sideIcon} resizeMode="contain" />
-        </TouchableOpacity>
-
-        {/* Notifications */}
-        <TouchableOpacity
-          style={s.sideBtn}
-          onPress={() => setShowNotifSettings(true)}
-        >
-          <Image
-            source={notificationsIcon}
-            style={s.sideIcon}
-            resizeMode="contain"
-          />
-          {realNotificationCount > 0 && (
-            <View style={s.notifDot}>
-              <Text style={{ color: "#fff", fontSize: 9, fontWeight: "800" }}>
-                {realNotificationCount > 99 ? "99+" : realNotificationCount}
-              </Text>
-            </View>
-          )}
-        </TouchableOpacity>
-      </View>
-
-      {/* Loading / count bar */}
-      {isLoadingPlaces && (
-        <View style={s.loadingBar}>
-          <ActivityIndicator color="#fff" size="small" />
-          <Text style={s.loadingTxt}>{t("map.loading")}</Text>
-        </View>
-      )}
-      {!isLoadingPlaces && (allPlaces.length > 0 || showOnlyVisited) && (
-        <View style={s.bottomBar}>
-          <Text style={s.countTxt}>
-            {showOnlyVisited
-              ? `${visits.length} ${t("map.visitedOnly")}`
-              : t("map.shown", {
-                  shown: Math.min(displayLimit, allPlaces.length),
-                  total: allPlaces.length,
-                })}
+          <Text style={[s.topBtnText, showOstalo && { color: "#c0e0a0" }]}>
+            ☰
           </Text>
-          {/* Prikaži više gumb */}
-          {!showOnlyVisited && hasMore && (
+        </TouchableOpacity> */}
+      </View>
+
+      {/* ✅ OVERLAY — DODAJ OVDJE, IZMEĐU topBar i dropdown panela */}
+      {showOstalo && (
+        <TouchableOpacity
+          style={{
+            position: "absolute",
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            zIndex: 9998,
+          }}
+          activeOpacity={1}
+          onPress={() => setShowOstalo(false)}
+        />
+      )}
+
+      {showOstalo && (
+        <View
+          style={{
+            position: "absolute",
+            top: Platform.OS === "ios" ? 168 : 144,
+            left: 12, // ← LIJEVO, ispod Ostalo gumba
+            backgroundColor: "#1e3620",
+            borderRadius: 16,
+            paddingVertical: 8,
+            paddingHorizontal: 8,
+            gap: 6,
+            shadowColor: "#000",
+            shadowOffset: { width: 0, height: 6 },
+            shadowOpacity: 0.35,
+            shadowRadius: 10,
+            elevation: 12,
+            borderWidth: 1.5,
+            borderColor: "#4a7040",
+            zIndex: 9999,
+          }}
+        >
+          {[
+            {
+              icon: planIcon,
+              label: "Plan puta",
+              onPress: () => {
+                setShowOstalo(false);
+                setShowPlanMyDay(true);
+              },
+            },
+            {
+              icon: groupsIcon,
+              label: "Aktivnosti",
+              onPress: () => {
+                setShowOstalo(false);
+                setShowGroups(true);
+              },
+            },
+            {
+              icon: archiveIcon,
+              label: "Arhiva",
+              onPress: () => {
+                setShowOstalo(false);
+                setShowArchive(true);
+              },
+            },
+            {
+              icon: badgesIcon,
+              label: "Značke",
+              onPress: () => {
+                setShowOstalo(false);
+                setShowBadges(true);
+              },
+            },
+            {
+              icon: notificationsIcon,
+              label: "Obavijesti",
+              onPress: () => {
+                setShowOstalo(false);
+                setShowNotifSettings(true);
+              },
+              badge: realNotificationCount,
+            },
+          ].map((item, i) => (
             <TouchableOpacity
-              style={s.showMoreBtn}
-              onPress={() => {
-                const newLimit = displayLimit + 10;
-                setDisplayLimit(newLimit);
-                // Centriraj kartu na nova mjesta
-                const newSlice = allPlaces.slice(displayLimit, newLimit);
-                if (newSlice.length > 0 && mapRef.current && activeSearchLoc) {
-                  mapRef.current.fitToCoordinates(
-                    [
-                      ...allPlaces.slice(0, newLimit).map((p) => ({
-                        latitude: p.latitude,
-                        longitude: p.longitude,
-                      })),
-                      {
-                        latitude: activeSearchLoc.latitude,
-                        longitude: activeSearchLoc.longitude,
-                      },
-                    ],
-                    {
-                      edgePadding: {
-                        top: 110,
-                        right: 60,
-                        bottom: 150,
-                        left: 60,
-                      },
-                      animated: true,
-                    },
-                  );
-                }
+              key={i}
+              style={{
+                flexDirection: "row",
+                alignItems: "center",
+                gap: 10,
+                paddingHorizontal: 12,
+                paddingVertical: 9,
+                borderRadius: 10,
+                backgroundColor: "#2a4230",
+                borderWidth: 1,
+                borderColor: "#3a5a30",
               }}
+              onPress={item.onPress}
+              activeOpacity={0.75}
             >
-              <Text style={s.showMoreTxt}>
-                {t("map.showMore", { count: showMoreCount })}
+              <View style={{ position: "relative" }}>
+                <Image
+                  source={item.icon}
+                  style={{ width: 30, height: 30 }}
+                  resizeMode="contain"
+                />
+                {item.badge != null && item.badge > 0 && (
+                  <View
+                    style={{
+                      position: "absolute",
+                      top: -4,
+                      right: -4,
+                      minWidth: 16,
+                      height: 16,
+                      borderRadius: 8,
+                      backgroundColor: "#cc3830",
+                      justifyContent: "center",
+                      alignItems: "center",
+                      borderWidth: 1.5,
+                      borderColor: "#1e3620",
+                      paddingHorizontal: 2,
+                    }}
+                  >
+                    <Text
+                      style={{ color: "#fff", fontSize: 9, fontWeight: "800" }}
+                    >
+                      {item.badge > 99 ? "99+" : item.badge}
+                    </Text>
+                  </View>
+                )}
+              </View>
+              <Text
+                style={{
+                  color: "#d0e8c0",
+                  fontSize: 13,
+                  fontWeight: "600",
+                  minWidth: 80,
+                }}
+              >
+                {item.label}
               </Text>
             </TouchableOpacity>
-          )}
+          ))}
+        </View>
+      )}
+
+      {/* Side panel - zamijenjene ikone */}
+      {/* Toggle gumb — uvijek vidljiv */}
+      <TouchableOpacity
+        style={{
+          position: "absolute",
+          right: 12,
+          top: Platform.OS === "ios" ? 202 : 178,
+          backgroundColor: "#fff",
+          borderRadius: 14,
+          width: 46,
+          height: 46,
+          justifyContent: "center",
+          alignItems: "center",
+          shadowColor: "#000",
+          shadowOffset: { width: 0, height: 4 },
+          shadowOpacity: 0.16,
+          shadowRadius: 8,
+          elevation: 8,
+          borderWidth: 1,
+          borderColor: "rgba(0,0,0,0.06)",
+          zIndex: 10,
+        }}
+        onPress={() => setShowMapCtrlPanel((v) => !v)}
+      >
+        <Text style={{ fontSize: 16, color: "#555" }}>
+          {showMapCtrlPanel ? "›" : "‹"}
+        </Text>
+        <Text
+          style={{
+            fontSize: 8,
+            color: "#888",
+            fontWeight: "600",
+            marginTop: 1,
+          }}
+        >
+          {showMapCtrlPanel ? "Sakrij" : "Prikaži"}
+        </Text>
+      </TouchableOpacity>
+
+      {/* Glavni panel — prikazuje se samo kad je showMapCtrlPanel=true */}
+      {showMapCtrlPanel && (
+        <View
+          style={[
+            UI_STYLES.mapCtrlPanel,
+            { top: Platform.OS === "ios" ? 258 : 234 },
+          ]}
+        >
+          {/* Zoom In */}
+          <TouchableOpacity style={UI_STYLES.mapCtrlBtn} onPress={handleZoomIn}>
+            <View
+              style={{
+                width: 26,
+                height: 26,
+                borderRadius: 6,
+                borderWidth: 2,
+                borderColor: "#555",
+                justifyContent: "center",
+                alignItems: "center",
+              }}
+            >
+              <Text
+                style={{
+                  fontSize: 18,
+                  color: "#333",
+                  lineHeight: 20,
+                  fontWeight: "300",
+                }}
+              >
+                +
+              </Text>
+            </View>
+          </TouchableOpacity>
+          <Text
+            style={{
+              fontSize: 8,
+              color: "#888",
+              fontWeight: "600",
+              textAlign: "center",
+              marginBottom: 2,
+            }}
+          >
+            Povećaj
+          </Text>
+
+          {/* Zoom Out */}
+          <TouchableOpacity
+            style={UI_STYLES.mapCtrlBtn}
+            onPress={handleZoomOut}
+          >
+            <View
+              style={{
+                width: 26,
+                height: 26,
+                borderRadius: 6,
+                borderWidth: 2,
+                borderColor: "#555",
+                justifyContent: "center",
+                alignItems: "center",
+              }}
+            >
+              <Text
+                style={{
+                  fontSize: 18,
+                  color: "#333",
+                  lineHeight: 20,
+                  fontWeight: "300",
+                }}
+              >
+                −
+              </Text>
+            </View>
+          </TouchableOpacity>
+          <Text
+            style={{
+              fontSize: 8,
+              color: "#888",
+              fontWeight: "600",
+              textAlign: "center",
+              marginBottom: 2,
+            }}
+          >
+            Smanji
+          </Text>
+
+          <View style={UI_STYLES.mapCtrlDivider} />
+
+          {/* Moja lokacija */}
+          <TouchableOpacity
+            style={UI_STYLES.mapCtrlBtn}
+            onPress={getCurrentLocation}
+          >
+            <View
+              style={{
+                width: 26,
+                height: 26,
+                justifyContent: "center",
+                alignItems: "center",
+              }}
+            >
+              <View
+                style={{
+                  width: 24,
+                  height: 24,
+                  borderRadius: 12,
+                  borderWidth: 2,
+                  borderColor: "#007AFF",
+                  justifyContent: "center",
+                  alignItems: "center",
+                }}
+              >
+                <View
+                  style={{
+                    width: 8,
+                    height: 8,
+                    borderRadius: 4,
+                    backgroundColor: "#007AFF",
+                  }}
+                />
+              </View>
+              <View
+                style={{
+                  position: "absolute",
+                  top: -3,
+                  width: 0,
+                  height: 0,
+                  borderLeftWidth: 3,
+                  borderRightWidth: 3,
+                  borderBottomWidth: 5,
+                  borderLeftColor: "transparent",
+                  borderRightColor: "transparent",
+                  borderBottomColor: "#007AFF",
+                }}
+              />
+            </View>
+          </TouchableOpacity>
+          <Text
+            style={{
+              fontSize: 8,
+              color: "#888",
+              fontWeight: "600",
+              textAlign: "center",
+              marginBottom: 2,
+            }}
+          >
+            Lokacija
+          </Text>
+
+          {/* Radijus */}
+          <TouchableOpacity
+            style={[
+              UI_STYLES.mapCtrlBtn,
+              showRadiusCircle && UI_STYLES.mapCtrlBtnActive,
+            ]}
+            onPress={() => setShowRadiusCircle((v) => !v)}
+          >
+            <View
+              style={{
+                width: 26,
+                height: 26,
+                justifyContent: "center",
+                alignItems: "center",
+              }}
+            >
+              <View
+                style={{
+                  width: 24,
+                  height: 24,
+                  borderRadius: 12,
+                  borderWidth: 1.5,
+                  borderColor: showRadiusCircle ? "#5a8a48" : "#aaa",
+                }}
+              />
+              <View
+                style={{
+                  position: "absolute",
+                  width: 14,
+                  height: 14,
+                  borderRadius: 7,
+                  borderWidth: 1.5,
+                  borderColor: showRadiusCircle ? "#5a8a48" : "#aaa",
+                }}
+              />
+              <View
+                style={{
+                  position: "absolute",
+                  width: 4,
+                  height: 4,
+                  borderRadius: 2,
+                  backgroundColor: showRadiusCircle ? "#5a8a48" : "#aaa",
+                }}
+              />
+            </View>
+            {showRadiusCircle && <View style={UI_STYLES.mapCtrlActiveDot} />}
+          </TouchableOpacity>
+          <Text
+            style={{
+              fontSize: 8,
+              color: "#888",
+              fontWeight: "600",
+              textAlign: "center",
+              marginBottom: 2,
+            }}
+          >
+            Radijus
+          </Text>
+
+          <View style={UI_STYLES.mapCtrlDivider} />
+
+          {/* Posjećena mjesta */}
+          <TouchableOpacity
+            style={[
+              UI_STYLES.mapCtrlBtn,
+              showOnlyVisited && UI_STYLES.mapCtrlBtnVisited,
+            ]}
+            onPress={() => setShowOnlyVisited((v) => !v)}
+          >
+            <View
+              style={{
+                width: 26,
+                height: 26,
+                justifyContent: "center",
+                alignItems: "center",
+              }}
+            >
+              <View
+                style={{
+                  width: 24,
+                  height: 24,
+                  borderRadius: 12,
+                  borderWidth: 2,
+                  borderColor: showOnlyVisited ? "#34c759" : "#888",
+                  justifyContent: "center",
+                  alignItems: "center",
+                }}
+              >
+                <Text
+                  style={{
+                    fontSize: 13,
+                    color: showOnlyVisited ? "#34c759" : "#888",
+                    fontWeight: "700",
+                    lineHeight: 15,
+                  }}
+                >
+                  ✓
+                </Text>
+              </View>
+            </View>
+            {showOnlyVisited && <View style={UI_STYLES.mapCtrlActiveDot} />}
+          </TouchableOpacity>
+          <Text
+            style={{
+              fontSize: 8,
+              color: "#888",
+              fontWeight: "600",
+              textAlign: "center",
+              marginBottom: 2,
+            }}
+          >
+            Posjećeno
+          </Text>
         </View>
       )}
 
@@ -7814,7 +10520,7 @@ export default function DashboardScreen() {
         transparent={false}
         onRequestClose={() => setShowFilterPanel(false)}
       >
-        <View style={{ flex: 1, backgroundColor: "#1a2e1a" }}>
+        <View style={{ flex: 1, backgroundColor: DC.bg }}>
           <View
             style={{
               flexDirection: "row",
@@ -7823,16 +10529,16 @@ export default function DashboardScreen() {
               padding: 20,
               paddingTop: Platform.OS === "ios" ? 54 : 36,
               borderBottomWidth: 1.5,
-              borderBottomColor: "#4a7040",
-              backgroundColor: "#1a2e1a",
+              borderBottomColor: DC.border,
+              backgroundColor: DC.bg,
             }}
           >
-            <Text style={{ fontSize: 20, fontWeight: "800", color: "#e8e8e8" }}>
+            <Text style={{ fontSize: 20, fontWeight: "800", color: DC.text }}>
               {t("map.filters")}
             </Text>
             <TouchableOpacity onPress={() => setShowFilterPanel(false)}>
               <Text
-                style={{ fontSize: 14, color: "#b0b0b0", fontWeight: "600" }}
+                style={{ fontSize: 14, color: DC.textDim, fontWeight: "600" }}
               >
                 {t("common.close")}
               </Text>
@@ -7840,129 +10546,19 @@ export default function DashboardScreen() {
           </View>
 
           <ScrollView contentContainerStyle={{ paddingBottom: 40 }}>
-            {/* Search */}
-            <View
-              style={{
-                padding: 16,
-                borderBottomWidth: 1,
-                borderBottomColor: "#3a5a30",
-              }}
-            >
-              <Text
-                style={{
-                  fontSize: 14,
-                  fontWeight: "700",
-                  color: "#c0c0c0",
-                  marginBottom: 10,
-                }}
-              >
-                {t("map.searchPlaceholder")}
-              </Text>
-              <View style={{ flexDirection: "row", gap: 8 }}>
-                <TextInput
-                  style={{
-                    flex: 1,
-                    backgroundColor: "#2a4230",
-                    borderRadius: 10,
-                    borderWidth: 1,
-                    borderColor: "#4a7040",
-                    paddingHorizontal: 14,
-                    paddingVertical: 10,
-                    fontSize: 15,
-                    color: "#e8e8e8",
-                  }}
-                  placeholder={t("common.placeNamePlaceholder")}
-                  placeholderTextColor="#8a8a8a"
-                  value={searchQuery}
-                  onChangeText={setSearchQuery}
-                  onSubmitEditing={handleSearch}
-                  returnKeyType="search"
-                />
-                <TouchableOpacity
-                  style={{
-                    backgroundColor: "#3a5a30",
-                    paddingHorizontal: 16,
-                    paddingVertical: 10,
-                    borderRadius: 10,
-                    borderWidth: 1,
-                    borderColor: "#4a7040",
-                    justifyContent: "center",
-                  }}
-                  onPress={handleSearch}
-                >
-                  {isSearching ? (
-                    <ActivityIndicator color="#e8e8e8" size="small" />
-                  ) : (
-                    <Text style={{ color: "#e8e8e8", fontWeight: "700" }}>
-                      {t("common.searchBtnShort")}
-                    </Text>
-                  )}
-                </TouchableOpacity>
-              </View>
-
-              {showSearchResults && searchResults.length > 0 && (
-                <View
-                  style={{
-                    marginTop: 10,
-                    borderRadius: 12,
-                    borderWidth: 1,
-                    borderColor: "#4a7040",
-                    overflow: "hidden",
-                    backgroundColor: "#2a4230",
-                  }}
-                >
-                  {searchResults.map((r) => (
-                    <TouchableOpacity
-                      key={r.id}
-                      style={{
-                        flexDirection: "row",
-                        alignItems: "center",
-                        padding: 12,
-                        gap: 10,
-                        borderBottomWidth: 1,
-                        borderBottomColor: "#3a5a30",
-                      }}
-                      onPress={() => {
-                        handleSelectSearchResult(r);
-                        setShowFilterPanel(false);
-                      }}
-                    >
-                      <Text style={{ fontSize: 22 }}>
-                        {EMOJIS[r.type] || "📍"}
-                      </Text>
-                      <View>
-                        <Text
-                          style={{
-                            fontSize: 14,
-                            fontWeight: "600",
-                            color: "#e8e8e8",
-                          }}
-                        >
-                          {r.name}
-                        </Text>
-                        <Text style={{ fontSize: 12, color: "#a0a0a0" }}>
-                          {t(`categories.${r.type}`, { defaultValue: r.type })}
-                        </Text>
-                      </View>
-                    </TouchableOpacity>
-                  ))}
-                </View>
-              )}
-            </View>
-
             {/* Doba dana */}
             <View
               style={{
                 padding: 16,
                 borderBottomWidth: 1,
-                borderBottomColor: "#3a5a30",
+                borderBottomColor: DC.borderDim,
               }}
             >
               <Text
                 style={{
                   fontSize: 14,
                   fontWeight: "700",
-                  color: "#c0c0c0",
+                  color: DC.textSub,
                   marginBottom: 10,
                 }}
               >
@@ -7990,23 +10586,25 @@ export default function DashboardScreen() {
                   },
                 ].map((tod) => {
                   const active = activeTimeOfDay === tod.key;
+
+                  // ⬆️ DODAJ OVE LINIJE ⬆️
                   return (
                     <TouchableOpacity
                       key={tod.key}
                       style={[
                         {
-                          backgroundColor: "#2a4230",
+                          backgroundColor: DC.card,
                           borderRadius: 12,
                           padding: 14,
                           borderWidth: 1.5,
-                          borderColor: "#3a5a30",
+                          borderColor: DC.borderDim,
                           flexDirection: "row",
                           alignItems: "center",
                           gap: 12,
                         },
                         active && {
-                          backgroundColor: "#3a5a30",
-                          borderColor: "#5a8a48",
+                          backgroundColor: DC.cardHover,
+                          borderColor: DC.border,
                         },
                       ]}
                       onPress={() => applyTimeOfDay(tod.key)}
@@ -8021,7 +10619,7 @@ export default function DashboardScreen() {
                           style={{
                             fontSize: 14,
                             fontWeight: "700",
-                            color: "#e8e8e8",
+                            color: DC.text,
                           }}
                         >
                           {tod.label}
@@ -8029,12 +10627,13 @@ export default function DashboardScreen() {
                         <Text
                           style={{
                             fontSize: 12,
-                            color: "#a0a0a0",
+                            color: DC.textDim,
                             marginTop: 3,
                           }}
                         >
                           {tod.sub}
                         </Text>
+                        {/* ⬇️ DODAJ OVAJ NOVI TEXT ⬇️ */}
                       </View>
                       {active && (
                         <View
@@ -8071,7 +10670,7 @@ export default function DashboardScreen() {
                 paddingTop: 12,
                 paddingBottom: 4,
                 borderBottomWidth: 1,
-                borderBottomColor: "#3a5a30",
+                borderBottomColor: DC.borderDim,
               }}
             >
               <View
@@ -8083,7 +10682,7 @@ export default function DashboardScreen() {
                 }}
               >
                 <Text
-                  style={{ fontSize: 14, fontWeight: "700", color: "#c0c0c0" }}
+                  style={{ fontSize: 14, fontWeight: "700", color: DC.textSub }}
                 >
                   {t("map.categories")}
                 </Text>
@@ -8097,7 +10696,7 @@ export default function DashboardScreen() {
                     <Text
                       style={{
                         fontSize: 13,
-                        color: "#5a8a48",
+                        color: DC.accent,
                         fontWeight: "600",
                       }}
                     >
@@ -8121,14 +10720,14 @@ export default function DashboardScreen() {
                       style={{
                         width: CELL_W,
                         height: 130, // ← fiksna visina umjesto aspectRatio
-                        backgroundColor: active ? cat.color : "#2a4230",
+                        backgroundColor: active ? cat.color : DC.card,
                         borderRadius: 12,
                         justifyContent: "center",
                         alignItems: "center",
                         paddingHorizontal: 4,
                         paddingVertical: 8,
                         borderWidth: active ? 2 : 1,
-                        borderColor: active ? cat.color : "#3a5a30",
+                        borderColor: active ? cat.color : DC.borderDim,
                       }}
                       onPress={() => toggleType(cat.id)}
                     >
@@ -8147,7 +10746,7 @@ export default function DashboardScreen() {
                         style={{
                           fontSize: 11,
                           fontWeight: "600",
-                          color: active ? "#fff" : "#c0c0c0",
+                          color: active ? "#fff" : DC.textSub,
                           textAlign: "center",
                         }}
                         numberOfLines={2}
@@ -8165,14 +10764,14 @@ export default function DashboardScreen() {
               style={{
                 padding: 16,
                 borderBottomWidth: 1,
-                borderBottomColor: "#3a5a30",
+                borderBottomColor: DC.borderDim,
               }}
             >
               <Text
                 style={{
                   fontSize: 14,
                   fontWeight: "700",
-                  color: "#c0c0c0",
+                  color: DC.textSub,
                   marginBottom: 10,
                 }}
               >
@@ -8187,17 +10786,17 @@ export default function DashboardScreen() {
                       style={{
                         paddingHorizontal: 16,
                         paddingVertical: 9,
-                        backgroundColor: active ? "#3a5a30" : "#2a4230",
+                        backgroundColor: active ? DC.cardHover : DC.card,
                         borderRadius: 8,
                         borderWidth: 1,
-                        borderColor: active ? "#5a8a48" : "#3a5a30",
+                        borderColor: active ? DC.border : DC.borderDim,
                       }}
                       onPress={() => setRadius(r)}
                     >
                       <Text
                         style={{
                           fontSize: 13,
-                          color: active ? "#e8e8e8" : "#b0b0b0",
+                          color: active ? DC.text : DC.textDim,
                           fontWeight: active ? "700" : "400",
                         }}
                       >
@@ -8214,7 +10813,7 @@ export default function DashboardScreen() {
               style={{
                 padding: 16,
                 borderBottomWidth: 1,
-                borderBottomColor: "#3a5a30",
+                borderBottomColor: DC.borderDim,
               }}
             >
               <View
@@ -8226,7 +10825,7 @@ export default function DashboardScreen() {
                 }}
               >
                 <Text
-                  style={{ fontSize: 14, fontWeight: "700", color: "#c0c0c0" }}
+                  style={{ fontSize: 14, fontWeight: "700", color: DC.textSub }}
                 >
                   {t("map.forAgeGroup")}
                 </Text>
@@ -8235,7 +10834,7 @@ export default function DashboardScreen() {
                     <Text
                       style={{
                         fontSize: 13,
-                        color: "#5a8a48",
+                        color: DC.accent,
                         fontWeight: "600",
                       }}
                     >
@@ -8257,17 +10856,35 @@ export default function DashboardScreen() {
                         paddingHorizontal: 14,
                         paddingVertical: 10,
                         borderRadius: 10,
-                        backgroundColor: active ? grp.color : "#2a4230",
+                        backgroundColor: active ? grp.color : DC.card,
                         borderWidth: 1.5,
-                        borderColor: active ? grp.color : "#3a5a30",
+                        borderColor: active ? grp.color : DC.borderDim,
                       }}
-                      onPress={() =>
-                        setSelectedAgeGroups((prev) =>
-                          prev.includes(grp.id)
-                            ? prev.filter((x) => x !== grp.id)
-                            : [...prev, grp.id],
-                        )
-                      }
+                      onPress={() => {
+                        const newGroups = selectedAgeGroups.includes(grp.id)
+                          ? selectedAgeGroups.filter((x) => x !== grp.id)
+                          : [...selectedAgeGroups, grp.id];
+
+                        setSelectedAgeGroups(newGroups);
+                        setActiveTimeOfDay(null); // resetiraj TOD filter — dobna grupa ima prednost
+
+                        if (newGroups.length > 0) {
+                          // Skupi sve kategorije iz svih odabranih dobnih skupina (bez duplikata)
+                          const ageCats = [
+                            ...new Set(
+                              newGroups.flatMap(
+                                (gId) =>
+                                  getAgeGroups().find((g) => g.id === gId)
+                                    ?.cats ?? [],
+                              ),
+                            ),
+                          ];
+                          setSelectedTypes(ageCats);
+                        } else {
+                          // Ako su sve dobne grupe odznačene, očisti i kategorije
+                          setSelectedTypes([]);
+                        }
+                      }}
                     >
                       <Image
                         source={grp.icon}
@@ -8279,7 +10896,7 @@ export default function DashboardScreen() {
                           style={{
                             fontSize: 13,
                             fontWeight: "700",
-                            color: active ? "#fff" : "#e8e8e8",
+                            color: active ? "#fff" : DC.text,
                           }}
                         >
                           {grp.label}
@@ -8289,7 +10906,7 @@ export default function DashboardScreen() {
                             fontSize: 10,
                             color: active
                               ? "rgba(255,255,255,0.75)"
-                              : "#a0a0a0",
+                              : DC.textDim,
                           }}
                         >
                           {grp.desc}
@@ -8303,17 +10920,17 @@ export default function DashboardScreen() {
                 <View
                   style={{
                     marginTop: 10,
-                    backgroundColor: "#2a4230",
+                    backgroundColor: DC.card,
                     borderRadius: 10,
                     borderWidth: 1,
-                    borderColor: "#5a8a48",
+                    borderColor: DC.border,
                     padding: 10,
                   }}
                 >
                   <Text
                     style={{
                       fontSize: 12,
-                      color: "#5a8a48",
+                      color: DC.accent,
                       fontWeight: "600",
                     }}
                   >
@@ -8332,25 +10949,25 @@ export default function DashboardScreen() {
               style={{
                 padding: 16,
                 borderBottomWidth: 1,
-                borderBottomColor: "#3a5a30",
+                borderBottomColor: DC.borderDim,
               }}
             >
               <Text
                 style={{
                   fontSize: 14,
                   fontWeight: "700",
-                  color: "#c0c0c0",
+                  color: DC.textSub,
                   marginBottom: 4,
                 }}
               >
-                📊{" "}
+                {" "}
                 {t("map.displayOnMap", {
                   shown: Math.min(displayLimit, allPlaces.length),
                   total: allPlaces.length,
                 })}
               </Text>
               <Text
-                style={{ fontSize: 12, color: "#a0a0a0", marginBottom: 12 }}
+                style={{ fontSize: 12, color: DC.textDim, marginBottom: 12 }}
               >
                 {t("map.displayLimitHint")}
               </Text>
@@ -8368,17 +10985,17 @@ export default function DashboardScreen() {
                           style={{
                             paddingHorizontal: 16,
                             paddingVertical: 9,
-                            backgroundColor: active ? "#3a5a30" : "#2a4230",
+                            backgroundColor: active ? DC.cardHover : DC.card,
                             borderRadius: 8,
                             borderWidth: 1,
-                            borderColor: active ? "#5a8a48" : "#3a5a30",
+                            borderColor: active ? DC.border : DC.borderDim,
                           }}
                           onPress={() => setDisplayLimit(n)}
                         >
                           <Text
                             style={{
                               fontSize: 13,
-                              color: active ? "#e8e8e8" : "#b0b0b0",
+                              color: active ? DC.text : DC.textDim,
                               fontWeight: active ? "700" : "400",
                             }}
                           >
@@ -8427,7 +11044,7 @@ export default function DashboardScreen() {
                   style={{
                     fontSize: 14,
                     fontWeight: "700",
-                    color: "#c0c0c0",
+                    color: DC.textSub,
                     marginBottom: 8,
                   }}
                 >
@@ -8440,22 +11057,22 @@ export default function DashboardScreen() {
                       flexDirection: "row",
                       justifyContent: "space-between",
                       alignItems: "center",
-                      backgroundColor: "#2a4230",
+                      backgroundColor: DC.card,
                       borderRadius: 10,
                       borderWidth: 1,
-                      borderColor: "#3a5a30",
+                      borderColor: DC.borderDim,
                       padding: 12,
                       marginBottom: 8,
                     }}
                     onPress={() => handleRestorePlace(id)}
                   >
                     <Text
-                      style={{ fontSize: 12, color: "#a0a0a0", flex: 1 }}
+                      style={{ fontSize: 12, color: DC.textDim, flex: 1 }}
                       numberOfLines={1}
                     >
                       ID: {id.split("_").slice(-1)[0]}
                     </Text>
-                    <Text style={{ color: "#5a8a48", fontWeight: "700" }}>
+                    <Text style={{ color: DC.accent, fontWeight: "700" }}>
                       ↩ Vrati
                     </Text>
                   </TouchableOpacity>
@@ -8467,18 +11084,16 @@ export default function DashboardScreen() {
             <TouchableOpacity
               style={{
                 margin: 16,
-                backgroundColor: "#3a5a30",
+                backgroundColor: DC.cardHover,
                 borderRadius: 12,
                 borderWidth: 1.5,
-                borderColor: "#5a8a48",
+                borderColor: DC.border,
                 paddingVertical: 16,
                 alignItems: "center",
               }}
               onPress={() => setShowFilterPanel(false)}
             >
-              <Text
-                style={{ color: "#e8e8e8", fontSize: 16, fontWeight: "700" }}
-              >
+              <Text style={{ color: DC.text, fontSize: 16, fontWeight: "700" }}>
                 {t("map.apply")}
                 {selectedTypes.length > 0
                   ? ` (${selectedTypes.length} kategorija)`
@@ -8535,6 +11150,7 @@ export default function DashboardScreen() {
         onClose={() => setShowPlanMyDay(false)}
         onMarkVisited={handleMarkVisited}
         visits={visits}
+        PlaceDetailModalComponent={PlaceDetailModal}
       />
       <NotificationSettingsModal
         visible={showNotifSettings}
@@ -8551,6 +11167,58 @@ export default function DashboardScreen() {
         onClose={() => setShowGroups(false)}
         userLocation={userLocation}
       />
+      {/* Info bar — broj rezultata + koliko je trenutno otvoreno */}
+      {(isLoadingPlaces || places.length > 0 || activeTimeOfDay) && (
+        <View style={UI_STYLES.infoBar}>
+          {isLoadingPlaces ? (
+            <>
+              <ActivityIndicator size="small" color="#a0d080" />
+              <Text style={UI_STYLES.infoBarText}>{t("map.loading")}...</Text>
+            </>
+          ) : (
+            <>
+              <Text style={UI_STYLES.infoBarText}>
+                {(() => {
+                  const shown = placesForMap.length;
+                  const total = focusedType
+                    ? ageFilteredPlaces.filter((p) => p.type === focusedType)
+                        .length
+                    : ageFilteredPlaces.length;
+
+                  // Broj aktivnih kategorija koje imaju rezultata
+                  const activeCatCount = selectedTypes.filter((type) =>
+                    ageFilteredPlaces.some((p) => p.type === type),
+                  ).length;
+
+                  const catLabel = focusedType
+                    ? t(`categories.${focusedType}`, {
+                        defaultValue: focusedType,
+                      })
+                    : activeCatCount > 1
+                      ? `${activeCatCount} kategorija`
+                      : selectedTypes.length === 1
+                        ? t(`categories.${selectedTypes[0]}`, {
+                            defaultValue: selectedTypes[0],
+                          })
+                        : t("map.results");
+
+                  return `${shown}/${total} = ${catLabel}`;
+                })()}
+              </Text>
+              {hasMore && (
+                <TouchableOpacity
+                  style={UI_STYLES.infoShowMoreBtn}
+                  onPress={() => setDisplayLimit((prev) => prev + 20)}
+                >
+                  <Text style={UI_STYLES.infoShowMoreText}>
+                    +{Math.min(totalFiltered - placesForMap.length, 20)} više
+                  </Text>
+                </TouchableOpacity>
+              )}
+            </>
+          )}
+        </View>
+      )}
     </View>
   );
 }

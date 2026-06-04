@@ -265,7 +265,15 @@ function ComposeMessageModal({
             }}
           >
             <VaraAvatar
-              avatar={recipient.avatar}
+              avatar={
+                recipient.avatar
+                  ? recipient.avatar.startsWith("avatar:")
+                    ? recipient.avatar
+                    : recipient.avatar.startsWith("http")
+                      ? `${recipient.avatar}${recipient.avatar.includes("?") ? "&" : "?"}_t=${recipient.id}`
+                      : `${API_BASE_URL}${recipient.avatar.startsWith("/") ? "" : "/"}${recipient.avatar}?_t=${recipient.id}`
+                  : null
+              }
               firstName={firstName}
               lastName={lastName}
               size={28}
@@ -416,7 +424,14 @@ export default function SearchScreen() {
       });
       if (res.ok) {
         const data: User[] = await res.json();
-        const others = data.filter((u) => u.id !== parsedId);
+        const others = data.filter(
+          (u) =>
+            u.id !== parsedId &&
+            u.username?.toLowerCase() !== "admin_cromap" &&
+            `${u.firstname || u.firstName || ""} ${u.lastname || u.lastName || ""}`
+              .toLowerCase()
+              .trim() !== "admin cromap",
+        );
         setUsers(others);
         setFiltered(others);
       }

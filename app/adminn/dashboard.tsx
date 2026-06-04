@@ -36,6 +36,14 @@ interface User {
   totalSessionMinutes: number;
 }
 
+interface PlanRating {
+  id: number;
+  userName: string;
+  destination: string;
+  rating: number;
+  createdAt: string;
+}
+
 interface UserActivity {
   date: string;
   sessionMinutes: number;
@@ -52,11 +60,14 @@ export default function AdminDashboard() {
   const [showUserModal, setShowUserModal] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [summary, setSummary] = useState<any>(null);
+  const [planRatings, setPlanRatings] = useState<PlanRating[]>([]);
+  const [ratingsLoading, setRatingsLoading] = useState(false);
 
   useEffect(() => {
     checkAdminAuth();
     loadUsers();
     loadSummary();
+    loadPlanRatings();
   }, []);
 
   const checkAdminAuth = async () => {
@@ -83,6 +94,24 @@ export default function AdminDashboard() {
       console.error("Error loading users:", error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const loadPlanRatings = async () => {
+    setRatingsLoading(true);
+    try {
+      const token = await AsyncStorage.getItem("adminToken");
+      const response = await fetch(`${API_BASE_URL}/api/plan-ratings`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setPlanRatings(data);
+      }
+    } catch (error) {
+      console.error("Error loading plan ratings:", error);
+    } finally {
+      setRatingsLoading(false);
     }
   };
 
@@ -395,6 +424,123 @@ export default function AdminDashboard() {
                 </View>
               )}
             </View>
+            {/* OCJENE PLANOVA */}
+            <View style={styles.activitySection}>
+              <View
+                style={{
+                  flexDirection: "row",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                  marginBottom: 12,
+                }}
+              >
+                <Text style={styles.activityTitle}>Ocjene planova</Text>
+                {planRatings.length > 0 && (
+                  <View
+                    style={{
+                      flexDirection: "row",
+                      alignItems: "center",
+                      gap: 6,
+                    }}
+                  >
+                    <Text
+                      style={{ fontSize: 14, fontWeight: "600", color: "#333" }}
+                    >
+                      {(
+                        planRatings.reduce((sum, r) => sum + r.rating, 0) /
+                        planRatings.length
+                      ).toFixed(1)}
+                    </Text>
+                    <Text style={{ fontSize: 14, color: "#f39c12" }}>★</Text>
+                    <Text style={{ fontSize: 12, color: "#999" }}>
+                      ({planRatings.length})
+                    </Text>
+                  </View>
+                )}
+              </View>
+
+              {ratingsLoading ? (
+                <ActivityIndicator
+                  size="small"
+                  color="#667eea"
+                  style={{ paddingVertical: 20 }}
+                />
+              ) : planRatings.length === 0 ? (
+                <Text style={styles.noActivityText}>Nema ocjena za prikaz</Text>
+              ) : (
+                <>
+                  {/* Zaglavlje tablice */}
+                  <View style={ratingsStyles.tableHeader}>
+                    <Text style={[ratingsStyles.headerCell, { flex: 2 }]}>
+                      Korisnik
+                    </Text>
+                    <Text style={[ratingsStyles.headerCell, { flex: 2 }]}>
+                      Destinacija
+                    </Text>
+                    <Text style={[ratingsStyles.headerCell, { flex: 1 }]}>
+                      Ocjena
+                    </Text>
+                    <Text style={[ratingsStyles.headerCell, { flex: 1.5 }]}>
+                      Datum
+                    </Text>
+                  </View>
+
+                  {planRatings.map((item) => (
+                    <View key={item.id} style={ratingsStyles.tableRow}>
+                      {/* Avatar + ime */}
+                      <View style={[{ flex: 2 }, ratingsStyles.nameCell]}>
+                        <View style={ratingsStyles.avatar}>
+                          <Text style={ratingsStyles.avatarText}>
+                            {item.userName
+                              .split(" ")
+                              .map((n) => n[0])
+                              .slice(0, 2)
+                              .join("")
+                              .toUpperCase()}
+                          </Text>
+                        </View>
+                        <Text style={ratingsStyles.nameText} numberOfLines={1}>
+                          {item.userName}
+                        </Text>
+                      </View>
+
+                      {/* Destinacija */}
+                      <Text
+                        style={[ratingsStyles.cell, { flex: 2 }]}
+                        numberOfLines={1}
+                      >
+                        {item.destination}
+                      </Text>
+
+                      {/* Ocjena — zvjezdice */}
+                      <View
+                        style={[
+                          { flex: 1 },
+                          { flexDirection: "row", alignItems: "center" },
+                        ]}
+                      >
+                        <Text style={{ fontSize: 13, color: "#f39c12" }}>
+                          {"★".repeat(item.rating)}
+                          <Text style={{ color: "#ddd" }}>
+                            {"★".repeat(5 - item.rating)}
+                          </Text>
+                        </Text>
+                      </View>
+
+                      {/* Datum */}
+                      <Text
+                        style={[
+                          ratingsStyles.cell,
+                          { flex: 1.5, color: "#999" },
+                        ]}
+                      >
+                        {new Date(item.createdAt).toLocaleDateString("hr-HR")}
+                      </Text>
+                    </View>
+                  ))}
+                </>
+              )}
+            </View>
           </ScrollView>
         </SafeAreaView>
       </Modal>
@@ -669,5 +815,58 @@ const styles = StyleSheet.create({
   activityBar: {
     height: 20,
     borderRadius: 4,
+  },
+});
+
+const ratingsStyles = StyleSheet.create({
+  tableHeader: {
+    flexDirection: "row",
+    paddingVertical: 6,
+    paddingHorizontal: 4,
+    backgroundColor: "#f8f9fa",
+    borderRadius: 6,
+    marginBottom: 4,
+  },
+  headerCell: {
+    fontSize: 11,
+    color: "#999",
+    fontWeight: "600",
+    textTransform: "uppercase",
+  },
+  tableRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingVertical: 10,
+    paddingHorizontal: 4,
+    borderTopWidth: 1,
+    borderTopColor: "#f0f0f0",
+  },
+  nameCell: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
+  avatar: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: "#667eea22",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  avatarText: {
+    fontSize: 11,
+    fontWeight: "600",
+    color: "#667eea",
+  },
+  nameText: {
+    fontSize: 13,
+    color: "#333",
+    fontWeight: "500",
+    flex: 1,
+  },
+  cell: {
+    fontSize: 13,
+    color: "#333",
   },
 });

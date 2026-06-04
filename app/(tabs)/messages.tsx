@@ -62,6 +62,21 @@ function getM(dark: boolean) {
   } as const;
 }
 
+function normalizeAvatarUrl(avatar: string | null | undefined): string | null {
+  if (!avatar || avatar.trim() === "") return null;
+  // Odbaci sve placeholder stringove (avatar:male, avatar:female, default, itd.)
+  if (avatar.startsWith("avatar:") || avatar === "default" || avatar === "null")
+    return null;
+  const base =
+    avatar.startsWith("http://") || avatar.startsWith("https://")
+      ? avatar
+      : `${API_BASE_URL}${avatar.startsWith("/") ? "" : "/"}${avatar}`;
+  if (!base.includes("_t=")) {
+    return `${base}${base.includes("?") ? "&" : "?"}_t=${Date.now()}`;
+  }
+  return base;
+}
+
 interface Story {
   id: number;
   userId: number;
@@ -218,6 +233,51 @@ function StoryViewer({
   );
 
   const reactions = ["👍", "❤️", "😊", "😂", "😮", "😢", "🔥"];
+
+  const [resolvedAvatarUrl, setResolvedAvatarUrl] = useState<string | null>(
+    normalizeAvatarUrl(story.userAvatar),
+  );
+
+  // Zamijeni postojeći useEffect za avatar u StoryViewer:
+  useEffect(() => {
+    const fetchAvatar = async () => {
+      const normalized = normalizeAvatarUrl(story.userAvatar);
+      if (normalized) {
+        setResolvedAvatarUrl(normalized);
+      }
+      try {
+        const token = await AsyncStorage.getItem("token");
+        const res = await fetch(
+          `${API_BASE_URL}/api/auth/users/${story.userId}`,
+          { headers: { Authorization: `Bearer ${token}` } },
+        );
+        if (res.ok) {
+          const data = await res.json();
+          // DODAJ LOG da vidiš strukturu:
+          console.log("User data for avatar:", JSON.stringify(data));
+
+          // Provjeri sva moguća polja gdje avatar može biti:
+          const avatarField =
+            data.avatarUrl || // možda je avatarUrl
+            data.profileImage || // ili profileImage
+            data.photo || // ili photo
+            data.avatar; // ili avatar
+
+          const freshUrl = normalizeAvatarUrl(avatarField);
+          console.log(
+            "Resolved avatar URL:",
+            freshUrl,
+            "from field:",
+            avatarField,
+          );
+          if (freshUrl) setResolvedAvatarUrl(freshUrl);
+        }
+      } catch (e) {
+        console.error("Avatar fetch error:", e);
+      }
+    };
+    fetchAvatar();
+  }, [story.userId]);
 
   const startProgress = () => {
     progress.setValue(0);
@@ -507,14 +567,15 @@ function StoryViewer({
             onPress={() => onSendMessage?.(story.userId, story.userName)}
           >
             <View style={sv.smallAvatar}>
-              {story.userAvatar ? (
+              {resolvedAvatarUrl ? (
                 <Image
-                  source={{ uri: story.userAvatar }}
+                  source={{ uri: resolvedAvatarUrl }}
                   style={sv.smallAvatarImg}
+                  onError={() => setResolvedAvatarUrl(null)}
                 />
               ) : (
                 <Text style={sv.smallAvatarText}>
-                  {story.userName?.[0]?.toUpperCase()}
+                  {story.userName?.[0]?.toUpperCase() ?? "?"}
                 </Text>
               )}
             </View>
@@ -534,7 +595,9 @@ function StoryViewer({
           </View>
         </View>
         <TouchableOpacity onPress={onClose} style={sv.closeBtn}>
-          <Ionicons name="close" size={28} color="#fff" />
+          <Text style={{ color: "#c0c0c0", fontSize: 15, fontWeight: "600" }}>
+            Zatvori
+          </Text>
         </TouchableOpacity>
       </View>
 
@@ -655,7 +718,11 @@ function StoryViewer({
                   resumeProgress();
                 }}
               >
-                <Ionicons name="close" size={24} color="#e8e8e8" />
+                <Text
+                  style={{ color: "#c0c0c0", fontSize: 15, fontWeight: "600" }}
+                >
+                  Zatvori
+                </Text>
               </TouchableOpacity>
             </View>
 
@@ -725,7 +792,11 @@ function StoryViewer({
                   resumeProgress();
                 }}
               >
-                <Ionicons name="close" size={24} color="#e8e8e8" />
+                <Text
+                  style={{ color: "#c0c0c0", fontSize: 15, fontWeight: "600" }}
+                >
+                  Zatvori
+                </Text>
               </TouchableOpacity>
             </View>
             <FlatList
@@ -789,7 +860,11 @@ function StoryViewer({
                 {t("story.comments")} ({comments.length})
               </Text>
               <TouchableOpacity onPress={handleCloseComments}>
-                <Ionicons name="close" size={24} color="#e8e8e8" />
+                <Text
+                  style={{ color: "#c0c0c0", fontSize: 15, fontWeight: "600" }}
+                >
+                  Zatvori
+                </Text>
               </TouchableOpacity>
             </View>
 
@@ -1066,28 +1141,26 @@ const sv = StyleSheet.create({
   // ── Comments Modal ──
   commentsKAV: {
     flex: 1,
-    justifyContent: "flex-end",
     backgroundColor: "rgba(0,0,0,0.65)",
   },
-  commentsOverlay: { flex: 1 },
+  commentsOverlay: { height: 0 },
   commentsContent: {
     backgroundColor: "#1a2e1a",
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    borderTopWidth: 1.5,
+    borderTopLeftRadius: 0, // ← ukloni zaobljenje za puni ekran
+    borderTopRightRadius: 0,
+    borderTopWidth: 0,
     borderColor: "#4a7040",
-    height: "90%",
+    flex: 1,
   },
   commentsHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
     padding: 16,
+    paddingTop: Platform.OS === "ios" ? 54 : 36, // ← sigurna zona za status bar
     borderBottomWidth: 1,
     borderBottomColor: "#3a5a30",
     backgroundColor: "#1a2e1a",
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
   },
   commentsTitle: { fontSize: 18, fontWeight: "700", color: "#e8e8e8" },
   commentsList: { flex: 1, paddingHorizontal: 16 },
@@ -1187,7 +1260,7 @@ function StoriesRow({
 }) {
   const { t } = useTranslation();
   const { colors, isDark } = useTheme();
-  const M = useMemo(() => getM(isDark), [isDark]); // ← DODATI
+  const M = useMemo(() => getM(isDark), [isDark]);
   const srs = useMemo(() => getSrsStyles(colors, M), [M]);
   const [stories, setStories] = useState<Story[]>([]);
   const [viewing, setViewing] = useState<Story | null>(null);
@@ -1204,7 +1277,31 @@ function StoriesRow({
 
   useEffect(() => {
     loadStories();
-  }, []);
+  }, [currentUserId]);
+
+  const [myAvatarUrl, setMyAvatarUrl] = useState<string | null>(null);
+
+  // Dohvati vlastiti avatar
+  useEffect(() => {
+    if (!currentUserId) return;
+    const fetchMyAvatar = async () => {
+      try {
+        const token = await AsyncStorage.getItem("token");
+        const res = await fetch(
+          `${API_BASE_URL}/api/auth/users/${currentUserId}`,
+          { headers: { Authorization: `Bearer ${token}` } },
+        );
+        if (res.ok) {
+          const data = await res.json();
+          console.log("My user data:", JSON.stringify(data)); // ← DODAJ
+          const avatarField =
+            data.avatarUrl || data.profileImage || data.photo || data.avatar;
+          setMyAvatarUrl(normalizeAvatarUrl(avatarField));
+        }
+      } catch {}
+    };
+    fetchMyAvatar();
+  }, [currentUserId]);
 
   const handleDelete = async (id: number) => {
     try {
@@ -1270,11 +1367,8 @@ function StoriesRow({
                     ]}
                     onPress={myLatest ? () => setViewing(myLatest) : onAddStory}
                   >
-                    {myLatest ? (
-                      <Image
-                        source={{ uri: myLatest.mediaUrl }}
-                        style={srs.img}
-                      />
+                    {myAvatarUrl ? (
+                      <Image source={{ uri: myAvatarUrl }} style={srs.img} />
                     ) : (
                       <View style={srs.addBg}>
                         <Ionicons name="person" size={20} color="#fff" />
@@ -1515,13 +1609,16 @@ function AddStoryModal({
 
   return (
     <Modal visible={visible} animationType="slide" onRequestClose={onClose}>
-      <SafeAreaView style={{ flex: 1, backgroundColor: "#fff" }}>
+      <SafeAreaView style={{ flex: 1, backgroundColor: M.bg }}>
         <View style={asm.header}>
-          <TouchableOpacity onPress={onClose}>
-            <Ionicons name="close" size={28} color="#333" />
-          </TouchableOpacity>
           <Text style={asm.title}>{t("story.addStory")}</Text>
-          <View style={{ width: 28 }} />
+          <TouchableOpacity onPress={onClose}>
+            <Text
+              style={{ color: M.textMuted, fontSize: 15, fontWeight: "600" }}
+            >
+              Zatvori
+            </Text>
+          </TouchableOpacity>
         </View>
         {!preview ? (
           <View style={asm.pickContainer}>

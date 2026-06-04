@@ -22,7 +22,6 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import Svg, { Defs, LinearGradient, Path, Stop } from "react-native-svg";
 import { StoryBadge } from "../../app/StoryBadge";
 import { useTheme } from "../../components/AdaptiveThemeProvider";
 import UserAvatar from "../../components/UserAvatar";
@@ -403,15 +402,7 @@ function makeTabStyles(V: ReturnType<typeof getVara>) {
     filterBtnText: { fontSize: 13, color: V.silver },
     filterBtnTextActive: { color: V.silverBright, fontWeight: "600" },
     goingBadge: { fontSize: 13, color: V.visited, marginTop: 4 },
-    deleteOverlay: {
-      position: "absolute",
-      top: 4,
-      right: 4,
-      backgroundColor: "rgba(0,0,0,0.65)",
-      borderRadius: 12,
-      padding: 4,
-      zIndex: 1,
-    },
+    // deleteOverlay removed — ikona smeća više se ne prikazuje u gridu
   });
 }
 
@@ -785,173 +776,26 @@ function makeThemeStyles(V: ReturnType<typeof getVara>) {
   });
 }
 
-// ─── SVG Avatari ──────────────────────────────────────────────────────────────
+const AVATAR_MALE = require("../../assets/images/avatar-male.png");
+const AVATAR_FEMALE = require("../../assets/images/avatar-female.png");
+
 function AvatarMale({ size = 96 }: { size?: number }) {
   return (
-    <Svg width={size} height={size} viewBox="0 0 100 100">
-      <Defs>
-        <LinearGradient id="bgM" x1="0" y1="0" x2="0" y2="1">
-          <Stop offset="0%" stopColor="#2D6418" />
-          <Stop offset="100%" stopColor="#142F09" />
-        </LinearGradient>
-        <LinearGradient id="skinM" x1="0" y1="0" x2="0" y2="1">
-          <Stop offset="0%" stopColor="#D4A574" />
-          <Stop offset="100%" stopColor="#B8845A" />
-        </LinearGradient>
-        <LinearGradient id="shirtM" x1="0" y1="0" x2="0" y2="1">
-          <Stop offset="0%" stopColor="#8A9A98" />
-          <Stop offset="100%" stopColor="#5C6E6C" />
-        </LinearGradient>
-      </Defs>
-      <Path d="M 0 0 L 100 0 L 100 100 L 0 100 Z" fill="url(#bgM)" />
-      <Path d="M 20 100 L 20 72 Q 50 62 80 72 L 80 100 Z" fill="url(#shirtM)" />
-      <Path d="M 42 58 L 42 68 Q 50 72 58 68 L 58 58 Z" fill="url(#skinM)" />
-      <Path d="M 36 68 Q 50 78 64 68 L 64 72 Q 50 82 36 72 Z" fill="#5C6E6C" />
-      <Path
-        d="M 32 38 Q 32 20 50 20 Q 68 20 68 38 Q 68 56 50 58 Q 32 56 32 38 Z"
-        fill="url(#skinM)"
-      />
-      <Path
-        d="M 32 36 Q 32 18 50 18 Q 68 18 68 36 Q 65 24 50 22 Q 35 24 32 36 Z"
-        fill="#3A2A1A"
-      />
-      <Path
-        d="M 37 34 Q 42 32 45 34"
-        stroke="#3A2A1A"
-        strokeWidth="1.5"
-        fill="none"
-        strokeLinecap="round"
-      />
-      <Path
-        d="M 55 34 Q 58 32 63 34"
-        stroke="#3A2A1A"
-        strokeWidth="1.5"
-        fill="none"
-        strokeLinecap="round"
-      />
-      <Path d="M 38 37 Q 41 35 44 37 Q 41 40 38 37 Z" fill="#2A1A0A" />
-      <Path d="M 56 37 Q 59 35 62 37 Q 59 40 56 37 Z" fill="#2A1A0A" />
-      <Path
-        d="M 49 40 L 48 47 Q 50 49 52 47 L 51 40"
-        fill="none"
-        stroke="#B8845A"
-        strokeWidth="1"
-        strokeLinecap="round"
-      />
-      <Path
-        d="M 44 51 Q 50 55 56 51"
-        fill="none"
-        stroke="#8B5E3C"
-        strokeWidth="1.5"
-        strokeLinecap="round"
-      />
-      <Path
-        d="M 44 84 L 38 87 L 38 93 Q 44 96 50 97 Q 56 96 62 93 L 62 87 L 56 84 Z"
-        fill="none"
-        stroke="rgba(200,215,200,0.5)"
-        strokeWidth="1"
-      />
-    </Svg>
+    <Image
+      source={AVATAR_MALE}
+      style={{ width: size, height: size, borderRadius: size / 2 }}
+      resizeMode="cover"
+    />
   );
 }
 
 function AvatarFemale({ size = 96 }: { size?: number }) {
   return (
-    <Svg width={size} height={size} viewBox="0 0 100 100">
-      <Defs>
-        <LinearGradient id="bgF" x1="0" y1="0" x2="0" y2="1">
-          <Stop offset="0%" stopColor="#2D6418" />
-          <Stop offset="100%" stopColor="#142F09" />
-        </LinearGradient>
-        <LinearGradient id="skinF" x1="0" y1="0" x2="0" y2="1">
-          <Stop offset="0%" stopColor="#E8B896" />
-          <Stop offset="100%" stopColor="#C8907A" />
-        </LinearGradient>
-        <LinearGradient id="topF" x1="0" y1="0" x2="0" y2="1">
-          <Stop offset="0%" stopColor="#A8B8A8" />
-          <Stop offset="100%" stopColor="#6A7A6A" />
-        </LinearGradient>
-        <LinearGradient id="hairF" x1="0" y1="0" x2="0" y2="1">
-          <Stop offset="0%" stopColor="#4A2A0A" />
-          <Stop offset="100%" stopColor="#2A1A08" />
-        </LinearGradient>
-      </Defs>
-      <Path d="M 0 0 L 100 0 L 100 100 L 0 100 Z" fill="url(#bgF)" />
-      <Path d="M 22 100 L 22 70 Q 50 58 78 70 L 78 100 Z" fill="url(#topF)" />
-      <Path d="M 42 68 Q 50 74 58 68 L 60 72 Q 50 80 40 72 Z" fill="#8A9898" />
-      <Path d="M 43 57 L 43 68 Q 50 71 57 68 L 57 57 Z" fill="url(#skinF)" />
-      <Path
-        d="M 33 38 Q 33 20 50 20 Q 67 20 67 38 Q 67 56 50 58 Q 33 56 33 38 Z"
-        fill="url(#skinF)"
-      />
-      <Path
-        d="M 33 36 Q 32 16 50 15 Q 68 16 67 36 Q 65 20 50 18 Q 35 20 33 36 Z"
-        fill="url(#hairF)"
-      />
-      <Path d="M 33 36 Q 28 45 30 56 Q 32 52 33 48 Z" fill="url(#hairF)" />
-      <Path d="M 67 36 Q 72 45 70 56 Q 68 52 67 48 Z" fill="url(#hairF)" />
-      <Path d="M 28 56 Q 24 70 26 85 Q 30 72 33 65 Z" fill="url(#hairF)" />
-      <Path d="M 72 56 Q 76 70 74 85 Q 70 72 67 65 Z" fill="url(#hairF)" />
-      <Path
-        d="M 37 33 Q 41 30 45 33"
-        stroke="#4A2A0A"
-        strokeWidth="1.5"
-        fill="none"
-        strokeLinecap="round"
-      />
-      <Path
-        d="M 55 33 Q 59 30 63 33"
-        stroke="#4A2A0A"
-        strokeWidth="1.5"
-        fill="none"
-        strokeLinecap="round"
-      />
-      <Path d="M 37 37 Q 41 34 45 37 Q 41 41 37 37 Z" fill="#2A1A0A" />
-      <Path d="M 55 37 Q 59 34 63 37 Q 59 41 55 37 Z" fill="#2A1A0A" />
-      <Path
-        d="M 37 36 L 36 34 M 39 35 L 39 33 M 41 35 L 41 33 M 43 35 L 44 33 M 45 36 L 46 34"
-        stroke="#2A1A0A"
-        strokeWidth="0.8"
-      />
-      <Path
-        d="M 55 36 L 54 34 M 57 35 L 57 33 M 59 35 L 59 33 M 61 35 L 62 33 M 63 36 L 64 34"
-        stroke="#2A1A0A"
-        strokeWidth="0.8"
-      />
-      <Path
-        d="M 49 40 L 48 46 Q 50 48 52 46 L 51 40"
-        fill="none"
-        stroke="#C8907A"
-        strokeWidth="0.8"
-        strokeLinecap="round"
-      />
-      <Path
-        d="M 43 51 Q 50 56 57 51"
-        fill="none"
-        stroke="#C04060"
-        strokeWidth="2"
-        strokeLinecap="round"
-      />
-      <Path d="M 43 51 Q 50 54 57 51" fill="#C04060" opacity="0.3" />
-      <Path
-        d="M 33 47 L 33 52"
-        stroke="#C0C8C0"
-        strokeWidth="1.5"
-        strokeLinecap="round"
-      />
-      <Path
-        d="M 67 47 L 67 52"
-        stroke="#C0C8C0"
-        strokeWidth="1.5"
-        strokeLinecap="round"
-      />
-      <Path
-        d="M 44 84 L 38 87 L 38 93 Q 44 96 50 97 Q 56 96 62 93 L 62 87 L 56 84 Z"
-        fill="none"
-        stroke="rgba(200,215,200,0.5)"
-        strokeWidth="1"
-      />
-    </Svg>
+    <Image
+      source={AVATAR_FEMALE}
+      style={{ width: size, height: size, borderRadius: size / 2 }}
+      resizeMode="cover"
+    />
   );
 }
 
@@ -960,7 +804,7 @@ function AvatarSection({ onUpdate }: { onUpdate: () => void }) {
   const { t } = useTranslation();
   const { isDark } = useTheme();
   const V = useMemo(() => getVara(isDark), [isDark]);
-  const { profile, updateAvatar, refreshProfile } = useUser();
+  const { profile, updateAvatar, refreshProfile, resetProfile } = useUser();
   const [loading, setLoading] = useState(false);
   const [showAvatarModal, setShowAvatarModal] = useState(false);
 
@@ -1103,11 +947,14 @@ function AvatarSection({ onUpdate }: { onUpdate: () => void }) {
   const getAvatarUrl = () => {
     if (!profile?.avatar) return null;
     if (profile.avatar.startsWith("avatar:")) return null;
-    return profile.avatar.startsWith("http")
+
+    const base = profile.avatar.startsWith("http")
       ? profile.avatar
       : `${API_BASE_URL}${profile.avatar.startsWith("/") ? "" : "/"}${profile.avatar}`;
-  };
 
+    const separator = base.includes("?") ? "&" : "?";
+    return `${base}${separator}uid=${profile.id}`;
+  };
   const avatarUrl = getAvatarUrl();
   const isMaleAvatar = profile?.avatar === "avatar:male";
   const isFemaleAvatar = profile?.avatar === "avatar:female";
@@ -1253,7 +1100,7 @@ function AvatarSection({ onUpdate }: { onUpdate: () => void }) {
                   )}
                 </View>
                 <Text style={[avModal.optionLabel, { color: V.silver }]}>
-                  {t("profile.initialsAvatar")}
+                  {t("profile.femaleAvatar")}
                 </Text>
               </TouchableOpacity>
 
@@ -1934,16 +1781,19 @@ function ActivityArchive({ userId }: { userId: number | null }) {
 }
 
 // ─── Video Preview Modal ──────────────────────────────────────────────────────
+// PROMJENA: dodan onDelete callback za gumb "Obriši" u headeru
 function VideoPreviewModal({
   visible,
   videoUrl,
   title,
   onClose,
+  onDelete,
 }: {
   visible: boolean;
   videoUrl: string;
   title: string;
   onClose: () => void;
+  onDelete?: () => void;
 }) {
   const playerRef = useRef<any>(null);
   const [isPlayerReady, setIsPlayerReady] = useState(false);
@@ -1991,14 +1841,33 @@ function VideoPreviewModal({
       onRequestClose={onClose}
     >
       <SafeAreaView style={{ flex: 1, backgroundColor: "#000" }}>
+        {/* PROMJENA: header sada ima "Zatvori" lijevo, naziv u sredini, "Obriši" desno */}
         <View style={vpModal.header}>
-          <TouchableOpacity onPress={onClose}>
-            <Ionicons name="close" size={28} color="#c0c0c0" />
+          <TouchableOpacity onPress={onClose} style={vpModal.headerBtn}>
+            <Text style={{ color: "#c0c0c0", fontSize: 15, fontWeight: "600" }}>
+              Zatvori
+            </Text>
           </TouchableOpacity>
           <Text style={vpModal.title} numberOfLines={1}>
             {title}
           </Text>
-          <View style={{ width: 28 }} />
+          {onDelete ? (
+            <TouchableOpacity
+              onPress={() => {
+                onClose();
+                onDelete();
+              }}
+              style={vpModal.headerBtn}
+            >
+              <Text
+                style={{ color: "#C05050", fontSize: 15, fontWeight: "600" }}
+              >
+                Obriši
+              </Text>
+            </TouchableOpacity>
+          ) : (
+            <View style={vpModal.headerBtn} />
+          )}
         </View>
         <View style={vpModal.videoContainer}>
           {visible && (
@@ -2024,6 +1893,9 @@ const vpModal = StyleSheet.create({
     backgroundColor: "#000",
     borderBottomWidth: 1,
     borderBottomColor: "#222",
+  },
+  headerBtn: {
+    minWidth: 60,
   },
   title: {
     fontSize: 16,
@@ -2344,7 +2216,6 @@ function MeTab({ userId }: { userId: number | null }) {
         onPress={addMedia}
         disabled={uploading}
       >
-        <Ionicons name="add" size={20} color={V.silverBright} />
         <Text style={tab.addBtnText}>
           {uploading ? t("profile.uploading") : t("profile.addMedia")}
         </Text>
@@ -2361,10 +2232,11 @@ function MeTab({ userId }: { userId: number | null }) {
             const isVideo = item.type === "video";
             const imageUrl = getThumbnail(item);
             return (
+              // PROMJENA: uklonjena onLongPress i deleteOverlay ikona smeća
+              // Brisanje je sada dostupno samo kroz gumb "Obriši" u previewu
               <TouchableOpacity
                 style={tab.gridItem}
                 onPress={() => openMedia(item)}
-                onLongPress={() => confirmDelete(item)}
                 activeOpacity={0.7}
               >
                 {imageUrl ? (
@@ -2392,9 +2264,7 @@ function MeTab({ userId }: { userId: number | null }) {
                     />
                   </View>
                 )}
-                <View style={tab.deleteOverlay}>
-                  <Ionicons name="trash-outline" size={14} color={V.silver} />
-                </View>
+                {/* UKLONJENO: deleteOverlay / ikona smeća */}
                 <Text style={tab.gridDate} numberOfLines={1}>
                   {new Date(item.createdAt).toLocaleDateString("hr-HR")}
                 </Text>
@@ -2405,6 +2275,8 @@ function MeTab({ userId }: { userId: number | null }) {
         />
       )}
 
+      {/* PROMJENA: Media modal sada koristi isti pattern kao BoxTab/WishlistTab
+          s gumbom "Obriši" u headeru */}
       <Modal
         visible={showMediaModal}
         animationType="slide"
@@ -2413,19 +2285,32 @@ function MeTab({ userId }: { userId: number | null }) {
       >
         <SafeAreaView style={{ flex: 1, backgroundColor: "#000" }}>
           <View style={styles.mediaModalHeader}>
-            <TouchableOpacity onPress={() => setShowMediaModal(false)}>
-              <Ionicons name="close" size={28} color="#c0c0c0" />
+            <TouchableOpacity
+              onPress={() => setShowMediaModal(false)}
+              style={{ minWidth: 60 }}
+            >
+              <Text
+                style={{ color: "#c0c0c0", fontSize: 15, fontWeight: "600" }}
+              >
+                Zatvori
+              </Text>
             </TouchableOpacity>
             <Text style={styles.mediaModalTitle} numberOfLines={1}>
               {selectedMedia?.title || "Pregled"}
             </Text>
+            {/* PROMJENA: "Obriši" gumb desno sa alert potvrdom */}
             <TouchableOpacity
               onPress={() => {
                 setShowMediaModal(false);
                 if (selectedMedia) confirmDelete(selectedMedia);
               }}
+              style={{ minWidth: 60, alignItems: "flex-end" }}
             >
-              <Ionicons name="trash-outline" size={24} color="#C05050" />
+              <Text
+                style={{ color: "#C05050", fontSize: 15, fontWeight: "600" }}
+              >
+                Obriši
+              </Text>
             </TouchableOpacity>
           </View>
           <View style={styles.mediaModalContent}>
@@ -2521,6 +2406,7 @@ function BoxTab() {
         keyExtractor={(i) => i.id.toString()}
         contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 80 }}
         renderItem={({ item }) => (
+          // PROMJENA: uklonjena ikona smeća s desne strane liste
           <TouchableOpacity
             style={tab.listItem}
             onPress={() => setSelectedVideo(item)}
@@ -2552,15 +2438,11 @@ function BoxTab() {
                 Pohranjeno: {new Date(item.savedAt).toLocaleDateString("hr-HR")}
               </Text>
             </View>
-            <TouchableOpacity
-              onPress={() => handleRemove(item.videoId, item.title)}
-              style={tab.removeBtn}
-            >
-              <Ionicons name="trash-outline" size={20} color={V.danger} />
-            </TouchableOpacity>
+            {/* UKLONJENO: ikona smeća (trash-outline) */}
           </TouchableOpacity>
         )}
       />
+      {/* PROMJENA: VideoPreviewModal dobiva onDelete callback */}
       <VideoPreviewModal
         visible={selectedVideo !== null}
         videoUrl={
@@ -2570,6 +2452,11 @@ function BoxTab() {
         }
         title={selectedVideo?.title || ""}
         onClose={() => setSelectedVideo(null)}
+        onDelete={
+          selectedVideo
+            ? () => handleRemove(selectedVideo.videoId, selectedVideo.title)
+            : undefined
+        }
       />
     </>
   );
@@ -2623,6 +2510,21 @@ function WishlistTab() {
     } catch {}
   };
 
+  const handleRemoveWishlist = (videoId: number, title: string) => {
+    Alert.alert(
+      t("profile.removeFromWishlist"),
+      t("profile.removeFromWishlistConfirm", { title }),
+      [
+        { text: "Odustani", style: "cancel" },
+        {
+          text: "Obriši",
+          style: "destructive",
+          onPress: () => removeFromWishlist(videoId),
+        },
+      ],
+    );
+  };
+
   const toggleGoing = async (item: WishlistItem) => {
     const token = await AsyncStorage.getItem("token");
     const newVal =
@@ -2667,23 +2569,27 @@ function WishlistTab() {
                   filter === f && tab.filterBtnTextActive,
                 ]}
               >
+                {/* PROMJENA: uklonjen simbol "❌" kod "Nisam bio/la" filtra */}
                 {f === "all"
                   ? t("common.all")
                   : f === "yes"
                     ? "✅ " + t("profile.visited")
-                    : "❌ " + t("profile.notVisited")}
+                    : t("profile.notVisited")}
               </Text>
             </TouchableOpacity>
           ))}
         </View>
         {filtered.length === 0 ? (
-          <EmptyTab icon="star-outline" text={t("profile.wishlistEmpty")} />
+          <View style={tab.empty}>
+            <Text style={tab.emptyText}>{t("profile.wishlistEmpty")}</Text>
+          </View>
         ) : (
           <FlatList
             data={filtered}
             keyExtractor={(i) => i.videoId.toString()}
             contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 80 }}
             renderItem={({ item }) => (
+              // PROMJENA: uklonjena ikona smeća s desne strane liste
               <TouchableOpacity
                 style={tab.listItem}
                 onPress={() => setSelectedVideo(item)}
@@ -2722,37 +2628,18 @@ function WishlistTab() {
                       {item.isGoing === true
                         ? "✅ " + t("profile.visited")
                         : item.isGoing === false
-                          ? "❌ " + t("profile.notVisited")
+                          ? t("profile.notVisited")
                           : "⭕ " + t("profile.undecided")}
                     </Text>
                   </TouchableOpacity>
                 </View>
-                <TouchableOpacity
-                  onPress={() =>
-                    Alert.alert(
-                      t("profile.removeFromWishlist"),
-                      t("profile.removeFromWishlistConfirm", {
-                        title: item.title,
-                      }),
-                      [
-                        { text: "Odustani", style: "cancel" },
-                        {
-                          text: "Obriši",
-                          style: "destructive",
-                          onPress: () => removeFromWishlist(item.videoId),
-                        },
-                      ],
-                    )
-                  }
-                  style={tab.removeBtn}
-                >
-                  <Ionicons name="trash-outline" size={20} color={V.danger} />
-                </TouchableOpacity>
+                {/* UKLONJENO: ikona smeća (trash-outline) */}
               </TouchableOpacity>
             )}
           />
         )}
       </View>
+      {/* PROMJENA: VideoPreviewModal dobiva onDelete callback */}
       <VideoPreviewModal
         visible={selectedVideo !== null}
         videoUrl={
@@ -2762,6 +2649,12 @@ function WishlistTab() {
         }
         title={selectedVideo?.title || ""}
         onClose={() => setSelectedVideo(null)}
+        onDelete={
+          selectedVideo
+            ? () =>
+                handleRemoveWishlist(selectedVideo.videoId, selectedVideo.title)
+            : undefined
+        }
       />
     </>
   );
@@ -2788,10 +2681,14 @@ function GoldenFriendsTab() {
           setFriends(
             data.map((f: any) => ({
               ...f,
+              // Ne normaliziramo ovdje — UserAvatar to radi sam
+              // Samo čuvamo originalni avatar string kakav jest
               avatar: f.avatar
-                ? f.avatar.startsWith("http")
-                  ? f.avatar
-                  : `${API_BASE_URL}${f.avatar.startsWith("/") ? "" : "/"}${f.avatar}`
+                ? f.avatar.startsWith("avatar:")
+                  ? f.avatar // avatar:male / avatar:female — ne diramo
+                  : f.avatar.startsWith("http")
+                    ? `${f.avatar}${f.avatar.includes("?") ? "&" : "?"}_t=${Date.now()}`
+                    : `${API_BASE_URL}${f.avatar.startsWith("/") ? "" : "/"}${f.avatar}?_t=${Date.now()}`
                 : null,
             })),
           );
@@ -2841,8 +2738,11 @@ function GoldenFriendsTab() {
               } as any)
             }
           >
+            {/* PROMJENA: avatar URL se prosljeđuje direktno — već je normaliziran
+                u useEffect, dodajemo samo cache-busting uid query param */}
             <UserAvatar
-              avatar={item.avatar}
+              key={`golden-avatar-${item.userId}`}
+              avatar={item.avatar ?? null}
               firstName={item.firstName}
               lastName={item.lastName}
               size={50}
@@ -2919,6 +2819,7 @@ function SettingsModal({
   const { isDark, setManualOverride } = useTheme();
   const V = useMemo(() => getVara(isDark), [isDark]);
   const sm = useMemo(() => makeSmStyles(V), [V]);
+  const { resetProfile } = useUser();
   const langStyles = useMemo(() => makeLangStyles(V), [V]);
   const themeStyles = useMemo(() => makeThemeStyles(V), [V]);
 
@@ -2947,8 +2848,8 @@ function SettingsModal({
   }, [visible]);
 
   const handleThemeChange = async (mode: "light" | "auto" | "dark") => {
-    setManualTheme(mode); // lokalni UI state (za vizualni odabir)
-    await setManualOverride(mode); // ← OVO ažurira provider i odmah mijenja temu
+    setManualTheme(mode);
+    await setManualOverride(mode);
   };
 
   const currentHour = new Date().getHours();
@@ -3078,6 +2979,7 @@ function SettingsModal({
         text: "Odjavi se",
         style: "destructive",
         onPress: async () => {
+          resetProfile();
           await AsyncStorage.clear();
           router.replace("/login");
         },
@@ -3446,7 +3348,7 @@ function SettingsModal({
               <View style={sm.dangerHeaderLine} />
             </View>
             <Text style={sm.dangerDesc}>
-              {t("profile.dangerZoneDesc") ?? "Ove radnje su nepovratne"}
+              {t("") ?? "Ove radnje su nepovratne"}
             </Text>
 
             <TouchableOpacity style={sm.varaBtn} onPress={handleLogout}>
@@ -3498,6 +3400,7 @@ const trackSessionTime = async (minutes: number) => {
 
 // ─── Main Profile Screen ──────────────────────────────────────────────────────
 export default function ProfileScreen() {
+  const { refreshProfile } = useUser();
   const { t } = useTranslation();
   const { isDark } = useTheme();
   const V = useMemo(() => getVara(isDark), [isDark]);
@@ -3579,11 +3482,9 @@ export default function ProfileScreen() {
   useFocusEffect(
     useCallback(() => {
       load();
-    }, [load]),
+      refreshProfile();
+    }, [load, refreshProfile]),
   );
-  useEffect(() => {
-    load();
-  }, []);
 
   useEffect(() => {
     (async () => {

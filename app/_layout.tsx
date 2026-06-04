@@ -47,6 +47,18 @@ export default function RootLayout() {
   const checkAuth = async () => {
     try {
       console.log("🔍 Checking auth...");
+
+      // Ako je web i URL sadrži /admin — ne diraj routing, pusti admin layout
+      if (
+        typeof window !== "undefined" &&
+        (window.location.pathname.startsWith("/admin") ||
+          window.location.pathname.startsWith("/adminn"))
+      ) {
+        console.log("➡️ Admin ruta — preskačem auth check");
+        setReady(true);
+        return;
+      }
+
       const token = await AsyncStorage.getItem("token");
       console.log("🔑 Token exists:", !!token);
 

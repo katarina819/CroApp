@@ -31,6 +31,7 @@ export interface Place {
   phone?: string;
   website?: string;
   openingHours?: string;
+  openNow?: boolean | null;
 }
 
 export const placeCategories: Record<
@@ -147,24 +148,37 @@ export const placeCategories: Record<
   },
 };
 
-// ─── Strogi OSM filteri po kategoriji ────────────────────────────────────────
-//
-// Svaka kategorija ima BIJELU listu tagova koji su jedini prihvaćeni.
-// Ime mjesta se dodatno provjerava crnom listom zabranjenih ključnih riječi.
-
 interface CategoryRule {
-  // Overpass node queries (OR logika između elemenata liste)
   queries: string[];
-  // Bijela lista — tag ključ + vrijednost koja MORA biti prisutna
   whitelist: { key: string; values: string[] }[];
-  // Crna lista — ako ime sadrži ove riječi, izbaci rezultat
   nameDenylist: string[];
 }
 
 const CATEGORY_RULES: Record<string, CategoryRule> = {
   restaurant: {
-    queries: ['node["amenity"="restaurant"]'],
-    whitelist: [{ key: "amenity", values: ["restaurant"] }],
+    queries: [
+      'node["amenity"="restaurant"]',
+      'way["amenity"="restaurant"]',
+      'node["amenity"="fast_food"]',
+      'way["amenity"="fast_food"]',
+      'node["amenity"="food_court"]',
+      'way["amenity"="food_court"]',
+      // ✅ DODANO: restorani definirani preko cuisine taga
+      'node["cuisine"]',
+      'way["cuisine"]',
+      // ✅ DODANO: restorani definirani preko brand taga
+      'node["brand"~"McDonald|KFC|Burger King|Subway|Domino|Pizza Hut",i]',
+      'way["brand"~"McDonald|KFC|Burger King|Subway|Domino|Pizza Hut",i]',
+      // ✅ DODANO: restorani definirani preko name taga (sadrži "restoran")
+      'node["name"~"restoran|pizzeria|grill|ćevabdžinica",i]',
+      'way["name"~"restoran|pizzeria|grill|ćevabdžinica",i]',
+    ],
+    whitelist: [
+      { key: "amenity", values: ["restaurant", "fast_food", "food_court"] },
+      // ✅ DODANO: dozvoli cuisine i brand tagove
+      { key: "cuisine", values: ["*"] },
+      { key: "brand", values: ["*"] },
+    ],
     nameDenylist: [
       "hotel",
       "hostel",
@@ -176,21 +190,79 @@ const CATEGORY_RULES: Record<string, CategoryRule> = {
       "rooms",
     ],
   },
+
   cafe: {
-    queries: ['node["amenity"="cafe"]', 'node["amenity"="coffee_shop"]'],
-    whitelist: [{ key: "amenity", values: ["cafe", "coffee_shop"] }],
-    nameDenylist: ["hotel", "hostel", "apartman", "soba", "prenočište"],
-  },
-  club: {
     queries: [
-      'node["amenity"="nightclub"]',
-      'node["amenity"="bar"]["club"="yes"]',
+      'node["amenity"="cafe"]',
+      'way["amenity"="cafe"]',
+      'node["amenity"="coffee_shop"]',
     ],
-    whitelist: [{ key: "amenity", values: ["nightclub", "bar"] }],
-    nameDenylist: ["hotel", "hostel", "apartman", "soba", "prenočište"],
+    // ✅ FIX: maknuto node["amenity"="bar"]["cafe"="yes"] — preširoko, bar tagovi idu u klub
+    whitelist: [{ key: "amenity", values: ["cafe", "coffee_shop"] }],
+    nameDenylist: [
+      "hotel",
+      "hostel",
+      "apartman",
+      "soba",
+      "prenočište",
+      "bmw",
+      "audi",
+      "mercedes",
+      "volkswagen",
+      "vw",
+      "opel",
+      "ford",
+      "toyota",
+      "auto",
+      "automobil",
+      "servis",
+      "salon automobila",
+      "car",
+      "fitness",
+      "gym",
+      "teretana",
+    ],
   },
 
-  // Plaža = samo natural=beach — mora biti fizička plaža, ne objekt
+  club: {
+    // ✅ FIX: ISKLJUČIVO nightclub — uklonjen "bar" i "pub" koji su uzrok
+    // da kafići, beach barovi, lounge barovi, saloni za pse, tasting shopovi
+    // sve završi ovdje. Bar ≠ Nightclub u OSM taksonomiji.
+    queries: ['node["amenity"="nightclub"]', 'way["amenity"="nightclub"]'],
+    whitelist: [{ key: "amenity", values: ["nightclub"] }],
+    nameDenylist: [
+      "hotel",
+      "hostel",
+      "apartman",
+      "soba",
+      "prenočište",
+      "kladionica",
+      "kladi",
+      "sportska",
+      "bet",
+      "betting",
+      "mozzart",
+      "winbet",
+      "superbet",
+      "lvbet",
+      "premiere",
+      "germania",
+      "admiral",
+      "casino",
+      "kockarnica",
+      "salon",
+      "frizersk",
+      "kozmetik",
+      "beauty",
+      "tasting",
+      "shop",
+      "trgovin",
+      "prodavao",
+      "restaurant",
+      "restoran",
+    ],
+  },
+
   beach: {
     queries: [
       'node["natural"="beach"]',
@@ -218,13 +290,17 @@ const CATEGORY_RULES: Record<string, CategoryRule> = {
     ],
   },
 
-  // Znamenitosti = samo trajne povijesne znamenitosti bez sezonskih događanja
   landmark: {
     queries: [
       'node["historic"]',
-      'node["tourism"="attraction"]',
       'way["historic"]',
+      'relation["historic"]',
+      'node["tourism"="attraction"]',
       'way["tourism"="attraction"]',
+      'node["tourism"="viewpoint"]',
+      'way["tourism"="viewpoint"]',
+      'node["amenity"="place_of_worship"]',
+      'way["amenity"="place_of_worship"]',
     ],
     whitelist: [
       {
@@ -239,16 +315,13 @@ const CATEGORY_RULES: Record<string, CategoryRule> = {
           "fort",
           "church",
           "city_gate",
-          "manor",
-          "milestone",
-          "aircraft",
-          "ship",
-          "locomotive",
-          "tank",
-          "yes",
+          "catacombs",
+          "catacomb",
+          "bridge",
         ],
       },
-      { key: "tourism", values: ["attraction"] },
+      { key: "tourism", values: ["attraction", "viewpoint"] },
+      { key: "amenity", values: ["place_of_worship"] },
     ],
     nameDenylist: [
       "advent",
@@ -267,22 +340,48 @@ const CATEGORY_RULES: Record<string, CategoryRule> = {
       "it",
       "d.o.o",
       "nekretnin",
-      "centar nekretnina",
+      "hostel street",
+      "winterland",
+      "wine & walk",
+      "wine walk",
+      "wine and walk",
+      "museum",
+      "muzej", // muzeji idu u svoju kategoriju
+      "shell museum",
+      "water world",
+      "sobe",
+      "rooms",
+      "millennium", // Hotel Millennium
+      "arhiv", // državni arhiv nije turistička znamenitost
+      "archive",
+      "lacković",
+      "biljski krokodil",
+      "sakuntala", // park s historic tagom — ide u parks
+      "centar nekretnine", // singular
+      "nekretnine",
+      "employment service", // Croatian Employment Service
+      "zapošljavanj", // Hrvatski zavod za zapošljavanje
+      "zavod za zaposl", // kratica/alternativa
+      "hzz",
     ],
   },
 
-  // OPG = obiteljska poljoprivredna gospodarstva — naziv mora počinjati s "OPG"
   opg: {
     queries: [
       'node["shop"="farm"]',
-      'node["landuse"="farmyard"]',
+      'way["shop"="farm"]',
       'node["produce"]',
-      'node["farm"="yes"]',
+      'way["produce"]',
+      // ✅ FIX: dodano name filter direktno u query ne pomaže u Overpassu,
+      // ali dodajemo farmyard da ne propustimo OPG-ove koji su way
+      'node["landuse"="farmyard"]["name"~"OPG",i]',
+      'way["landuse"="farmyard"]["name"~"OPG",i]',
     ],
     whitelist: [
       { key: "shop", values: ["farm"] },
       { key: "landuse", values: ["farmyard", "farm"] },
       { key: "produce", values: ["*"] },
+      { key: "name", values: ["*"] },
     ],
     nameDenylist: [
       "hotel",
@@ -300,19 +399,25 @@ const CATEGORY_RULES: Record<string, CategoryRule> = {
     ],
   },
 
-  // Smještaji = hoteli, hosteli, apartmani, sobe, prenočišta
   accommodation: {
     queries: [
       'node["tourism"="hotel"]',
-      'node["tourism"="hostel"]',
-      'node["tourism"="apartment"]',
-      'node["tourism"="guest_house"]',
-      'node["tourism"="motel"]',
-      'node["tourism"="bed_and_breakfast"]',
       'way["tourism"="hotel"]',
+      'node["tourism"="hostel"]',
       'way["tourism"="hostel"]',
+      'node["tourism"="apartment"]',
       'way["tourism"="apartment"]',
+      'node["tourism"="guest_house"]',
       'way["tourism"="guest_house"]',
+      'node["tourism"="motel"]',
+      'way["tourism"="motel"]',
+      'node["tourism"="bed_and_breakfast"]',
+      'way["tourism"="bed_and_breakfast"]',
+      'node["tourism"="camp_site"]',
+      'way["tourism"="camp_site"]',
+      // ✅ DODANO: sobe, rooms, accommodation
+      'node["name"~"sobe|rooms|apartments|accommodation",i]',
+      'way["name"~"sobe|rooms|apartments|accommodation",i]',
     ],
     whitelist: [
       {
@@ -324,6 +429,7 @@ const CATEGORY_RULES: Record<string, CategoryRule> = {
           "guest_house",
           "motel",
           "bed_and_breakfast",
+          "camp_site",
         ],
       },
     ],
@@ -335,15 +441,26 @@ const CATEGORY_RULES: Record<string, CategoryRule> = {
       "park",
       "fitness",
       "kozmetik",
-      "studio kozmetik",
       "salon",
       "ambulanta",
       "ljekarnica",
+      "kazalište",
+      "theatre",
+      "kino",
+      "restoran",
+      "bischof",
+      "restoran",
+      "restaurant",
+      "bistro",
+      "caffe",
+      "kafić",
+      "zrinjevac",
+      "perla",
     ],
   },
-
-  // Tržnica = uređen prostor za prodaju hrane i poljopr. proizvoda
   market: {
+    // ✅ FIX: uklonjeni supermarket i convenience — korisnik NE želi
+    // prikazivati trgovine, samo tržnice (marketplace)
     queries: ['node["amenity"="marketplace"]', 'way["amenity"="marketplace"]'],
     whitelist: [{ key: "amenity", values: ["marketplace"] }],
     nameDenylist: [
@@ -356,16 +473,23 @@ const CATEGORY_RULES: Record<string, CategoryRule> = {
       "it",
       "d.o.o",
       "nekretnin",
-      "centar",
-      "shopping",
+      "šetalište",
+      "setaliste",
+      "ntl",
+      "feđika",
+      "fedika",
+      "park",
+      "ulica",
+      "trg",
     ],
   },
 
-  // Paintball = strogo sportski teren za paintball
   paintball: {
     queries: [
       'node["sport"="paintball"]',
+      'way["sport"="paintball"]',
       'node["leisure"="sports_centre"]["sport"="paintball"]',
+      'way["leisure"="sports_centre"]["sport"="paintball"]',
     ],
     whitelist: [{ key: "sport", values: ["paintball"] }],
     nameDenylist: [
@@ -385,17 +509,38 @@ const CATEGORY_RULES: Record<string, CategoryRule> = {
   cinema: {
     queries: ['node["amenity"="cinema"]', 'way["amenity"="cinema"]'],
     whitelist: [{ key: "amenity", values: ["cinema"] }],
-    nameDenylist: ["hotel", "hostel", "apartman", "it", "nekretnin"],
+    nameDenylist: [
+      "hotel",
+      "hostel",
+      "apartman",
+      "it",
+      "nekretnin",
+      "grad ",
+      "općina",
+      "municipality",
+      "dvorac",
+      "crkva",
+      "muzej",
+      "knjižnica",
+      "škola",
+      "bolnica",
+      "zgrada",
+      "palace",
+      "palača",
+      "tvrđava",
+      "dom kulture",
+      "kulturni centar",
+      "kulturni dom",
+    ],
   },
 
-  // Park = uređena zelena površina za odmor, ne perivoj/atrakcija
   park: {
     queries: [
       'node["leisure"="park"]',
       'way["leisure"="park"]',
       'relation["leisure"="park"]',
     ],
-    whitelist: [{ key: "leisure", values: ["park"] }],
+    whitelist: [{ key: "leisure", values: ["park", "garden"] }],
     nameDenylist: [
       "perivoj",
       "dvorac",
@@ -412,13 +557,51 @@ const CATEGORY_RULES: Record<string, CategoryRule> = {
       "it",
       "d.o.o",
       "nekretnin",
-      "centar",
+      "fićo", // Red fićo (restoran/bar, ne park)
+      "red fić",
+      "podgorje",
+      "suvara",
+      "kraševo",
+      "krasevo",
+      "bikana",
+      "čimen",
+      "cimen",
+      "južni blok",
+      "juzni blok",
+      "removac",
+      "removač",
+      // Generički uzorci za naselja i blokove
+      "blok",
+      "naselje",
+      "zaselak",
+      "zaselje",
+      "ulica",
+      "trg",
+      "cesta",
+      " sa morem",
+      "sa morem",
+      // Rubna zona / predjel bez prave parkovne infrastrukture
+      "predio",
+      "predjel",
+      "zona",
+      "četvrt",
+      "cetvrt",
+      "kvart",
+      "kvart",
+      "perivoj", // ← NOVO: Perivoj bana Šokčevića, Perivoj hrvatskih velikana
+      "monument", // ← NOVO: Monument to Miroslav Krleža (ima leisure=park tag u OSM-u)
+      "miroslav", // ← NOVO: specifično za ovaj monument
+      "park sakuntala",
     ],
   },
 
-  // Escape Room = soba za bijeg, interaktivna igra
   escapeRoom: {
-    queries: ['node["leisure"="escape_game"]', 'node["amenity"="escape_game"]'],
+    queries: [
+      'node["leisure"="escape_game"]',
+      'way["leisure"="escape_game"]',
+      'node["amenity"="escape_game"]',
+      'way["amenity"="escape_game"]',
+    ],
     whitelist: [
       { key: "leisure", values: ["escape_game"] },
       { key: "amenity", values: ["escape_game"] },
@@ -433,17 +616,18 @@ const CATEGORY_RULES: Record<string, CategoryRule> = {
       "it",
       "d.o.o",
       "nekretnin",
-      "centar",
     ],
   },
 
-  // Muzej = institucija koja čuva i izlaže baštinu
   museum: {
     queries: ['node["tourism"="museum"]', 'way["tourism"="museum"]'],
     whitelist: [{ key: "tourism", values: ["museum"] }],
+    // ✅ FIX: dodani "most", "bridge", "catacomb", "katakomb" — ne smiju biti muzeji
     nameDenylist: [
+      "most",
+      "bridge",
       "catacomb",
-      "catacombe",
+      "katakomb",
       "atrakcija",
       "hotel",
       "hostel",
@@ -454,29 +638,71 @@ const CATEGORY_RULES: Record<string, CategoryRule> = {
       "it",
       "d.o.o",
       "nekretnin",
+      "bridge bench",
+      "bench",
+      "war scarred",
+      "scarred building",
+      "building",
+      "ruin",
+      "shell museum",
+      "water world",
+      "školjaka",
+      "skoljaka",
+      "catacomb", // ← vraćeno: blokira OSM katakombe u muzejima
+      "catacombs",
+      "katakomba",
     ],
   },
 
-  // Kazalište = zgrada/ustanova za scenska izvođenja
   theater: {
-    queries: ['node["amenity"="theatre"]', 'way["amenity"="theatre"]'],
+    queries: [
+      'node["amenity"="theatre"]',
+      'way["amenity"="theatre"]',
+      'relation["amenity"="theatre"]',
+    ],
+
     whitelist: [{ key: "amenity", values: ["theatre"] }],
+
     nameDenylist: [
-      "osiguranje",
-      "banka",
       "hotel",
       "hostel",
       "apartman",
-      "it",
-      "d.o.o",
-      "nekretnin",
-      "centar",
+      "apartment",
+      "apartments",
+      "soba",
+      "sobe",
+      "rooms",
+      "room",
+      "guest",
+      "guesthouse",
+      "guest house",
+      "smještaj",
+      "accommodation",
+      "lodging",
+      "villa",
+      "vila",
+      "resort",
+      "motel",
+      "inn",
+      "pansion",
+      "bed",
+      "breakfast",
+      "b&b",
+      "studio",
+      "suite",
+      "kuća za odmor",
+      "odmaralište",
+      "camp",
+      "glamping",
     ],
   },
 
-  // Planina = prirodni vrh / uzvišenje
   mountain: {
-    queries: ['node["natural"="peak"]', 'node["natural"="hill"]'],
+    queries: [
+      'node["natural"="peak"]',
+      'node["natural"="hill"]',
+      'way["natural"="peak"]',
+    ],
     whitelist: [{ key: "natural", values: ["peak", "hill"] }],
     nameDenylist: [
       "hotel",
@@ -488,16 +714,14 @@ const CATEGORY_RULES: Record<string, CategoryRule> = {
       "it",
       "d.o.o",
       "nekretnin",
-      "centar",
     ],
   },
 
-  // Nacionalni park = zaštićeno prirodno područje
   nationalPark: {
     queries: [
       'relation["boundary"="national_park"]',
       'relation["boundary"="protected_area"]["protect_class"="2"]',
-      'node["boundary"="national_park"]',
+      'way["boundary"="national_park"]',
     ],
     whitelist: [
       { key: "boundary", values: ["national_park", "protected_area"] },
@@ -513,11 +737,9 @@ const CATEGORY_RULES: Record<string, CategoryRule> = {
       "it",
       "d.o.o",
       "nekretnin",
-      "centar",
     ],
   },
 
-  // Špilja = prirodna podzemna šupljina
   cave: {
     queries: [
       'node["natural"="cave_entrance"]',
@@ -534,17 +756,17 @@ const CATEGORY_RULES: Record<string, CategoryRule> = {
       "it",
       "d.o.o",
       "nekretnin",
-      "centar",
-      "perla inn",
     ],
   },
 
-  // Toplice = prirodni termalni/mineralni izvori i lječilišta
   spa: {
     queries: [
       'node["amenity"="spa"]',
+      'way["amenity"="spa"]',
       'node["leisure"="spa"]',
+      'way["leisure"="spa"]',
       'node["leisure"="water_park"]',
+      'way["leisure"="water_park"]',
       'node["natural"="hot_spring"]',
     ],
     whitelist: [
@@ -552,24 +774,60 @@ const CATEGORY_RULES: Record<string, CategoryRule> = {
       { key: "leisure", values: ["spa", "water_park"] },
       { key: "natural", values: ["hot_spring"] },
     ],
+    // ✅ FIX: proširena denylist — ambulanta, beauty salon, fitness, centar kulture tijela ne smiju biti toplice
     nameDenylist: [
+      // Medicinsko
       "ambulanta",
+      "liječnik",
+      "doktor",
+      "medicina",
+      "medical",
+      "obiteljske",
+      "dežurna",
+      "fizioterapija",
+      "fizioterapi",
+      "physio",
+      "rehabilitaci",
+      // Kozmetika — i s dijakriticima
       "beauty",
       "kozmetik",
-      "salon",
+      "kozmetičk",
       "estetika",
-      "fizioterapija",
-      "tensegrity",
+      "estetica",
+      "estetska",
+      "salon",
+      "nail",
+      "manikur",
+      "pedikur",
+      // Fitness
       "fitness",
-      "obrt",
-      "ljekarnica",
-      "apoteka",
+      "fit",
+      "gym",
+      "teretana",
+      "crossfit",
+      "osobni trening",
+      "treninzi",
+      // Tijelo/njega
+      "njegu",
+      "kulture tijela",
+      "centar kulture",
+      "sport i njegu",
+      "tensegrity",
+      "wellar",
+      "body service",
+      "body care",
+      // Studio/smještaj
+      "studio",
+      "apartman",
       "hotel",
       "hostel",
-      "apartman",
-      "it",
+      // Poslovno
+      "obrt",
       "d.o.o",
       "nekretnin",
+      "ljekarnica",
+      "apoteka",
+      "wellness centar",
     ],
   },
 };
@@ -578,8 +836,53 @@ const CATEGORY_RULES: Record<string, CategoryRule> = {
 const GLOBAL_NAME_DENYLIST = [
   "mono d.o.o",
   "centar nekretnina",
+  "centar nekretnine",
+  "nekretnin",
   "it park",
   "nekretnin",
+  "kladionica",
+  "sportska kladionica",
+  "mozzart",
+  "winbet",
+  "superbet",
+  "lvbet",
+  "admiral casino",
+  "kockarnica",
+  // ✅ FIX: dodano — saloni za pse i slični obrti ne smiju se nigdje prikazati
+  "salon za pse",
+  "dog salon",
+  "frizerski salon",
+  "uljepšavanje",
+  // ✅ FIX: nekretnine i IT firme
+  "agencija za nekretnine",
+  "fitness centar",
+  "beauty salon",
+  "centar ljepote",
+  "perla",
+  "guest house",
+  "guesthouse",
+  "apartments",
+  "rooms",
+  "accommodation",
+  "lodging",
+  "salon za pse",
+  "dog salon",
+  "pet salon",
+  "grooming salon",
+  "njega pasa",
+  "šišanje pasa",
+  "uređivanje pasa",
+  "kućni ljubimac",
+  "ljubimac",
+  "automat club",
+  "automat",
+  "gaming club",
+  "slot club",
+  "tombola",
+  "frizerski salon",
+  "hair salon",
+  "barber shop",
+  "brijačnica",
 ];
 
 // ─── Cache ────────────────────────────────────────────────────────────────────
@@ -691,7 +994,139 @@ function passesFilter(
     if (nameLower.includes(denied.toLowerCase())) return false;
   }
 
-  // Provjeri bijelu listu tagova
+  const ACCOMMODATION_TAGS = [
+    "hotel",
+    "hostel",
+    "apartment",
+    "guest_house",
+    "motel",
+    "bed_and_breakfast",
+    "camp_site",
+  ];
+
+  if (
+    ACCOMMODATION_TAGS.includes(tags.tourism) ||
+    ACCOMMODATION_TAGS.includes(tags.accommodation) ||
+    ACCOMMODATION_TAGS.includes(tags.building)
+  ) {
+    return false;
+  }
+
+  // ✅ NOVO: Ako objekt ima tourism tag smještaja → nikad nije kazalište/park/muzej
+  const ACCOMMODATION_TOURISM_TAGS = [
+    "hotel",
+    "hostel",
+    "apartment",
+    "guest_house",
+    "motel",
+    "bed_and_breakfast",
+    "camp_site",
+  ];
+  if (
+    tags.tourism &&
+    ACCOMMODATION_TOURISM_TAGS.includes(tags.tourism) &&
+    // Iznimka: accommodation kategorija smije imati ove tagove
+    !rule.whitelist.some(
+      (wl) =>
+        wl.key === "tourism" &&
+        ACCOMMODATION_TOURISM_TAGS.some((t) => wl.values.includes(t)),
+    )
+  ) {
+    return false;
+  }
+
+  const LANDMARK_HISTORIC_VALUES = [
+    "castle",
+    "monument",
+    "memorial",
+    "ruins",
+    "archaeological_site",
+    "building",
+    "fort",
+    "church",
+    "city_gate",
+    "catacombs",
+    "catacomb",
+    "bridge",
+  ];
+  if (
+    tags.historic &&
+    LANDMARK_HISTORIC_VALUES.includes(tags.historic) &&
+    !rule.whitelist.some((wl) => wl.key === "historic")
+  ) {
+    return false;
+  }
+
+  // ✅ NOVO: Za theater, dodatno provjeri da nije smještaj PO IMENU
+  if (rule.whitelist.some((wl) => wl.values.includes("theatre"))) {
+    // Ključne riječi koje označavaju smještaj (čak i ako ima amenity=theatre)
+    const accommodationNames = [
+      "hotel",
+      "hostel",
+      "apartman",
+      "soba",
+      "prenočište",
+      "guest house",
+      "guesthouse",
+      "apartment",
+      "rooms",
+      "smještaj",
+      "accommodation",
+      "lodging",
+      "bed & breakfast",
+      "b&b",
+      "inn",
+      "villa",
+      "resort",
+      "perla inn",
+      "pansion",
+      "motel",
+      "studio",
+      "room",
+      "vila",
+      "kuća za odmor",
+      "odmaralište",
+      "aparthotel",
+      "apartments",
+    ];
+
+    for (const accName of accommodationNames) {
+      if (nameLower.includes(accName)) {
+        return false;
+      }
+    }
+
+    // Također provjeri tagove za smještaj
+    if (
+      tags.tourism === "hotel" ||
+      tags.tourism === "hostel" ||
+      tags.tourism === "apartment" ||
+      tags.tourism === "guest_house"
+    ) {
+      return false;
+    }
+    if (tags.amenity === "hotel" || tags.amenity === "hostel") {
+      return false;
+    }
+  }
+
+  // ✅ NOVO: Ako je objekt s amenity=theatre, ali ima i tourism tag za smještaj → odbij
+  if (tags.amenity === "theatre") {
+    const tourismTags = [
+      "hotel",
+      "hostel",
+      "apartment",
+      "guest_house",
+      "motel",
+      "bed_and_breakfast",
+    ];
+    if (tags.tourism && tourismTags.includes(tags.tourism)) {
+      return false;
+    }
+  }
+
+  if (Object.keys(tags).length === 0) return false;
+
   for (const wl of rule.whitelist) {
     const tagVal = tags[wl.key];
     if (!tagVal) continue;
@@ -700,11 +1135,45 @@ function passesFilter(
 
   return false;
 }
-
 // ─── OPG posebna provjera ─────────────────────────────────────────────────────
-function isValidOPG(name: string): boolean {
-  // OPG mora u imenu sadržavati "OPG" (case insensitive)
-  return name.toUpperCase().includes("OPG");
+function isValidOPG(tags: Record<string, string>, name: string): boolean {
+  const combined = [
+    name,
+    tags.operator || "",
+    tags.brand || "",
+    tags["official_name"] || "",
+    tags.description || "",
+  ]
+    .join(" ")
+    .toUpperCase();
+  return (
+    combined.includes("OPG") ||
+    tags.shop === "farm" || // ako je shop=farm, to je OPG
+    tags.produce != null // ako ima produce tag, to je OPG
+  );
+}
+
+// ─── Deduplikacija po imenu + blizini (za duple prikaze poput Zoo Hotel) ──────
+// ✅ FIX: ID-based dedup nije dovoljan jer Overpass i Nominatim daju različite ID-eve
+// za isti objekt. Dodajemo provjeru: isti naziv + udaljenost < 100m = duplikat.
+function deduplicatePlaces(places: Place[]): Place[] {
+  const result: Place[] = [];
+  for (const place of places) {
+    const isDuplicate = result.some((existing) => {
+      const sameName =
+        existing.name.toLowerCase().trim() === place.name.toLowerCase().trim();
+      const closeEnough =
+        haversineKm(
+          existing.latitude,
+          existing.longitude,
+          place.latitude,
+          place.longitude,
+        ) < 0.1; // 100 metara
+      return sameName && closeEnough;
+    });
+    if (!isDuplicate) result.push(place);
+  }
+  return result;
 }
 
 // ─── Glavni fetch s Overpass API ──────────────────────────────────────────────
@@ -722,11 +1191,14 @@ async function fetchFromOverpass(
     .map((q) => `${q}(around:${radiusM},${center});`)
     .join("\n");
 
+  // ✅ FIX: dodan "out center;" — bez njega `way` elementi nemaju koordinate
+  // (el.center je undefined), pa su svi way objekti (McDonald's kao way,
+  // OPG kao way, znamenitosti kao way) bili tiho filtrirani zbog !lat || !lon
   const overpassQuery = `[out:json][timeout:30];
 (
 ${parts}
 );
-out body;`;
+out body center;`;
 
   const endpoints = [
     "https://overpass-api.de/api/interpreter",
@@ -760,6 +1232,7 @@ out body;`;
           tags["official_name"];
         if (!name) continue;
 
+        // ✅ FIX: el.center sada postoji za way/relation jer koristimo "out body center;"
         const lat = el.lat ?? el.center?.lat;
         const lon = el.lon ?? el.center?.lon;
         if (!lat || !lon) continue;
@@ -767,25 +1240,76 @@ out body;`;
         const dist = haversineKm(latitude, longitude, lat, lon);
         if (dist > radiusM / 1000) continue;
 
-        // Posebna provjera za OPG
-        if (type === "opg" && !isValidOPG(name)) continue;
+        if (type === "opg") {
+          if (!isValidOPG(tags, name)) continue;
+          const nameLower = name.toLowerCase();
+          const globalDenied = GLOBAL_NAME_DENYLIST.some((d) =>
+            nameLower.includes(d.toLowerCase()),
+          );
+          if (globalDenied) continue;
+          const catDenied = rule.nameDenylist.some((d) =>
+            nameLower.includes(d.toLowerCase()),
+          );
+          if (catDenied) continue;
+        } else {
+          if (!passesFilter(tags, name, rule)) continue;
+        }
 
-        // Provjera filtera
-        if (!passesFilter(tags, name, rule)) continue;
+        // Posebna provjera za theater - odbij sve što liči na smještaj
+        // Theater: odbij smještaj, BEZ name whitelist — amenity=theatre je dovoljan
+        if (type === "theater") {
+          const nameLower = name.toLowerCase();
+          const accommodationIndicators = [
+            "hotel",
+            "hostel",
+            "apartman",
+            "apartment",
+            "soba",
+            "sobe",
+            "rooms",
+            "room",
+            "prenočište",
+            "prenoćište",
+            "guest",
+            "villa",
+            "vila",
+            "resort",
+            "odmaralište",
+            "pansion",
+            "motel",
+            "inn",
+            "b&b",
+            "bed",
+            "breakfast",
+            "smještaj",
+            "accommodation",
+            "lodging",
+            "studio",
+            "suite",
+            "camp",
+            "glamping",
+            "nekretnin",
+          ];
+          if (accommodationIndicators.some((ind) => nameLower.includes(ind))) {
+            continue;
+          }
+        }
 
         results.push({
-          id: `${el.type || "node"}_${el.id}`,
+          id: `osm_${el.type}_${el.id}`,
           name,
           latitude: lat,
           longitude: lon,
           type: type as Place["type"],
           distance: dist,
-          address: tags["addr:street"]
-            ? `${tags["addr:street"]} ${tags["addr:housenumber"] || ""}`.trim()
-            : undefined,
+          address:
+            [tags["addr:street"], tags["addr:housenumber"], tags["addr:city"]]
+              .filter(Boolean)
+              .join(" ") || undefined,
+          phone: tags.phone || tags["contact:phone"] || undefined,
+          website: tags.website || tags["contact:website"] || undefined,
+          openingHours: tags.opening_hours || undefined,
           rating: tags.stars ? parseFloat(tags.stars) : undefined,
-          phone: tags.phone || tags["contact:phone"],
-          website: tags.website || tags["contact:website"],
         });
       }
 
@@ -798,7 +1322,6 @@ out body;`;
   return [];
 }
 
-// ─── Glavna izvozna funkcija ──────────────────────────────────────────────────
 // ─── Glavna izvozna funkcija ──────────────────────────────────────────────────
 export const getPlacesInRadius = async (
   latitude: number,
@@ -816,7 +1339,40 @@ export const getPlacesInRadius = async (
     return cached.places;
   }
 
-  // Dohvati svaki tip paralelno, s Nominatim fallbackom ako < 5 rezultata
+  // Blok smještajnih ključnih riječi za theater (koristi se na dva mjesta)
+  const THEATER_BLOCK = [
+    "hotel",
+    "hostel",
+    "guest",
+    "guesthouse",
+    "guest house",
+    "apartman",
+    "apartment",
+    "apartments",
+    "rooms",
+    "room",
+    "soba",
+    "sobe",
+    "villa",
+    "vila",
+    "resort",
+    "inn",
+    "motel",
+    "lodging",
+    "accommodation",
+    "smještaj",
+    "bed",
+    "breakfast",
+    "b&b",
+    "suite",
+    "studio",
+    "camp",
+    "glamping",
+    "pansion",
+    "pension",
+    "nekretnin",
+  ];
+
   const promises = types.map(async (type): Promise<Place[]> => {
     const overpassResults = await fetchFromOverpass(
       latitude,
@@ -824,7 +1380,51 @@ export const getPlacesInRadius = async (
       radiusM,
       type,
     );
-    if (overpassResults.length < 5) {
+
+    if (type === "theater") {
+      // OSM amenity=theatre je dovoljan — ne trebamo name whitelist.
+      // Blokiramo samo očiti smještaj.
+      const filtered = overpassResults.filter((p) => {
+        const n = p.name.toLowerCase().trim();
+        return !THEATER_BLOCK.some((bad) => n.includes(bad));
+      });
+
+      // Nominatim fallback samo ako OSM nema dovoljno, ali s name filterom
+      // jer Nominatim vraća gradove/regije za query "theatre"
+      if (filtered.length < 2) {
+        const nominatimResults = await fetchFromNominatim(
+          latitude,
+          longitude,
+          radiusKm,
+          type,
+        );
+        const validNominatim = nominatimResults.filter((p) => {
+          const n = p.name.toLowerCase().trim();
+          // WHITELIST: samo stvarna kazališta po imenu
+          const isRealTheater =
+            n.includes("kazalište") ||
+            n.includes("kazaliste") ||
+            n.includes("teatar") ||
+            n.includes("theatre") ||
+            n.includes("theater") ||
+            n.startsWith("hnk") ||
+            n.includes("dječje") ||
+            n.includes("narodno");
+          if (!isRealTheater) return false;
+          // BLACKLIST: ukloni smještaj
+          return !THEATER_BLOCK.some((bad) => n.includes(bad));
+        });
+        const existingIds = new Set(filtered.map((p) => p.id));
+        return [
+          ...filtered,
+          ...validNominatim.filter((p) => !existingIds.has(p.id)),
+        ];
+      }
+      return filtered;
+    }
+
+    // Sve ostale kategorije — standardni Nominatim fallback
+    if (overpassResults.length < 3) {
       const nominatimResults = await fetchFromNominatim(
         latitude,
         longitude,
@@ -842,19 +1442,20 @@ export const getPlacesInRadius = async (
     return overpassResults;
   });
 
-  // ← ovo je bio problem: results nije bio definiran
   const results = await Promise.all(promises);
-  const allPlaces = results.flat();
+  let allPlaces = results.flat();
 
-  // Deduplikacija po ID-u
-  const seen = new Set<string>();
-  const deduped = allPlaces.filter((p: Place) => {
-    if (seen.has(p.id)) return false;
-    seen.add(p.id);
-    return true;
-  });
+  // Post-filter za theater — ukloni smještaj koji je možda ušao kroz Google
+  // (street keyword provjera uklonjena — blokirala je legitimna kazališta)
+  if (types.includes("theater")) {
+    allPlaces = allPlaces.filter((place) => {
+      if (place.type !== "theater") return true;
+      const nameLower = place.name.toLowerCase();
+      return !THEATER_BLOCK.some((kw) => nameLower.includes(kw));
+    });
+  }
 
-  // Sortiraj po udaljenosti
+  const deduped = deduplicatePlaces(allPlaces);
   deduped.sort((a: Place, b: Place) => (a.distance ?? 0) - (b.distance ?? 0));
 
   placesCache.set(cacheKey, { places: deduped, timestamp: Date.now() });
@@ -863,13 +1464,15 @@ export const getPlacesInRadius = async (
 
 // ─── Nominatim fallback po kategoriji ────────────────────────────────────────
 const NOMINATIM_CATEGORY_QUERIES: Record<string, string> = {
-  restaurant: "restaurant",
+  restaurant: "restaurant OR fast food OR pizzeria OR grill",
   cafe: "cafe",
+  // ✅ FIX: club fallback samo za nightclub, ne "bar"
   club: "nightclub",
   beach: "beach",
-  landmark: "tourist attraction",
+  landmark: "castle OR church OR monument OR historic",
   accommodation: "hotel",
-  market: "market",
+  // ✅ FIX: market fallback samo za tržnicu, ne "market" (preširoko)
+  market: "marketplace",
   cinema: "cinema",
   park: "park",
   museum: "museum",
@@ -880,7 +1483,7 @@ const NOMINATIM_CATEGORY_QUERIES: Record<string, string> = {
   paintball: "paintball",
   cave: "cave",
   nationalPark: "national park",
-  opg: "OPG",
+  opg: "farm OR OPG",
 };
 
 async function fetchFromNominatim(
@@ -893,8 +1496,7 @@ async function fetchFromNominatim(
   if (!query) return [];
 
   try {
-    // Nominatim structured search s bounding boxom
-    const delta = radiusKm / 111; // ~1 stupanj = 111 km
+    const delta = radiusKm / 111;
     const bbox = `${longitude - delta},${latitude - delta},${longitude + delta},${latitude + delta}`;
 
     const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&viewbox=${bbox}&bounded=1&limit=15&addressdetails=1`;
@@ -911,7 +1513,9 @@ async function fetchFromNominatim(
     const data = await res.json();
     if (!Array.isArray(data)) return [];
 
+    const rule = CATEGORY_RULES[type];
     const results: Place[] = [];
+
     for (const item of data) {
       const lat = parseFloat(item.lat);
       const lon = parseFloat(item.lon);
@@ -921,12 +1525,30 @@ async function fetchFromNominatim(
       const name = item.name || item.display_name?.split(",")[0];
       if (!name || name.length < 2) continue;
 
-      // Provjeri globalnu crnu listu
       const nameLower = name.toLowerCase();
-      const denied = GLOBAL_NAME_DENYLIST.some((d) =>
+
+      // Globalna crna lista
+      const globalDenied = GLOBAL_NAME_DENYLIST.some((d) =>
         nameLower.includes(d.toLowerCase()),
       );
-      if (denied) continue;
+      if (globalDenied) continue;
+
+      // ✅ FIX: i u Nominatim fallbacku primjeni kategorizacijsku crnu listu
+      if (rule) {
+        const categoryDenied = rule.nameDenylist.some((d) =>
+          nameLower.includes(d.toLowerCase()),
+        );
+        if (categoryDenied) continue;
+      }
+
+      if (type === "park") {
+        const isRealPark =
+          nameLower.includes("park") ||
+          nameLower.includes("garden") ||
+          nameLower.includes("šetalište") ||
+          nameLower.includes("setaliste");
+        if (!isRealPark) continue;
+      }
 
       results.push({
         id: `nom_${type}_${item.place_id}`,

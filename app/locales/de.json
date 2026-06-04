@@ -217,9 +217,9 @@
   },
   "videos": {
     "title": "Videos",
-    "quickMessage1": "Super Video! 🔥",
-    "quickMessage2": "Ausgezeichnet! 👏",
-    "quickMessage3": "Hallo! 👋",
+    "quickMessage1": "Super Video! ",
+    "quickMessage2": "Ausgezeichnet! ",
+    "quickMessage3": "Hallo! ",
     "quickMessage4": "Wo ist das?",
     "add": "Inhalt hinzufügen",
     "preview": "Vorschau & veröffentlichen",

@@ -3,7 +3,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as ImagePicker from "expo-image-picker";
 import { router, useLocalSearchParams } from "expo-router";
 import { VideoView, useVideoPlayer } from "expo-video";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -19,6 +19,7 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { useTheme } from "../../components/AdaptiveThemeProvider";
 import {
   Message,
   getConversationMessages,
@@ -29,20 +30,22 @@ import {
 import { API_BASE_URL } from "../config/api";
 
 // ─── VARA Paleta ───────────────────────────────────────────────────────────────
-const V = {
-  forestDeep: "#1A2E15",
-  forestMid: "#243B1E",
-  forestLight: "#2D5518",
-  borderGreen: "#4A7040",
-  borderDim: "#304A28",
-  silver: "#C4CABC",
-  silverBright: "#E8EDE4",
-  silverDim: "#8A9486",
-  accentGold: "#B8A060",
-  visited: "#5A8A48",
-  danger: "#8B3030",
-  overlay: "rgba(10,20,8,0.88)",
-} as const;
+function getV(isDark: boolean) {
+  return {
+    forestDeep: isDark ? "#1A2E15" : "#f0ede4",
+    forestMid: isDark ? "#243B1E" : "#e4ead8",
+    forestLight: isDark ? "#2D5518" : "#3a6a28",
+    borderGreen: isDark ? "#4A7040" : "#5a8a40",
+    borderDim: isDark ? "#304A28" : "#c0d0a8",
+    silver: isDark ? "#C4CABC" : "#3a4a35",
+    silverBright: isDark ? "#E8EDE4" : "#1a2a18",
+    silverDim: isDark ? "#8A9486" : "#5a6a55",
+    accentGold: isDark ? "#B8A060" : "#8a6a20",
+    visited: isDark ? "#5A8A48" : "#2D6418",
+    danger: isDark ? "#8B3030" : "#cc2222",
+    overlay: isDark ? "rgba(10,20,8,0.88)" : "rgba(240,237,228,0.88)",
+  } as const;
+}
 
 // ─── Video Share Format ────────────────────────────────────────────────────────
 export const VIDEO_PREFIX = "__CROMAP_VIDEO__";
@@ -62,21 +65,11 @@ export function parseVideoMessage(content: string): VideoSharePayload | null {
   }
 }
 
-// ─── Video Bubble ──────────────────────────────────────────────────────────────
-const vbStyles = StyleSheet.create({
-  container: {
-    width: 240,
-    height: 160,
-    borderRadius: 12,
-    overflow: "hidden",
-    backgroundColor: "#000",
-    borderWidth: 1,
-    borderColor: V.borderGreen,
-  },
-  video: { width: "100%", height: "100%" },
-});
-
+// UKLONI cijeli vbStyles StyleSheet.create blok i zamijeni VideoBubble s ovim:
 function VideoBubble({ url }: { url: string }) {
+  const { isDark } = useTheme();
+  const V = useMemo(() => getV(isDark), [isDark]);
+
   const player = useVideoPlayer(url, (p) => {
     p.loop = false;
     p.muted = false;
@@ -89,10 +82,20 @@ function VideoBubble({ url }: { url: string }) {
     };
   }, []);
   return (
-    <View style={vbStyles.container}>
+    <View
+      style={{
+        width: 240,
+        height: 160,
+        borderRadius: 12,
+        overflow: "hidden",
+        backgroundColor: "#000",
+        borderWidth: 1,
+        borderColor: V.borderGreen,
+      }}
+    >
       <VideoView
         player={player}
-        style={vbStyles.video}
+        style={{ width: "100%", height: "100%" }}
         contentFit="contain"
         nativeControls
       />
@@ -101,7 +104,11 @@ function VideoBubble({ url }: { url: string }) {
 }
 
 // ─── Image Bubble ──────────────────────────────────────────────────────────────
+// ZAMIJENI postojeći ImageBubble:
 function ImageBubble({ url }: { url: string }) {
+  const { isDark } = useTheme();
+  const V = useMemo(() => getV(isDark), [isDark]);
+
   return (
     <View
       style={{
@@ -159,13 +166,15 @@ function AvatarCircle({
   size: number;
   style?: any;
 }) {
+  const { isDark } = useTheme();
+  const V = useMemo(() => getV(isDark), [isDark]);
   const [failed, setFailed] = useState(false);
   const r = size / 2;
 
   if (avatarUrl && !failed) {
     return (
       <Image
-        source={{ uri: avatarUrl }}
+        source={{ uri: avatarUrl, cache: "reload" }}
         style={[{ width: size, height: size, borderRadius: r }, style]}
         onError={() => setFailed(true)}
       />
@@ -202,6 +211,9 @@ function AvatarCircle({
 
 // ─── Chat Screen ───────────────────────────────────────────────────────────────
 export default function ChatScreen() {
+  const { isDark } = useTheme();
+  const V = useMemo(() => getV(isDark), [isDark]);
+  const styles = useMemo(() => getStyles(V, isDark), [V, isDark]);
   const { userId, name } = useLocalSearchParams<{
     userId: string;
     name?: string;
@@ -245,10 +257,23 @@ export default function ChatScreen() {
         );
         if (res.ok) {
           const userData = await res.json();
+
+          // Ispravno izvuci avatar URL
+          const av = userData.avatar;
+          let avatarUrl = null;
+
+          if (av && av.trim() !== "" && !av.startsWith("avatar:")) {
+            if (av.startsWith("http://") || av.startsWith("https://")) {
+              avatarUrl = `${av}?_t=${Date.now()}`;
+            } else {
+              avatarUrl = `${API_BASE_URL}${av.startsWith("/") ? "" : "/"}${av}?_t=${Date.now()}`;
+            }
+          }
+
           setOtherUserInfo({
             firstName: userData.firstName || "",
             lastName: userData.lastName || "",
-            avatarUrl: buildAvatarUrl(userData.avatar),
+            avatarUrl: avatarUrl,
           });
         }
       } catch (e) {
@@ -506,6 +531,7 @@ export default function ChatScreen() {
               style={[styles.msgAvatarWrap, prevSameSender && styles.hidden]}
             >
               <AvatarCircle
+                key={`msg-avatar-${otherUserInfo?.avatarUrl ?? "no"}`}
                 avatarUrl={otherUserInfo?.avatarUrl ?? null}
                 initials={initials}
                 size={30}
@@ -575,6 +601,7 @@ export default function ChatScreen() {
         </TouchableOpacity>
         <View style={styles.headerCenter}>
           <AvatarCircle
+            key={otherUserInfo?.avatarUrl ?? "no-avatar"}
             avatarUrl={otherUserInfo?.avatarUrl ?? null}
             initials={headerInitials}
             size={40}
@@ -741,211 +768,410 @@ export default function ChatScreen() {
 // ─── Stilovi — VARA tema ──────────────────────────────────────────────────────
 const BUBBLE_RADIUS = 16;
 
-const styles = StyleSheet.create({
-  safeArea: { flex: 1, backgroundColor: V.forestDeep },
+// const styles = StyleSheet.create({
+//   safeArea: { flex: 1, backgroundColor: V.forestDeep },
 
-  // Header
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: 8,
-    paddingVertical: 10,
-    borderBottomWidth: 1.5,
-    borderBottomColor: V.borderGreen,
-    backgroundColor: V.forestDeep,
-  },
-  backBtn: { padding: 8 },
-  headerCenter: {
-    flex: 1,
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 10,
-    marginLeft: 4,
-  },
-  headerName: {
-    fontSize: 16,
-    fontWeight: "700",
-    color: V.silverBright,
-    maxWidth: 180,
-  },
-  headerStatus: { fontSize: 12, color: V.silverDim, marginTop: 1 },
+//   // Header
+//   header: {
+//     flexDirection: "row",
+//     alignItems: "center",
+//     paddingHorizontal: 8,
+//     paddingVertical: 10,
+//     borderBottomWidth: 1.5,
+//     borderBottomColor: V.borderGreen,
+//     backgroundColor: V.forestDeep,
+//   },
+//   backBtn: { padding: 8 },
+//   headerCenter: {
+//     flex: 1,
+//     flexDirection: "row",
+//     alignItems: "center",
+//     gap: 10,
+//     marginLeft: 4,
+//   },
+//   headerName: {
+//     fontSize: 16,
+//     fontWeight: "700",
+//     color: V.silverBright,
+//     maxWidth: 180,
+//   },
+//   headerStatus: { fontSize: 12, color: V.silverDim, marginTop: 1 },
 
-  // Error
-  errorBanner: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-    backgroundColor: "#2A1010",
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderBottomWidth: 1,
-    borderBottomColor: "#5A2A2A",
-  },
-  errorText: { fontSize: 13, color: "#ff3b30", flex: 1 },
+//   // Error
+//   errorBanner: {
+//     flexDirection: "row",
+//     alignItems: "center",
+//     gap: 8,
+//     backgroundColor: "#2A1010",
+//     paddingHorizontal: 16,
+//     paddingVertical: 8,
+//     borderBottomWidth: 1,
+//     borderBottomColor: "#5A2A2A",
+//   },
+//   errorText: { fontSize: 13, color: "#ff3b30", flex: 1 },
 
-  // Messages list
-  messagesList: {
-    padding: 12,
-    paddingBottom: 8,
-    backgroundColor: V.forestDeep,
-  },
-  emptyList: {
-    flex: 1,
-    justifyContent: "center",
-    backgroundColor: V.forestDeep,
-  },
+//   // Messages list
+//   messagesList: {
+//     padding: 12,
+//     paddingBottom: 8,
+//     backgroundColor: V.forestDeep,
+//   },
+//   emptyList: {
+//     flex: 1,
+//     justifyContent: "center",
+//     backgroundColor: V.forestDeep,
+//   },
 
-  // Date separator
-  dateSep: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginVertical: 16,
-    gap: 10,
-  },
-  dateSepLine: {
-    flex: 1,
-    height: StyleSheet.hairlineWidth,
-    backgroundColor: V.borderDim,
-  },
-  dateSepText: { fontSize: 12, color: V.silverDim, fontWeight: "500" },
+//   // Date separator
+//   dateSep: {
+//     flexDirection: "row",
+//     alignItems: "center",
+//     marginVertical: 16,
+//     gap: 10,
+//   },
+//   dateSepLine: {
+//     flex: 1,
+//     height: StyleSheet.hairlineWidth,
+//     backgroundColor: V.borderDim,
+//   },
+//   dateSepText: { fontSize: 12, color: V.silverDim, fontWeight: "500" },
 
-  // Message row
-  msgRow: { flexDirection: "row", marginVertical: 3, alignItems: "flex-end" },
-  msgRowLeft: { justifyContent: "flex-start" },
-  msgRowRight: { justifyContent: "flex-end" },
-  msgAvatarWrap: { marginRight: 6, flexShrink: 0 },
-  hidden: { opacity: 0 },
+//   // Message row
+//   msgRow: { flexDirection: "row", marginVertical: 3, alignItems: "flex-end" },
+//   msgRowLeft: { justifyContent: "flex-start" },
+//   msgRowRight: { justifyContent: "flex-end" },
+//   msgAvatarWrap: { marginRight: 6, flexShrink: 0 },
+//   hidden: { opacity: 0 },
 
-  // Bubble containers
-  outgoing: { alignItems: "flex-end", maxWidth: "75%" },
-  incomingGroup: { alignItems: "flex-start", maxWidth: "75%" },
+//   // Bubble containers
+//   outgoing: { alignItems: "flex-end", maxWidth: "75%" },
+//   incomingGroup: { alignItems: "flex-start", maxWidth: "75%" },
 
-  // Bubbles
-  bubble: {
-    borderRadius: BUBBLE_RADIUS,
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-  },
-  bubbleMine: {
-    backgroundColor: V.forestLight,
-    borderBottomRightRadius: 4,
-    borderWidth: 1,
-    borderColor: V.borderGreen,
-  },
-  bubbleOther: {
-    backgroundColor: V.forestMid,
-    borderBottomLeftRadius: 4,
-    borderWidth: 1,
-    borderColor: V.borderDim,
-  },
-  bubbleTextMine: { color: V.silverBright, fontSize: 15, lineHeight: 21 },
-  bubbleTextOther: { color: V.silver, fontSize: 15, lineHeight: 21 },
+//   // Bubbles
+//   bubble: {
+//     borderRadius: BUBBLE_RADIUS,
+//     paddingHorizontal: 14,
+//     paddingVertical: 10,
+//   },
+//   bubbleMine: {
+//     backgroundColor: V.forestLight,
+//     borderBottomRightRadius: 4,
+//     borderWidth: 1,
+//     borderColor: V.borderGreen,
+//   },
+//   bubbleOther: {
+//     backgroundColor: V.forestMid,
+//     borderBottomLeftRadius: 4,
+//     borderWidth: 1,
+//     borderColor: V.borderDim,
+//   },
+//   bubbleTextMine: { color: V.silverBright, fontSize: 15, lineHeight: 21 },
+//   bubbleTextOther: { color: V.silver, fontSize: 15, lineHeight: 21 },
 
-  // Time
-  timeRow: { flexDirection: "row", alignItems: "center", marginTop: 3 },
-  timeRowRight: { justifyContent: "flex-end" },
-  timeRowLeft: { justifyContent: "flex-start" },
-  timeText: { fontSize: 11, color: V.silverDim },
+//   // Time
+//   timeRow: { flexDirection: "row", alignItems: "center", marginTop: 3 },
+//   timeRowRight: { justifyContent: "flex-end" },
+//   timeRowLeft: { justifyContent: "flex-start" },
+//   timeText: { fontSize: 11, color: V.silverDim },
 
-  // Empty state
-  emptyState: { alignItems: "center", paddingHorizontal: 48, gap: 12 },
-  emptyTitle: { fontSize: 18, fontWeight: "700", color: V.silverDim },
-  emptySubtitle: {
-    fontSize: 14,
-    color: V.silverDim,
-    textAlign: "center",
-    lineHeight: 20,
-  },
+//   // Empty state
+//   emptyState: { alignItems: "center", paddingHorizontal: 48, gap: 12 },
+//   emptyTitle: { fontSize: 18, fontWeight: "700", color: V.silverDim },
+//   emptySubtitle: {
+//     fontSize: 14,
+//     color: V.silverDim,
+//     textAlign: "center",
+//     lineHeight: 20,
+//   },
 
-  // Loading
-  center: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    gap: 12,
-    backgroundColor: V.forestDeep,
-  },
-  loadingText: { color: V.silverDim, fontSize: 14 },
+//   // Loading
+//   center: {
+//     flex: 1,
+//     justifyContent: "center",
+//     alignItems: "center",
+//     gap: 12,
+//     backgroundColor: V.forestDeep,
+//   },
+//   loadingText: { color: V.silverDim, fontSize: 14 },
 
-  // Input area
-  inputArea: {
-    flexDirection: "row",
-    alignItems: "flex-end",
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    borderTopWidth: 1.5,
-    borderTopColor: V.borderGreen,
-    backgroundColor: V.forestDeep,
-    gap: 8,
-  },
-  mediaBtn: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: V.forestMid,
-    borderWidth: 1,
-    borderColor: V.borderGreen,
-  },
-  textInput: {
-    flex: 1,
-    minHeight: 42,
-    maxHeight: 120,
-    backgroundColor: V.forestMid,
-    borderRadius: 21,
-    borderWidth: 1,
-    borderColor: V.borderGreen,
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    fontSize: 15,
-    color: V.silverBright,
-    lineHeight: 20,
-  },
-  sendBtn: {
-    width: 42,
-    height: 42,
-    borderRadius: 21,
-    backgroundColor: V.forestLight,
-    borderWidth: 1.5,
-    borderColor: V.borderGreen,
-    justifyContent: "center",
-    alignItems: "center",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.4,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  sendBtnDisabled: {
-    backgroundColor: V.borderDim,
-    borderColor: V.borderDim,
-    shadowOpacity: 0,
-  },
+//   // Input area
+//   inputArea: {
+//     flexDirection: "row",
+//     alignItems: "flex-end",
+//     paddingHorizontal: 12,
+//     paddingVertical: 10,
+//     borderTopWidth: 1.5,
+//     borderTopColor: V.borderGreen,
+//     backgroundColor: V.forestDeep,
+//     gap: 8,
+//   },
+//   mediaBtn: {
+//     width: 40,
+//     height: 40,
+//     borderRadius: 20,
+//     justifyContent: "center",
+//     alignItems: "center",
+//     backgroundColor: V.forestMid,
+//     borderWidth: 1,
+//     borderColor: V.borderGreen,
+//   },
+//   textInput: {
+//     flex: 1,
+//     minHeight: 42,
+//     maxHeight: 120,
+//     backgroundColor: V.forestMid,
+//     borderRadius: 21,
+//     borderWidth: 1,
+//     borderColor: V.borderGreen,
+//     paddingHorizontal: 16,
+//     paddingVertical: 10,
+//     fontSize: 15,
+//     color: V.silverBright,
+//     lineHeight: 20,
+//   },
+//   sendBtn: {
+//     width: 42,
+//     height: 42,
+//     borderRadius: 21,
+//     backgroundColor: V.forestLight,
+//     borderWidth: 1.5,
+//     borderColor: V.borderGreen,
+//     justifyContent: "center",
+//     alignItems: "center",
+//     shadowColor: "#000",
+//     shadowOffset: { width: 0, height: 2 },
+//     shadowOpacity: 0.4,
+//     shadowRadius: 4,
+//     elevation: 3,
+//   },
+//   sendBtnDisabled: {
+//     backgroundColor: V.borderDim,
+//     borderColor: V.borderDim,
+//     shadowOpacity: 0,
+//   },
 
-  // Preview modal
-  previewHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    padding: 16,
-    backgroundColor: "#000",
-  },
-  previewTitle: { fontSize: 17, fontWeight: "600", color: "#fff" },
-  previewSendBtn: {
-    backgroundColor: V.forestLight,
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 20,
-    borderWidth: 1,
-    borderColor: V.borderGreen,
-  },
-  previewSendBtnText: { color: V.silverBright, fontWeight: "600" },
-  previewContainer: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: "#000",
-  },
-  previewMedia: { width: "100%", height: "100%" },
-});
+//   // Preview modal
+//   previewHeader: {
+//     flexDirection: "row",
+//     justifyContent: "space-between",
+//     alignItems: "center",
+//     padding: 16,
+//     backgroundColor: "#000",
+//   },
+//   previewTitle: { fontSize: 17, fontWeight: "600", color: "#fff" },
+//   previewSendBtn: {
+//     backgroundColor: V.forestLight,
+//     paddingHorizontal: 16,
+//     paddingVertical: 8,
+//     borderRadius: 20,
+//     borderWidth: 1,
+//     borderColor: V.borderGreen,
+//   },
+//   previewSendBtnText: { color: V.silverBright, fontWeight: "600" },
+//   previewContainer: {
+//     flex: 1,
+//     justifyContent: "center",
+//     alignItems: "center",
+//     backgroundColor: "#000",
+//   },
+//   previewMedia: { width: "100%", height: "100%" },
+// });
+
+// Finalna verzija funkcije:
+const getStyles = (V: ReturnType<typeof getV>, isDark: boolean) =>
+  StyleSheet.create({
+    safeArea: { flex: 1, backgroundColor: V.forestDeep },
+
+    header: {
+      flexDirection: "row",
+      alignItems: "center",
+      paddingHorizontal: 8,
+      paddingVertical: 10,
+      borderBottomWidth: 1.5,
+      borderBottomColor: V.borderGreen,
+      backgroundColor: V.forestDeep,
+    },
+    backBtn: { padding: 8 },
+    headerCenter: {
+      flex: 1,
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 10,
+      marginLeft: 4,
+    },
+    headerName: {
+      fontSize: 16,
+      fontWeight: "700",
+      color: V.silverBright,
+      maxWidth: 180,
+    },
+    headerStatus: { fontSize: 12, color: V.silverDim, marginTop: 1 },
+
+    errorBanner: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 8,
+      backgroundColor: isDark ? "#2A1010" : "#fde8e8",
+      paddingHorizontal: 16,
+      paddingVertical: 8,
+      borderBottomWidth: 1,
+      borderBottomColor: isDark ? "#5A2A2A" : "#f0b0b0",
+    },
+    errorText: { fontSize: 13, color: "#ff3b30", flex: 1 },
+
+    messagesList: {
+      padding: 12,
+      paddingBottom: 8,
+      backgroundColor: V.forestDeep,
+    },
+    emptyList: {
+      flex: 1,
+      justifyContent: "center",
+      backgroundColor: V.forestDeep,
+    },
+
+    dateSep: {
+      flexDirection: "row",
+      alignItems: "center",
+      marginVertical: 16,
+      gap: 10,
+    },
+    dateSepLine: {
+      flex: 1,
+      height: StyleSheet.hairlineWidth,
+      backgroundColor: V.borderDim,
+    },
+    dateSepText: { fontSize: 12, color: V.silverDim, fontWeight: "500" },
+
+    msgRow: { flexDirection: "row", marginVertical: 3, alignItems: "flex-end" },
+    msgRowLeft: { justifyContent: "flex-start" },
+    msgRowRight: { justifyContent: "flex-end" },
+    msgAvatarWrap: { marginRight: 6, flexShrink: 0 },
+    hidden: { opacity: 0 },
+
+    outgoing: { alignItems: "flex-end", maxWidth: "75%" },
+    incomingGroup: { alignItems: "flex-start", maxWidth: "75%" },
+
+    bubble: {
+      borderRadius: BUBBLE_RADIUS,
+      paddingHorizontal: 14,
+      paddingVertical: 10,
+    },
+    bubbleMine: {
+      backgroundColor: V.forestLight,
+      borderBottomRightRadius: 4,
+      borderWidth: 1,
+      borderColor: V.borderGreen,
+    },
+    bubbleOther: {
+      backgroundColor: V.forestMid,
+      borderBottomLeftRadius: 4,
+      borderWidth: 1,
+      borderColor: V.borderDim,
+    },
+    bubbleTextMine: { color: V.silverBright, fontSize: 15, lineHeight: 21 },
+    bubbleTextOther: { color: V.silver, fontSize: 15, lineHeight: 21 },
+
+    timeRow: { flexDirection: "row", alignItems: "center", marginTop: 3 },
+    timeRowRight: { justifyContent: "flex-end" },
+    timeRowLeft: { justifyContent: "flex-start" },
+    timeText: { fontSize: 11, color: V.silverDim },
+
+    emptyState: { alignItems: "center", paddingHorizontal: 48, gap: 12 },
+    emptyTitle: { fontSize: 18, fontWeight: "700", color: V.silverDim },
+    emptySubtitle: {
+      fontSize: 14,
+      color: V.silverDim,
+      textAlign: "center",
+      lineHeight: 20,
+    },
+
+    center: {
+      flex: 1,
+      justifyContent: "center",
+      alignItems: "center",
+      gap: 12,
+      backgroundColor: V.forestDeep,
+    },
+    loadingText: { color: V.silverDim, fontSize: 14 },
+
+    inputArea: {
+      flexDirection: "row",
+      alignItems: "flex-end",
+      paddingHorizontal: 12,
+      paddingVertical: 10,
+      borderTopWidth: 1.5,
+      borderTopColor: V.borderGreen,
+      backgroundColor: V.forestDeep,
+      gap: 8,
+    },
+    mediaBtn: {
+      width: 40,
+      height: 40,
+      borderRadius: 20,
+      justifyContent: "center",
+      alignItems: "center",
+      backgroundColor: V.forestMid,
+      borderWidth: 1,
+      borderColor: V.borderGreen,
+    },
+    textInput: {
+      flex: 1,
+      minHeight: 42,
+      maxHeight: 120,
+      backgroundColor: V.forestMid,
+      borderRadius: 21,
+      borderWidth: 1,
+      borderColor: V.borderGreen,
+      paddingHorizontal: 16,
+      paddingVertical: 10,
+      fontSize: 15,
+      color: V.silverBright,
+      lineHeight: 20,
+    },
+    sendBtn: {
+      width: 42,
+      height: 42,
+      borderRadius: 21,
+      backgroundColor: V.forestLight,
+      borderWidth: 1.5,
+      borderColor: V.borderGreen,
+      justifyContent: "center",
+      alignItems: "center",
+      shadowColor: "#000",
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: isDark ? 0.4 : 0.15,
+      shadowRadius: 4,
+      elevation: 3,
+    },
+    sendBtnDisabled: {
+      backgroundColor: V.borderDim,
+      borderColor: V.borderDim,
+      shadowOpacity: 0,
+    },
+
+    previewHeader: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "center",
+      padding: 16,
+      backgroundColor: "#000",
+    },
+    previewTitle: { fontSize: 17, fontWeight: "600", color: "#fff" },
+    previewSendBtn: {
+      backgroundColor: V.forestLight,
+      paddingHorizontal: 16,
+      paddingVertical: 8,
+      borderRadius: 20,
+      borderWidth: 1,
+      borderColor: V.borderGreen,
+    },
+    previewSendBtnText: { color: V.silverBright, fontWeight: "600" },
+    previewContainer: {
+      flex: 1,
+      justifyContent: "center",
+      alignItems: "center",
+      backgroundColor: "#000",
+    },
+    previewMedia: { width: "100%", height: "100%" },
+  });
