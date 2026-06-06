@@ -2,20 +2,17 @@
 import { Platform } from "react-native";
 
 // 🔥 KORISTI OVU IP ADRESU (tvoja Wi-Fi IP)
-const YOUR_COMPUTER_IP = "10.147.238.205"; // 🔹 tvoj laptop IP
+const YOUR_COMPUTER_IP = "10.206.222.205"; // 🔹 tvoj laptop IP
 const BACKEND_PORT = "7089";
 
 const getBaseUrl = () => {
   if (__DEV__) {
-    if (Platform.OS === "android") {
-      // Android fizički uređaj ili emulator
-      return `http://${YOUR_COMPUTER_IP}:${BACKEND_PORT}`;
-    } else if (Platform.OS === "ios") {
-      // iOS fizički uređaj ili simulator
+    if (Platform.OS === "android" || Platform.OS === "ios") {
       return `http://${YOUR_COMPUTER_IP}:${BACKEND_PORT}`;
     }
+    // web (localhost)
+    return `http://localhost:${BACKEND_PORT}`;
   }
-  // production URL (promijeni kad objaviš)
   return "https://your-production-api.com";
 };
 

@@ -183,6 +183,26 @@ const otvorenIcon = require("../../assets/images/otvoren.png");
 const zatvorenoIcon = require("../../assets/images/zatvoreno.png");
 const kombiniranoIcon = require("../../assets/images/kombinirano.png");
 
+// Preset avatari — prilagodi putanje prema svom profile screenu
+// Promjena 1 — ispravne putanje (s crticom, ne underscore)
+const AVATAR_MALE = require("../../assets/images/avatar-male.png");
+const AVATAR_FEMALE = require("../../assets/images/avatar-female.png");
+
+const PRESET_AVATARS: Record<string, any> = {
+  "avatar:male": AVATAR_MALE,
+  "avatar:female": AVATAR_FEMALE,
+};
+
+function resolveAvatarUrl(
+  avatar: string | null | undefined,
+  apiBaseUrl: string,
+): string | null {
+  if (!avatar || avatar === "") return null;
+  if (avatar.startsWith("avatar:")) return avatar;
+  if (avatar.startsWith("http")) return avatar;
+  return `${apiBaseUrl}/${avatar.replace(/^\//, "")}`;
+}
+
 const CATEGORY_ICONS: Record<string, any> = {
   restaurant: restaurantIcon,
   cafe: cafeIcon,
@@ -1069,8 +1089,10 @@ async function checkBadges(
 
 function UserLocationMarker() {
   const pulse = useRef(new Animated.Value(0)).current;
+  const [ready, setReady] = useState(false);
 
   useEffect(() => {
+    setReady(true); // tek kad je mountiran
     const anim = Animated.loop(
       Animated.sequence([
         Animated.timing(pulse, {
@@ -2238,20 +2260,44 @@ export function ActivityGroupsModal({
     try {
       const token = await AsyncStorage.getItem("token");
       if (token) {
-        // Pokušaj dohvatiti ime sa servera
         const res = await fetch(`${API_BASE_URL}/api/auth/my-profile`, {
           headers: { Authorization: `Bearer ${token}` },
         });
         if (res.ok) {
           const profile = await res.json();
-          setMyName(`${profile.firstName} ${profile.lastName}`.trim());
+          console.log("MY PROFILE full response:", JSON.stringify(profile));
+          const fullName = `${profile.firstName} ${profile.lastName}`.trim();
+          setMyName(fullName);
+
           const avatarField =
             profile.profileImage ||
             profile.avatarUrl ||
             profile.profilePicture ||
             profile.avatar ||
             null;
-          if (avatarField) setMyAvatar(avatarField);
+
+          if (avatarField && !avatarField.startsWith("avatar:")) {
+            // Logiraj točno što dobivamo
+            console.log("Avatar field value:", avatarField);
+            console.log("API_BASE_URL:", API_BASE_URL);
+
+            let normalizedUrl: string;
+            if (avatarField.startsWith("http")) {
+              normalizedUrl = avatarField;
+            } else {
+              normalizedUrl = `${API_BASE_URL}${avatarField.startsWith("/") ? "" : "/"}${avatarField}`;
+            }
+
+            console.log("Final avatar URL:", normalizedUrl);
+            const uid = Date.now();
+            const sep = normalizedUrl.includes("?") ? "&" : "?";
+            const finalUrl = `${normalizedUrl}${sep}uid=${uid}`;
+            setMyAvatar(finalUrl);
+            setMemberAvatars((prev) => ({
+              ...prev,
+              [fullName]: finalUrl,
+            }));
+          }
           return;
         }
       }
@@ -2268,28 +2314,58 @@ export function ActivityGroupsModal({
   const fetchMemberAvatars = async (members: string[]) => {
     try {
       const token = await AsyncStorage.getItem("token");
+      if (!token) return;
+
+      // Korak 1: dohvati listu korisnika da dobiješ ID-eve
       const res = await fetch(`${API_BASE_URL}/api/auth/users`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (!res.ok) return;
       const users = await res.json();
+
       const avatars: Record<string, string> = {};
+
       for (const member of members) {
         const nameLower = member.toLowerCase().trim();
         const found = users.find((u: any) => {
-          const fn = (u.firstName || u.firstname || "").toLowerCase();
-          const ln = (u.lastName || u.lastname || "").toLowerCase();
-          return `${fn} ${ln}`.trim() === nameLower || fn === nameLower;
+          const fn = (u.firstname || u.firstName || "").toLowerCase();
+          const ln = (u.lastname || u.lastName || "").toLowerCase();
+          return `${fn} ${ln}`.trim() === nameLower;
         });
-        const url =
-          found?.profileImage ||
-          found?.avatarUrl ||
-          found?.profilePicture ||
-          found?.avatar ||
-          null;
-        if (url) avatars[member] = url;
+
+        if (!found) continue;
+
+        // Korak 2: dohvati profil po ID-u za PRAVI avatar
+        try {
+          const profileRes = await fetch(
+            `${API_BASE_URL}/api/auth/users/${found.id}`,
+            { headers: { Authorization: `Bearer ${token}` } },
+          );
+          if (!profileRes.ok) continue;
+          const profile = await profileRes.json();
+
+          const rawUrl =
+            profile.Avatar ||
+            profile.avatar ||
+            profile.avatarUrl ||
+            profile.profileImage ||
+            null;
+
+          if (!rawUrl || rawUrl.startsWith("avatar:") || rawUrl === "")
+            continue;
+
+          const normalizedUrl = rawUrl.startsWith("http")
+            ? rawUrl
+            : `${API_BASE_URL}${rawUrl.startsWith("/") ? "" : "/"}${rawUrl}`;
+
+          const sep = normalizedUrl.includes("?") ? "&" : "?";
+          avatars[member] = `${normalizedUrl}${sep}uid=${found.id}`;
+        } catch {
+          // tiho ignoriraj za pojedinog korisnika
+        }
       }
-      setMemberAvatars(avatars);
+
+      setMemberAvatars((prev) => ({ ...prev, ...avatars }));
     } catch {
       // tiho ignoriraj
     }
@@ -2313,6 +2389,8 @@ export function ActivityGroupsModal({
             .map((group: any) => ({
               id: group.id || Math.random().toString(),
               creatorName: group.creatorName || "",
+              creatorUserId: group.creatorUserId || null, // NOVO
+              creatorAvatar: group.creatorAvatar || "", // NOVO
               activity: group.activity || "",
               description: group.description || "",
               latitude: group.latitude || 45.815,
@@ -2324,6 +2402,14 @@ export function ActivityGroupsModal({
               createdAt: group.createdAt || new Date().toISOString(),
             }));
           setGroups(formattedGroups);
+
+          // Dohvati avatare svih članova svih grupa
+          const allMembers = [
+            ...new Set(
+              formattedGroups.flatMap((g: any) => g.members as string[]),
+            ),
+          ];
+          if (allMembers.length > 0) fetchMemberAvatars(allMembers);
         } else {
           setGroups([]);
         }
@@ -2561,6 +2647,7 @@ export function ActivityGroupsModal({
                   minute: "2-digit",
                 })
               : "",
+          userAvatar: m.userAvatar || "",
         }));
         setSelectedGroup((prev) => (prev ? { ...prev, messages } : null));
       }
@@ -2729,7 +2816,7 @@ export function ActivityGroupsModal({
                 {selectedGroup.maxPeople} članova
               </Text>
             </View>
-            // PRONAĐI i ZAMIJENI ovaj dio u chat headeru ActivityGroupsModal:
+
             {selectedGroup.creatorName === myName ? (
               <TouchableOpacity
                 onPress={() => setShowDeleteConfirm(selectedGroup.id)}
@@ -2804,7 +2891,13 @@ export function ActivityGroupsModal({
                       isMe && { borderWidth: 2, borderColor: DC.border },
                     ]}
                   >
-                    {avatarUrl ? (
+                    {PRESET_AVATARS[avatarUrl ?? ""] ? (
+                      <Image
+                        source={PRESET_AVATARS[avatarUrl ?? ""]}
+                        style={{ width: 36, height: 36, borderRadius: 18 }}
+                        resizeMode="cover"
+                      />
+                    ) : avatarUrl && !avatarUrl.startsWith("avatar:") ? (
                       <Image
                         source={{ uri: avatarUrl }}
                         style={{ width: 36, height: 36, borderRadius: 18 }}
@@ -2884,7 +2977,10 @@ export function ActivityGroupsModal({
                     </Text>
                   </View>
                 );
-              const avatarUrl = isMe ? myAvatar : memberAvatars[name];
+              const avatarUrl = isMe
+                ? myAvatar
+                : resolveAvatarUrl(item.userAvatar, API_BASE_URL) ||
+                  memberAvatars[name];
               return (
                 <View
                   style={[
@@ -2898,7 +2994,13 @@ export function ActivityGroupsModal({
                     <View
                       style={[ag.msgAvatar, { backgroundColor: DC.cardHover }]}
                     >
-                      {avatarUrl ? (
+                      {PRESET_AVATARS[avatarUrl ?? ""] ? (
+                        <Image
+                          source={PRESET_AVATARS[avatarUrl ?? ""]}
+                          style={{ width: 30, height: 30, borderRadius: 15 }}
+                          resizeMode="cover"
+                        />
+                      ) : avatarUrl && !avatarUrl.startsWith("avatar:") ? (
                         <Image
                           source={{ uri: avatarUrl }}
                           style={{ width: 30, height: 30, borderRadius: 15 }}
@@ -3514,6 +3616,11 @@ export function ActivityGroupsModal({
                 const isFull = members.length >= (g.maxPeople || 0);
                 const isCreator = g.creatorName === myName;
 
+                const creatorAvatarUrl = resolveAvatarUrl(
+                  (g as any).creatorAvatar,
+                  API_BASE_URL,
+                );
+
                 // IZVAN renderItem-a (kao konstanta na razini komponente):
                 const activityToCategory: Record<string, string> = {
                   "☕ Kava": "cafe",
@@ -3634,44 +3741,61 @@ export function ActivityGroupsModal({
                           gap: 4,
                         }}
                       >
-                        {members.slice(0, 4).map((m, i) => (
-                          <View
-                            key={i}
-                            style={{
-                              width: 26,
-                              height: 26,
-                              borderRadius: 13,
-                              backgroundColor: "#667eea",
-                              justifyContent: "center",
-                              alignItems: "center",
-                              borderWidth: 2,
-                              borderColor: "#2a4230",
-                              marginLeft: i > 0 ? -8 : 0,
-                            }}
-                          >
-                            {memberAvatars[m] ? (
-                              <Image
-                                source={{ uri: memberAvatars[m] }}
-                                style={{
-                                  width: 26,
-                                  height: 26,
-                                  borderRadius: 13,
-                                }}
-                                resizeMode="cover"
-                              />
-                            ) : (
-                              <Text
-                                style={{
-                                  color: "#fff",
-                                  fontSize: 10,
-                                  fontWeight: "700",
-                                }}
-                              >
-                                {(m || "")[0]?.toUpperCase()}
-                              </Text>
-                            )}
-                          </View>
-                        ))}
+                        {members.slice(0, 4).map((m, i) => {
+                          const isCreatorMember = m === g.creatorName;
+                          const avatarToUse = isCreatorMember
+                            ? creatorAvatarUrl
+                            : resolveAvatarUrl(memberAvatars[m], API_BASE_URL);
+                          return (
+                            <View
+                              key={i}
+                              style={{
+                                width: 26,
+                                height: 26,
+                                borderRadius: 13,
+                                backgroundColor: "#667eea",
+                                justifyContent: "center",
+                                alignItems: "center",
+                                borderWidth: 2,
+                                borderColor: "#2a4230",
+                                marginLeft: i > 0 ? -8 : 0,
+                              }}
+                            >
+                              {avatarToUse &&
+                              avatarToUse.startsWith("avatar:") ? (
+                                <Image
+                                  source={PRESET_AVATARS[avatarToUse]}
+                                  style={{
+                                    width: 26,
+                                    height: 26,
+                                    borderRadius: 13,
+                                  }}
+                                  resizeMode="cover"
+                                />
+                              ) : avatarToUse ? (
+                                <Image
+                                  source={{ uri: avatarToUse }}
+                                  style={{
+                                    width: 26,
+                                    height: 26,
+                                    borderRadius: 13,
+                                  }}
+                                  resizeMode="cover"
+                                />
+                              ) : (
+                                <Text
+                                  style={{
+                                    color: "#fff",
+                                    fontSize: 10,
+                                    fontWeight: "700",
+                                  }}
+                                >
+                                  {(m || "")[0]?.toUpperCase()}
+                                </Text>
+                              )}
+                            </View>
+                          );
+                        })}
                         <Text
                           style={{
                             fontSize: 12,
@@ -9905,7 +10029,7 @@ export default function DashboardScreen() {
 
           return allMarkers.map((place, i) => (
             <PlaceMarker
-              key={`marker_${place.id}_${i}`}
+              key={`marker_${place.id}`}
               place={place}
               isVisited={(place as any)._isVisited}
               onPress={() => {

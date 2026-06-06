@@ -1,9 +1,6 @@
 {
   "name": "Vara",
   "main": "expo-router/entry",
-  "browser": {
-    "react-native-maps": "./mocks/react-native-maps.js"
-  },
   "version": "1.0.0",
   "scripts": {
     "start": "expo start",

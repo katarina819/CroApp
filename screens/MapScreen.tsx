@@ -2,22 +2,22 @@
 import * as Location from "expo-location";
 import React, { useEffect, useRef, useState } from "react";
 import {
-  ActivityIndicator,
-  Modal,
-  Platform,
-  ScrollView,
-  StyleSheet,
-  Text,
-  ToastAndroid,
-  TouchableOpacity,
-  View,
+    ActivityIndicator,
+    Modal,
+    Platform,
+    ScrollView,
+    StyleSheet,
+    Text,
+    ToastAndroid,
+    TouchableOpacity,
+    View,
 } from "react-native";
 import MapView, { Marker } from "react-native-maps";
 import {
-  clearPlacesCache,
-  getPlacesInRadius,
-  Place,
-  placeCategories,
+    clearPlacesCache,
+    getPlacesInRadius,
+    Place,
+    placeCategories,
 } from "../app/services/locationService";
 
 export default function MapScreen() {

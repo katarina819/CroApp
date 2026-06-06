@@ -832,10 +832,10 @@ export function PlanMyDayModal({
   const [planStyle, setPlanStyle] = useState<PlanStyle>("kulturno");
   const [spontaneous, setSpontaneous] = useState(false);
   const [showAdvanced, setShowAdvanced] = useState(false);
-  const [companions, setCompanions] = useState<CompanionType>("prijatelji");
-  const [transport, setTransport] = useState<TransportType>("auto");
-  const [budget, setBudget] = useState("500");
-  const [activityRadius, setActivityRadius] = useState(5);
+  const [companions, setCompanions] = useState<CompanionType | null>(null);
+  const [transport, setTransport] = useState<TransportType | null>(null);
+  const [budget, setBudget] = useState("");
+  const [activityRadius, setActivityRadius] = useState<number | null>(null);
   const [interests, setInterests] = useState<string[]>([]);
 
   const [activeDay, setActiveDay] = useState(0);
@@ -874,7 +874,7 @@ export function PlanMyDayModal({
     { icon: "", text: "Geolociram destinaciju..." },
     { icon: "", text: "Pronalazim restorane i kafiće..." },
     { icon: "", text: "Kreiram plan putovanja..." },
-    { icon: "", text: "Dovršavam vaš osobni itinerer..." },
+    { icon: "", text: "Dovršavam vaš osobni plan putovanja..." },
   ];
 
   useEffect(() => {
@@ -938,13 +938,23 @@ export function PlanMyDayModal({
     setAllVenues({});
     setGeocodedCoords(null);
     setActiveDay(0);
+    setActiveStop(0);
+    setCompletedStops(new Set());
     setMapReady(false);
     setExpandedCategories(new Set());
     setPlanRating(0);
     setRatingSubmitted(false);
     setGeneratedNumDays(1);
-    setActiveStop(0);
-    setCompletedStops(new Set());
+    setLoadingStep(0);
+    // ← DODAJ OVO:
+    setCompanions(null);
+    setTransport(null);
+    setBudget("");
+    setActivityRadius(null);
+    setInterests([]);
+    setSpontaneous(false);
+    setDestination("");
+    setNumDays(1);
     if (loadingInterval.current) clearInterval(loadingInterval.current);
   };
 
@@ -1009,7 +1019,7 @@ export function PlanMyDayModal({
     }
   };
 
-  const generate = async () => {
+  const generate = React.useCallback(async () => {
     if (!destination.trim()) {
       Alert.alert("Destinacija", "Unesite naziv mjesta koje želite posjetiti.");
       return;
@@ -1026,7 +1036,7 @@ export function PlanMyDayModal({
       const query = [destination.trim(), "Hrvatska"].join(" ");
       const { geocoded, venues } = await fetchVenuesNearCity(
         query,
-        activityRadius,
+        activityRadius ?? 5, // fallback na 5km ako nije odabrano
         interests,
       );
 
@@ -1069,7 +1079,7 @@ export function PlanMyDayModal({
       Alert.alert("Greška", "Nije moguće generirati plan. Pokušajte ponovo.");
       setStep("form");
     }
-  };
+  }, [destination, activityRadius, interests, spontaneous, numDays]);
 
   const openVenueDetail = (activity: DayActivity) => {
     if (!activity.venue) return;
@@ -1177,16 +1187,28 @@ export function PlanMyDayModal({
               {destination}
             </Text>
           )}
+
           {step === "result" ? (
-            <TouchableOpacity
-              onPress={() => Share.share({ message: result }).catch(() => {})}
+            <View
+              style={{ flexDirection: "row", gap: 12, alignItems: "center" }}
             >
-              <Text
-                style={{ fontSize: 14, color: DC.textDim, fontWeight: "600" }}
+              <TouchableOpacity
+                onPress={() => Share.share({ message: result }).catch(() => {})}
               >
-                Dijeli
-              </Text>
-            </TouchableOpacity>
+                <Text
+                  style={{ fontSize: 14, color: DC.textDim, fontWeight: "600" }}
+                >
+                  Dijeli
+                </Text>
+              </TouchableOpacity>
+              <TouchableOpacity onPress={handleClose}>
+                <Text
+                  style={{ fontSize: 14, color: DC.textDim, fontWeight: "600" }}
+                >
+                  Zatvori
+                </Text>
+              </TouchableOpacity>
+            </View>
           ) : (
             <TouchableOpacity onPress={handleClose}>
               <Text
@@ -1367,12 +1389,12 @@ export function PlanMyDayModal({
                     },
                     {
                       val: "kulturno" as PlanStyle,
-                      emoji: "🏛️",
+                      emoji: "🧐",
                       label: "Kulturno",
                     },
                     {
                       val: "avantura" as PlanStyle,
-                      emoji: "🏔️",
+                      emoji: "🤩",
                       label: "Avantura",
                     },
                   ].map((o) => (
