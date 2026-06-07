@@ -224,11 +224,19 @@ function makeAcStyles(V: ReturnType<typeof getVara>) {
     },
     periodBtnText: { fontSize: 13, color: V.silverDim },
     periodBtnTextActive: { color: V.silverBright, fontWeight: "600" },
-    summaryRow: { flexDirection: "row", flexWrap: "wrap", gap: 8, padding: 16 },
+    summaryRow: {
+      flexDirection: "row",
+      flexWrap: "wrap",
+      gap: 10,
+      paddingHorizontal: 16,
+      paddingVertical: 8,
+      justifyContent: "center",
+    },
     summaryCard: {
-      flex: 1,
-      minWidth: (SCREEN_W - 56) / 2,
+      width: (SCREEN_W - 64) / 2,
+      minHeight: 100, // ← ovo dodaj
       alignItems: "center",
+      justifyContent: "center", // ← ovo dodaj
       padding: 14,
       backgroundColor: V.forestMid,
       borderRadius: 12,
@@ -1690,8 +1698,8 @@ function ActivityArchive({ userId }: { userId: number | null }) {
         ))}
       </View>
 
-      <View style={ac.summaryRow}>
-        {[
+      {[
+        [
           {
             icon: "heart",
             color: "#C05050",
@@ -1704,6 +1712,8 @@ function ActivityArchive({ userId }: { userId: number | null }) {
             value: totalComments,
             label: t("activity.comments"),
           },
+        ],
+        [
           {
             icon: "images",
             color: V.accentGold,
@@ -1716,19 +1726,40 @@ function ActivityArchive({ userId }: { userId: number | null }) {
             value: totalMinutes,
             label: t("activity.minutes"),
           },
-        ].map((card, i) => (
-          <View
-            key={i}
-            style={[ac.summaryCard, { borderTopColor: card.color }]}
-          >
-            <Ionicons name={card.icon as any} size={20} color={card.color} />
-            <Text style={[ac.summaryNum, { color: card.color }]}>
-              {card.value}
-            </Text>
-            <Text style={ac.summaryLabel}>{card.label}</Text>
-          </View>
-        ))}
-      </View>
+        ],
+        [
+          {
+            icon: "people",
+            color: V.visited,
+            value: currentFollowers,
+            label: t("activity.currentFollowers"),
+          },
+        ],
+      ].map((row, rowIndex) => (
+        <View
+          key={rowIndex}
+          style={{
+            flexDirection: "row",
+            justifyContent: "center",
+            gap: 10,
+            marginBottom: 10,
+            paddingHorizontal: 16,
+          }}
+        >
+          {row.map((card, i) => (
+            <View
+              key={i}
+              style={[ac.summaryCard, { borderTopColor: card.color }]}
+            >
+              <Ionicons name={card.icon as any} size={20} color={card.color} />
+              <Text style={[ac.summaryNum, { color: card.color }]}>
+                {card.value}
+              </Text>
+              <Text style={ac.summaryLabel}>{card.label}</Text>
+            </View>
+          ))}
+        </View>
+      ))}
 
       <View style={ac.followersCard}>
         <Ionicons name="people" size={24} color={V.visited} />
@@ -2681,15 +2712,7 @@ function GoldenFriendsTab() {
           setFriends(
             data.map((f: any) => ({
               ...f,
-              // Ne normaliziramo ovdje — UserAvatar to radi sam
-              // Samo čuvamo originalni avatar string kakav jest
-              avatar: f.avatar
-                ? f.avatar.startsWith("avatar:")
-                  ? f.avatar // avatar:male / avatar:female — ne diramo
-                  : f.avatar.startsWith("http")
-                    ? `${f.avatar}${f.avatar.includes("?") ? "&" : "?"}_t=${Date.now()}`
-                    : `${API_BASE_URL}${f.avatar.startsWith("/") ? "" : "/"}${f.avatar}?_t=${Date.now()}`
-                : null,
+              avatar: f.avatar ?? null,
             })),
           );
         }
@@ -2738,15 +2761,62 @@ function GoldenFriendsTab() {
               } as any)
             }
           >
-            {/* PROMJENA: avatar URL se prosljeđuje direktno — već je normaliziran
-                u useEffect, dodajemo samo cache-busting uid query param */}
-            <UserAvatar
-              key={`golden-avatar-${item.userId}`}
-              avatar={item.avatar ?? null}
-              firstName={item.firstName}
-              lastName={item.lastName}
-              size={50}
-            />
+            {(() => {
+              const av = item.avatar;
+              const initials =
+                `${item.firstName?.[0] ?? ""}${item.lastName?.[0] ?? ""}`.toUpperCase();
+              const PRESETS: Record<string, any> = {
+                "avatar:male": require("../../assets/images/avatar-male.png"),
+                "avatar:female": require("../../assets/images/avatar-female.png"),
+              };
+              if (av && PRESETS[av]) {
+                return (
+                  <Image
+                    source={PRESETS[av]}
+                    style={{ width: 50, height: 50, borderRadius: 25 }}
+                    resizeMode="cover"
+                  />
+                );
+              }
+              if (av && !av.startsWith("avatar:")) {
+                const url = av.startsWith("http")
+                  ? av
+                  : `${API_BASE_URL}${av.startsWith("/") ? "" : "/"}${av}`;
+                return (
+                  <Image
+                    source={{
+                      uri: `${url}${url.includes("?") ? "&" : "?"}_t=${Date.now()}`,
+                    }}
+                    style={{ width: 50, height: 50, borderRadius: 25 }}
+                    resizeMode="cover"
+                  />
+                );
+              }
+              return (
+                <View
+                  style={{
+                    width: 50,
+                    height: 50,
+                    borderRadius: 25,
+                    backgroundColor: V.forestMid,
+                    borderWidth: 1.5,
+                    borderColor: V.borderGreen,
+                    justifyContent: "center",
+                    alignItems: "center",
+                  }}
+                >
+                  <Text
+                    style={{
+                      color: V.silverBright,
+                      fontSize: 18,
+                      fontWeight: "700",
+                    }}
+                  >
+                    {initials || "?"}
+                  </Text>
+                </View>
+              );
+            })()}
           </TouchableOpacity>
           <TouchableOpacity
             style={{ flex: 1, marginLeft: 12 }}

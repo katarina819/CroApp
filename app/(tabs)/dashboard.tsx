@@ -260,6 +260,7 @@ const STORAGE_HIDDEN = "cromap_hidden_v4";
 const STORAGE_BADGES = "cromap_badges_v4";
 const STORAGE_GROUPS = "cromap_groups_v4";
 const STORAGE_NOTIFS = "cromap_notif_prefs_v4";
+const STORAGE_VISITS = "cromap_visits_v1";
 
 // Početni limit rezultata na karti
 const INITIAL_RESULTS_LIMIT = 20;
@@ -290,6 +291,7 @@ interface Badge {
 interface ActivityGroup {
   id: string;
   creatorName: string;
+  creatorAvatar?: string;
   activity: string;
   description: string;
   latitude: number;
@@ -1662,7 +1664,16 @@ function PlaceDetailModal({
                   </Text>
                   <Switch
                     value={isNotified}
-                    onValueChange={() => onToggleNotif(place.type)}
+                    onValueChange={(v) => {
+                      if (v) {
+                        Alert.alert(
+                          "Obavijesti nisu dostupne",
+                          "Trenutno nije moguće dobivati obavijesti putem aplikacije ili e-maila. Ukoliko se aplikacija bude dalje razvijala, ova opcija će biti omogućena 📧",
+                        );
+                        return;
+                      }
+                      onToggleNotif(place.type);
+                    }}
                     trackColor={{ true: "#667eea", false: "#ccc" }}
                     thumbColor="#fff"
                   />
@@ -1985,7 +1996,16 @@ function NotificationSettingsModal({
               </Text>
               <Switch
                 value={p.appEnabled}
-                onValueChange={(v) => setP((x) => ({ ...x, appEnabled: v }))}
+                onValueChange={(v) => {
+                  if (v) {
+                    Alert.alert(
+                      "Obavijesti nisu dostupne",
+                      "Trenutno nije moguće dobivati obavijesti putem aplikacije. Ukoliko se aplikacija bude dalje razvijala, ova opcija će biti omogućena 🔔",
+                    );
+                    return;
+                  }
+                  setP((x) => ({ ...x, appEnabled: v }));
+                }}
                 trackColor={{ true: "#5a8a48", false: "#3a5a30" }}
                 thumbColor={p.appEnabled ? "#34c759" : "#888"}
               />
@@ -2009,7 +2029,16 @@ function NotificationSettingsModal({
               </Text>
               <Switch
                 value={p.emailEnabled}
-                onValueChange={(v) => setP((x) => ({ ...x, emailEnabled: v }))}
+                onValueChange={(v) => {
+                  if (v) {
+                    Alert.alert(
+                      "Obavijesti nisu dostupne",
+                      "Trenutno nije moguće dobivati obavijesti putem e-maila. Ukoliko se aplikacija bude dalje razvijala, ova opcija će biti omogućena 📧",
+                    );
+                    return;
+                  }
+                  setP((x) => ({ ...x, emailEnabled: v }));
+                }}
                 trackColor={{ true: "#5a8a48", false: "#3a5a30" }}
                 thumbColor={p.emailEnabled ? "#34c759" : "#888"}
               />
@@ -2276,27 +2305,38 @@ export function ActivityGroupsModal({
             profile.avatar ||
             null;
 
-          if (avatarField && !avatarField.startsWith("avatar:")) {
-            // Logiraj točno što dobivamo
-            console.log("Avatar field value:", avatarField);
-            console.log("API_BASE_URL:", API_BASE_URL);
-
-            let normalizedUrl: string;
-            if (avatarField.startsWith("http")) {
-              normalizedUrl = avatarField;
+          // NOVO: podrška i za preset avatare i za URL-ove
+          if (avatarField) {
+            if (avatarField.startsWith("avatar:")) {
+              // Preset avatar (avatar:male / avatar:female)
+              console.log("Preset avatar detected:", avatarField);
+              setMyAvatar(avatarField);
+              setMemberAvatars((prev) => ({
+                ...prev,
+                [fullName]: avatarField,
+              }));
             } else {
-              normalizedUrl = `${API_BASE_URL}${avatarField.startsWith("/") ? "" : "/"}${avatarField}`;
-            }
+              // Pravi URL (postojeća logika)
+              console.log("Avatar field value:", avatarField);
+              console.log("API_BASE_URL:", API_BASE_URL);
 
-            console.log("Final avatar URL:", normalizedUrl);
-            const uid = Date.now();
-            const sep = normalizedUrl.includes("?") ? "&" : "?";
-            const finalUrl = `${normalizedUrl}${sep}uid=${uid}`;
-            setMyAvatar(finalUrl);
-            setMemberAvatars((prev) => ({
-              ...prev,
-              [fullName]: finalUrl,
-            }));
+              let normalizedUrl: string;
+              if (avatarField.startsWith("http")) {
+                normalizedUrl = avatarField;
+              } else {
+                normalizedUrl = `${API_BASE_URL}${avatarField.startsWith("/") ? "" : "/"}${avatarField}`;
+              }
+
+              console.log("Final avatar URL:", normalizedUrl);
+              const uid = Date.now();
+              const sep = normalizedUrl.includes("?") ? "&" : "?";
+              const finalUrl = `${normalizedUrl}${sep}uid=${uid}`;
+              setMyAvatar(finalUrl);
+              setMemberAvatars((prev) => ({
+                ...prev,
+                [fullName]: finalUrl,
+              }));
+            }
           }
           return;
         }
@@ -2351,8 +2391,13 @@ export function ActivityGroupsModal({
             profile.profileImage ||
             null;
 
-          if (!rawUrl || rawUrl.startsWith("avatar:") || rawUrl === "")
+          if (!rawUrl || rawUrl === "") continue;
+
+          if (rawUrl.startsWith("avatar:")) {
+            // Preset avatar — pohrani direktno
+            avatars[member] = rawUrl;
             continue;
+          }
 
           const normalizedUrl = rawUrl.startsWith("http")
             ? rawUrl
@@ -2387,19 +2432,25 @@ export function ActivityGroupsModal({
           const formattedGroups = data
             .filter((group: any) => group != null)
             .map((group: any) => ({
-              id: group.id || Math.random().toString(),
-              creatorName: group.creatorName || "",
-              creatorUserId: group.creatorUserId || null, // NOVO
-              creatorAvatar: group.creatorAvatar || "", // NOVO
-              activity: group.activity || "",
-              description: group.description || "",
-              latitude: group.latitude || 45.815,
-              longitude: group.longitude || 15.9819,
-              locationName: group.locationName || "",
-              maxPeople: group.maxPeople || 5,
-              members: Array.isArray(group.members) ? group.members : [],
+              id: group.id || group.Id || Math.random().toString(),
+              creatorName: group.creatorName || group.CreatorName || "",
+              creatorUserId: group.creatorUserId || group.CreatorUserId || null,
+              // POPRAVAK: provjeri oba slučaja (camelCase i PascalCase)
+              creatorAvatar: group.creatorAvatar || group.CreatorAvatar || "",
+              activity: group.activity || group.Activity || "",
+              description: group.description || group.Description || "",
+              latitude: group.latitude || group.Latitude || 45.815,
+              longitude: group.longitude || group.Longitude || 15.9819,
+              locationName: group.locationName || group.LocationName || "",
+              maxPeople: group.maxPeople || group.MaxPeople || 5,
+              members: Array.isArray(group.members)
+                ? group.members
+                : Array.isArray(group.Members)
+                  ? group.Members
+                  : [],
               messages: Array.isArray(group.messages) ? group.messages : [],
-              createdAt: group.createdAt || new Date().toISOString(),
+              createdAt:
+                group.createdAt || group.CreatedAt || new Date().toISOString(),
             }));
           setGroups(formattedGroups);
 
@@ -2534,8 +2585,11 @@ export function ActivityGroupsModal({
       );
 
       if (res.ok) {
-        // Osvježi grupe
         await loadGroups();
+        // ── NOVO: osvježi avatare grupe nakon pridruživanja ──
+        if (selectedGroup) {
+          fetchMemberAvatars(selectedGroup.members);
+        }
         Alert.alert(t("common.success"), t("common.ok"));
       } else {
         const error = await res.json();
@@ -2632,7 +2686,6 @@ export function ActivityGroupsModal({
 
       if (res.ok) {
         const raw = await res.json();
-        // Mapiraj backend format → frontend format
         const messages = (Array.isArray(raw) ? raw : []).map((m: any) => ({
           name: m.userName || m.name || "?",
           text: m.text || m.Text || "",
@@ -2649,7 +2702,20 @@ export function ActivityGroupsModal({
               : "",
           userAvatar: m.userAvatar || "",
         }));
-        setSelectedGroup((prev) => (prev ? { ...prev, messages } : null));
+        setSelectedGroup((prev) => {
+          if (!prev) return null;
+          // ── NOVO: dohvati avatare članova koji još nisu u memberAvatars ──
+          const unknownSenders = messages
+            .map((m) => m.name)
+            .filter(
+              (name) =>
+                name !== "Sustav" && name !== myName && !memberAvatars[name],
+            );
+          if (unknownSenders.length > 0) {
+            fetchMemberAvatars([...new Set(unknownSenders)]);
+          }
+          return { ...prev, messages };
+        });
       }
     } catch (error) {
       console.error("Error loading messages:", error);
@@ -2730,8 +2796,42 @@ export function ActivityGroupsModal({
           const ln = (u.lastName || u.lastname || "").toLowerCase();
           return `${fn} ${ln}`.trim() === nameLower || fn === nameLower;
         });
+
         setDmTarget({ name: memberName, userId: found?.id ?? null });
         setShowDMCompose(true);
+
+        // ── NOVO: dohvati avatar za DM target ako već nije u memberAvatars ──
+        if (found?.id && !memberAvatars[memberName]) {
+          try {
+            const profileRes = await fetch(
+              `${API_BASE_URL}/api/auth/users/${found.id}`,
+              { headers: { Authorization: `Bearer ${token}` } },
+            );
+            if (profileRes.ok) {
+              const profile = await profileRes.json();
+              const rawUrl =
+                profile.Avatar ||
+                profile.avatar ||
+                profile.avatarUrl ||
+                profile.profileImage ||
+                null;
+
+              if (rawUrl && !rawUrl.startsWith("avatar:") && rawUrl !== "") {
+                const normalizedUrl = rawUrl.startsWith("http")
+                  ? rawUrl
+                  : `${API_BASE_URL}${rawUrl.startsWith("/") ? "" : "/"}${rawUrl}`;
+                const sep = normalizedUrl.includes("?") ? "&" : "?";
+                const finalUrl = `${normalizedUrl}${sep}uid=${found.id}`;
+                setMemberAvatars((prev) => ({
+                  ...prev,
+                  [memberName]: finalUrl,
+                }));
+              }
+            }
+          } catch {
+            // tiho ignoriraj
+          }
+        }
       }
     } catch {
       Alert.alert(t("common.error"), t("userProfile.messageFailed"));
@@ -2797,19 +2897,30 @@ export function ActivityGroupsModal({
           {/* Header */}
           <View style={[ag.chatHeader, { backgroundColor: DC.card }]}>
             <TouchableOpacity
+              style={{
+                paddingHorizontal: 8,
+                paddingVertical: 4,
+                borderRadius: 6,
+                backgroundColor: DC.bg,
+                borderWidth: 1,
+                borderColor: DC.borderDim,
+              }}
               onPress={() => {
                 setSelectedGroup(null);
                 setChatMsg("");
               }}
             >
-              <Text style={[ag.chatHeaderBack, { color: DC.accent }]}>
-                Natrag
+              <Text
+                style={{ color: DC.accent, fontSize: 13, fontWeight: "600" }}
+              >
+                ← Natrag
               </Text>
             </TouchableOpacity>
             <View style={{ flex: 1 }}>
               <Text style={ag.chatHeaderTitle} numberOfLines={1}>
-                {EMOJIS[selectedGroup.activity] || "🤝"}{" "}
-                {selectedGroup.activity}
+                {selectedGroup.activity
+                  .replace(/^[\p{Emoji}\s]+/u, "")
+                  .trim() || selectedGroup.activity}
               </Text>
               <Text style={ag.chatHeaderSub}>
                 {selectedGroup.locationName} · {selectedGroup.members.length}/
@@ -2877,13 +2988,28 @@ export function ActivityGroupsModal({
           >
             {selectedGroup.members.map((m, i) => {
               const isMe = m === myName;
-              const avatarUrl = isMe ? myAvatar : memberAvatars[m];
+              const isCreator = m === selectedGroup.creatorName;
+              let avatarUrl: string | null = null;
+
+              if (isMe) {
+                avatarUrl = myAvatar || memberAvatars[m] || null;
+              } else if (isCreator && selectedGroup.creatorAvatar) {
+                const ca = selectedGroup.creatorAvatar;
+                if (!ca.startsWith("avatar:")) {
+                  avatarUrl = ca.startsWith("http")
+                    ? ca
+                    : `${API_BASE_URL}${ca.startsWith("/") ? "" : "/"}${ca}`;
+                }
+              } else {
+                const raw = memberAvatars[m] || null;
+                avatarUrl = raw; // može biti i "avatar:male" ili pravi URL
+              }
+
               return (
                 <TouchableOpacity
                   key={i}
                   style={{ alignItems: "center" }}
                   onPress={() => handleMemberPress(m)}
-                  activeOpacity={isMe ? 1 : 0.7}
                 >
                   <View
                     style={[
@@ -2915,18 +3041,6 @@ export function ActivityGroupsModal({
                   >
                     {m.split(" ")[0]}
                   </Text>
-                  {!isMe && (
-                    <Text
-                      style={{
-                        fontSize: 9,
-                        color: DC.accent,
-                        fontWeight: "700",
-                        marginTop: 1,
-                      }}
-                    >
-                      DM
-                    </Text>
-                  )}
                 </TouchableOpacity>
               );
             })}
@@ -2978,7 +3092,7 @@ export function ActivityGroupsModal({
                   </View>
                 );
               const avatarUrl = isMe
-                ? myAvatar
+                ? myAvatar || memberAvatars[myName] || null
                 : resolveAvatarUrl(item.userAvatar, API_BASE_URL) ||
                   memberAvatars[name];
               return (
@@ -3098,7 +3212,11 @@ export function ActivityGroupsModal({
                 onPress={() => sendGroupMessage(selectedGroup.id)}
                 disabled={!chatMsg.trim()}
               >
-                <Text style={{ color: "#fff", fontSize: 18 }}>↑</Text>
+                <Text
+                  style={{ color: "#fff", fontSize: 16, letterSpacing: -0.5 }}
+                >
+                  ➤
+                </Text>
               </TouchableOpacity>
             </View>
           ) : (
@@ -3145,11 +3263,30 @@ export function ActivityGroupsModal({
                 {/* Header */}
                 <View style={ag.dmHeader}>
                   <View style={ag.dmAvatar}>
-                    <Text
-                      style={{ color: "#fff", fontSize: 18, fontWeight: "800" }}
-                    >
-                      {dmTarget.name[0]?.toUpperCase()}
-                    </Text>
+                    {memberAvatars[dmTarget.name] &&
+                    !memberAvatars[dmTarget.name].startsWith("avatar:") ? (
+                      <Image
+                        source={{ uri: memberAvatars[dmTarget.name] }}
+                        style={{ width: 46, height: 46, borderRadius: 23 }}
+                        resizeMode="cover"
+                      />
+                    ) : PRESET_AVATARS[memberAvatars[dmTarget.name] ?? ""] ? (
+                      <Image
+                        source={PRESET_AVATARS[memberAvatars[dmTarget.name]]}
+                        style={{ width: 46, height: 46, borderRadius: 23 }}
+                        resizeMode="cover"
+                      />
+                    ) : (
+                      <Text
+                        style={{
+                          color: "#fff",
+                          fontSize: 18,
+                          fontWeight: "800",
+                        }}
+                      >
+                        {dmTarget.name[0]?.toUpperCase()}
+                      </Text>
+                    )}
                   </View>
                   <View style={{ flex: 1 }}>
                     <Text style={ag.dmTitle}>{t("groups.privateMessage")}</Text>
@@ -3686,7 +3823,11 @@ export function ActivityGroupsModal({
                           }}
                           numberOfLines={1}
                         >
-                          {g.activity || "Aktivnost"}
+                          {(g.activity || "Aktivnost")
+                            .replace(/^[\p{Emoji}\s]+/u, "")
+                            .trim() ||
+                            g.activity ||
+                            "Aktivnost"}
                         </Text>
                         <Text
                           style={{
@@ -3695,7 +3836,7 @@ export function ActivityGroupsModal({
                             marginTop: 2,
                           }}
                         >
-                          📍 {g.locationName || "Nepoznata lokacija"}
+                          {g.locationName || "Nepoznata lokacija"}
                         </Text>
                         {g.description ? (
                           <Text
@@ -3709,21 +3850,6 @@ export function ActivityGroupsModal({
                             {g.description}
                           </Text>
                         ) : null}
-                      </View>
-                      <View
-                        style={{
-                          width: 44,
-                          height: 44,
-                          borderRadius: 22,
-                          justifyContent: "center",
-                          alignItems: "center",
-                          marginLeft: 12,
-                          backgroundColor: color + "33",
-                        }}
-                      >
-                        <Text style={{ fontSize: 22 }}>
-                          {EMOJIS[categoryKey] || "🤝"}
-                        </Text>
                       </View>
                     </View>
                     <View
@@ -9178,12 +9304,21 @@ export default function DashboardScreen() {
   };
 
   useEffect(() => {
-    // Tiho dohvati posjete — ne crashaj ako nema mreže
+    // 1. Odmah učitaj iz lokalnog cache-a
+    loadJSON<VisitRecord[]>(STORAGE_VISITS, []).then((cached) => {
+      if (cached.length > 0) setVisits(cached);
+    });
+
+    // 2. Sinkroniziraj s backendom u pozadini
     backendGetVisits()
       .then((sv) => {
-        if (sv.length > 0) setVisits(sv);
+        if (sv.length > 0) {
+          setVisits(sv);
+          saveJSON(STORAGE_VISITS, sv);
+        }
       })
       .catch(() => {});
+
     loadJSON<string[]>(STORAGE_HIDDEN, []).then(setHiddenPlaceIds);
     loadJSON<NotifPrefs>(STORAGE_NOTIFS, {
       appEnabled: true,
@@ -9853,6 +9988,7 @@ export default function DashboardScreen() {
     };
     const updated = [nv, ...visits];
     setVisits(updated);
+    saveJSON(STORAGE_VISITS, updated); // ← DODAJ
     await backendAddVisit(nv);
     const newBadges = await checkBadges(place.type, updated);
     if (newBadges.length > 0) {
@@ -9870,7 +10006,9 @@ export default function DashboardScreen() {
 
   const handleDeleteVisit = async (id: string) => {
     await backendDeleteVisit(id);
-    setVisits((prev) => prev.filter((v) => v.id !== id));
+    const updated = visits.filter((v) => v.id !== id);
+    setVisits(updated);
+    saveJSON(STORAGE_VISITS, updated);
   };
 
   const handleHidePlace = async (placeId: string) => {
@@ -9900,8 +10038,6 @@ export default function DashboardScreen() {
   const isVisited = (placeId: string) =>
     visits.some((v) => v.placeId === placeId);
   const ageFilteredPlaces = useMemo(() => {
-    if (showOnlyVisited) return [];
-
     let result = places; // places = timeFilteredPlaces, već filtriran po radnom vremenu
 
     if (ageAllowedCats) {
@@ -9915,12 +10051,24 @@ export default function DashboardScreen() {
   }, [places, ageAllowedCats, showOnlyVisited]);
 
   // PRONAĐI i ZAMIJENI placesForMap useMemo:
+  // NOVO — kad je showOnlyVisited, koristi visits kao bazu:
   const placesForMap = useMemo(() => {
+    if (showOnlyVisited) {
+      // Prikaži posjećena mjesta kao Place objekte
+      return visits.slice(0, displayLimit).map((v) => ({
+        id: v.placeId,
+        name: v.placeName,
+        latitude: v.latitude,
+        longitude: v.longitude,
+        type: v.placeType as Place["type"],
+        address: v.address,
+      }));
+    }
+
     let base = focusedType
       ? ageFilteredPlaces.filter((p) => p.type === focusedType)
       : ageFilteredPlaces;
 
-    // Ako su odabrani tipovi, stavi ih na početak liste
     if (selectedTypes.length > 0 && !focusedType) {
       base = [
         ...base.filter((p) => selectedTypes.includes(p.type)),
@@ -9929,7 +10077,14 @@ export default function DashboardScreen() {
     }
 
     return base.slice(0, displayLimit);
-  }, [ageFilteredPlaces, displayLimit, focusedType, selectedTypes]);
+  }, [
+    ageFilteredPlaces,
+    displayLimit,
+    focusedType,
+    selectedTypes,
+    showOnlyVisited,
+    visits,
+  ]);
 
   // Ima li još rezultata koji nisu prikazani
   // Ukupno relevantnih mjesta (nakon age/time filtera, s eventualnim focus tipom)
@@ -10007,8 +10162,21 @@ export default function DashboardScreen() {
         {(() => {
           // Posjećena mjesta koja NISU u trenutnom placesForMap prikazu
           const displayedIds = new Set(placesForMap.map((p) => p.id));
+          // NOVO — preskoči selectedTypes filter kad je showOnlyVisited aktivan:
           const extraVisited = visits
-            .filter((v) => !displayedIds.has(v.placeId))
+            .filter((v) => {
+              if (displayedIds.has(v.placeId)) return false;
+              // Kad je showOnlyVisited, prikaži SVA posjećena mjesta bez obzira na selectedTypes
+              if (!showOnlyVisited) {
+                if (
+                  selectedTypes.length > 0 &&
+                  !selectedTypes.includes(v.placeType)
+                )
+                  return false;
+                if (focusedType && v.placeType !== focusedType) return false;
+              }
+              return true;
+            })
             .map((v) => ({
               id: v.placeId,
               name: v.placeName,
@@ -11246,19 +11414,30 @@ export default function DashboardScreen() {
         onClose={() => setShowArchive(false)}
         visits={visits}
         onSelectVisit={(v) => {
-          setTimeout(
-            () =>
-              mapRef.current?.animateToRegion(
-                {
-                  latitude: v.latitude,
-                  longitude: v.longitude,
-                  latitudeDelta: 0.01,
-                  longitudeDelta: 0.01,
-                },
-                800,
-              ),
-            300,
-          );
+          setShowArchive(false);
+          // Uključi showOnlyVisited da se posjećena mjesta renderiraju na karti
+          setShowOnlyVisited(true);
+          setTimeout(() => {
+            mapRef.current?.animateToRegion(
+              {
+                latitude: v.latitude,
+                longitude: v.longitude,
+                latitudeDelta: 0.01,
+                longitudeDelta: 0.01,
+              },
+              600,
+            );
+            // Otvori detail modal za to mjesto
+            setSelectedPlace({
+              id: v.placeId,
+              name: v.placeName,
+              latitude: v.latitude,
+              longitude: v.longitude,
+              type: v.placeType as Place["type"],
+              address: v.address,
+            });
+            setShowPlaceDetail(true);
+          }, 400);
         }}
         onDeleteVisit={handleDeleteVisit}
       />
@@ -11292,7 +11471,10 @@ export default function DashboardScreen() {
         userLocation={userLocation}
       />
       {/* Info bar — broj rezultata + koliko je trenutno otvoreno */}
-      {(isLoadingPlaces || places.length > 0 || activeTimeOfDay) && (
+      {(isLoadingPlaces ||
+        places.length > 0 ||
+        activeTimeOfDay ||
+        showOnlyVisited) && (
         <View style={UI_STYLES.infoBar}>
           {isLoadingPlaces ? (
             <>
@@ -11303,13 +11485,16 @@ export default function DashboardScreen() {
             <>
               <Text style={UI_STYLES.infoBarText}>
                 {(() => {
+                  if (showOnlyVisited) {
+                    return `${visits.length} posjećenih mjesta`;
+                  }
+
                   const shown = placesForMap.length;
                   const total = focusedType
                     ? ageFilteredPlaces.filter((p) => p.type === focusedType)
                         .length
                     : ageFilteredPlaces.length;
 
-                  // Broj aktivnih kategorija koje imaju rezultata
                   const activeCatCount = selectedTypes.filter((type) =>
                     ageFilteredPlaces.some((p) => p.type === type),
                   ).length;

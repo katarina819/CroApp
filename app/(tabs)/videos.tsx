@@ -5,7 +5,13 @@ import * as FileSystem from "expo-file-system/legacy";
 import * as ImagePicker from "expo-image-picker";
 import * as MediaLibrary from "expo-media-library";
 import { VideoView, useVideoPlayer } from "expo-video";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { useTranslation } from "react-i18next";
 import {
   ActivityIndicator,
@@ -26,7 +32,6 @@ import {
 } from "react-native";
 import { StoryBadge } from "../../app/StoryBadge";
 import { useTheme } from "../../components/AdaptiveThemeProvider";
-import UserAvatar from "../../components/UserAvatar";
 import { API_BASE_URL } from "../config/api";
 
 const { width, height } = Dimensions.get("window");
@@ -92,6 +97,123 @@ function buildAvatarUrl(avatar: string | null | undefined): string | null {
     return avatar;
   return `${API_BASE_URL}${avatar.startsWith("/") ? avatar : `/${avatar}`}`;
 }
+
+function useUserAvatar(userId: number): string | null {
+  const [url, setUrl] = useState<string | null>(null);
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const token = await AsyncStorage.getItem("token");
+        const res = await fetch(`${API_BASE_URL}/api/auth/users/${userId}`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (!res.ok) return;
+        const profile = await res.json();
+        const raw =
+          profile.Avatar ||
+          profile.avatar ||
+          profile.avatarUrl ||
+          profile.profileImage ||
+          null;
+        if (!raw) return;
+        if (raw.startsWith("avatar:")) {
+          setUrl(raw);
+          return;
+        }
+        const normalized = raw.startsWith("http")
+          ? raw
+          : `${API_BASE_URL}${raw.startsWith("/") ? "" : "/"}${raw}`;
+        const sep = normalized.includes("?") ? "&" : "?";
+        setUrl(`${normalized}${sep}uid=${Date.now()}`);
+      } catch {}
+    })();
+  }, [userId]);
+
+  return url;
+}
+
+const PRESET_AVATARS_VID: Record<string, any> = {
+  "avatar:male": require("../../assets/images/avatar-male.png"),
+  "avatar:female": require("../../assets/images/avatar-female.png"),
+};
+
+function FreshAvatar({
+  userId,
+  firstName,
+  lastName,
+  username,
+  size,
+}: {
+  userId: number;
+  firstName?: string;
+  lastName?: string;
+  username?: string;
+  size: number;
+}) {
+  const url = useUserAvatar(userId);
+  const [failed, setFailed] = useState(false);
+  const initials =
+    firstName && lastName
+      ? `${firstName[0]}${lastName[0]}`.toUpperCase()
+      : firstName
+        ? firstName[0].toUpperCase()
+        : username
+          ? username.slice(0, 2).toUpperCase()
+          : "?";
+
+  if (url && url.startsWith("avatar:") && PRESET_AVATARS_VID[url]) {
+    return (
+      <Image
+        source={PRESET_AVATARS_VID[url]}
+        style={{ width: size, height: size, borderRadius: size / 2 }}
+        resizeMode="cover"
+      />
+    );
+  }
+
+  if (url && !failed) {
+    return (
+      <Image
+        source={{ uri: url }}
+        style={{ width: size, height: size, borderRadius: size / 2 }}
+        onError={() => setFailed(true)}
+      />
+    );
+  }
+
+  return (
+    <View
+      style={{
+        width: size,
+        height: size,
+        borderRadius: size / 2,
+        backgroundColor: V.forestLight,
+        borderWidth: 1.5,
+        borderColor: V.borderGreen,
+        justifyContent: "center",
+        alignItems: "center",
+      }}
+    >
+      <Text
+        style={{
+          color: V.silverBright,
+          fontSize: size * 0.36,
+          fontWeight: "700",
+        }}
+      >
+        {initials || "?"}
+      </Text>
+    </View>
+  );
+}
+
+const StableAvatar = React.memo(
+  ({ userId, size }: { userId: number; size: number }) => (
+    <FreshAvatar userId={userId} size={size} />
+  ),
+  (prev, next) => prev.userId === next.userId && prev.size === next.size,
+);
 
 // ─── VARA Avatar s fallback inicijalima ───────────────────────────────────────
 function VaraAvatar({
@@ -278,7 +400,7 @@ function VideoItemComponent({
       <View style={vs.bottomInfo}>
         <View style={vs.userInfo}>
           <StoryBadge userId={item.userId} size={40}>
-            <UserAvatar userId={item.userId} size={40} />
+            <FreshAvatar userId={item.userId} size={40} />
           </StoryBadge>
           <Text style={vs.userName}>
             {item.userName || `User_${item.userId}`}
@@ -324,6 +446,7 @@ function CommentsModal({
   const [newComment, setNewComment] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const scrollViewRef = useRef<ScrollView>(null);
+  const commentListKey = useRef(0);
 
   const loadComments = async () => {
     if (!video) return;
@@ -438,8 +561,8 @@ function CommentsModal({
               keyboardShouldPersistTaps="handled"
             >
               {comments.map((item) => (
-                <View key={item.id} style={modal.commentRow}>
-                  <UserAvatar userId={item.userId} size={38} />
+                <View key={`comment_${item.id}`} style={modal.commentRow}>
+                  <StableAvatar userId={item.userId} size={38} />
                   <View style={{ flex: 1 }}>
                     <Text style={modal.commentUser}>
                       {item.userName || `User_${item.userId}`}
@@ -566,7 +689,7 @@ function MessengerModal({
 
           {/* ── Primatelj ── */}
           <View style={modal.recipientRow}>
-            <UserAvatar userId={video.userId} size={48} />
+            <FreshAvatar userId={video.userId} size={48} />
             <View style={{ flex: 1, marginLeft: 12 }}>
               <Text style={modal.recipientName}>
                 {video.userName || `User_${video.userId}`}
@@ -659,7 +782,8 @@ function ShareModal({
       const res = await fetch(`${API_BASE_URL}/api/auth/users`, {
         headers: { Authorization: `Bearer ${token}` },
       });
-      setUsers(await res.json());
+      const allUsers = await res.json();
+      setUsers(allUsers.filter((u: any) => u.username !== "admin_cromap"));
     } catch (e) {
       console.error(e);
     } finally {
@@ -667,33 +791,45 @@ function ShareModal({
     }
   };
 
-  const shareToUser = async (receiverId: number, userName: string) => {
-    if (!video) return;
-    const token = await AsyncStorage.getItem("token");
-    setSending(receiverId);
-    try {
-      const VIDEO_PREFIX = "__CROMAP_VIDEO__";
-      const content = `${VIDEO_PREFIX}${JSON.stringify({ id: video.id, title: video.title, url: video.filePath })}`;
-      const res = await fetch(`${API_BASE_URL}/api/message/send`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
+  const shareToUser = (receiverId: number, userName: string) => {
+    Alert.alert(
+      "Podijeli video",
+      `Jeste li sigurni da želite podijeliti video sa korisnikom ${userName}?`,
+      [
+        { text: "Ne", style: "cancel" },
+        {
+          text: "Da",
+          onPress: async () => {
+            if (!video) return;
+            const token = await AsyncStorage.getItem("token");
+            setSending(receiverId);
+            try {
+              const VIDEO_PREFIX = "__CROMAP_VIDEO__";
+              const content = `${VIDEO_PREFIX}${JSON.stringify({ id: video.id, title: video.title, url: video.filePath })}`;
+              const res = await fetch(`${API_BASE_URL}/api/message/send`, {
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/json",
+                  Authorization: `Bearer ${token}`,
+                },
+                body: JSON.stringify({ receiverId, content }),
+              });
+              if (res.ok) {
+                Alert.alert(
+                  t("common.success"),
+                  t("videos.sharedWith", { name: userName }),
+                );
+                onClose();
+              }
+            } catch {
+              Alert.alert(t("common.error"), t("videos.shareFailed"));
+            } finally {
+              setSending(null);
+            }
+          },
         },
-        body: JSON.stringify({ receiverId, content }),
-      });
-      if (res.ok) {
-        Alert.alert(
-          t("common.success"),
-          t("videos.sharedWith", { name: userName }),
-        );
-        onClose();
-      }
-    } catch {
-      Alert.alert(t("common.error"), t("videos.shareFailed"));
-    } finally {
-      setSending(null);
-    }
+      ],
+    );
   };
 
   useEffect(() => {
@@ -774,7 +910,13 @@ function ShareModal({
                 disabled={sending === u.id}
                 activeOpacity={0.75}
               >
-                <UserAvatar userId={u.id} size={48} />
+                <FreshAvatar
+                  userId={u.id}
+                  firstName={u.firstName}
+                  lastName={u.lastName}
+                  username={u.username}
+                  size={48}
+                />
                 <View style={{ flex: 1, marginLeft: 12 }}>
                   <Text style={modal.recipientName}>{u.username}</Text>
                   <Text style={modal.recipientSub}>

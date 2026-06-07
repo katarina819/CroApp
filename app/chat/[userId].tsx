@@ -155,6 +155,12 @@ const getInitials = (firstName?: string, lastName?: string) =>
   `${firstName?.[0] ?? ""}${lastName?.[0] ?? ""}`.toUpperCase();
 
 // ─── Avatar komponenta s fallback-om ──────────────────────────────────────────
+// ─── Avatar komponenta s fallback-om ──────────────────────────────────────────
+const PRESET_AVATARS_CHAT: Record<string, any> = {
+  "avatar:male": require("../../assets/images/avatar-male.png"),
+  "avatar:female": require("../../assets/images/avatar-female.png"),
+};
+
 function AvatarCircle({
   avatarUrl,
   initials,
@@ -171,6 +177,15 @@ function AvatarCircle({
   const [failed, setFailed] = useState(false);
   const r = size / 2;
 
+  if (avatarUrl && PRESET_AVATARS_CHAT[avatarUrl]) {
+    return (
+      <Image
+        source={PRESET_AVATARS_CHAT[avatarUrl]}
+        style={[{ width: size, height: size, borderRadius: r }, style]}
+        resizeMode="cover"
+      />
+    );
+  }
   if (avatarUrl && !failed) {
     return (
       <Image
@@ -251,29 +266,38 @@ export default function ChatScreen() {
         const token = await AsyncStorage.getItem("token");
         const res = await fetch(
           `${API_BASE_URL}/api/auth/users/${otherUserId}`,
-          {
-            headers: { Authorization: `Bearer ${token}` },
-          },
+          { headers: { Authorization: `Bearer ${token}` } },
         );
         if (res.ok) {
           const userData = await res.json();
 
-          // Ispravno izvuci avatar URL
-          const av = userData.avatar;
-          let avatarUrl = null;
+          // Provjeri sva moguća polja (case-insensitive)
+          const raw =
+            userData.Avatar ||
+            userData.avatar ||
+            userData.avatarUrl ||
+            userData.profileImage ||
+            userData.photo ||
+            null;
+          let avatarUrl: string | null = null;
 
-          if (av && av.trim() !== "" && !av.startsWith("avatar:")) {
-            if (av.startsWith("http://") || av.startsWith("https://")) {
-              avatarUrl = `${av}?_t=${Date.now()}`;
+          if (raw && raw.trim() !== "" && raw !== "null") {
+            if (raw.startsWith("avatar:")) {
+              avatarUrl = raw; // proslijedi "avatar:male" / "avatar:female"
+            } else if (
+              raw.startsWith("http://") ||
+              raw.startsWith("https://")
+            ) {
+              avatarUrl = `${raw}${raw.includes("?") ? "&" : "?"}_t=${Date.now()}`;
             } else {
-              avatarUrl = `${API_BASE_URL}${av.startsWith("/") ? "" : "/"}${av}?_t=${Date.now()}`;
+              avatarUrl = `${API_BASE_URL}${raw.startsWith("/") ? "" : "/"}${raw}?_t=${Date.now()}`;
             }
           }
 
           setOtherUserInfo({
-            firstName: userData.firstName || "",
-            lastName: userData.lastName || "",
-            avatarUrl: avatarUrl,
+            firstName: userData.firstName || userData.FirstName || "",
+            lastName: userData.lastName || userData.LastName || "",
+            avatarUrl,
           });
         }
       } catch (e) {

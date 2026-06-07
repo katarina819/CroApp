@@ -248,7 +248,7 @@
     "deleteConfirm": "Jeste li sigurni?",
     "deleteFailed": "Brisanje nije uspjelo",
     "comments": "Komentari ({{count}})",
-    "noComments": "Nema komentara. Budi prvi! 💬",
+    "noComments": "Nema komentara. Budi prvi!",
     "addComment": "Dodaj komentar...",
     "sendMessage": "Pošalji poruku",
     "shareVideo": "Podijeli video",

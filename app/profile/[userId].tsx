@@ -26,6 +26,11 @@ import { StoryBadge } from "../../app/StoryBadge";
 import { useTheme } from "../../components/AdaptiveThemeProvider";
 import { API_BASE_URL } from "../config/api";
 
+const PRESET_AVATARS: Record<string, any> = {
+  "avatar:male": require("../../assets/images/avatar-male.png"),
+  "avatar:female": require("../../assets/images/avatar-female.png"),
+};
+
 const { width: SCREEN_W } = Dimensions.get("window");
 
 function getVara(dark: boolean) {
@@ -643,14 +648,19 @@ export default function UserProfileScreen() {
 
   const initials =
     `${profile?.firstName?.[0] ?? ""}${profile?.lastName?.[0] ?? ""}`.toUpperCase();
-  const avatarUrl = profile?.avatar ? getMediaUrl(profile.avatar) : null;
+  const rawAvatar = profile?.avatar ?? null;
+  const isPreset = rawAvatar ? !!PRESET_AVATARS[rawAvatar] : false;
+  const avatarUrl =
+    rawAvatar && !rawAvatar.startsWith("avatar:")
+      ? getMediaUrl(rawAvatar)
+      : null;
 
   return (
     <SafeAreaView style={styles.safeArea} edges={["top"]}>
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()}>
-          <Ionicons name="arrow-back" size={28} color="#333" />
+          <Ionicons name="arrow-back" size={28} color={V.silverBright} />
         </TouchableOpacity>
         <Text style={styles.headerTitle} numberOfLines={1}>
           {profile?.firstName} {profile?.lastName}
@@ -668,8 +678,18 @@ export default function UserProfileScreen() {
         {/* Profile section */}
         <View style={styles.profileSection}>
           <StoryBadge userId={numericUserId} size={100}>
-            {avatarUrl ? (
-              <Image source={{ uri: avatarUrl }} style={styles.avatar} />
+            {isPreset ? (
+              <Image
+                source={PRESET_AVATARS[rawAvatar!]}
+                style={styles.avatar}
+                resizeMode="cover"
+              />
+            ) : avatarUrl ? (
+              <Image
+                source={{ uri: avatarUrl }}
+                style={styles.avatar}
+                resizeMode="cover"
+              />
             ) : (
               <View style={styles.avatarPlaceholder}>
                 <Text style={styles.avatarInitials}>{initials}</Text>

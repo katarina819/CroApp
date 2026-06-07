@@ -24,6 +24,11 @@ import { StoryBadge } from "../../app/StoryBadge";
 import { useTheme } from "../../components/AdaptiveThemeProvider";
 import { API_BASE_URL, API_ENDPOINTS } from "../config/api";
 
+const PRESET_AVATARS: Record<string, any> = {
+  "avatar:male": require("../../assets/images/avatar-male.png"),
+  "avatar:female": require("../../assets/images/avatar-female.png"),
+};
+
 // ─── VARA Paleta — identična dashboardu ───────────────────────────────────────
 const V = {
   bg: "#1a2e1a", // --forestDeep
@@ -97,20 +102,40 @@ function VaraAvatar({
   V: ReturnType<typeof getV>;
 }) {
   const [failed, setFailed] = useState(false);
-  const url = buildAvatarUrl(avatar);
   const initials =
     `${firstName?.[0] ?? ""}${lastName?.[0] ?? ""}`.toUpperCase();
   const r = size / 2;
 
-  if (url && !failed) {
+  // Preset avatar (avatar:male / avatar:female)
+  if (avatar && PRESET_AVATARS[avatar]) {
     return (
       <Image
-        source={{ uri: url }}
+        source={PRESET_AVATARS[avatar]}
         style={{ width: size, height: size, borderRadius: r }}
+        resizeMode="cover"
+      />
+    );
+  }
+
+  // URL avatar
+  if (avatar && !avatar.startsWith("avatar:") && !failed) {
+    const url =
+      avatar.startsWith("http://") || avatar.startsWith("https://")
+        ? avatar
+        : `${API_BASE_URL}${avatar.startsWith("/") ? "" : "/"}${avatar}`;
+    const urlWithCache = `${url}${url.includes("?") ? "&" : "?"}_t=${Date.now()}`;
+
+    return (
+      <Image
+        source={{ uri: urlWithCache }}
+        style={{ width: size, height: size, borderRadius: r }}
+        resizeMode="cover"
         onError={() => setFailed(true)}
       />
     );
   }
+
+  // Fallback – inicijali
   return (
     <View
       style={{

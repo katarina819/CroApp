@@ -32,14 +32,14 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { API_BASE_URL } from "../../app/config/api";
 import { StoryBadge } from "../../app/StoryBadge";
 import { useTheme } from "../../components/AdaptiveThemeProvider";
-import UserAvatar from "../../components/UserAvatar";
-import {
-  Conversation,
-  getConversations,
-  getUnreadCount,
-} from "../../utils/messagesApi";
+import { Conversation, getConversations } from "../../utils/messagesApi";
 
 const { width: SCREEN_W, height: SCREEN_H } = Dimensions.get("window");
+
+const PRESET_AVATARS_MSG: Record<string, any> = {
+  "avatar:male": require("../../assets/images/avatar-male.png"),
+  "avatar:female": require("../../assets/images/avatar-female.png"),
+};
 
 function getM(dark: boolean) {
   return {
@@ -235,48 +235,49 @@ function StoryViewer({
   const reactions = ["👍", "❤️", "😊", "😂", "😮", "😢", "🔥"];
 
   const [resolvedAvatarUrl, setResolvedAvatarUrl] = useState<string | null>(
-    normalizeAvatarUrl(story.userAvatar),
+    story.userAvatar ?? null,
   );
 
-  // Zamijeni postojeći useEffect za avatar u StoryViewer:
   useEffect(() => {
+    let cancelled = false;
     const fetchAvatar = async () => {
-      const normalized = normalizeAvatarUrl(story.userAvatar);
-      if (normalized) {
-        setResolvedAvatarUrl(normalized);
-      }
       try {
         const token = await AsyncStorage.getItem("token");
         const res = await fetch(
           `${API_BASE_URL}/api/auth/users/${story.userId}`,
           { headers: { Authorization: `Bearer ${token}` } },
         );
-        if (res.ok) {
-          const data = await res.json();
-          // DODAJ LOG da vidiš strukturu:
-          console.log("User data for avatar:", JSON.stringify(data));
+        if (!res.ok || cancelled) return;
+        const data = await res.json();
 
-          // Provjeri sva moguća polja gdje avatar može biti:
-          const avatarField =
-            data.avatarUrl || // možda je avatarUrl
-            data.profileImage || // ili profileImage
-            data.photo || // ili photo
-            data.avatar; // ili avatar
+        // Pokušaj sva moguća polja (Dapper vraća PascalCase)
+        const avatarField =
+          data.Avatar ||
+          data.avatar ||
+          data.avatarUrl ||
+          data.AvatarUrl ||
+          data.profileImage ||
+          data.ProfileImage ||
+          data.photo ||
+          null;
 
+        if (cancelled) return;
+
+        if (avatarField && PRESET_AVATARS_MSG[avatarField]) {
+          // preset avatar – pohrani string za Image source={PRESET_AVATARS_MSG[...]}
+          setResolvedAvatarUrl(avatarField);
+        } else {
           const freshUrl = normalizeAvatarUrl(avatarField);
-          console.log(
-            "Resolved avatar URL:",
-            freshUrl,
-            "from field:",
-            avatarField,
-          );
           if (freshUrl) setResolvedAvatarUrl(freshUrl);
         }
       } catch (e) {
-        console.error("Avatar fetch error:", e);
+        console.error("StoryViewer avatar fetch error:", e);
       }
     };
     fetchAvatar();
+    return () => {
+      cancelled = true;
+    };
   }, [story.userId]);
 
   const startProgress = () => {
@@ -567,10 +568,18 @@ function StoryViewer({
             onPress={() => onSendMessage?.(story.userId, story.userName)}
           >
             <View style={sv.smallAvatar}>
-              {resolvedAvatarUrl ? (
+              {resolvedAvatarUrl && PRESET_AVATARS_MSG[resolvedAvatarUrl] ? (
+                <Image
+                  source={PRESET_AVATARS_MSG[resolvedAvatarUrl]}
+                  style={sv.smallAvatarImg}
+                  resizeMode="cover"
+                />
+              ) : resolvedAvatarUrl &&
+                !resolvedAvatarUrl.startsWith("avatar:") ? (
                 <Image
                   source={{ uri: resolvedAvatarUrl }}
                   style={sv.smallAvatarImg}
+                  resizeMode="cover"
                   onError={() => setResolvedAvatarUrl(null)}
                 />
               ) : (
@@ -1271,7 +1280,11 @@ function StoriesRow({
       const res = await fetch(`${API_BASE_URL}/api/story`, {
         headers: { Authorization: `Bearer ${token}` },
       });
-      if (res.ok) setStories(await res.json());
+      if (res.ok) {
+        const data = await res.json();
+        console.log("Stories data sample:", JSON.stringify(data[0])); // ← DODAJ
+        setStories(data);
+      }
     } catch {}
   }, []);
 
@@ -1295,8 +1308,13 @@ function StoriesRow({
           const data = await res.json();
           console.log("My user data:", JSON.stringify(data)); // ← DODAJ
           const avatarField =
-            data.avatarUrl || data.profileImage || data.photo || data.avatar;
-          setMyAvatarUrl(normalizeAvatarUrl(avatarField));
+            data.Avatar ||
+            data.avatarUrl ||
+            data.profileImage ||
+            data.photo ||
+            data.avatar ||
+            null;
+          setMyAvatarUrl(avatarField ?? null);
         }
       } catch {}
     };
@@ -1335,7 +1353,7 @@ function StoriesRow({
     userId: parseInt(uid),
     userName: ss[0].userName,
     stories: ss,
-    avatar: ss[0].userAvatar,
+    avatar: ss[0].userAvatar ?? undefined, // ← sirovi string, NE normaliziraj
     unread: ss.some((s) => !s.viewedByMe),
   }));
 
@@ -1356,10 +1374,6 @@ function StoriesRow({
               const myLatest = myStories[0];
               return (
                 <View style={srs.storyItem}>
-                  {/*
-                    Za "Moj story" NE koristimo StoryIndicator jer je to vlastiti story.
-                    Koristimo standardni border indicator.
-                  */}
                   <TouchableOpacity
                     style={[
                       srs.avatarWrap,
@@ -1367,8 +1381,20 @@ function StoriesRow({
                     ]}
                     onPress={myLatest ? () => setViewing(myLatest) : onAddStory}
                   >
-                    {myAvatarUrl ? (
-                      <Image source={{ uri: myAvatarUrl }} style={srs.img} />
+                    {/* Provjeri preset avatar */}
+                    {myAvatarUrl && PRESET_AVATARS_MSG[myAvatarUrl] ? (
+                      <Image
+                        source={PRESET_AVATARS_MSG[myAvatarUrl]}
+                        style={srs.img}
+                        resizeMode="cover"
+                      />
+                    ) : myAvatarUrl && !myAvatarUrl.startsWith("avatar:") ? (
+                      <Image
+                        source={{ uri: myAvatarUrl }}
+                        style={srs.img}
+                        resizeMode="cover"
+                        onError={() => setMyAvatarUrl(null)}
+                      />
                     ) : (
                       <View style={srs.addBg}>
                         <Ionicons name="person" size={20} color="#fff" />
@@ -1400,24 +1426,39 @@ function StoriesRow({
 
             return (
               <View style={srs.storyItem}>
-                <StoryBadge userId={g.userId} size={64}>
-                  <TouchableOpacity
-                    style={srs.avatarWrap}
-                    onPress={() => {
-                      console.log("Pressed story from:", g.userName);
-                      console.log("Story data:", g.stories[0]);
-                      setViewing(g.stories[0]);
-                    }}
-                  >
-                    {g.avatar ? (
-                      <Image source={{ uri: g.avatar }} style={srs.img} />
-                    ) : (
-                      <View style={[srs.addBg, { backgroundColor: "#8e9cf0" }]}>
-                        <Text style={srs.initials}>{initials}</Text>
-                      </View>
-                    )}
-                  </TouchableOpacity>
-                </StoryBadge>
+                <TouchableOpacity
+                  onPress={() => {
+                    console.log("Pressed story from:", g.userName);
+                    setViewing(g.stories[0]);
+                  }}
+                  activeOpacity={0.8}
+                >
+                  <StoryBadge userId={g.userId} size={64}>
+                    <View style={srs.avatarWrap}>
+                      {g.avatar && PRESET_AVATARS_MSG[g.avatar] ? (
+                        <Image
+                          source={PRESET_AVATARS_MSG[g.avatar]}
+                          style={srs.img}
+                          resizeMode="cover"
+                        />
+                      ) : g.avatar && !g.avatar.startsWith("avatar:") ? (
+                        <Image
+                          source={{
+                            uri: normalizeAvatarUrl(g.avatar) ?? g.avatar,
+                          }}
+                          style={srs.img}
+                          resizeMode="cover"
+                        />
+                      ) : (
+                        <View
+                          style={[srs.addBg, { backgroundColor: "#8e9cf0" }]}
+                        >
+                          <Text style={srs.initials}>{initials}</Text>
+                        </View>
+                      )}
+                    </View>
+                  </StoryBadge>
+                </TouchableOpacity>
 
                 <Text style={srs.label} numberOfLines={1}>
                   {g.userName.split(" ")[0]}
@@ -1735,12 +1776,9 @@ export default function MessagesScreen() {
     try {
       const storedId = await AsyncStorage.getItem("userId");
       if (storedId) setCurrentUserId(parseInt(storedId));
-      const [convData, unread] = await Promise.all([
-        getConversations(),
-        getUnreadCount(),
-      ]);
+      const convData = await getConversations();
       setConversations(convData);
-      setTotalUnread(unread);
+      setTotalUnread(convData.reduce((sum, c) => sum + c.unreadCount, 0));
     } catch {
       if (!silent) setError("Greška pri učitavanju poruka.");
     } finally {
@@ -1905,34 +1943,37 @@ function ConversationItem({
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
 
   useEffect(() => {
-    if (item.avatar) {
-      const url = item.avatar.startsWith("http")
-        ? item.avatar
-        : `${API_BASE_URL}${item.avatar.startsWith("/") ? "" : "/"}${item.avatar}`;
-      setAvatarUrl(url);
-    } else {
-      const loadAvatar = async () => {
-        try {
-          const token = await AsyncStorage.getItem("token");
-          const res = await fetch(
-            `${API_BASE_URL}/api/auth/users/${item.userId}`,
-            { headers: { Authorization: `Bearer ${token}` } },
-          );
-          if (res.ok) {
-            const userData = await res.json();
-            if (userData.avatar) {
-              setAvatarUrl(
-                userData.avatar.startsWith("http")
-                  ? userData.avatar
-                  : `${API_BASE_URL}${userData.avatar}`,
-              );
-            }
-          }
-        } catch {}
-      };
-      loadAvatar();
-    }
-  }, [item.userId, item.avatar]);
+    const loadAvatar = async () => {
+      try {
+        const token = await AsyncStorage.getItem("token");
+        const res = await fetch(
+          `${API_BASE_URL}/api/auth/users/${item.userId}`,
+          { headers: { Authorization: `Bearer ${token}` } },
+        );
+        if (!res.ok) return;
+        const userData = await res.json();
+        const raw =
+          userData.Avatar ||
+          userData.avatar ||
+          userData.avatarUrl ||
+          userData.profileImage ||
+          null;
+        console.log("raw avatar:", raw);
+        if (!raw) return;
+        if (raw.startsWith("avatar:")) {
+          setAvatarUrl(raw);
+          return;
+        }
+        const normalized = raw.startsWith("http")
+          ? raw
+          : `${API_BASE_URL}${raw.startsWith("/") ? "" : "/"}${raw}`;
+        setAvatarUrl(
+          `${normalized}${normalized.includes("?") ? "&" : "?"}_t=${Date.now()}`,
+        );
+      } catch {}
+    };
+    loadAvatar();
+  }, [item.userId]);
 
   const initials =
     `${item.firstName?.[0] ?? ""}${item.lastName?.[0] ?? ""}`.toUpperCase();
@@ -1959,12 +2000,38 @@ function ConversationItem({
           Avatar unutar njega nema nikakav dodatan border.
         */}
         <StoryBadge userId={item.userId} size={56}>
-          <UserAvatar
-            avatar={item.avatar}
-            firstName={item.firstName}
-            lastName={item.lastName}
-            size={56}
-          />
+          {avatarUrl && PRESET_AVATARS_MSG[avatarUrl] ? (
+            <Image
+              source={PRESET_AVATARS_MSG[avatarUrl]}
+              style={{ width: 56, height: 56, borderRadius: 28 }}
+              resizeMode="cover"
+            />
+          ) : avatarUrl && !avatarUrl.startsWith("avatar:") ? (
+            <Image
+              source={{ uri: avatarUrl }}
+              style={{ width: 56, height: 56, borderRadius: 28 }}
+              onError={() => setAvatarUrl(null)}
+            />
+          ) : (
+            <View
+              style={{
+                width: 56,
+                height: 56,
+                borderRadius: 28,
+                backgroundColor: "#2D5518",
+                justifyContent: "center",
+                alignItems: "center",
+                borderWidth: 1.5,
+                borderColor: "#4A7040",
+              }}
+            >
+              <Text
+                style={{ color: "#E8EDE4", fontSize: 20, fontWeight: "700" }}
+              >
+                {initials || "?"}
+              </Text>
+            </View>
+          )}
         </StoryBadge>
 
         <View style={styles.convInfo}>
