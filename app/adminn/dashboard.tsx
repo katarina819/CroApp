@@ -36,6 +36,15 @@ interface User {
   totalSessionMinutes: number;
 }
 
+interface SupportReport {
+  id: number;
+  type: string;
+  message: string;
+  userName: string;
+  userUsername: string;
+  createdAt: string;
+}
+
 interface PlanRating {
   id: number;
   userName: string;
@@ -62,12 +71,15 @@ export default function AdminDashboard() {
   const [summary, setSummary] = useState<any>(null);
   const [planRatings, setPlanRatings] = useState<PlanRating[]>([]);
   const [ratingsLoading, setRatingsLoading] = useState(false);
+  const [supportReports, setSupportReports] = useState<SupportReport[]>([]);
+  const [reportsLoading, setReportsLoading] = useState(false);
 
   useEffect(() => {
     checkAdminAuth();
     loadUsers();
     loadSummary();
     loadPlanRatings();
+    loadSupportReports();
   }, []);
 
   const checkAdminAuth = async () => {
@@ -128,6 +140,24 @@ export default function AdminDashboard() {
       }
     } catch (error) {
       console.error("Error loading summary:", error);
+    }
+  };
+
+  const loadSupportReports = async () => {
+    setReportsLoading(true);
+    try {
+      const token = await AsyncStorage.getItem("adminToken");
+      const response = await fetch(`${API_BASE_URL}/api/support/reports`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setSupportReports(data);
+      }
+    } catch (error) {
+      console.error("Error loading support reports:", error);
+    } finally {
+      setReportsLoading(false);
     }
   };
 
@@ -424,6 +454,128 @@ export default function AdminDashboard() {
                 </View>
               )}
             </View>
+
+            {/* PRIJAVE KORISNIKA */}
+            <View style={[styles.activitySection, { marginTop: 16 }]}>
+              <View
+                style={{
+                  flexDirection: "row",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                  marginBottom: 12,
+                }}
+              >
+                <Text style={styles.activityTitle}>Prijave korisnika</Text>
+                <View style={{ flexDirection: "row", gap: 8 }}>
+                  <View
+                    style={{
+                      backgroundColor: "#fff3e0",
+                      paddingHorizontal: 8,
+                      paddingVertical: 3,
+                      borderRadius: 12,
+                    }}
+                  >
+                    <Text
+                      style={{
+                        fontSize: 11,
+                        color: "#ff9500",
+                        fontWeight: "600",
+                      }}
+                    >
+                      🐛 App:{" "}
+                      {supportReports.filter((r) => r.type === "app").length}
+                    </Text>
+                  </View>
+                  <View
+                    style={{
+                      backgroundColor: "#e8f5e9",
+                      paddingHorizontal: 8,
+                      paddingVertical: 3,
+                      borderRadius: 12,
+                    }}
+                  >
+                    <Text
+                      style={{
+                        fontSize: 11,
+                        color: "#34c759",
+                        fontWeight: "600",
+                      }}
+                    >
+                      🗺 Karta:{" "}
+                      {supportReports.filter((r) => r.type === "map").length}
+                    </Text>
+                  </View>
+                </View>
+              </View>
+
+              {reportsLoading ? (
+                <ActivityIndicator
+                  size="small"
+                  color="#667eea"
+                  style={{ paddingVertical: 20 }}
+                />
+              ) : supportReports.length === 0 ? (
+                <Text style={styles.noActivityText}>
+                  Nema prijava za prikaz
+                </Text>
+              ) : (
+                supportReports.map((report) => (
+                  <View
+                    key={report.id}
+                    style={{
+                      borderTopWidth: 1,
+                      borderTopColor: "#f0f0f0",
+                      paddingVertical: 12,
+                      gap: 6,
+                    }}
+                  >
+                    {/* Header reda */}
+                    <View
+                      style={{
+                        flexDirection: "row",
+                        alignItems: "center",
+                        gap: 8,
+                      }}
+                    >
+                      <View
+                        style={{
+                          paddingHorizontal: 8,
+                          paddingVertical: 3,
+                          borderRadius: 10,
+                          backgroundColor:
+                            report.type === "app" ? "#fff3e0" : "#e8f5e9",
+                        }}
+                      >
+                        <Text
+                          style={{
+                            fontSize: 11,
+                            fontWeight: "700",
+                            color:
+                              report.type === "app" ? "#ff9500" : "#34c759",
+                          }}
+                        >
+                          {report.type === "app" ? "🐛 Aplikacija" : "🗺 Karta"}
+                        </Text>
+                      </View>
+                      <Text style={{ fontSize: 12, color: "#999", flex: 1 }}>
+                        {report.userName} · @{report.userUsername}
+                      </Text>
+                      <Text style={{ fontSize: 11, color: "#bbb" }}>
+                        {new Date(report.createdAt).toLocaleDateString("hr-HR")}
+                      </Text>
+                    </View>
+
+                    {/* Poruka */}
+                    <Text
+                      style={{ fontSize: 13, color: "#333", lineHeight: 18 }}
+                    >
+                      {report.message}
+                    </Text>
+                  </View>
+                ))
+              )}
+            </View>
+
             {/* OCJENE PLANOVA */}
             <View style={styles.activitySection}>
               <View

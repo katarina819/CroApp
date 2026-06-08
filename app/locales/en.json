@@ -129,8 +129,31 @@
     "search": "Search",
     "profile": "Profile"
   },
+  "dm": {
+    "userNotFound": "User not found",
+    "userNotFoundDesc": "Unable to find user \"{{name}}\" in the system.",
+    "notFound": "Not found"
+  },
+  "notif": {
+    "unavailableTitle": "Notifications unavailable",
+    "unavailableAppEmail": "App and email notifications are not currently available. If the app continues to develop, this option will be enabled 📧",
+    "unavailableApp": "App notifications are not currently available. If the app continues to develop, this option will be enabled 🔔",
+    "unavailableEmail": "Email notifications are not currently available. If the app continues to develop, this option will be enabled 📧"
+  },
   "map": {
     "title": "Map",
+    "commentPlaceholder": "Leave a comment...",
+    "visitedPlacesCount": "{{count}} visited places",
+    "categoriesCount": "{{count}} categories",
+    "results": "results",
+
+    "hideControls": "Hide",
+    "showControls": "Show",
+    "zoomIn": "Zoom in",
+    "zoomOut": "Zoom out",
+    "locationBtn": "Location",
+    "radiusBtn": "Radius",
+    "visitedBtn": "Visited",
     "searchCityPlaceholder": "Search city or place...",
     "myLocationShort": "My location",
     "displayLimitHint": "Initially 10 results are shown. Use 'Show more' for additional.",
@@ -302,6 +325,21 @@
     "expired": "Expired",
     "sendMessage": "Send message"
   },
+  "badges": {
+    "newBadge": "🏆 New badge!",
+    "earned": "You earned:\n\"{{name}}\"",
+    "badge": "Badge {{level}}",
+    "totalVisits": "Total visits",
+    "earnedBadges": "Badges earned",
+    "nextBadge": "Next badge in {{count}} more",
+    "allEarned": "🏆 All badges earned!",
+    "visitCount": "{{count}} visits",
+    "nextBadgeIn": "Next badge in {{count}} more"
+  },
+  "archive": {
+    "markHint": "Mark places as visited on the map",
+    "noFilterResults": "No places for the selected filter"
+  },
   "search": {
     "title": "Search",
     "placeholder": "Search users...",
@@ -328,6 +366,13 @@
   },
   "groups": {
     "title": "Activities",
+    "leaveFailed": "Unable to leave group",
+    "agoMinutes": "{{count}} min ago",
+    "agoHours": "{{count}}h ago",
+    "defaultActivity": "Activity",
+    "unknownLocation": "Unknown location",
+    "dmPlaceholder": "Write a message for {{name}}...",
+    "system": "System",
     "noActivities": "No active activities",
     "beFirst": "Be the first! Post an activity and find people to go out with.",
     "createNew": "+ New activity",

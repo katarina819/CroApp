@@ -131,6 +131,17 @@
   },
   "map": {
     "title": "Karta",
+    "commentPlaceholder": "Ostavite komentar...",
+    "visitedPlacesCount": "{{count}} posjećenih mjesta",
+    "categoriesCount": "{{count}} kategorija",
+    "results": "rezultati",
+    "hideControls": "Sakrij",
+    "showControls": "Prikaži",
+    "zoomIn": "Povećaj",
+    "zoomOut": "Smanji",
+    "locationBtn": "Lokacija",
+    "radiusBtn": "Radijus",
+    "visitedBtn": "Posjećeno",
     "searchCityPlaceholder": "Pretraži grad ili mjesto...",
     "myLocationShort": "Moja lokacija",
     "displayLimitHint": "Početno se prikazuje 10 rezultata. Koristite 'Prikaži više' za dodatne.",
@@ -214,6 +225,12 @@
     "groups": "Aktivnosti",
     "notifSettings": "Postavke obavijesti",
     "distance": "{{dist}} km od vas"
+  },
+  "notif": {
+    "unavailableTitle": "Obavijesti nisu dostupne",
+    "unavailableAppEmail": "Trenutno nije moguće dobivati obavijesti putem aplikacije ili e-maila. Ukoliko se aplikacija bude dalje razvijala, ova opcija će biti omogućena 📧",
+    "unavailableApp": "Trenutno nije moguće dobivati obavijesti putem aplikacije. Ukoliko se aplikacija bude dalje razvijala, ova opcija će biti omogućena 🔔",
+    "unavailableEmail": "Trenutno nije moguće dobivati obavijesti putem e-maila. Ukoliko se aplikacija bude dalje razvijala, ova opcija će biti omogućena 📧"
   },
   "videos": {
     "title": "Videi",
@@ -326,13 +343,35 @@
     "loadFailed": "Nije moguće učitati korisnike",
     "messageFailedCheckConnection": "Nije moguće poslati poruku. Provjerite vezu."
   },
+  "badges": {
+    "newBadge": "🏆 Nova značka!",
+    "earned": "Zaradili ste:\n\"{{name}}\"",
+    "badge": "Značka {{level}}",
+    "totalVisits": "Ukupno posjeta",
+    "earnedBadges": "Zarađenih značaka",
+    "visitCount": "{{count}} posjeta",
+    "nextBadgeIn": "Sljedeća značka za još {{count}}",
+    "allEarned": "🏆 Sve značke zarađene!",
+    "nextBadge": "Sljedeća značka za {{count}} više"
+  },
+  "archive": {
+    "markHint": "Označi mjesta kao posjećena na karti",
+    "noFilterResults": "Nema mjesta za odabrani filter"
+  },
   "groups": {
     "title": "Zajedničke aktivnosti",
+    "leaveFailed": "Nije moguće napustiti grupu",
+    "agoMinutes": "Prije {{count}} min",
+    "agoHours": "Prije {{count}}h",
+    "defaultActivity": "Aktivnost",
+    "unknownLocation": "Nepoznata lokacija",
+    "dmPlaceholder": "Napiši poruku za {{name}}...",
     "noActivities": "Nema aktivnih aktivnosti",
     "beFirst": "Budi prvi! Objavi aktivnost i pronađi ljude za zajednički izlazak.",
     "createNew": "+ Nova aktivnost",
     "create": "🤝 Objavi aktivnost",
     "join": "Pridruži se",
+    "system": "Sustav",
     "joined": "✓ Član",
     "full": "Popunjeno",
     "yourGroup": "Tvoja",
@@ -359,6 +398,11 @@
     "joinSuccess": "Pridružili ste se grupi",
     "joinFailed": "Nije moguće pridružiti se grupi",
     "createFailed": "Nije moguće kreirati grupu. Provjerite internetsku vezu."
+  },
+  "dm": {
+    "userNotFound": "Korisnik nije pronađen",
+    "userNotFoundDesc": "Nije moguće pronaći korisnika \"{{name}}\" u sustavu.",
+    "notFound": "Nije nađen"
   },
   "follow": {
     "goldenAdded": "Golden Friend dodan",

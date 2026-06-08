@@ -18,6 +18,7 @@ import {
   StyleSheet,
   Switch,
   Text,
+  TextInput,
   TouchableOpacity,
   View,
 } from "react-native";
@@ -495,7 +496,7 @@ function makeSmStyles(V: ReturnType<typeof getVara>) {
     },
     title: { fontSize: 17, fontWeight: "600", color: V.silverBright },
     saveBtn: { fontSize: 16, fontWeight: "600", color: V.visited },
-    section: { marginTop: 24, paddingHorizontal: 16 },
+    section: { marginTop: 12, paddingHorizontal: 16 },
     sectionTitle: {
       fontSize: 12,
       fontWeight: "700",
@@ -1637,11 +1638,6 @@ function ActivityArchive({ userId }: { userId: number | null }) {
   const totalPosts = data.reduce((s, d) => s + d.posts, 0);
   const totalMinutes = data.reduce((s, d) => s + d.sessionMinutes, 0);
   const currentFollowers = data[data.length - 1]?.followersCount || 0;
-  const maxLikes = Math.max(...data.map((d) => d.likes), 1);
-  const maxComments = Math.max(...data.map((d) => d.comments), 1);
-  const maxPosts = Math.max(...data.map((d) => d.posts), 1);
-  const maxMinutes = Math.max(...data.map((d) => d.sessionMinutes), 1);
-  const BAR_HEIGHT = 60;
 
   const renderBarChart = (
     values: number[],
@@ -1760,53 +1756,6 @@ function ActivityArchive({ userId }: { userId: number | null }) {
           ))}
         </View>
       ))}
-
-      <View style={ac.followersCard}>
-        <Ionicons name="people" size={24} color={V.visited} />
-        <View>
-          <Text style={ac.followersNum}>{currentFollowers}</Text>
-          <Text style={ac.followersLabel}>
-            {t("activity.currentFollowers")}
-          </Text>
-        </View>
-      </View>
-
-      <Text style={ac.sectionTitle}>
-        {period === "daily"
-          ? t("activity.last7days")
-          : period === "weekly"
-            ? t("activity.last6weeks")
-            : t("activity.last6months")}
-      </Text>
-
-      {renderBarChart(
-        data.map((d) => d.sessionMinutes),
-        t("activity.minutesChart"),
-        V.silver,
-        maxMinutes,
-        BAR_HEIGHT,
-      )}
-      {renderBarChart(
-        data.map((d) => d.likes),
-        t("activity.likesChart"),
-        "#C05050",
-        maxLikes,
-        BAR_HEIGHT,
-      )}
-      {renderBarChart(
-        data.map((d) => d.comments),
-        t("activity.commentsChart"),
-        V.visited,
-        maxComments,
-        BAR_HEIGHT,
-      )}
-      {renderBarChart(
-        data.map((d) => d.posts),
-        t("activity.postsChart"),
-        V.accentGold,
-        maxPosts,
-        BAR_HEIGHT,
-      )}
     </ScrollView>
   );
 }
@@ -2302,7 +2251,7 @@ function MeTab({ userId }: { userId: number | null }) {
               </TouchableOpacity>
             );
           }}
-          contentContainerStyle={{ paddingBottom: 80 }}
+          contentContainerStyle={{ paddingBottom: 32 }}
         />
       )}
 
@@ -2903,6 +2852,10 @@ function SettingsModal({
   const [blockedUsers, setBlockedUsers] = useState<any[]>([]);
   const [showBlocked, setShowBlocked] = useState(false);
   const [showActivityArchive, setShowActivityArchive] = useState(false);
+  const [showAppProblemModal, setShowAppProblemModal] = useState(false);
+  const [showMapProblemModal, setShowMapProblemModal] = useState(false);
+  const [problemText, setProblemText] = useState("");
+  const [sendingReport, setSendingReport] = useState(false);
   const [saving, setSaving] = useState(false);
   const { i18n } = useTranslation();
   const [currentLang, setCurrentLang] = useState(i18n.language || "hr");
@@ -3076,6 +3029,46 @@ function SettingsModal({
     ]);
   };
 
+  const sendReport = async (type: "app" | "map") => {
+    if (!problemText.trim()) {
+      Alert.alert("Greška", "Molimo opišite problem.");
+      return;
+    }
+    setSendingReport(true);
+    try {
+      const token = await AsyncStorage.getItem("token");
+      const res = await fetch(`${API_BASE_URL}/api/support/report`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          type,
+          message: problemText.trim(),
+          userName: `${profile?.firstName} ${profile?.lastName}`,
+          userUsername: profile?.username,
+        }),
+      });
+      if (res.ok) {
+        setProblemText("");
+        type === "app"
+          ? setShowAppProblemModal(false)
+          : setShowMapProblemModal(false);
+        Alert.alert(
+          "Hvala!",
+          "Tvoja poruka je uspješno poslana adminu. Potrudit ćemo se odgovoriti što prije.",
+        );
+      } else {
+        Alert.alert("Greška", "Slanje nije uspjelo. Pokušaj ponovno.");
+      }
+    } catch {
+      Alert.alert("Greška", "Slanje nije uspjelo. Provjeri internetsku vezu.");
+    } finally {
+      setSendingReport(false);
+    }
+  };
+
   return (
     <Modal visible={visible} animationType="slide" onRequestClose={onClose}>
       <SafeAreaView style={{ flex: 1, backgroundColor: V.forestDeep }}>
@@ -3095,7 +3088,7 @@ function SettingsModal({
 
         <ScrollView contentContainerStyle={{ paddingBottom: 80 }}>
           {/* ─── JEZIK ─────────────────────────────────────── */}
-          <View style={sm.section}>
+          <View style={[sm.section, { marginTop: 8 }]}>
             <Text style={sm.sectionTitle}>{t("profile.language")}</Text>
             <View style={langStyles.currentLang}>
               <Text style={langStyles.currentLangLabel}>
@@ -3410,6 +3403,80 @@ function SettingsModal({
             )}
           </View>
 
+          {/* ─── PODRŠKA ──────────────────────────────────── */}
+          <View style={sm.section}>
+            <Text style={sm.sectionTitle}>
+              {<Text style={sm.sectionTitle}>Korisnička podrška</Text>}
+            </Text>
+
+            {/* 1. Obrati se adminu putem maila */}
+            <TouchableOpacity
+              style={sm.varaBtn}
+              onPress={() => {
+                const email = "adminvaraapp@gmail.com";
+                const subject = encodeURIComponent("Upit - Vara aplikacija");
+                const body = encodeURIComponent(
+                  `Pozdrav,\n\nPišem u vezi...\n\nKorisnik: ${profile?.firstName} ${profile?.lastName} (@${profile?.username})`,
+                );
+                import("react-native").then(({ Linking }) => {
+                  Linking.openURL(
+                    `mailto:${email}?subject=${subject}&body=${body}`,
+                  ).catch(() =>
+                    Alert.alert(
+                      "Greška",
+                      "Nije moguće otvoriti mail aplikaciju.",
+                    ),
+                  );
+                });
+              }}
+            >
+              <View style={sm.varaBtnIcon}>
+                <Ionicons name="mail-outline" size={18} color={V.silverDim} />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={sm.varaBtnText}>Kontaktiraj admina</Text>
+                <Text style={[sm.rowSub, { marginTop: 0 }]}>
+                  admin@gmail.com
+                </Text>
+              </View>
+              <Ionicons name="chevron-forward" size={16} color={V.silverDim} />
+            </TouchableOpacity>
+
+            {/* 2. Prijavi problem s aplikacijom */}
+            <TouchableOpacity
+              style={sm.varaBtn}
+              onPress={() => setShowAppProblemModal(true)}
+            >
+              <View style={sm.varaBtnIcon}>
+                <Ionicons name="bug-outline" size={18} color={V.silverDim} />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={sm.varaBtnText}>Nešto ne radi u aplikaciji</Text>
+                <Text style={[sm.rowSub, { marginTop: 0 }]}>
+                  Prijavi tehničke poteškoće
+                </Text>
+              </View>
+              <Ionicons name="chevron-forward" size={16} color={V.silverDim} />
+            </TouchableOpacity>
+
+            {/* 3. Prijavi problem s kartom */}
+            <TouchableOpacity
+              style={sm.varaBtn}
+              onPress={() => setShowMapProblemModal(true)}
+            >
+              <View style={sm.varaBtnIcon}>
+                <Ionicons name="map-outline" size={18} color={V.silverDim} />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={sm.varaBtnText}>Problem s podacima na karti</Text>
+                <Text style={[sm.rowSub, { marginTop: 0 }]}>
+                  Nedostaje lokacija ili pogrešni podaci
+                </Text>
+              </View>
+              <Ionicons name="chevron-forward" size={16} color={V.silverDim} />
+            </TouchableOpacity>
+          </View>
+
           {/* ─── OPASNA ZONA ──────────────────────────────── */}
           <View style={sm.section}>
             <View style={sm.dangerHeader}>
@@ -3448,6 +3515,194 @@ function SettingsModal({
           </View>
         </ScrollView>
       </SafeAreaView>
+      {/* ─── Modal za prijavu problema ─────────────────── */}
+      {(["app", "map"] as const).map((type) => (
+        <Modal
+          key={type}
+          visible={type === "app" ? showAppProblemModal : showMapProblemModal}
+          transparent
+          animationType="fade"
+          onRequestClose={() => {
+            setProblemText("");
+            type === "app"
+              ? setShowAppProblemModal(false)
+              : setShowMapProblemModal(false);
+          }}
+        >
+          <View
+            style={{
+              flex: 1,
+              justifyContent: "center",
+              alignItems: "center",
+              backgroundColor: V.overlay,
+            }}
+          >
+            <View
+              style={{
+                width: "88%",
+                backgroundColor: V.forestDeep,
+                borderRadius: 20,
+                borderWidth: 1.5,
+                borderColor: V.borderGreen,
+                padding: 24,
+              }}
+            >
+              {/* Naslov */}
+              <View
+                style={{
+                  flexDirection: "row",
+                  alignItems: "center",
+                  gap: 10,
+                  marginBottom: 6,
+                }}
+              >
+                <Ionicons
+                  name={type === "app" ? "bug-outline" : "map-outline"}
+                  size={22}
+                  color={V.visited}
+                />
+                <Text
+                  style={{
+                    fontSize: 17,
+                    fontWeight: "700",
+                    color: V.silverBright,
+                    flex: 1,
+                  }}
+                >
+                  {type === "app"
+                    ? "Problem s aplikacijom"
+                    : "Problem s kartom"}
+                </Text>
+                <TouchableOpacity
+                  onPress={() => {
+                    setProblemText("");
+                    type === "app"
+                      ? setShowAppProblemModal(false)
+                      : setShowMapProblemModal(false);
+                  }}
+                >
+                  <Ionicons name="close" size={22} color={V.silverDim} />
+                </TouchableOpacity>
+              </View>
+
+              <Text
+                style={{ fontSize: 13, color: V.silverDim, marginBottom: 16 }}
+              >
+                {type === "app"
+                  ? "Opiši što se dogodilo — npr. aplikacija se zamrznula, podaci se nisu učitali, nešto ne reagira."
+                  : "Opiši lokaciju ili podatak koji nedostaje / koji je netočan na karti."}
+              </Text>
+
+              {/* Tekstualno polje */}
+              <View
+                style={{
+                  backgroundColor: V.forestMid,
+                  borderRadius: 12,
+                  borderWidth: 1,
+                  borderColor: V.borderDim,
+                  marginBottom: 16,
+                }}
+              >
+                <TextInput
+                  value={problemText}
+                  onChangeText={setProblemText}
+                  placeholder={
+                    type === "app"
+                      ? "Npr. aplikacija se zamrzla na ekranu s kartom..."
+                      : "Npr. nedostaje restoran u centru Splita..."
+                  }
+                  placeholderTextColor={V.silverDim}
+                  multiline
+                  numberOfLines={5}
+                  textAlignVertical="top"
+                  style={{
+                    padding: 12,
+                    fontSize: 14,
+                    color: V.silverBright,
+                    minHeight: 110,
+                  }}
+                  maxLength={500}
+                />
+                <Text
+                  style={{
+                    fontSize: 11,
+                    color: V.silverDim,
+                    textAlign: "right",
+                    paddingRight: 10,
+                    paddingBottom: 6,
+                  }}
+                >
+                  {problemText.length}/500
+                </Text>
+              </View>
+
+              {/* Gumbi */}
+              <View style={{ flexDirection: "row", gap: 10 }}>
+                <TouchableOpacity
+                  onPress={() => {
+                    setProblemText("");
+                    type === "app"
+                      ? setShowAppProblemModal(false)
+                      : setShowMapProblemModal(false);
+                  }}
+                  style={{
+                    flex: 1,
+                    paddingVertical: 12,
+                    borderRadius: 10,
+                    borderWidth: 1,
+                    borderColor: V.borderDim,
+                    backgroundColor: V.forestMid,
+                    alignItems: "center",
+                  }}
+                >
+                  <Text
+                    style={{
+                      color: V.silverDim,
+                      fontWeight: "600",
+                      fontSize: 15,
+                    }}
+                  >
+                    Odustani
+                  </Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  onPress={() => sendReport(type)}
+                  disabled={sendingReport || !problemText.trim()}
+                  style={{
+                    flex: 1,
+                    paddingVertical: 12,
+                    borderRadius: 10,
+                    backgroundColor: problemText.trim()
+                      ? V.visited
+                      : V.forestMid,
+                    borderWidth: 1,
+                    borderColor: problemText.trim()
+                      ? V.borderGreen
+                      : V.borderDim,
+                    alignItems: "center",
+                    justifyContent: "center",
+                  }}
+                >
+                  {sendingReport ? (
+                    <ActivityIndicator size="small" color={V.silverBright} />
+                  ) : (
+                    <Text
+                      style={{
+                        color: V.silverBright,
+                        fontWeight: "600",
+                        fontSize: 15,
+                      }}
+                    >
+                      Pošalji
+                    </Text>
+                  )}
+                </TouchableOpacity>
+              </View>
+            </View>
+          </View>
+        </Modal>
+      ))}
     </Modal>
   );
 }

@@ -913,9 +913,7 @@ async function fetchGoogleDetails(
     if (r.opening_hours?.weekday_text?.length)
       openingHours = r.opening_hours.weekday_text.join("\n");
     else if (r.opening_hours?.open_now !== undefined)
-      openingHours = r.opening_hours.open_now
-        ? "Trenutno otvoreno"
-        : "Trenutno zatvoreno";
+      openingHours = r.opening_hours.open_now ? "__OPEN__" : "__CLOSED__";
     return {
       photos,
       openingHours,
@@ -1628,7 +1626,7 @@ function PlaceDetailModal({
                 ) : null}
                 {place.distance !== undefined ? (
                   <Text style={dm.meta}>
-                    📏 {place.distance.toFixed(2)} km od vas
+                    📏 {t("map.distance", { dist: place.distance.toFixed(2) })}
                   </Text>
                 ) : null}
                 {details?.rating || place.rating ? (
@@ -1645,12 +1643,14 @@ function PlaceDetailModal({
                   {loading ? (
                     <ActivityIndicator size="small" color={color} />
                   ) : details?.openingHours ? (
-                    <Text style={dm.hoursText}>{details.openingHours}</Text>
-                  ) : (
-                    <Text style={{ color: "#999", fontSize: 12 }}>
-                      {t("map.notAvailable")}
+                    <Text style={dm.hoursText}>
+                      {details.openingHours === "__OPEN__"
+                        ? t("map.openNow")
+                        : details.openingHours === "__CLOSED__"
+                          ? t("map.closedNow")
+                          : details.openingHours}
                     </Text>
-                  )}
+                  ) : null}
                 </View>
 
                 <View style={dm.notifRow}>
@@ -1667,8 +1667,8 @@ function PlaceDetailModal({
                     onValueChange={(v) => {
                       if (v) {
                         Alert.alert(
-                          "Obavijesti nisu dostupne",
-                          "Trenutno nije moguće dobivati obavijesti putem aplikacije ili e-maila. Ukoliko se aplikacija bude dalje razvijala, ova opcija će biti omogućena 📧",
+                          t("notif.unavailableTitle"),
+                          t("notif.unavailableApp"),
                         );
                         return;
                       }
@@ -1685,7 +1685,7 @@ function PlaceDetailModal({
                   <TextInput
                     ref={commentInputRef}
                     style={dm.commentInput}
-                    placeholder="Ostavite komentar..."
+                    placeholder={t("map.commentPlaceholder")}
                     placeholderTextColor="#bbb"
                     value={comment}
                     onChangeText={setComment}
@@ -1999,8 +1999,8 @@ function NotificationSettingsModal({
                 onValueChange={(v) => {
                   if (v) {
                     Alert.alert(
-                      "Obavijesti nisu dostupne",
-                      "Trenutno nije moguće dobivati obavijesti putem aplikacije. Ukoliko se aplikacija bude dalje razvijala, ova opcija će biti omogućena 🔔",
+                      t("notif.unavailableTitle"),
+                      t("notif.unavailableAppEmail"),
                     );
                     return;
                   }
@@ -2032,8 +2032,8 @@ function NotificationSettingsModal({
                 onValueChange={(v) => {
                   if (v) {
                     Alert.alert(
-                      "Obavijesti nisu dostupne",
-                      "Trenutno nije moguće dobivati obavijesti putem e-maila. Ukoliko se aplikacija bude dalje razvijala, ova opcija će biti omogućena 📧",
+                      t("notif.unavailableTitle"),
+                      t("notif.unavailableEmail"),
                     );
                     return;
                   }
@@ -2528,7 +2528,7 @@ export function ActivityGroupsModal({
           members: [myName],
           messages: [
             {
-              name: "Sustav",
+              name: t("groups.system"),
               text: `Grupa kreirana od ${myName}`,
               time: new Date().toLocaleTimeString("hr-HR", {
                 hour: "2-digit",
@@ -2593,7 +2593,7 @@ export function ActivityGroupsModal({
         Alert.alert(t("common.success"), t("common.ok"));
       } else {
         const error = await res.json();
-        Alert.alert("Greška", error.error || "Nije moguće pridružiti se grupi");
+        Alert.alert(t("common.error"), error.error || t("groups.joinFailed"));
       }
     } catch (error) {
       console.error("Error joining group:", error);
@@ -2607,7 +2607,7 @@ export function ActivityGroupsModal({
     try {
       const token = await AsyncStorage.getItem("token");
       if (!token) {
-        Alert.alert("Greška", "Niste prijavljeni");
+        Alert.alert(t("common.error"), t("auth.notLoggedIn"));
         return;
       }
 
@@ -2627,11 +2627,11 @@ export function ActivityGroupsModal({
         Alert.alert(t("common.success"), t("groups.leaveSuccess"));
       } else {
         const error = await res.json();
-        Alert.alert("Greška", error.error || "Nije moguće napustiti grupu");
+        Alert.alert(t("common.error"), error.error || t("groups.leaveFailed"));
       }
     } catch (error) {
       console.error("Error leaving group:", error);
-      Alert.alert("Greška", "Nije moguće napustiti grupu");
+      Alert.alert(t("common.error"), t("groups.leaveFailed"));
     }
   };
 
@@ -2842,8 +2842,8 @@ export function ActivityGroupsModal({
     if (!dmTarget.userId || !dmMessage.trim()) {
       if (!dmTarget.userId) {
         Alert.alert(
-          "Korisnik nije pronađen",
-          `Nije moguće pronaći korisnika "${dmTarget.name}" u sustavu.`,
+          t("dm.userNotFound"),
+          t("dm.userNotFoundDesc", { name: dmTarget.name }),
         );
       }
       return;
@@ -2870,10 +2870,10 @@ export function ActivityGroupsModal({
           t("messages.messageSentTo", { name: dmTarget.name }),
         );
       } else {
-        Alert.alert("Greška", "Poruka nije poslana. Pokušajte ponovo.");
+        Alert.alert(t("common.error"), t("messages.messageFailed"));
       }
     } catch {
-      Alert.alert("Greška", "Nije moguće poslati poruku.");
+      Alert.alert(t("common.error"), t("messages.messageFailed"));
     } finally {
       setSendingDM(false);
     }
@@ -2913,7 +2913,7 @@ export function ActivityGroupsModal({
               <Text
                 style={{ color: DC.accent, fontSize: 13, fontWeight: "600" }}
               >
-                ← Natrag
+                ← {t("common.back")}
               </Text>
             </TouchableOpacity>
             <View style={{ flex: 1 }}>
@@ -2924,7 +2924,7 @@ export function ActivityGroupsModal({
               </Text>
               <Text style={ag.chatHeaderSub}>
                 {selectedGroup.locationName} · {selectedGroup.members.length}/
-                {selectedGroup.maxPeople} članova
+                {selectedGroup.maxPeople} {t("map.members")}
               </Text>
             </View>
 
@@ -2948,7 +2948,7 @@ export function ActivityGroupsModal({
                     letterSpacing: 0.3,
                   }}
                 >
-                  Obriši
+                  {t("common.delete")}
                 </Text>
               </TouchableOpacity>
             ) : selectedGroup.members.includes(myName) ? (
@@ -3301,7 +3301,7 @@ export function ActivityGroupsModal({
                           fontWeight: "700",
                         }}
                       >
-                        ⚠️ Nije nađen
+                        ⚠️ {t("dm.notFound")}
                       </Text>
                     </View>
                   )}
@@ -3310,7 +3310,9 @@ export function ActivityGroupsModal({
                 {/* Input */}
                 <TextInput
                   style={ag.dmInput}
-                  placeholder={`Napiši poruku za ${dmTarget.name}...`}
+                  placeholder={t("groups.dmPlaceholder", {
+                    name: dmTarget.name,
+                  })}
                   placeholderTextColor="#bbb"
                   value={dmMessage}
                   onChangeText={setDmMessage}
@@ -3400,13 +3402,13 @@ export function ActivityGroupsModal({
                 color: DC.text,
               }}
             >
-              Nova aktivnost
+              {t("groups.createNew")}
             </Text>
             <TouchableOpacity onPress={() => setShowCreate(false)}>
               <Text
                 style={{ fontSize: 16, color: DC.accent, fontWeight: "700" }}
               >
-                Natrag
+                {t("common.back")}
               </Text>
             </TouchableOpacity>
           </View>
@@ -3698,13 +3700,13 @@ export function ActivityGroupsModal({
             }}
           >
             <Text style={{ fontSize: 20, fontWeight: "800", color: DC.text }}>
-              Zajedničke aktivnosti
+              {t("groups.title")}
             </Text>
             <TouchableOpacity onPress={onClose}>
               <Text
                 style={{ fontSize: 14, color: DC.textDim, fontWeight: "600" }}
               >
-                Zatvori
+                {t("common.close")}
               </Text>
             </TouchableOpacity>
           </View>
@@ -3787,8 +3789,8 @@ export function ActivityGroupsModal({
                 );
                 const timeStr =
                   timeAgo < 60
-                    ? `Prije ${timeAgo} min`
-                    : `Prije ${Math.floor(timeAgo / 60)}h`;
+                    ? t("groups.agoMinutes", { count: timeAgo })
+                    : t("groups.agoHours", { count: Math.floor(timeAgo / 60) });
 
                 return (
                   <TouchableOpacity
@@ -3823,11 +3825,11 @@ export function ActivityGroupsModal({
                           }}
                           numberOfLines={1}
                         >
-                          {(g.activity || "Aktivnost")
+                          {(g.activity || t("groups.defaultActivity"))
                             .replace(/^[\p{Emoji}\s]+/u, "")
                             .trim() ||
                             g.activity ||
-                            "Aktivnost"}
+                            t("groups.defaultActivity")}
                         </Text>
                         <Text
                           style={{
@@ -3836,7 +3838,7 @@ export function ActivityGroupsModal({
                             marginTop: 2,
                           }}
                         >
-                          {g.locationName || "Nepoznata lokacija"}
+                          {g.locationName || t("groups.unknownLocation")}
                         </Text>
                         {g.description ? (
                           <Text
@@ -4049,7 +4051,7 @@ export function ActivityGroupsModal({
             onPress={() => setShowCreate(true)}
           >
             <Text style={{ color: DC.text, fontSize: 16, fontWeight: "700" }}>
-              Dodaj novu aktivnost
+              {t("groups.create")}
             </Text>
           </TouchableOpacity>
         </View>
@@ -4841,6 +4843,7 @@ function PlaceDetailInPlan({
 }: {
   place: { name: string; latitude: number; longitude: number; type: string };
 }) {
+  const { t } = useTranslation();
   const [details, setDetails] = useState<PlaceDetails | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -4884,7 +4887,7 @@ function PlaceDetailInPlan({
           }}
         >
           <Text style={{ fontWeight: "700", marginBottom: 4 }}>
-            🕐 Radno vrijeme
+            🕐 {t("map.openingHours")}
           </Text>
           <Text style={{ fontSize: 13, color: "#555" }}>
             {details.openingHours}
@@ -7754,8 +7757,8 @@ function VisitArchiveModal({
               }}
             >
               {visits.length === 0
-                ? "Označi mjesta kao posjećena na karti"
-                : "Nema mjesta za odabrani filter"}
+                ? t("archive.markHint")
+                : t("archive.noFilterResults")}
             </Text>
           </View>
         ) : (
@@ -7976,7 +7979,7 @@ function BadgesModal({
               {totalVisits}
             </Text>
             <Text style={{ fontSize: 12, color: DC.textDim, marginTop: 2 }}>
-              Ukupno posjeta
+              {t("badges.totalVisits")}
             </Text>
           </View>
           <View
@@ -7994,7 +7997,7 @@ function BadgesModal({
               {totalBadges}
             </Text>
             <Text style={{ fontSize: 12, color: DC.textDim, marginTop: 2 }}>
-              Zarađenih značaka
+              {t("badges.earnedBadges")}
             </Text>
           </View>
         </View>
@@ -8086,18 +8089,13 @@ function BadgesModal({
                         fontWeight: "600",
                       }}
                     >
-                      {count}{" "}
-                      {count === 1
-                        ? "posjet"
-                        : count < 5
-                          ? "posjeta"
-                          : "posjeta"}
+                      {t("badges.visitCount", { count })}
                     </Text>
                     {next && (
                       <Text
                         style={{ fontSize: 11, color: DC.accent, marginTop: 1 }}
                       >
-                        Sljedeća značka za {next - count} više
+                        {t("badges.nextBadgeIn", { count: next - count })}
                       </Text>
                     )}
                     {!next && count > 0 && (
@@ -8109,7 +8107,7 @@ function BadgesModal({
                           fontWeight: "700",
                         }}
                       >
-                        🏆 Sve značke zarađene!
+                        🏆 {t("badges.allEarned")}
                       </Text>
                     )}
                   </View>
@@ -9994,8 +9992,12 @@ export default function DashboardScreen() {
     if (newBadges.length > 0) {
       for (const b of newBadges)
         Alert.alert(
-          "🏆 Nova značka!",
-          `Zaradili ste:\n"${BADGE_NAMES[b.category]?.[b.level] || `Značka ${b.level}`}"`,
+          t("badges.newBadge"),
+          t("badges.earned", {
+            name:
+              BADGE_NAMES[b.category]?.[b.level] ||
+              t("badges.badge", { level: b.level }),
+          }),
         );
     } else
       Alert.alert(
@@ -10400,7 +10402,7 @@ export default function DashboardScreen() {
           {[
             {
               icon: planIcon,
-              label: "Plan puta",
+              label: t("map.planDay"),
               onPress: () => {
                 setShowOstalo(false);
                 setShowPlanMyDay(true);
@@ -10408,7 +10410,7 @@ export default function DashboardScreen() {
             },
             {
               icon: groupsIcon,
-              label: "Aktivnosti",
+              label: t("map.groups"),
               onPress: () => {
                 setShowOstalo(false);
                 setShowGroups(true);
@@ -10416,7 +10418,7 @@ export default function DashboardScreen() {
             },
             {
               icon: archiveIcon,
-              label: "Arhiva",
+              label: t("map.visitArchive"),
               onPress: () => {
                 setShowOstalo(false);
                 setShowArchive(true);
@@ -10424,7 +10426,7 @@ export default function DashboardScreen() {
             },
             {
               icon: badgesIcon,
-              label: "Značke",
+              label: t("map.badges"),
               onPress: () => {
                 setShowOstalo(false);
                 setShowBadges(true);
@@ -10432,7 +10434,7 @@ export default function DashboardScreen() {
             },
             {
               icon: notificationsIcon,
-              label: "Obavijesti",
+              label: t("map.notifSettings"),
               onPress: () => {
                 setShowOstalo(false);
                 setShowNotifSettings(true);
@@ -10537,7 +10539,7 @@ export default function DashboardScreen() {
             marginTop: 1,
           }}
         >
-          {showMapCtrlPanel ? "Sakrij" : "Prikaži"}
+          {showMapCtrlPanel ? t("map.hideControls") : t("map.showControls")}
         </Text>
       </TouchableOpacity>
 
@@ -10583,7 +10585,7 @@ export default function DashboardScreen() {
               marginBottom: 2,
             }}
           >
-            Povećaj
+            {t("map.zoomIn")}
           </Text>
 
           {/* Zoom Out */}
@@ -10623,7 +10625,7 @@ export default function DashboardScreen() {
               marginBottom: 2,
             }}
           >
-            Smanji
+            {t("map.zoomOut")}
           </Text>
 
           <View style={UI_STYLES.mapCtrlDivider} />
@@ -10686,7 +10688,7 @@ export default function DashboardScreen() {
               marginBottom: 2,
             }}
           >
-            Lokacija
+            {t("map.locationBtn")}
           </Text>
 
           {/* Radijus */}
@@ -10745,7 +10747,7 @@ export default function DashboardScreen() {
               marginBottom: 2,
             }}
           >
-            Radijus
+            {t("map.radiusBtn")}
           </Text>
 
           <View style={UI_STYLES.mapCtrlDivider} />
@@ -10800,7 +10802,7 @@ export default function DashboardScreen() {
               marginBottom: 2,
             }}
           >
-            Posjećeno
+            {t("map.visitedBtn")}
           </Text>
         </View>
       )}
@@ -11130,7 +11132,7 @@ export default function DashboardScreen() {
                         fontWeight: "600",
                       }}
                     >
-                      Očisti
+                      {t("map.clearAgeFilter")}
                     </Text>
                   </TouchableOpacity>
                 )}
@@ -11322,7 +11324,7 @@ export default function DashboardScreen() {
                             : "#b0b0b0",
                       }}
                     >
-                      Svi ({allPlaces.length})
+                      {t("common.all")} ({allPlaces.length})
                     </Text>
                   </TouchableOpacity>
                 </View>
@@ -11340,7 +11342,7 @@ export default function DashboardScreen() {
                     marginBottom: 8,
                   }}
                 >
-                  Skrivena mjesta ({hiddenPlaceIds.length})
+                  {t("map.hiddenPlaces", { count: hiddenPlaceIds.length })}
                 </Text>
                 {hiddenPlaceIds.map((id) => (
                   <TouchableOpacity
@@ -11365,7 +11367,7 @@ export default function DashboardScreen() {
                       ID: {id.split("_").slice(-1)[0]}
                     </Text>
                     <Text style={{ color: DC.accent, fontWeight: "700" }}>
-                      ↩ Vrati
+                      ↩ {t("map.restorePlace")}
                     </Text>
                   </TouchableOpacity>
                 ))}
@@ -11386,10 +11388,9 @@ export default function DashboardScreen() {
               onPress={() => setShowFilterPanel(false)}
             >
               <Text style={{ color: DC.text, fontSize: 16, fontWeight: "700" }}>
-                {t("map.apply")}
                 {selectedTypes.length > 0
-                  ? ` (${selectedTypes.length} kategorija)`
-                  : ""}
+                  ? t("map.applyWithCount", { count: selectedTypes.length })
+                  : t("map.apply")}
               </Text>
             </TouchableOpacity>
           </ScrollView>
@@ -11486,7 +11487,9 @@ export default function DashboardScreen() {
               <Text style={UI_STYLES.infoBarText}>
                 {(() => {
                   if (showOnlyVisited) {
-                    return `${visits.length} posjećenih mjesta`;
+                    return t("map.visitedPlacesCount", {
+                      count: visits.length,
+                    });
                   }
 
                   const shown = placesForMap.length;
@@ -11504,7 +11507,7 @@ export default function DashboardScreen() {
                         defaultValue: focusedType,
                       })
                     : activeCatCount > 1
-                      ? `${activeCatCount} kategorija`
+                      ? t("map.categoriesCount", { count: activeCatCount })
                       : selectedTypes.length === 1
                         ? t(`categories.${selectedTypes[0]}`, {
                             defaultValue: selectedTypes[0],
@@ -11520,7 +11523,8 @@ export default function DashboardScreen() {
                   onPress={() => setDisplayLimit((prev) => prev + 20)}
                 >
                   <Text style={UI_STYLES.infoShowMoreText}>
-                    +{Math.min(totalFiltered - placesForMap.length, 20)} više
+                    +{Math.min(totalFiltered - placesForMap.length, 20)}{" "}
+                    {t("common.more")}
                   </Text>
                 </TouchableOpacity>
               )}
