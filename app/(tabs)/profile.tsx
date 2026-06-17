@@ -2415,7 +2415,8 @@ function BoxTab() {
               </Text>
               <Text style={tab.itemMeta}>@{item.userName}</Text>
               <Text style={tab.itemDate}>
-                Pohranjeno: {new Date(item.savedAt).toLocaleDateString("hr-HR")}
+                {t("profile.savedOn")}{" "}
+                {new Date(item.savedAt).toLocaleDateString("hr-HR")}
               </Text>
             </View>
             {/* UKLONJENO: ikona smeća (trash-outline) */}
@@ -2601,7 +2602,8 @@ function WishlistTab() {
                     {item.title}
                   </Text>
                   <Text style={tab.itemDate}>
-                    Dodano: {new Date(item.addedAt).toLocaleDateString("hr-HR")}
+                    {t("profile.addedOn")}{" "}
+                    {new Date(item.addedAt).toLocaleDateString("hr-HR")}
                   </Text>
                   <TouchableOpacity onPress={() => toggleGoing(item)}>
                     <Text style={tab.goingBadge}>
@@ -3092,7 +3094,7 @@ function SettingsModal({
             <Text style={sm.sectionTitle}>{t("profile.language")}</Text>
             <View style={langStyles.currentLang}>
               <Text style={langStyles.currentLangLabel}>
-                {"Trenutni jezik: "}
+                {t("profile.currentLanguage")}
                 <Text style={langStyles.currentLangValue}>
                   {LANGUAGES.find((l) => l.code === currentLang)?.flag}{" "}
                   {LANGUAGES.find((l) => l.code === currentLang)?.label}
@@ -3156,7 +3158,9 @@ function SettingsModal({
                   <View style={themeStyles.previewCircleLight} />
                 </View>
                 <Text style={themeStyles.themeLabelLight}>☀️</Text>
-                <Text style={themeStyles.themeTitleLight}>Svjetla</Text>
+                <Text style={themeStyles.themeTitleLight}>
+                  {t("profile.themeLight")}
+                </Text>
                 {manualTheme === "light" && (
                   <View
                     style={[
@@ -3190,8 +3194,12 @@ function SettingsModal({
                   <View style={themeStyles.previewCircleAuto} />
                 </View>
                 <Text style={themeStyles.themeLabelAuto}>🕐</Text>
-                <Text style={themeStyles.themeTitleAuto}>Automatski</Text>
-                <Text style={themeStyles.themeSubAuto}>po dobu dana</Text>
+                <Text style={themeStyles.themeTitleAuto}>
+                  {t("profile.themeAuto")}
+                </Text>
+                <Text style={themeStyles.themeSubAuto}>
+                  {t("profile.themeAutoSub")}
+                </Text>
                 {manualTheme === "auto" && (
                   <View
                     style={[
@@ -3225,7 +3233,9 @@ function SettingsModal({
                   <View style={themeStyles.previewCircleDark} />
                 </View>
                 <Text style={themeStyles.themeLabelDark}>🌙</Text>
-                <Text style={themeStyles.themeTitleDark}>Tamna</Text>
+                <Text style={themeStyles.themeTitleDark}>
+                  {t("profile.themeDark")}
+                </Text>
                 {manualTheme === "dark" && (
                   <View
                     style={[
@@ -3406,7 +3416,7 @@ function SettingsModal({
           {/* ─── PODRŠKA ──────────────────────────────────── */}
           <View style={sm.section}>
             <Text style={sm.sectionTitle}>
-              {<Text style={sm.sectionTitle}>Korisnička podrška</Text>}
+              {<Text style={sm.sectionTitle}>{t("profile.support")}</Text>}
             </Text>
 
             {/* 1. Obrati se adminu putem maila */}
@@ -3434,7 +3444,7 @@ function SettingsModal({
                 <Ionicons name="mail-outline" size={18} color={V.silverDim} />
               </View>
               <View style={{ flex: 1 }}>
-                <Text style={sm.varaBtnText}>Kontaktiraj admina</Text>
+                <Text style={sm.varaBtnText}>{t("profile.contactAdmin")}</Text>
                 <Text style={[sm.rowSub, { marginTop: 0 }]}>
                   admin@gmail.com
                 </Text>
@@ -3451,9 +3461,11 @@ function SettingsModal({
                 <Ionicons name="bug-outline" size={18} color={V.silverDim} />
               </View>
               <View style={{ flex: 1 }}>
-                <Text style={sm.varaBtnText}>Nešto ne radi u aplikaciji</Text>
+                <Text style={sm.varaBtnText}>
+                  {t("profile.reportAppIssue")}
+                </Text>
                 <Text style={[sm.rowSub, { marginTop: 0 }]}>
-                  Prijavi tehničke poteškoće
+                  {t("profile.reportAppIssueSub")}
                 </Text>
               </View>
               <Ionicons name="chevron-forward" size={16} color={V.silverDim} />
@@ -3468,9 +3480,11 @@ function SettingsModal({
                 <Ionicons name="map-outline" size={18} color={V.silverDim} />
               </View>
               <View style={{ flex: 1 }}>
-                <Text style={sm.varaBtnText}>Problem s podacima na karti</Text>
+                <Text style={sm.varaBtnText}>
+                  {t("profile.reportMapIssue")}
+                </Text>
                 <Text style={[sm.rowSub, { marginTop: 0 }]}>
-                  Nedostaje lokacija ili pogrešni podaci
+                  {t("profile.reportMapIssueSub")}
                 </Text>
               </View>
               <Ionicons name="chevron-forward" size={16} color={V.silverDim} />
@@ -3570,8 +3584,8 @@ function SettingsModal({
                   }}
                 >
                   {type === "app"
-                    ? "Problem s aplikacijom"
-                    : "Problem s kartom"}
+                    ? t("profile.appProblemTitle")
+                    : t("profile.mapProblemTitle")}
                 </Text>
                 <TouchableOpacity
                   onPress={() => {
@@ -3589,8 +3603,8 @@ function SettingsModal({
                 style={{ fontSize: 13, color: V.silverDim, marginBottom: 16 }}
               >
                 {type === "app"
-                  ? "Opiši što se dogodilo — npr. aplikacija se zamrznula, podaci se nisu učitali, nešto ne reagira."
-                  : "Opiši lokaciju ili podatak koji nedostaje / koji je netočan na karti."}
+                  ? t("profile.appProblemDesc")
+                  : t("profile.mapProblemDesc")}
               </Text>
 
               {/* Tekstualno polje */}
@@ -3608,8 +3622,8 @@ function SettingsModal({
                   onChangeText={setProblemText}
                   placeholder={
                     type === "app"
-                      ? "Npr. aplikacija se zamrzla na ekranu s kartom..."
-                      : "Npr. nedostaje restoran u centru Splita..."
+                      ? t("profile.appProblemPlaceholder")
+                      : t("profile.mapProblemPlaceholder")
                   }
                   placeholderTextColor={V.silverDim}
                   multiline
@@ -3662,7 +3676,7 @@ function SettingsModal({
                       fontSize: 15,
                     }}
                   >
-                    Odustani
+                    {t("common.cancel")}
                   </Text>
                 </TouchableOpacity>
 
@@ -3694,7 +3708,7 @@ function SettingsModal({
                         fontSize: 15,
                       }}
                     >
-                      Pošalji
+                      {t("common.send")}
                     </Text>
                   )}
                 </TouchableOpacity>

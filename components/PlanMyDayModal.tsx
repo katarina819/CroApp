@@ -253,6 +253,7 @@ function getTimeBasedActivities(
   allVenues: Record<string, VenueItem[]>,
   dayOffset: number = 0,
   fallbackCoords?: { latitude: number; longitude: number } | null,
+  t?: (key: string, opts?: any) => string,
 ): DayActivity[] {
   // Pomoćna: uzmi venue koji još nije korišten u ovom danu
   const usedVenueNames = new Set<string>();
@@ -281,77 +282,77 @@ function getTimeBasedActivities(
       type: "cafe",
       duration: 45,
       cost: "5-10",
-      description: "Doručak",
+      description: t ? t("plan.schedBreakfast") : "Doručak",
     },
     {
       time: "09:00",
       type: "landmark",
       duration: 50,
       cost: "0-5",
-      description: "Jutarnje razgledavanje — turistički promet najmanji",
+      description: t ? t("plan.schedMorningTour") : "Jutarnje razgledavanje",
     },
     {
       time: "10:00",
       type: "museum",
       duration: 75,
       cost: "8-15",
-      description: "Muzej (otvoren od 10h)",
+      description: t ? t("plan.schedMuseum") : "Muzej",
     },
     {
       time: "11:30",
       type: "market",
       duration: 30,
       cost: "0-10",
-      description: "Tržnica — suveniri ili lokalni proizvodi",
+      description: t ? t("plan.schedMarket") : "Tržnica",
     },
     {
       time: "12:15",
       type: "restaurant",
       duration: 60,
       cost: "12-22",
-      description: "Ručak",
+      description: t ? t("plan.schedLunch") : "Ručak",
     },
     {
       time: "13:30",
       type: "park",
       duration: 45,
       cost: "0",
-      description: "Kratka šetnja nakon ručka",
+      description: t ? t("plan.schedWalk") : "Kratka šetnja nakon ručka",
     },
     {
       time: "14:30",
       type: "beach",
       duration: 150,
       cost: "0-10",
-      description: "Plaža — zlatni sat sunca",
+      description: t ? t("plan.schedBeach") : "Plaža",
     },
     {
       time: "17:15",
       type: "cafe",
       duration: 30,
       cost: "4-8",
-      description: "Kava/sladoled — odmor prije večeri",
+      description: t ? t("plan.schedAfternoonCoffee") : "Kava/sladoled",
     },
     {
       time: "18:00",
       type: "spa",
       duration: 60,
       cost: "20-40",
-      description: "Spa/wellbeing — ako dostupno",
+      description: t ? t("plan.schedSpa") : "Spa/wellbeing",
     },
     {
       time: "19:30",
       type: "restaurant",
       duration: 75,
       cost: "20-40",
-      description: "Večera — drugi restoran od ručka",
+      description: t ? t("plan.schedDinner") : "Večera",
     },
     {
       time: "21:00",
       type: "club",
       duration: 180,
       cost: "15-35",
-      description: "Noćni izlazak",
+      description: t ? t("plan.schedNight") : "Noćni izlazak",
     },
   ];
 
@@ -383,7 +384,11 @@ function getTimeBasedActivities(
     if (!selectedVenue && fallback) {
       const off = OFFSETS[idx % OFFSETS.length];
       selectedVenue = {
-        name: `Lokalni ${item.type}`,
+        name: t
+          ? t("plan.localVenue", {
+              type: t(`categories.${item.type}`, { defaultValue: item.type }),
+            })
+          : `Lokalni ${item.type}`,
         latitude: fallback.latitude + off.lat,
         longitude: fallback.longitude + off.lng,
       };
@@ -870,11 +875,11 @@ export function PlanMyDayModal({
   const [mapReady, setMapReady] = useState(false);
 
   const LOADING_MESSAGES = [
-    { icon: "", text: "Tražim lokacije u okolici..." },
-    { icon: "", text: "Geolociram destinaciju..." },
-    { icon: "", text: "Pronalazim restorane i kafiće..." },
-    { icon: "", text: "Kreiram plan putovanja..." },
-    { icon: "", text: "Dovršavam vaš osobni plan putovanja..." },
+    { icon: "", text: t("plan.loadingMsg1") },
+    { icon: "", text: t("plan.loadingMsg2") },
+    { icon: "", text: t("plan.loadingMsg3") },
+    { icon: "", text: t("plan.loadingMsg4") },
+    { icon: "", text: t("plan.loadingMsg5") },
   ];
 
   useEffect(() => {
@@ -1013,7 +1018,7 @@ export function PlanMyDayModal({
       if (!response.ok) throw new Error("Server error");
       setRatingSubmitted(true);
     } catch {
-      setRatingError("Nije moguće poslati ocjenu. Pokušajte ponovo.");
+      setRatingError(t("plan.ratingError"));
     } finally {
       setRatingLoading(false);
     }
@@ -1021,7 +1026,7 @@ export function PlanMyDayModal({
 
   const generate = React.useCallback(async () => {
     if (!destination.trim()) {
-      Alert.alert("Destinacija", "Unesite naziv mjesta koje želite posjetiti.");
+      Alert.alert(t("plan.destination"), t("plan.destinationRequired"));
       return;
     }
 
@@ -1076,7 +1081,7 @@ export function PlanMyDayModal({
       setStep("result");
     } catch (err) {
       if (loadingInterval.current) clearInterval(loadingInterval.current);
-      Alert.alert("Greška", "Nije moguće generirati plan. Pokušajte ponovo.");
+      Alert.alert(t("common.error"), t("plan.planError"));
       setStep("form");
     }
   }, [destination, activityRadius, interests, spontaneous, numDays]);
@@ -1138,7 +1143,7 @@ export function PlanMyDayModal({
               textAlign: "center",
             }}
           >
-            Pronalazim stvarna mjesta za {destination}...
+            {t("plan.findingPlaces", { destination })}
           </Text>
         </View>
       </Modal>
@@ -1174,12 +1179,12 @@ export function PlanMyDayModal({
               <Text
                 style={{ fontSize: 15, color: DC.accent, fontWeight: "700" }}
               >
-                Novi plan
+                {t("plan.newPlan")}
               </Text>
             </TouchableOpacity>
           ) : (
             <Text style={{ fontSize: 20, fontWeight: "800", color: DC.text }}>
-              Plan putovanja
+              {t("plan.planTrip")}
             </Text>
           )}
           {step === "result" && (
@@ -1198,14 +1203,14 @@ export function PlanMyDayModal({
                 <Text
                   style={{ fontSize: 14, color: DC.textDim, fontWeight: "600" }}
                 >
-                  Dijeli
+                  {t("plan.share")}
                 </Text>
               </TouchableOpacity>
               <TouchableOpacity onPress={handleClose}>
                 <Text
                   style={{ fontSize: 14, color: DC.textDim, fontWeight: "600" }}
                 >
-                  Zatvori
+                  {t("common.close")}
                 </Text>
               </TouchableOpacity>
             </View>
@@ -1214,7 +1219,7 @@ export function PlanMyDayModal({
               <Text
                 style={{ fontSize: 14, color: DC.textDim, fontWeight: "600" }}
               >
-                Zatvori
+                {t("common.close")}
               </Text>
             </TouchableOpacity>
           )}
@@ -1249,12 +1254,12 @@ export function PlanMyDayModal({
                   <Text
                     style={{ fontSize: 15, fontWeight: "700", color: DC.text }}
                   >
-                    Spontano putovanje
+                    {t("plan.spontaneous")}
                   </Text>
                   <Text
                     style={{ fontSize: 12, color: DC.textDim, marginTop: 2 }}
                   >
-                    Zatekao/la sam se u gradu — bez smještaja (1 dan)
+                    {t("plan.spontaneousDesc")}
                   </Text>
                 </View>
                 <TouchableOpacity
@@ -1294,7 +1299,7 @@ export function PlanMyDayModal({
                     marginBottom: 6,
                   }}
                 >
-                  Kamo putujete?
+                  {t("plan.whereGoing")}?
                 </Text>
                 <TextInput
                   style={{
@@ -1308,7 +1313,7 @@ export function PlanMyDayModal({
                     color: DC.text,
                     fontWeight: "600",
                   }}
-                  placeholder="npr. Rovinj, Split, Dubrovnik..."
+                  placeholder={t("plan.destinationExample")}
                   placeholderTextColor={DC.textDim}
                   value={destination}
                   onChangeText={setDestination}
@@ -1327,17 +1332,34 @@ export function PlanMyDayModal({
                       marginBottom: 10,
                     }}
                   >
-                    Koliko dana?
+                    {t("plan.howManyDays")}?
                   </Text>
                   <View
                     style={{ flexDirection: "row", gap: 8, flexWrap: "wrap" }}
                   >
                     {[
-                      { val: 1, label: "1 dan" },
-                      { val: 2, label: "Vikend" },
-                      { val: 3, label: "3 dana" },
-                      { val: 5, label: "Tjedan" },
-                      { val: 7, label: "7 dana" },
+                      {
+                        val: 1,
+                        label: t("plan.day1Label", { defaultValue: "1 dan" }),
+                      },
+                      {
+                        val: 2,
+                        label: t("plan.weekendLabel", {
+                          defaultValue: "Vikend",
+                        }),
+                      },
+                      {
+                        val: 3,
+                        label: t("plan.days3Label", { defaultValue: "3 dana" }),
+                      },
+                      {
+                        val: 5,
+                        label: t("plan.weekLabel", { defaultValue: "Tjedan" }),
+                      },
+                      {
+                        val: 7,
+                        label: t("plan.days7Label", { defaultValue: "7 dana" }),
+                      },
                     ].map((o) => (
                       <TouchableOpacity
                         key={o.val}
@@ -1378,24 +1400,24 @@ export function PlanMyDayModal({
                     marginBottom: 10,
                   }}
                 >
-                  Kakav stil putovanja?
+                  {t("plan.tripStyle")}?
                 </Text>
                 <View style={{ flexDirection: "row", gap: 8 }}>
                   {[
                     {
                       val: "opusteno" as PlanStyle,
                       emoji: "😎",
-                      label: "Opušteno",
+                      label: t("plan.styleRelaxed"),
                     },
                     {
                       val: "kulturno" as PlanStyle,
                       emoji: "🧐",
-                      label: "Kulturno",
+                      label: t("plan.styleCultural"),
                     },
                     {
                       val: "avantura" as PlanStyle,
                       emoji: "🤩",
-                      label: "Avantura",
+                      label: t("plan.styleAdventure"),
                     },
                   ].map((o) => (
                     <TouchableOpacity
@@ -1450,10 +1472,12 @@ export function PlanMyDayModal({
                 <Text
                   style={{ fontSize: 13, color: DC.textSub, fontWeight: "600" }}
                 >
-                  Napredne opcije
+                  {t("plan.advancedOptions")}
                 </Text>
                 <Text style={{ fontSize: 13, color: DC.textDim }}>
-                  {showAdvanced ? "▲ Zatvori" : "▼ Prikaži"}
+                  {showAdvanced
+                    ? t("plan.advancedHide")
+                    : t("plan.advancedShow")}
                 </Text>
               </TouchableOpacity>
 
@@ -1482,33 +1506,33 @@ export function PlanMyDayModal({
                         marginBottom: 8,
                       }}
                     >
-                      S kim putujete?
+                      {t("plan.withWhom")}?
                     </Text>
                     <View style={{ gap: 8 }}>
                       {[
                         {
                           val: "solo" as CompanionType,
-                          label: "Solo",
+                          label: t("plan.companionSolo"),
                           emoji: "🧍",
-                          desc: "Sam/sama",
+                          desc: t("plan.companionSoloDesc"),
                         },
                         {
                           val: "partner" as CompanionType,
-                          label: "Par",
+                          label: t("plan.companionPartner"),
                           emoji: "💑",
-                          desc: "Dvoje — romantično",
+                          desc: t("plan.companionPartnerDesc"),
                         },
                         {
                           val: "prijatelji" as CompanionType,
-                          label: "Prijatelji",
+                          label: t("plan.companionFriends"),
                           emoji: "👯",
-                          desc: "Grupa — zabava",
+                          desc: t("plan.companionFriendsDesc"),
                         },
                         {
                           val: "obitelj" as CompanionType,
-                          label: "Obitelj",
+                          label: t("plan.companionFamily"),
                           emoji: "👨‍👩‍👧‍👦",
-                          desc: "S djecom",
+                          desc: t("plan.companionFamilyDesc"),
                         },
                       ].map((o) => (
                         <TouchableOpacity
@@ -1565,16 +1589,25 @@ export function PlanMyDayModal({
                         marginBottom: 8,
                       }}
                     >
-                      Prijevoz
+                      {t("plan.transportLabel")}
                     </Text>
                     <View
                       style={{ flexDirection: "row", gap: 6, flexWrap: "wrap" }}
                     >
                       {[
-                        { val: "auto" as TransportType, label: "Auto" },
-                        { val: "javni" as TransportType, label: "Javni" },
-                        { val: "pjesice" as TransportType, label: "Pješice" },
-                        { val: "bicikl" as TransportType, label: "Bicikl" },
+                        { val: "auto" as TransportType, label: t("plan.car") },
+                        {
+                          val: "javni" as TransportType,
+                          label: t("plan.public"),
+                        },
+                        {
+                          val: "pjesice" as TransportType,
+                          label: t("plan.walking"),
+                        },
+                        {
+                          val: "bicikl" as TransportType,
+                          label: t("plan.bicycle"),
+                        },
                       ].map((o) => (
                         <TouchableOpacity
                           key={o.val}
@@ -1614,7 +1647,7 @@ export function PlanMyDayModal({
                         marginBottom: 8,
                       }}
                     >
-                      Budžet (EUR)
+                      {t("plan.budgetLabel")}
                     </Text>
                     <View
                       style={{
@@ -1638,7 +1671,7 @@ export function PlanMyDayModal({
                           color: DC.text,
                           padding: 0,
                         }}
-                        placeholder="npr. 500"
+                        placeholder={t("plan.budgetPlaceholder")}
                         placeholderTextColor={DC.textDim}
                         value={budget}
                         onChangeText={(v) =>
@@ -1663,7 +1696,7 @@ export function PlanMyDayModal({
                         marginBottom: 8,
                       }}
                     >
-                      Radijus pretrage
+                      {t("plan.radiusLabel")}
                     </Text>
                     <View
                       style={{ flexDirection: "row", gap: 6, flexWrap: "wrap" }}
@@ -1714,7 +1747,7 @@ export function PlanMyDayModal({
                           color: DC.textSub,
                         }}
                       >
-                        Interesi (opcionalno)
+                        {t("plan.interestsLabel")}
                       </Text>
                       {interests.length > 0 && (
                         <TouchableOpacity onPress={() => setInterests([])}>
@@ -1725,7 +1758,7 @@ export function PlanMyDayModal({
                               fontWeight: "600",
                             }}
                           >
-                            Očisti
+                            {t("plan.clearInterestsBtn")}
                           </Text>
                         </TouchableOpacity>
                       )}
@@ -1763,12 +1796,10 @@ export function PlanMyDayModal({
                 <Text
                   style={{ color: DC.text, fontSize: 17, fontWeight: "800" }}
                 >
-                  {spontaneous
-                    ? " Otkrij što mogu posjetiti"
-                    : " Generiraj plan"}
+                  {spontaneous ? t("plan.discoverBtn") : t("plan.generateBtn")}
                 </Text>
                 <Text style={{ color: DC.textDim, fontSize: 12, marginTop: 4 }}>
-                  Plan sat po sat s konkretnim mjestima
+                  {t("plan.generateSubtitle")}
                 </Text>
               </TouchableOpacity>
             </ScrollView>
@@ -1979,7 +2010,7 @@ export function PlanMyDayModal({
                                   : ROUTE_COLORS[i % ROUTE_COLORS.length],
                             }}
                           >
-                            Dan {i + 1}
+                            {t("plan.dayLabel2", { day: i + 1 })}
                           </Text>
                         </TouchableOpacity>
                       ))}
@@ -2101,7 +2132,10 @@ export function PlanMyDayModal({
               }}
             >
               <Text style={{ fontSize: 11, color: DC.textSub }}>
-                Stop {activeStop + 1} od {activeDayActivities.length}
+                {t("plan.stopOf", {
+                  current: activeStop + 1,
+                  total: activeDayActivities.length,
+                })}
               </Text>
             </View>
 
@@ -2119,8 +2153,8 @@ export function PlanMyDayModal({
               >
                 {" "}
                 {generatedNumDays > 1
-                  ? `Plan dana ${activeDay + 1}`
-                  : "Vaš plan sat po sat"}
+                  ? t("plan.dayPlanLabel", { day: activeDay + 1 })
+                  : t("plan.hourlyPlan")}
               </Text>
 
               <View
@@ -2248,7 +2282,7 @@ export function PlanMyDayModal({
                               fontWeight: "800",
                             }}
                           >
-                            Otvori →
+                            {t("plan.open")} →
                           </Text>
                         </View>
                       )}
@@ -2288,7 +2322,7 @@ export function PlanMyDayModal({
                                 fontWeight: "900",
                               }}
                             >
-                              Obišao ✓
+                              {t("plan.visitedMark")} ✓
                             </Text>
                           </TouchableOpacity>
                         )}
@@ -2312,7 +2346,7 @@ export function PlanMyDayModal({
                               fontWeight: "800",
                             }}
                           >
-                            ✓ Obišao
+                            ✓ {t("plan.visitedDone")}
                           </Text>
                         </View>
                       )}
@@ -2333,7 +2367,7 @@ export function PlanMyDayModal({
                     marginBottom: 10,
                   }}
                 >
-                  Sva pronađena mjesta
+                  {t("plan.allFoundPlaces")}
                 </Text>
                 {Object.entries(allVenues).map(([type, options]) => {
                   const cat =
@@ -2394,9 +2428,9 @@ export function PlanMyDayModal({
                             {t(`categories.${type}`, { defaultValue: type })}
                           </Text>
                           <Text style={{ fontSize: 11, color: DC.textDim }}>
-                            {options.length} mjesta
+                            {options.length} {t("plan.placesWord")}
                             {visitedCount > 0
-                              ? ` · ✓ ${visitedCount} posjećeno`
+                              ? ` · ✓ ${visitedCount} ${t("plan.visitedWord")}`
                               : ""}
                           </Text>
                         </View>
@@ -2528,7 +2562,9 @@ export function PlanMyDayModal({
                                     color: visited ? "#34c759" : color,
                                   }}
                                 >
-                                  {visited ? "✓ Bila/ Bio" : "Označi"}
+                                  {visited
+                                    ? t("plan.visited2")
+                                    : t("plan.markPlace")}
                                 </Text>
                               </TouchableOpacity>
                             </View>
@@ -2556,7 +2592,7 @@ export function PlanMyDayModal({
                 <Text
                   style={{ color: DC.text, fontSize: 15, fontWeight: "700" }}
                 >
-                  Dijeli plan
+                  {t("plan.sharePlan")}
                 </Text>
               </TouchableOpacity>
               <TouchableOpacity
@@ -2573,7 +2609,7 @@ export function PlanMyDayModal({
                 <Text
                   style={{ color: DC.textSub, fontSize: 14, fontWeight: "600" }}
                 >
-                  Generiraj novi plan
+                  {t("plan.newPlanBtn")}
                 </Text>
               </TouchableOpacity>
             </View>
@@ -2595,7 +2631,7 @@ export function PlanMyDayModal({
                   marginBottom: 10,
                 }}
               >
-                Kako ti se sviđa plan?
+                {t("plan.rateTitle")}
               </Text>
               <View style={{ flexDirection: "row", gap: 8 }}>
                 {[1, 2, 3, 4, 5].map((n) => (
@@ -2652,7 +2688,7 @@ export function PlanMyDayModal({
                     <ActivityIndicator size="small" color={DC.text} />
                   ) : (
                     <Text style={{ color: DC.text, fontWeight: "700" }}>
-                      Pošalji ocjenu
+                      {t("plan.rateSubmit")}
                     </Text>
                   )}
                 </TouchableOpacity>
@@ -2679,7 +2715,7 @@ export function PlanMyDayModal({
                       fontSize: 14,
                     }}
                   >
-                    ✓ Hvala! Tvoja ocjena je zabilježena
+                    ✓ {t("plan.rateThankYou")}
                   </Text>
                   <Text
                     style={{

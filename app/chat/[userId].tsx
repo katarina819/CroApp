@@ -4,6 +4,7 @@ import * as ImagePicker from "expo-image-picker";
 import { router, useLocalSearchParams } from "expo-router";
 import { VideoView, useVideoPlayer } from "expo-video";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import {
   ActivityIndicator,
   Alert,
@@ -28,6 +29,7 @@ import {
   sendMessage,
 } from "../../utils/messagesApi";
 import { API_BASE_URL } from "../config/api";
+import i18n from "../config/i18n";
 
 // ─── VARA Paleta ───────────────────────────────────────────────────────────────
 function getV(isDark: boolean) {
@@ -226,6 +228,7 @@ function AvatarCircle({
 
 // ─── Chat Screen ───────────────────────────────────────────────────────────────
 export default function ChatScreen() {
+  const { t } = useTranslation();
   const { isDark } = useTheme();
   const V = useMemo(() => getV(isDark), [isDark]);
   const styles = useMemo(() => getStyles(V, isDark), [V, isDark]);
@@ -491,9 +494,12 @@ export default function ChatScreen() {
     const now = new Date();
     const yesterday = new Date(now);
     yesterday.setDate(now.getDate() - 1);
-    if (date.toDateString() === now.toDateString()) return "Danas";
-    if (date.toDateString() === yesterday.toDateString()) return "Jučer";
-    return date.toLocaleDateString("hr-HR", {
+    if (date.toDateString() === now.toDateString()) return t("chat.today");
+    if (date.toDateString() === yesterday.toDateString())
+      return t("chat.yesterday");
+    const locale = i18n.language === "hr" ? "hr-HR" : "en-US"; // ← nova linija
+    return date.toLocaleDateString(locale, {
+      // ← locale umjesto "hr-HR"
       weekday: "long",
       day: "2-digit",
       month: "long",
@@ -634,7 +640,7 @@ export default function ChatScreen() {
             <Text style={styles.headerName} numberOfLines={1}>
               {displayName}
             </Text>
-            <Text style={styles.headerStatus}>Aktivan korisnik</Text>
+            <Text style={styles.headerStatus}>{t("chat.activeUser")}</Text>
           </View>
         </View>
         <View style={{ width: 40 }} />
@@ -709,7 +715,7 @@ export default function ChatScreen() {
           <TextInput
             ref={inputRef}
             style={styles.textInput}
-            placeholder={`Poruka za ${displayName}...`}
+            placeholder={t("chat.messagePlaceholder", { name: displayName })}
             placeholderTextColor={V.silverDim}
             value={inputText}
             onChangeText={setInputText}

@@ -10,12 +10,11 @@
     "newArchEnabled": true,
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.anonymous.cromapmobile",
+      "bundleIdentifier": "com.vara.app",
       "infoPlist": {
         "NSLocationWhenInUseUsageDescription": "VARA koristi tvoju lokaciju za prikaz restorana, kafića, plaža i drugih zanimljivih mjesta u tvojoj blizini.",
-        "NSLocationAlwaysAndWhenInUseUsageDescription": "VARA koristi tvoju lokaciju za prikaz restorana, kafića, plaža i drugih zanimljivih mjesta u tvojoj blizini, čak i kada aplikacija radi u pozadini.",
+        "NSLocationAlwaysAndWhenInUseUsageDescription": "VARA koristi tvoju lokaciju za prikaz restorana, kafića, plaža i drugih zanimljivih mjesta u tvojoj blizini.",
         "CFBundleURLTypes": [
-          // ← dodaj ovo za iOS deep links
           {
             "CFBundleURLSchemes": ["vara"]
           }
@@ -38,22 +37,11 @@
       "permissions": [
         "ACCESS_COARSE_LOCATION",
         "ACCESS_FINE_LOCATION",
-        "ACCESS_BACKGROUND_LOCATION",
-        "android.permission.ACCESS_COARSE_LOCATION",
-        "android.permission.ACCESS_FINE_LOCATION",
-        "android.permission.ACCESS_BACKGROUND_LOCATION",
-        "android.permission.FOREGROUND_SERVICE",
-        "android.permission.FOREGROUND_SERVICE_LOCATION",
-        "ACCESS_COARSE_LOCATION",
-        "ACCESS_FINE_LOCATION",
-        "ACCESS_BACKGROUND_LOCATION",
-        "android.permission.ACCESS_COARSE_LOCATION",
-        "android.permission.ACCESS_FINE_LOCATION",
-        "android.permission.ACCESS_BACKGROUND_LOCATION",
-        "android.permission.FOREGROUND_SERVICE",
-        "android.permission.FOREGROUND_SERVICE_LOCATION"
+        "FOREGROUND_SERVICE",
+        "FOREGROUND_SERVICE_LOCATION"
       ],
-      "package": "com.anonymous.cromapmobile",
+      "package": "com.zivac.vara",
+      "versionCode": 1,
       "config": {
         "googleMaps": {
           "apiKey": "AIzaSyAzgl_HOUh-kwD_eQQaWLerARekr36qrgg"
@@ -94,10 +82,9 @@
       [
         "expo-location",
         {
-          "locationAlwaysAndWhenInUsePermission": "VARA koristi tvoju lokaciju za prikaz restorana, kafića, plaža i drugih zanimljivih mjesta u tvojoj blizini.",
           "locationWhenInUsePermission": "VARA koristi tvoju lokaciju za prikaz restorana, kafića, plaža i drugih zanimljivih mjesta u tvojoj blizini.",
-          "isIosBackgroundLocationEnabled": true,
-          "isAndroidBackgroundLocationEnabled": true
+          "isIosBackgroundLocationEnabled": false,
+          "isAndroidBackgroundLocationEnabled": false
         }
       ],
       "expo-font",
@@ -107,7 +94,7 @@
         {
           "android": {
             "compileSdkVersion": 36,
-            "targetSdkVersion": 34,
+            "targetSdkVersion": 35,
             "buildToolsVersion": "35.0.0",
             "kotlinVersion": "2.1.0",
             "minSdkVersion": 24
@@ -119,6 +106,12 @@
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "6deceb71-9275-406a-929a-f05381e88228"
+      }
     }
   }
 }

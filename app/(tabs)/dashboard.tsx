@@ -2211,19 +2211,6 @@ function NotificationSettingsModal({
   );
 }
 
-const ACTIVITY_TEMPLATES = [
-  { label: "☕ Kava", value: "cafe" },
-  { label: "🍽️ Ručak/Večera", value: "restaurant" },
-  { label: "🎵 Noćni izlazak", value: "club" },
-  { label: "🏖️ Plaža", value: "beach" },
-  { label: "🎬 Kino", value: "cinema" },
-  { label: "🌳 Šetnja", value: "park" },
-  { label: "🔐 Escape Room", value: "escapeRoom" },
-  { label: "🎯 Paintball", value: "paintball" },
-  { label: "⛰️ Planinarenje", value: "mountain" },
-  { label: "💧 Toplice", value: "spa" },
-];
-
 export function ActivityGroupsModal({
   visible,
   onClose,
@@ -2236,6 +2223,23 @@ export function ActivityGroupsModal({
   const { t } = useTranslation();
   const { isDark } = useTheme();
   const DC = getDashColors(isDark);
+
+  const ACTIVITY_TEMPLATES = useMemo(
+    () => [
+      { label: `☕ ${t("categories.cafe")}`, value: "cafe" },
+      { label: `🍽️ ${t("categories.restaurant")}`, value: "restaurant" },
+      { label: `🎵 ${t("categories.club")}`, value: "club" },
+      { label: `🏖️ ${t("categories.beach")}`, value: "beach" },
+      { label: `🎬 ${t("categories.cinema")}`, value: "cinema" },
+      { label: `🌳 ${t("categories.park")}`, value: "park" },
+      { label: `🔐 ${t("categories.escapeRoom")}`, value: "escapeRoom" },
+      { label: `🎯 ${t("categories.paintball")}`, value: "paintball" },
+      { label: `⛰️ ${t("categories.mountain")}`, value: "mountain" },
+      { label: `💧 ${t("categories.spa")}`, value: "spa" },
+    ],
+    [t],
+  );
+
   const [groups, setGroups] = useState<ActivityGroup[]>([]);
   const [showCreate, setShowCreate] = useState(false);
   const [selectedGroup, setSelectedGroup] = useState<ActivityGroup | null>(
@@ -2496,7 +2500,7 @@ export function ActivityGroupsModal({
 
       const requestBody = {
         creatorName: myName,
-        activity: newGroup.activity.trim(),
+        activity: newGroup.category,
         description: newGroup.description.trim(),
         latitude: userLocation?.latitude || 45.815,
         longitude: userLocation?.longitude || 15.9819,
@@ -2519,7 +2523,7 @@ export function ActivityGroupsModal({
         const formattedGroup = {
           id: newGroupData.group?.id || newGroupData.id,
           creatorName: myName,
-          activity: newGroup.activity.trim(),
+          activity: newGroup.category,
           description: newGroup.description.trim(),
           latitude: userLocation?.latitude || 45.815,
           longitude: userLocation?.longitude || 15.9819,
@@ -3775,7 +3779,11 @@ export function ActivityGroupsModal({
                   Kavica: "cafe",
                 };
 
-                const categoryKey = activityToCategory[g.activity] ?? "";
+                const categoryKey =
+                  ACTIVITY_TEMPLATES.find(
+                    (tmpl) =>
+                      tmpl.label === g.activity || tmpl.value === g.activity,
+                  )?.value ?? "";
                 // SIGURNO dohvati color — bez spreada ili Object.keys
                 const color =
                   (categoryKey &&
@@ -4585,6 +4593,7 @@ function buildPlanWithVenues(
   preference: PreferenceType,
   interests: string[],
   venues: Record<string, { name: string; address?: string }[]>,
+  t: (key: string, opts?: any) => string,
 ): string {
   const DAYS: Record<PlanPeriod, number> = {
     dan: 1,
@@ -4682,7 +4691,7 @@ function buildPlanWithVenues(
 
   for (let d = 1; d <= Math.min(days, 7); d++) {
     plan += `\n${"─".repeat(36)}\n`;
-    plan += `📆 DAN ${d}\n`;
+    plan += `📆 ${t("plan.dayLabel")} ${d}\n`;
     plan += `${"─".repeat(36)}\n\n`;
 
     let cursor = 8 * 60; // 08:00
@@ -4699,7 +4708,7 @@ function buildPlanWithVenues(
 
     // 08:00 – Doručak/kava
     // 08:00 – Doručak/kava
-    plan += `🌅 JUTRO\n`;
+    plan += `🌅 ${t("plan.morningLabel")}\n`;
     const cafe = get("cafe", d - 1);
     if (cafe) plan += `  ☕ ${slot(45)} Doručak: ${cafe}\n`;
     else plan += `  ☕ ${slot(45)} Doručak u lokalnom kafiću\n`;
@@ -4728,7 +4737,7 @@ function buildPlanWithVenues(
 
     // Ručak — bez forsiranog skoka, samo minimalni floor od 12:00
     if (cursor < 12 * 60) cursor = 12 * 60;
-    plan += `\n☀️ POSLIJEPODNE\n`;
+    plan += `☀️ ${t("plan.afternoonLabel")}\n`;
     const rest1 = get("restaurant", (d - 1) * 2);
     if (rest1) plan += `  🍽️ ${slot(75)} Ručak: ${rest1} (~20-35 EUR/os.)\n`;
     else
@@ -4788,7 +4797,7 @@ function buildPlanWithVenues(
 
     // Večera — floor 18:30 (ne 19:00 jer gubimo čitav sat)
     if (cursor < 18 * 60 + 30) cursor = 18 * 60 + 30;
-    plan += `\n🌙 VEČER\n`;
+    plan += `🌙 ${t("plan.eveningLabel")}\n`;
     const rest2 = get("restaurant", (d - 1) * 2 + 1);
     if (rest2) plan += `  🍷 ${slot(75)} Večera: ${rest2} (~30-55 EUR/os.)\n`;
     else plan += `  🍷 ${slot(75)} Večera (~30-55 EUR/os.)\n`;
@@ -4819,7 +4828,7 @@ function buildPlanWithVenues(
 
   // Savjeti
   plan += `\n${"━".repeat(40)}\n`;
-  plan += `💡 SAVJETI\n`;
+  plan += `💡 ${t("plan.tipsLabel")}\n`;
   plan += `${"━".repeat(40)}\n`;
   if (transport === "javni")
     plan += `• Prijevozni raspored: hzpp.hr / arriva.hr / getbybus.com\n`;
@@ -7648,7 +7657,7 @@ function VisitArchiveModal({
           }}
         >
           <Text style={{ fontSize: 20, fontWeight: "800", color: DC.text }}>
-            {t("map.visitArchive", { count: visits.length })}
+            {t("map.visitArchive")}
           </Text>
           <TouchableOpacity onPress={onClose}>
             <Text
