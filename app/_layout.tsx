@@ -44,19 +44,9 @@ export default function RootLayout() {
     return () => clearTimeout(timer);
   }, []);
 
+  // ZAMIJENI cijeli if blok s ovim:
   const checkAuth = async () => {
     try {
-      // ← POMAKNI OVU PROVJERU NA SAM VRH, PRIJE SVEGA
-      if (
-        typeof window !== "undefined" &&
-        (window.location.pathname.startsWith("/admin") ||
-          window.location.pathname.startsWith("/adminn"))
-      ) {
-        console.log("➡️ Admin ruta — preskačem auth check");
-        setReady(true);
-        return; // ← izlazi odmah, ne dotiče routing
-      }
-
       const token = await AsyncStorage.getItem("token");
       console.log("🔑 Token exists:", !!token);
 

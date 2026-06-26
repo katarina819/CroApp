@@ -1,19 +1,14 @@
 // app/config/api.ts
-import { Platform } from "react-native";
 
 // 🔥 KORISTI OVU IP ADRESU (tvoja Wi-Fi IP)
-const YOUR_COMPUTER_IP = "10.206.222.205"; // 🔹 tvoj laptop IP
+const YOUR_COMPUTER_IP = "10.33.74.205"; // 🔹 tvoj laptop IP
 const BACKEND_PORT = "7089";
 
 const getBaseUrl = () => {
   if (__DEV__) {
-    if (Platform.OS === "android" || Platform.OS === "ios") {
-      return `http://${YOUR_COMPUTER_IP}:${BACKEND_PORT}`;
-    }
-    // web (localhost)
-    return `http://localhost:${BACKEND_PORT}`;
+    return "https://cromap.onrender.com";
   }
-  return "https://your-production-api.com";
+  return "https://cromap.onrender.com";
 };
 
 export const API_BASE_URL = getBaseUrl();
