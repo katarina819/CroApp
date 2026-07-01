@@ -317,12 +317,16 @@ function VideoItemComponent({
   return (
     <View style={vs.videoContainer}>
       {isImage ? (
-        <Image source={{ uri: mediaUrl }} style={vs.video} resizeMode="cover" />
+        <Image
+          source={{ uri: mediaUrl }}
+          style={vs.video}
+          resizeMode="contain"
+        />
       ) : (
         <VideoView
           player={player}
           style={vs.video}
-          contentFit="cover"
+          contentFit="contain"
           nativeControls={false}
         />
       )}
@@ -982,6 +986,15 @@ export function UploadModal({
   const [mediaType, setMediaType] = useState<"video" | "image">("video");
   const [title, setTitle] = useState("");
   const [location, setLocation] = useState("");
+  const [locationValid, setLocationValid] = useState(false);
+  const [locationSuggestions, setLocationSuggestions] = useState<
+    { displayName: string; lat: string; lon: string }[]
+  >([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const [searchingLocation, setSearchingLocation] = useState(false);
+  const locationDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(
+    null,
+  );
   const [description, setDescription] = useState("");
   const [uploading, setUploading] = useState(false);
   const [step, setStep] = useState<"pick" | "preview">("pick");
@@ -1033,6 +1046,44 @@ export function UploadModal({
     }
   };
 
+  const searchLocations = (query: string) => {
+    setLocation(query);
+    setLocationValid(false);
+
+    if (locationDebounceRef.current) clearTimeout(locationDebounceRef.current);
+
+    if (query.trim().length < 2) {
+      setLocationSuggestions([]);
+      setShowSuggestions(false);
+      return;
+    }
+
+    locationDebounceRef.current = setTimeout(async () => {
+      setSearchingLocation(true);
+      try {
+        const res = await fetch(
+          `${API_BASE_URL}/api/locationsearch/autocomplete?query=${encodeURIComponent(query.trim())}`,
+        );
+        if (res.ok) {
+          const data = await res.json();
+          setLocationSuggestions(data);
+          setShowSuggestions(data.length > 0);
+        }
+      } catch {
+        setLocationSuggestions([]);
+      } finally {
+        setSearchingLocation(false);
+      }
+    }, 400);
+  };
+
+  const selectLocation = (suggestion: { displayName: string }) => {
+    setLocation(suggestion.displayName);
+    setLocationValid(true);
+    setShowSuggestions(false);
+    setLocationSuggestions([]);
+  };
+
   const uploadMedia = async () => {
     const token = await AsyncStorage.getItem("token");
     let userId = await AsyncStorage.getItem("userId");
@@ -1051,6 +1102,13 @@ export function UploadModal({
     }
     if (!location.trim()) {
       Alert.alert(t("common.error"), t("videos.locationRequired"));
+      return;
+    }
+    if (!locationValid) {
+      Alert.alert(
+        "Neispravna lokacija",
+        "Molimo odaberi lokaciju iz ponuđene liste kako bismo potvrdili da postoji.",
+      );
       return;
     }
     if (!userId || userId === "0") {
@@ -1116,6 +1174,9 @@ export function UploadModal({
     setMediaUri(null);
     setTitle("");
     setLocation("");
+    setLocationValid(false);
+    setLocationSuggestions([]);
+    setShowSuggestions(false);
     setDescription("");
     setStep("pick");
     onClose();
@@ -1234,14 +1295,75 @@ export function UploadModal({
                     (obavezno)
                   </Text>
                 </Text>
-                <TextInput
-                  style={upload.fieldInput}
-                  placeholder="Npr. Zagreb, Dolac"
-                  placeholderTextColor={VT.placeholder}
-                  value={location}
-                  onChangeText={setLocation}
-                  maxLength={150}
-                />
+                <View style={{ position: "relative", zIndex: 20 }}>
+                  <View style={{ position: "relative" }}>
+                    <TextInput
+                      style={[
+                        upload.fieldInput,
+                        locationValid && { borderColor: V.visited },
+                      ]}
+                      placeholder="Npr. Osijek..."
+                      placeholderTextColor={VT.placeholder}
+                      value={location}
+                      onChangeText={searchLocations}
+                      maxLength={150}
+                    />
+                    {searchingLocation && (
+                      <ActivityIndicator
+                        size="small"
+                        color={VT.accent}
+                        style={{ position: "absolute", right: 14, top: 14 }}
+                      />
+                    )}
+                    {locationValid && !searchingLocation && (
+                      <Ionicons
+                        name="checkmark-circle"
+                        size={20}
+                        color={V.visited}
+                        style={{ position: "absolute", right: 12, top: 13 }}
+                      />
+                    )}
+                  </View>
+
+                  {showSuggestions && (
+                    <View
+                      style={{
+                        backgroundColor: VT.bgCard,
+                        borderWidth: 1,
+                        borderColor: VT.borderBright,
+                        borderRadius: 10,
+                        marginTop: 4,
+                        maxHeight: 220,
+                        overflow: "hidden",
+                      }}
+                    >
+                      <ScrollView
+                        keyboardShouldPersistTaps="handled"
+                        nestedScrollEnabled
+                      >
+                        {locationSuggestions.map((s, idx) => (
+                          <TouchableOpacity
+                            key={`${s.lat}_${s.lon}_${idx}`}
+                            style={{
+                              paddingHorizontal: 14,
+                              paddingVertical: 12,
+                              borderBottomWidth:
+                                idx < locationSuggestions.length - 1 ? 1 : 0,
+                              borderBottomColor: VT.border,
+                            }}
+                            onPress={() => selectLocation(s)}
+                          >
+                            <Text
+                              style={{ color: VT.textPrimary, fontSize: 14 }}
+                            >
+                              {s.displayName}
+                            </Text>
+                          </TouchableOpacity>
+                        ))}
+                      </ScrollView>
+                    </View>
+                  )}
+                </View>
 
                 <Text style={upload.fieldLabel}>Opis (opcionalno)</Text>
                 <TextInput
