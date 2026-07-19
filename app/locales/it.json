@@ -450,6 +450,12 @@
 
   "profile": {
     "title": "Profilo",
+    "blockConfirmTitle": "Blocca utente",
+    "blockConfirmMsg": "Sei sicuro di voler bloccare {{name}}?",
+    "blockConfirmBtn": "Blocca",
+    "goldenConfirmTitle": "Aggiungi Amico d'Oro",
+    "goldenConfirmMsg": "Sei sicuro di voler aggiungere {{name}} ai tuoi Amici d'Oro?",
+    "goldenConfirmBtn": "Aggiungi ⭐",
     "savedOn": "Salvato:",
     "addedOn": "Aggiunto:",
     "themeLight": "Chiaro",

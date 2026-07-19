@@ -441,6 +441,12 @@
   "profile": {
     "title": "Profile",
     "savedOn": "Saved:",
+    "blockConfirmTitle": "Block user",
+    "blockConfirmMsg": "Are you sure you want to block {{name}}?",
+    "blockConfirmBtn": "Block",
+    "goldenConfirmTitle": "Add Golden Friend",
+    "goldenConfirmMsg": "Are you sure you want to add {{name}} to your Golden Friends?",
+    "goldenConfirmBtn": "Add ⭐",
     "addedOn": "Added:",
 
     "themeLight": "Light",

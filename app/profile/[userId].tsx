@@ -472,8 +472,8 @@ export default function UserProfileScreen() {
     try {
       if (!isGolden) {
         Alert.alert(
-          "⭐ Dodaj Golden Frienda",
-          `Dodati ${profile?.firstName} ${profile?.lastName} u Golden Friends?`,
+          "Dodaj Zlatnog prijatelja",
+          `Dodati ${profile?.firstName} ${profile?.lastName} u Zlatne prijatelje?`,
           [
             { text: "Odustani", style: "cancel" },
             {

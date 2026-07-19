@@ -34,7 +34,7 @@ import { StoryBadge } from "../../app/StoryBadge";
 import { useTheme } from "../../components/AdaptiveThemeProvider";
 import { API_BASE_URL } from "../config/api";
 
-const { width, height } = Dimensions.get("window");
+const { width } = Dimensions.get("window");
 
 // ─── VARA Paleta — identična dashboard.tsx / varaTheme.ts ────────────────────
 const V = {
@@ -271,6 +271,7 @@ function VaraAvatar({
 function VideoItemComponent({
   item,
   isActive,
+  containerHeight,
   onLikeToggle,
   onSaveToggle,
   onWishlistToggle,
@@ -282,6 +283,7 @@ function VideoItemComponent({
 }: {
   item: VideoItem;
   isActive: boolean;
+  containerHeight: number;
   onLikeToggle: (id: number) => void;
   onSaveToggle: (id: number) => void;
   onWishlistToggle: (id: number) => void;
@@ -315,7 +317,7 @@ function VideoItemComponent({
     );
 
   return (
-    <View style={vs.videoContainer}>
+    <View style={[vs.videoContainer, { height: containerHeight }]}>
       {isImage ? (
         <Image
           source={{ uri: mediaUrl }}
@@ -1446,6 +1448,9 @@ export default function VideosScreen() {
   const VT = useMemo(() => getVT(isDark), [isDark]);
   const [videos, setVideos] = useState<VideoItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [containerHeight, setContainerHeight] = useState(
+    Dimensions.get("window").height,
+  );
   const [currentPlayingIndex, setCurrentPlayingIndex] = useState<number | null>(
     null,
   );
@@ -1654,7 +1659,10 @@ export default function VideosScreen() {
     );
 
   return (
-    <View style={vs.container}>
+    <View
+      style={vs.container}
+      onLayout={(e) => setContainerHeight(e.nativeEvent.layout.height)}
+    >
       <TouchableOpacity
         style={vs.addButton}
         onPress={() => setShowUploadModal(true)}
@@ -1670,6 +1678,7 @@ export default function VideosScreen() {
           <VideoItemComponent
             item={item}
             isActive={index === currentPlayingIndex}
+            containerHeight={containerHeight}
             onLikeToggle={handleLikeToggle}
             onSaveToggle={handleSaveToggle}
             onWishlistToggle={handleWishlistToggle}
@@ -1684,7 +1693,7 @@ export default function VideosScreen() {
         showsVerticalScrollIndicator={false}
         onViewableItemsChanged={onViewableItemsChanged}
         viewabilityConfig={{ itemVisiblePercentThreshold: 50 }}
-        snapToInterval={height}
+        snapToInterval={containerHeight}
         decelerationRate="fast"
       />
 
@@ -1724,7 +1733,7 @@ const vs = StyleSheet.create({
   },
   videoContainer: {
     width,
-    height,
+
     position: "relative",
     backgroundColor: "#000",
   },

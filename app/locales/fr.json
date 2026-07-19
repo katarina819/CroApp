@@ -464,6 +464,12 @@
   "weekendLabel": "Week-end",
   "profile": {
     "title": "Profil",
+    "blockConfirmTitle": "Bloquer l'utilisateur",
+    "blockConfirmMsg": "Êtes-vous sûr de vouloir bloquer {{name}} ?",
+    "blockConfirmBtn": "Bloquer",
+    "goldenConfirmTitle": "Ajouter un Ami Doré",
+    "goldenConfirmMsg": "Êtes-vous sûr de vouloir ajouter {{name}} à vos Amis Dorés ?",
+    "goldenConfirmBtn": "Ajouter ⭐",
     "savedOn": "Enregistré le :",
     "addedOn": "Ajouté le :",
     "themeLight": "Clair",

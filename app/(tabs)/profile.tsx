@@ -1337,13 +1337,28 @@ function FollowListModal({
               const blockedData = blockedRes.ok
                 ? await blockedRes.json()
                 : { isBlocked: false };
+              const cacheBustedAvatar =
+                user.avatar && !user.avatar.startsWith("avatar:")
+                  ? `${user.avatar}${user.avatar.includes("?") ? "&" : "?"}_t=${Date.now()}`
+                  : user.avatar;
+
               return {
                 ...user,
+                avatar: cacheBustedAvatar,
                 isGolden: goldenData.isGolden || false,
                 isBlocked: blockedData.isBlocked || false,
               };
             } catch {
-              return { ...user, isGolden: false, isBlocked: false };
+              const cacheBustedAvatar =
+                user.avatar && !user.avatar.startsWith("avatar:")
+                  ? `${user.avatar}${user.avatar.includes("?") ? "&" : "?"}_t=${Date.now()}`
+                  : user.avatar;
+              return {
+                ...user,
+                avatar: cacheBustedAvatar,
+                isGolden: false,
+                isBlocked: false,
+              };
             }
           }),
         );
@@ -1359,53 +1374,75 @@ function FollowListModal({
   const handleGoldenToggle = async (
     targetUserId: number,
     currentStatus: boolean,
+    targetName?: string,
   ) => {
-    setProcessingId(targetUserId);
-    try {
-      const token = await AsyncStorage.getItem("token");
-      const res = !currentStatus
-        ? await fetch(
-            `${API_BASE_URL}/api/golden-friends/add/${targetUserId}`,
-            {
-              method: "POST",
-              headers: {
-                "Content-Type": "application/json",
-                Authorization: `Bearer ${token}`,
+    const doToggle = async () => {
+      setProcessingId(targetUserId);
+      try {
+        const token = await AsyncStorage.getItem("token");
+        const res = !currentStatus
+          ? await fetch(
+              `${API_BASE_URL}/api/golden-friends/add/${targetUserId}`,
+              {
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/json",
+                  Authorization: `Bearer ${token}`,
+                },
               },
-            },
-          )
-        : await fetch(
-            `${API_BASE_URL}/api/golden-friends/remove/${targetUserId}`,
-            { method: "DELETE", headers: { Authorization: `Bearer ${token}` } },
+            )
+          : await fetch(
+              `${API_BASE_URL}/api/golden-friends/remove/${targetUserId}`,
+              {
+                method: "DELETE",
+                headers: { Authorization: `Bearer ${token}` },
+              },
+            );
+        if (res.ok) {
+          setList((prev) =>
+            prev.map((user) =>
+              user.id === targetUserId
+                ? { ...user, isGolden: !currentStatus }
+                : user,
+            ),
           );
-      if (res.ok) {
-        setList((prev) =>
-          prev.map((user) =>
-            user.id === targetUserId
-              ? { ...user, isGolden: !currentStatus }
-              : user,
-          ),
-        );
-        Alert.alert(
-          t("common.success"),
-          currentStatus ? t("profile.goldenRemoved") : t("profile.goldenAdded"),
-        );
+          Alert.alert(
+            t("common.success"),
+            currentStatus
+              ? t("profile.goldenRemoved")
+              : t("profile.goldenAdded"),
+          );
+        }
+      } catch (error) {
+        console.error("Golden toggle error:", error);
+      } finally {
+        setProcessingId(null);
       }
-    } catch (error) {
-      console.error("Golden toggle error:", error);
-    } finally {
-      setProcessingId(null);
+    };
+
+    if (!currentStatus) {
+      Alert.alert(
+        t("profile.goldenConfirmTitle"),
+        t("profile.goldenConfirmMsg", { name: targetName ?? "" }),
+        [
+          { text: t("common.cancel"), style: "cancel" },
+          { text: t("profile.goldenConfirmBtn"), onPress: doToggle },
+        ],
+      );
+    } else {
+      doToggle();
     }
   };
 
   const handleBlockToggle = async (
     targetUserId: number,
     currentStatus: boolean,
+    targetName?: string,
   ) => {
-    setProcessingId(targetUserId);
-    try {
-      const token = await AsyncStorage.getItem("token");
-      if (!currentStatus) {
+    const doBlock = async () => {
+      setProcessingId(targetUserId);
+      try {
+        const token = await AsyncStorage.getItem("token");
         try {
           const checkFollow = await fetch(
             `${API_BASE_URL}/api/follow/is-following/${targetUserId}`,
@@ -1440,7 +1477,17 @@ function FollowListModal({
           if (onUpdate) onUpdate();
           if (list.length === 1) onClose();
         }
-      } else {
+      } catch (error) {
+        console.error("Block toggle error:", error);
+      } finally {
+        setProcessingId(null);
+      }
+    };
+
+    const doUnblock = async () => {
+      setProcessingId(targetUserId);
+      try {
+        const token = await AsyncStorage.getItem("token");
         const res = await fetch(
           `${API_BASE_URL}/api/block/unblock/${targetUserId}`,
           { method: "DELETE", headers: { Authorization: `Bearer ${token}` } },
@@ -1453,11 +1500,28 @@ function FollowListModal({
           );
           Alert.alert(t("profile.unblocked"), t("profile.unblockedDesc"));
         }
+      } catch (error) {
+        console.error("Block toggle error:", error);
+      } finally {
+        setProcessingId(null);
       }
-    } catch (error) {
-      console.error("Block toggle error:", error);
-    } finally {
-      setProcessingId(null);
+    };
+
+    if (!currentStatus) {
+      Alert.alert(
+        t("profile.blockConfirmTitle"),
+        t("profile.blockConfirmMsg", { name: targetName ?? "" }),
+        [
+          { text: t("common.cancel"), style: "cancel" },
+          {
+            text: t("profile.blockConfirmBtn"),
+            style: "destructive",
+            onPress: doBlock,
+          },
+        ],
+      );
+    } else {
+      doUnblock();
     }
   };
 
@@ -1545,7 +1609,11 @@ function FollowListModal({
                         item.isGolden && fl.goldenBtnActive,
                       ]}
                       onPress={() =>
-                        handleGoldenToggle(item.id, item.isGolden || false)
+                        handleGoldenToggle(
+                          item.id,
+                          item.isGolden || false,
+                          `${item.firstName} ${item.lastName}`,
+                        )
                       }
                       disabled={isLoading}
                     >
@@ -1562,7 +1630,11 @@ function FollowListModal({
                     <TouchableOpacity
                       style={[fl.blockBtn, item.isBlocked && fl.blockBtnActive]}
                       onPress={() =>
-                        handleBlockToggle(item.id, item.isBlocked || false)
+                        handleBlockToggle(
+                          item.id,
+                          item.isBlocked || false,
+                          `${item.firstName} ${item.lastName}`,
+                        )
                       }
                       disabled={isLoading}
                     >

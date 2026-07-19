@@ -420,6 +420,12 @@
   },
   "profile": {
     "title": "Profil",
+    "blockConfirmTitle": "Benutzer blockieren",
+    "blockConfirmMsg": "Möchten Sie {{name}} wirklich blockieren?",
+    "blockConfirmBtn": "Blockieren",
+    "goldenConfirmTitle": "Goldenen Freund hinzufügen",
+    "goldenConfirmMsg": "Möchten Sie {{name}} wirklich zu Ihren Goldenen Freunden hinzufügen?",
+    "goldenConfirmBtn": "Hinzufügen ⭐",
     "savedOn": "Gespeichert:",
     "addedOn": "Hinzugefügt:",
     "themeLight": "Hell",

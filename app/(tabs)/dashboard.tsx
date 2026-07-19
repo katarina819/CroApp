@@ -8197,26 +8197,30 @@ function BadgesModal({
                         key={threshold}
                         style={{
                           borderRadius: 10,
-                          paddingHorizontal: 10,
+                          paddingHorizontal: 8,
                           paddingVertical: 6,
                           backgroundColor: isEarned ? cat.color : DC.bg,
                           borderWidth: 1,
                           borderColor: isEarned ? cat.color : DC.borderDim,
                           alignItems: "center",
-                          minWidth: 52,
+                          minWidth: 68, // ← povećano s 52 na 60
                         }}
                       >
                         <Text
+                          numberOfLines={1}
+                          adjustsFontSizeToFit
+                          minimumFontScale={0.7}
                           style={{
                             color: isEarned ? "#fff" : DC.textDim,
-                            fontSize: 12,
+                            fontSize: 11,
                             fontWeight: "800",
                           }}
                         >
-                          {isEarned ? "🏆" : "🔒"} {threshold}x
+                          {isEarned ? "🏆" : "🔒"} {threshold}×
                         </Text>
                         {isEarned && badgeName && (
                           <Text
+                            numberOfLines={1}
                             style={{
                               color: "rgba(255,255,255,0.85)",
                               fontSize: 9,
@@ -9368,22 +9372,38 @@ export default function DashboardScreen() {
 
   const getLocationFast = async () => {
     try {
-      // KORAK 1 — Balanced: brzo, manje precizno
       const fastLoc = await Location.getCurrentPositionAsync({
         accuracy: Location.Accuracy.Balanced,
       });
       applyLocation(fastLoc.coords.latitude, fastLoc.coords.longitude);
 
-      // KORAK 2 — High: precizno, u pozadini
       Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.High })
         .then((precLoc) => {
           applyLocation(precLoc.coords.latitude, precLoc.coords.longitude);
         })
-        .catch(() => {
-          // Ignorira — već imamo Balanced lokaciju
-        });
+        .catch(() => {});
     } catch {
-      Alert.alert(t("common.error"), t("map.locationError"));
+      // NOVO: prvo pokušaj zadnju poznatu lokaciju umjesto odmah alerta
+      try {
+        const lastKnown = await Location.getLastKnownPositionAsync();
+        if (lastKnown) {
+          applyLocation(lastKnown.coords.latitude, lastKnown.coords.longitude);
+          return;
+        }
+      } catch {}
+
+      // NOVO: pričekaj i pokušaj još jednom prije nego prikažeš alert
+      try {
+        await new Promise((resolve) => setTimeout(resolve, 2000));
+        const retryLoc = await Location.getCurrentPositionAsync({
+          accuracy: Location.Accuracy.Low,
+        });
+        applyLocation(retryLoc.coords.latitude, retryLoc.coords.longitude);
+      } catch {
+        // Tek sada, nakon svih pokušaja, tiho odustani bez alarmantnog alerta
+        // (korisnik uvijek može ručno kliknuti "Moja lokacija" gumb na karti)
+        console.log("Location fetch failed after retries");
+      }
     }
   };
 

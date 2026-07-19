@@ -439,6 +439,12 @@
   },
   "profile": {
     "title": "Profil",
+    "blockConfirmTitle": "Blokiraj korisnika",
+    "blockConfirmMsg": "Jeste li sigurni da želite blokirati korisnika {{name}}?",
+    "blockConfirmBtn": "Blokiraj",
+    "goldenConfirmTitle": "Dodaj Zlatnog prijatelja",
+    "goldenConfirmMsg": "Jeste li sigurni da korisnika {{name}} želite dodati u Zlatne prijatelje?",
+    "goldenConfirmBtn": "Dodaj ⭐",
     "savedOn": "Pohranjeno:",
     "addedOn": "Dodano:",
     "currentLanguage": "Trenutni jezik:",
