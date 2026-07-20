@@ -8197,19 +8197,16 @@ function BadgesModal({
                         key={threshold}
                         style={{
                           borderRadius: 10,
-                          paddingHorizontal: 8,
+                          paddingHorizontal: 6,
                           paddingVertical: 6,
                           backgroundColor: isEarned ? cat.color : DC.bg,
                           borderWidth: 1,
                           borderColor: isEarned ? cat.color : DC.borderDim,
                           alignItems: "center",
-                          minWidth: 68, // ← povećano s 52 na 60
+                          minWidth: 84, // ← povećano s 52 na 60
                         }}
                       >
                         <Text
-                          numberOfLines={1}
-                          adjustsFontSizeToFit
-                          minimumFontScale={0.7}
                           style={{
                             color: isEarned ? "#fff" : DC.textDim,
                             fontSize: 11,
@@ -9426,7 +9423,26 @@ export default function DashboardScreen() {
       });
       applyLocation(loc.coords.latitude, loc.coords.longitude);
     } catch {
-      Alert.alert(t("common.error"), t("map.locationError"));
+      // GPS možda još nije spreman — pokušaj zadnju poznatu lokaciju
+      try {
+        const lastKnown = await Location.getLastKnownPositionAsync();
+        if (lastKnown) {
+          applyLocation(lastKnown.coords.latitude, lastKnown.coords.longitude);
+          return;
+        }
+      } catch {}
+
+      // Pričekaj 5s i pokušaj ponovno prije nego pokažeš grešku
+      try {
+        await new Promise((resolve) => setTimeout(resolve, 5000));
+        const retryLoc = await Location.getCurrentPositionAsync({
+          accuracy: Location.Accuracy.Low,
+        });
+        applyLocation(retryLoc.coords.latitude, retryLoc.coords.longitude);
+      } catch {
+        // Tek nakon svih pokušaja pokaži alert
+        Alert.alert(t("common.error"), t("map.locationError"));
+      }
     }
   };
 
@@ -10416,7 +10432,7 @@ export default function DashboardScreen() {
             backgroundColor: "#1e3620",
             borderRadius: 16,
             paddingVertical: 8,
-            paddingHorizontal: 8,
+            paddingHorizontal: 6,
             gap: 6,
             shadowColor: "#000",
             shadowOffset: { width: 0, height: 6 },
