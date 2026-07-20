@@ -1322,7 +1322,10 @@ function FollowListModal({
         const enhancedData = await Promise.all(
           data.map(async (user: FollowUser) => {
             try {
-              const [goldenRes, blockedRes] = await Promise.all([
+              const [profileRes, goldenRes, blockedRes] = await Promise.all([
+                fetch(`${API_BASE_URL}/api/auth/users/${user.id}`, {
+                  headers: { Authorization: `Bearer ${token}` },
+                }),
                 fetch(
                   `${API_BASE_URL}/api/golden-friends/is-golden/${user.id}`,
                   { headers: { Authorization: `Bearer ${token}` } },
@@ -1331,16 +1334,24 @@ function FollowListModal({
                   headers: { Authorization: `Bearer ${token}` },
                 }),
               ]);
+
+              // Svježi avatar iz profila korisnika, ne onaj snimljen u follow zapisu
+              const freshProfile = profileRes.ok
+                ? await profileRes.json()
+                : null;
+              const rawAvatar = freshProfile?.avatar ?? user.avatar;
+
               const goldenData = goldenRes.ok
                 ? await goldenRes.json()
                 : { isGolden: false };
               const blockedData = blockedRes.ok
                 ? await blockedRes.json()
                 : { isBlocked: false };
+
               const cacheBustedAvatar =
-                user.avatar && !user.avatar.startsWith("avatar:")
-                  ? `${user.avatar}${user.avatar.includes("?") ? "&" : "?"}_t=${Date.now()}`
-                  : user.avatar;
+                rawAvatar && !rawAvatar.startsWith("avatar:")
+                  ? `${rawAvatar}${rawAvatar.includes("?") ? "&" : "?"}_t=${Date.now()}`
+                  : rawAvatar;
 
               return {
                 ...user,

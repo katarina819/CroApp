@@ -9108,6 +9108,19 @@ export default function DashboardScreen() {
   const [isLoadingPlaces, setIsLoadingPlaces] = useState(false);
   const [activeTimeOfDay, setActiveTimeOfDay] = useState<string | null>(null);
 
+  const [todHint, setTodHint] = useState<string | null>(null);
+  const todHintTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const showTodHint = async (key: string, text: string) => {
+    const seenRaw = await AsyncStorage.getItem("tod_hint_seen_count");
+    const seen = parseInt(seenRaw || "0");
+    if (seen >= 3) return; // nakon 3 prikaza više ne pokazuj
+    if (todHintTimer.current) clearTimeout(todHintTimer.current);
+    setTodHint(text);
+    todHintTimer.current = setTimeout(() => setTodHint(null), 2800);
+    await AsyncStorage.setItem("tod_hint_seen_count", String(seen + 1));
+  };
+
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<Place[]>([]);
   const [showSearchResults, setShowSearchResults] = useState(false);
@@ -10357,7 +10370,13 @@ export default function DashboardScreen() {
           {/* Jutro */}
           <TouchableOpacity
             style={[s.todBtn, activeTimeOfDay === "jutro" && s.todBtnA]}
-            onPress={() => applyTimeOfDay("jutro")}
+            onPress={() => {
+              showTodHint(
+                "jutro",
+                "🌅 Jutro (06–12h): kafići, parkovi, znamenitosti, muzeji",
+              );
+              applyTimeOfDay("jutro");
+            }}
           >
             <Image
               source={morningIcon}
@@ -10369,7 +10388,13 @@ export default function DashboardScreen() {
           {/* Poslijepodne */}
           <TouchableOpacity
             style={[s.todBtn, activeTimeOfDay === "poslijepodne" && s.todBtnA]}
-            onPress={() => applyTimeOfDay("poslijepodne")}
+            onPress={() => {
+              showTodHint(
+                "poslijepodne",
+                "☀️ Poslijepodne (12–18h): restorani, plaže, kina, tržnice",
+              );
+              applyTimeOfDay("poslijepodne");
+            }}
           >
             <Image
               source={afternoonIcon}
@@ -10381,7 +10406,13 @@ export default function DashboardScreen() {
           {/* Večer */}
           <TouchableOpacity
             style={[s.todBtn, activeTimeOfDay === "vecer" && s.todBtnA]}
-            onPress={() => applyTimeOfDay("vecer")}
+            onPress={() => {
+              showTodHint(
+                "vecer",
+                "🌙 Večer (18–24h): klubovi, kazališta, restorani, spa",
+              );
+              applyTimeOfDay("vecer");
+            }}
           >
             <Image
               source={eveningIcon}
@@ -10406,6 +10437,33 @@ export default function DashboardScreen() {
           </Text>
         </TouchableOpacity> */}
       </View>
+
+      {todHint && (
+        <View
+          style={{
+            position: "absolute",
+            top: Platform.OS === "ios" ? 132 : 108,
+            left: 12,
+            right: 12,
+            backgroundColor: "rgba(20,40,20,0.94)",
+            borderRadius: 14,
+            paddingHorizontal: 14,
+            paddingVertical: 10,
+            borderWidth: 1,
+            borderColor: "#5a8a48",
+            zIndex: 50,
+            shadowColor: "#000",
+            shadowOffset: { width: 0, height: 3 },
+            shadowOpacity: 0.25,
+            shadowRadius: 6,
+            elevation: 6,
+          }}
+        >
+          <Text style={{ color: "#d0f0a0", fontSize: 12, fontWeight: "600" }}>
+            {todHint}
+          </Text>
+        </View>
+      )}
 
       {/* ✅ OVERLAY — DODAJ OVDJE, IZMEĐU topBar i dropdown panela */}
       {showOstalo && (
