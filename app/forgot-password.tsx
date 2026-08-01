@@ -1,5 +1,6 @@
 import { router } from "expo-router";
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import {
   ActivityIndicator,
   Alert,
@@ -17,6 +18,7 @@ import { API_ENDPOINTS } from "./config/api";
 type Step = "email" | "code" | "newPassword";
 
 export default function ForgotPasswordScreen() {
+  const { t } = useTranslation();
   const [step, setStep] = useState<Step>("email");
   const [email, setEmail] = useState("");
   const [code, setCode] = useState("");
@@ -27,7 +29,7 @@ export default function ForgotPasswordScreen() {
 
   const handleRequestCode = async () => {
     if (!contact.trim()) {
-      Alert.alert("Greška", "Unesite email ili broj telefona");
+      Alert.alert(t("common.error"), t("validation.enterEmail"));
       return;
     }
     setIsLoading(true);
@@ -37,27 +39,27 @@ export default function ForgotPasswordScreen() {
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(
-            contact.includes("@")
-              ? { email: contact.trim() }
-              : { phone: contact.trim() },
-          ),
+          body: JSON.stringify({ email: contact.trim() }),
         },
       );
 
       if (response.ok) {
+        setEmail(contact.trim());
         setStep("code");
-        Alert.alert("Kod poslan! 📨", `Poslan je kod na: ${contact}`);
+        Alert.alert(
+          t("forgotPassword.codeSentTitle"),
+          t("forgotPassword.codeSentDesc", { contact }),
+        );
       } else if (response.status === 404) {
         Alert.alert(
-          "Nije pronađeno ❌",
-          "Nema korisnika s tim emailom ili brojem telefona.",
+          t("forgotPassword.notFoundTitle"),
+          t("forgotPassword.notFoundDesc"),
         );
       } else {
-        Alert.alert("Greška", "Pokušajte ponovo.");
+        Alert.alert(t("common.error"), t("forgotPassword.tryAgain"));
       }
     } catch {
-      Alert.alert("Greška", "Provjeri internetsku vezu.");
+      Alert.alert(t("common.error"), t("common.networkError"));
     } finally {
       setIsLoading(false);
     }
@@ -65,7 +67,7 @@ export default function ForgotPasswordScreen() {
 
   const handleVerifyCode = () => {
     if (code.trim().length !== 6) {
-      Alert.alert("Greška", "Unesite 6-znamenkasti kod");
+      Alert.alert(t("common.error"), t("forgotPassword.enterCode"));
       return;
     }
     setStep("newPassword");
@@ -73,11 +75,11 @@ export default function ForgotPasswordScreen() {
 
   const handleResetPassword = async () => {
     if (newPassword.length < 6) {
-      Alert.alert("Greška", "Lozinka mora imati najmanje 6 znakova");
+      Alert.alert(t("common.error"), t("validation.passwordMin"));
       return;
     }
     if (newPassword !== confirmPassword) {
-      Alert.alert("Greška", "Lozinke se ne podudaraju");
+      Alert.alert(t("common.error"), t("auth.passwordMismatch"));
       return;
     }
     setIsLoading(true);
@@ -91,15 +93,21 @@ export default function ForgotPasswordScreen() {
         },
       );
       if (response.ok) {
-        Alert.alert("Uspjeh! ✅", "Lozinka je promijenjena. Prijavite se.", [
-          { text: "Prijava", onPress: () => router.replace("/login") },
-        ]);
+        Alert.alert(
+          t("forgotPassword.successTitle"),
+          t("forgotPassword.successDesc"),
+          [
+            {
+              text: t("auth.loginBtn"),
+              onPress: () => router.replace("/login"),
+            },
+          ],
+        );
       } else {
-        const data = await response.json();
-        Alert.alert("Greška", data.message || "Kod je neispravan ili istekao.");
+        Alert.alert(t("common.error"), t("forgotPassword.invalidCode"));
       }
     } catch {
-      Alert.alert("Greška", "Provjeri internetsku vezu.");
+      Alert.alert(t("common.error"), t("common.networkError"));
     } finally {
       setIsLoading(false);
     }
@@ -107,18 +115,18 @@ export default function ForgotPasswordScreen() {
 
   const STEPS = {
     email: {
-      title: "Zaboravili ste lozinku?",
-      subtitle: "Unesite email za dobivanje koda",
+      title: t("forgotPassword.step1Title"),
+      subtitle: t("forgotPassword.step1Desc"),
       icon: "📧",
     },
     code: {
-      title: "Unesite kod",
-      subtitle: `Poslan na ${email}`,
+      title: t("forgotPassword.step2Title"),
+      subtitle: t("forgotPassword.step2Desc", { email }),
       icon: "🔢",
     },
     newPassword: {
-      title: "Nova lozinka",
-      subtitle: "Odaberite novu lozinku",
+      title: t("forgotPassword.step3Title"),
+      subtitle: t("forgotPassword.step3Desc"),
       icon: "🔐",
     },
   };
@@ -155,10 +163,10 @@ export default function ForgotPasswordScreen() {
         {/* EMAIL korak */}
         {step === "email" && (
           <View style={styles.form}>
-            <Text style={styles.label}>Email adresa</Text>
+            <Text style={styles.label}>{t("forgotPassword.emailLabel")}</Text>
             <TextInput
               style={styles.input}
-              placeholder="Email ili broj telefona"
+              placeholder={t("forgotPassword.emailPlaceholder")}
               placeholderTextColor="#999"
               value={contact}
               onChangeText={setContact}
@@ -175,7 +183,9 @@ export default function ForgotPasswordScreen() {
               {isLoading ? (
                 <ActivityIndicator color="#fff" />
               ) : (
-                <Text style={styles.buttonText}>Pošalji kod</Text>
+                <Text style={styles.buttonText}>
+                  {t("forgotPassword.sendCode")}
+                </Text>
               )}
             </TouchableOpacity>
           </View>
@@ -184,7 +194,7 @@ export default function ForgotPasswordScreen() {
         {/* KOD korak */}
         {step === "code" && (
           <View style={styles.form}>
-            <Text style={styles.label}>6-znamenkasti kod</Text>
+            <Text style={styles.label}>{t("forgotPassword.codeLabel")}</Text>
             <TextInput
               style={[styles.input, styles.codeInput]}
               placeholder="123456"
@@ -196,7 +206,9 @@ export default function ForgotPasswordScreen() {
               autoFocus
             />
             <TouchableOpacity style={styles.button} onPress={handleVerifyCode}>
-              <Text style={styles.buttonText}>Potvrdi kod</Text>
+              <Text style={styles.buttonText}>
+                {t("forgotPassword.verifyCode")}
+              </Text>
             </TouchableOpacity>
             <TouchableOpacity
               style={styles.resendBtn}
@@ -205,7 +217,9 @@ export default function ForgotPasswordScreen() {
                 setCode("");
               }}
             >
-              <Text style={styles.resendText}>← Pošalji novi kod</Text>
+              <Text style={styles.resendText}>
+                {t("forgotPassword.resendCode")}
+              </Text>
             </TouchableOpacity>
           </View>
         )}
@@ -213,10 +227,12 @@ export default function ForgotPasswordScreen() {
         {/* NOVA LOZINKA korak */}
         {step === "newPassword" && (
           <View style={styles.form}>
-            <Text style={styles.label}>Nova lozinka</Text>
+            <Text style={styles.label}>
+              {t("forgotPassword.newPasswordLabel")}
+            </Text>
             <TextInput
               style={styles.input}
-              placeholder="Najmanje 6 znakova"
+              placeholder={t("forgotPassword.newPasswordPlaceholder")}
               placeholderTextColor="#999"
               value={newPassword}
               onChangeText={setNewPassword}
@@ -225,7 +241,7 @@ export default function ForgotPasswordScreen() {
               editable={!isLoading}
             />
             <Text style={[styles.label, { marginTop: 12 }]}>
-              Potvrdi lozinku
+              {t("forgotPassword.confirmPasswordLabel")}
             </Text>
             <TextInput
               style={[
@@ -234,7 +250,7 @@ export default function ForgotPasswordScreen() {
                   ? styles.inputError
                   : null,
               ]}
-              placeholder="Ponovi lozinku"
+              placeholder={t("forgotPassword.confirmPasswordPlaceholder")}
               placeholderTextColor="#999"
               value={confirmPassword}
               onChangeText={setConfirmPassword}
@@ -242,7 +258,7 @@ export default function ForgotPasswordScreen() {
               editable={!isLoading}
             />
             {confirmPassword && newPassword !== confirmPassword && (
-              <Text style={styles.errorText}>Lozinke se ne podudaraju</Text>
+              <Text style={styles.errorText}>{t("auth.passwordMismatch")}</Text>
             )}
             <TouchableOpacity
               style={[styles.button, isLoading && styles.buttonDisabled]}
@@ -252,14 +268,16 @@ export default function ForgotPasswordScreen() {
               {isLoading ? (
                 <ActivityIndicator color="#fff" />
               ) : (
-                <Text style={styles.buttonText}>Promijeni lozinku</Text>
+                <Text style={styles.buttonText}>
+                  {t("forgotPassword.changePasswordBtn")}
+                </Text>
               )}
             </TouchableOpacity>
           </View>
         )}
 
         <TouchableOpacity style={styles.backBtn} onPress={() => router.back()}>
-          <Text style={styles.backText}>← Povratak na prijavu</Text>
+          <Text style={styles.backText}>{t("forgotPassword.backToLogin")}</Text>
         </TouchableOpacity>
       </ScrollView>
     </KeyboardAvoidingView>

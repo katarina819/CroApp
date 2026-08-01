@@ -1,11 +1,11 @@
 // app/register.tsx — VARA redesign v2 (puna zelena pozadina)
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import { router } from "expo-router";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import LanguageSelector from "../components/LanguageSelector";
 import { useGoogleAuth } from "../hooks/useGoogleAuth";
 
+import DateTimePicker from "@react-native-community/datetimepicker";
 import {
   ActivityIndicator,
   Alert,
@@ -43,39 +43,20 @@ export default function RegisterScreen() {
     birthDate: "",
   });
   const [isLoading, setIsLoading] = useState(false);
+  const [showPicker, setShowPicker] = useState(false);
 
-  const { request, promptAsync } = useGoogleAuth(async (idToken) => {
-    setIsLoading(true);
-    try {
-      const res = await fetch(API_ENDPOINTS.GOOGLE_AUTH, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ idToken }),
-      });
-      if (res.ok) {
-        const data = await res.json();
-        await AsyncStorage.multiSet([
-          ["token", data.token],
-          ["userId", String(data.userId)],
-          ["firstName", data.firstName],
-          ["lastName", data.lastName],
-          ["needsBirthDate", String(data.needsBirthDate)],
-        ]);
-        if (data.needsPassword) {
-          router.replace("/set-password");
-        } else if (data.needsBirthDate) {
-          router.replace("/complete-profile");
-        } else {
-          router.replace("/(tabs)");
-        }
-      } else {
-        Alert.alert("Greška", "Google prijava nije uspjela.");
-      }
-    } catch {
-      Alert.alert("Greška", "Provjeri internetsku vezu.");
-    } finally {
-      setIsLoading(false);
-    }
+  const { request, promptAsync } = useGoogleAuth((profile) => {
+    const usernameBase = profile.email
+      .split("@")[0]
+      .toLowerCase()
+      .replace(/[^a-z0-9]/g, "");
+    setForm((prev) => ({
+      ...prev,
+      firstName: profile.firstName || prev.firstName,
+      lastName: profile.lastName || prev.lastName,
+      email: profile.email || prev.email,
+      username: usernameBase || prev.username,
+    }));
   });
 
   const handleChange = (name: string, value: string) =>
@@ -265,7 +246,7 @@ export default function RegisterScreen() {
 
           <Field
             label={`${t("auth.email").toUpperCase()}`}
-            placeholder="vaš@email.com"
+            placeholder={t("auth.emailPlaceholder")}
             value={form.email}
             onChangeText={(v) => handleChange("email", v)}
             keyboardType="email-address"
@@ -288,13 +269,50 @@ export default function RegisterScreen() {
             secureTextEntry
             editable={!isLoading}
           />
-          <Field
-            label={`${t("auth.birthDate").toUpperCase()} *`}
-            placeholder="YYYY-MM-DD"
-            value={form.birthDate}
-            onChangeText={(v) => handleChange("birthDate", v)}
-            editable={!isLoading}
-          />
+          <View style={s.fieldWrap}>
+            <Text style={s.label}>{t("auth.birthDate").toUpperCase()} *</Text>
+            <View style={{ flexDirection: "row", gap: 8 }}>
+              <TextInput
+                style={[s.input, { flex: 1 }]}
+                placeholder="YYYY-MM-DD"
+                placeholderTextColor="#9AA9A7"
+                value={form.birthDate}
+                onChangeText={(v) => handleChange("birthDate", v)}
+                editable={!isLoading}
+              />
+              <TouchableOpacity
+                style={{
+                  width: 46,
+                  borderRadius: 10,
+                  borderWidth: 1.5,
+                  borderColor: "#D1DADB",
+                  backgroundColor: SILVER_LIGHT,
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
+                onPress={() => setShowPicker(true)}
+              >
+                <Text style={{ fontSize: 18 }}>📅</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+          {showPicker && (
+            <DateTimePicker
+              value={
+                form.birthDate ? new Date(form.birthDate) : new Date(2000, 0, 1)
+              }
+              mode="date"
+              display={Platform.OS === "ios" ? "spinner" : "default"}
+              maximumDate={new Date()}
+              onChange={(event, selectedDate) => {
+                setShowPicker(false);
+                if (selectedDate) {
+                  const iso = selectedDate.toISOString().split("T")[0];
+                  handleChange("birthDate", iso);
+                }
+              }}
+            />
+          )}
 
           <TouchableOpacity
             style={[s.btn, isLoading && s.btnDisabled]}
@@ -305,7 +323,7 @@ export default function RegisterScreen() {
             {isLoading ? (
               <ActivityIndicator color="#fff" />
             ) : (
-              <Text style={s.btnText}>Registriraj se</Text>
+              <Text style={s.btnText}>{t("auth.registerBtn")}</Text>
             )}
           </TouchableOpacity>
 
@@ -319,7 +337,7 @@ export default function RegisterScreen() {
           >
             <View style={{ flex: 1, height: 1, backgroundColor: "#D1DADB" }} />
             <Text style={{ marginHorizontal: 10, color: MUTED, fontSize: 12 }}>
-              ILI
+              {t("common.or").toUpperCase()}
             </Text>
             <View style={{ flex: 1, height: 1, backgroundColor: "#D1DADB" }} />
           </View>
@@ -342,7 +360,7 @@ export default function RegisterScreen() {
             activeOpacity={0.8}
           >
             <Text style={{ fontSize: 15, fontWeight: "700", color: TEXT }}>
-              Nastavi s Google računom
+              {t("auth.continueWithGoogle")}
             </Text>
           </TouchableOpacity>
 
@@ -357,9 +375,7 @@ export default function RegisterScreen() {
           </TouchableOpacity>
         </View>
 
-        <Text style={s.bottomNote}>
-          Registracijom prihvaćate Uvjete i Pravila privatnosti
-        </Text>
+        <Text style={s.bottomNote}>{t("auth.registerTerms")}</Text>
       </ScrollView>
     </KeyboardAvoidingView>
   );

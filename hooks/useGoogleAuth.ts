@@ -12,44 +12,55 @@ GoogleSignin.configure({
   offlineAccess: false,
 });
 
-export function useGoogleAuth(onSuccess: (idToken: string) => void) {
+export interface GoogleProfile {
+  idToken: string;
+  email: string;
+  firstName: string;
+  lastName: string;
+}
+
+export function useGoogleAuth(onSuccess: (profile: GoogleProfile) => void) {
   const signIn = async () => {
     try {
       await GoogleSignin.hasPlayServices();
       const response = await GoogleSignin.signIn();
 
       if (isSuccessResponse(response)) {
-        const idToken = response.data.idToken;
+        const { idToken, user } = response.data;
         if (idToken) {
-          onSuccess(idToken);
+          onSuccess({
+            idToken,
+            email: user.email ?? "",
+            firstName: user.givenName ?? "",
+            lastName: user.familyName ?? "",
+          });
         } else {
-          Alert.alert("Debug", "Nema idToken u odgovoru!"); // 🔥 DODANO
+          Alert.alert("Debug", "Nema idToken u odgovoru!");
         }
       } else {
-        Alert.alert("Debug", `Response type: ${response.type}`); // 🔥 DODANO
+        Alert.alert("Debug", `Response type: ${response.type}`);
       }
     } catch (error) {
       if (isErrorWithCode(error)) {
         switch (error.code) {
           case statusCodes.SIGN_IN_CANCELLED:
-            // korisnik je otkazao, ne treba alert
             break;
           case statusCodes.IN_PROGRESS:
             break;
           case statusCodes.PLAY_SERVICES_NOT_AVAILABLE:
             console.warn("Play Services nisu dostupni");
-            Alert.alert("Debug", "Play Services nisu dostupni"); // 🔥 DODANO
+            Alert.alert("Debug", "Play Services nisu dostupni");
             break;
           default:
             console.error("Google Sign-In error:", error);
             Alert.alert(
               "Debug",
               `Kod: ${error.code}\nPoruka: ${error.message}`,
-            ); // 🔥 DODANO
+            );
         }
       } else {
         console.error("Unknown Google Sign-In error:", error);
-        Alert.alert("Debug", `Nepoznata greška: ${String(error)}`); // 🔥 DODANO
+        Alert.alert("Debug", `Nepoznata greška: ${String(error)}`);
       }
     }
   };

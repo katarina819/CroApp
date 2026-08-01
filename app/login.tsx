@@ -65,38 +65,12 @@ export default function LoginScreen() {
   const [usernameFocused, setUsernameFocused] = useState(false);
   const [passwordFocused, setPasswordFocused] = useState(false);
 
-  const { promptAsync } = useGoogleAuth(async (idToken) => {
-    setIsLoading(true);
-    try {
-      const res = await fetch(API_ENDPOINTS.GOOGLE_AUTH, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ idToken }),
-      });
-      if (res.ok) {
-        const data = await res.json();
-        await AsyncStorage.multiSet([
-          ["token", data.token],
-          ["userId", String(data.userId)],
-          ["firstName", data.firstName],
-          ["lastName", data.lastName],
-          ["needsBirthDate", String(data.needsBirthDate)],
-        ]);
-        if (data.needsPassword) {
-          router.replace("/set-password");
-        } else if (data.needsBirthDate) {
-          router.replace("/complete-profile");
-        } else {
-          router.replace("/(tabs)");
-        }
-      } else {
-        Alert.alert(t("common.error"), t("validation.invalidCredentials"));
-      }
-    } catch {
-      Alert.alert(t("common.error"), t("common.networkError"));
-    } finally {
-      setIsLoading(false);
-    }
+  const { promptAsync } = useGoogleAuth((profile) => {
+    const usernameBase = profile.email
+      .split("@")[0]
+      .toLowerCase()
+      .replace(/[^a-z0-9]/g, "");
+    setUsername(usernameBase);
   });
 
   const handleLogin = async () => {
@@ -155,19 +129,19 @@ export default function LoginScreen() {
             resizeMode="contain"
           />
           <VaraWordmark />
-          <Text style={s.tagline}>Otkrijte svako mjesto</Text>
+          <Text style={s.tagline}>{t("auth.tagline")}</Text>
         </View>
 
         {/* Bijela kartica s formom */}
         <View style={s.card}>
-          <Text style={s.cardTitle}>Prijava</Text>
+          <Text style={s.cardTitle}>{t("auth.login")}</Text>
 
           {/* Korisničko ime */}
           <View style={s.fieldWrap}>
-            <Text style={s.label}>KORISNIČKO IME</Text>
+            <Text style={s.label}>{t("auth.username").toUpperCase()}</Text>
             <TextInput
               style={[s.input, usernameFocused && s.inputFocused]}
-              placeholder="Unesite korisničko ime"
+              placeholder={t("auth.usernamePlaceholder")}
               placeholderTextColor="#9AA9A7"
               value={username}
               onChangeText={setUsername}
@@ -181,10 +155,10 @@ export default function LoginScreen() {
 
           {/* Lozinka */}
           <View style={s.fieldWrap}>
-            <Text style={s.label}>LOZINKA</Text>
+            <Text style={s.label}>{t("auth.password").toUpperCase()}</Text>
             <TextInput
               style={[s.input, passwordFocused && s.inputFocused]}
-              placeholder="Unesite lozinku"
+              placeholder={t("auth.passwordPlaceholder")}
               placeholderTextColor="#9AA9A7"
               value={password}
               onChangeText={setPassword}
@@ -200,7 +174,7 @@ export default function LoginScreen() {
             style={s.forgotWrap}
             onPress={() => router.push("/forgot-password")}
           >
-            <Text style={s.forgotText}>Zaboravili ste lozinku?</Text>
+            <Text style={s.forgotText}>{t("auth.forgotPassword")}</Text>
           </TouchableOpacity>
 
           {/* Prijavi se gumb */}
@@ -213,14 +187,14 @@ export default function LoginScreen() {
             {isLoading ? (
               <ActivityIndicator color="#fff" />
             ) : (
-              <Text style={s.btnText}>Prijavi se</Text>
+              <Text style={s.btnText}>{t("auth.loginBtn")}</Text>
             )}
           </TouchableOpacity>
 
           {/* Razdjelnik */}
           <View style={s.divider}>
             <View style={s.dividerLine} />
-            <Text style={s.dividerText}>ili</Text>
+            <Text style={s.dividerText}>{t("common.or")}</Text>
             <View style={s.dividerLine} />
           </View>
 
@@ -242,7 +216,7 @@ export default function LoginScreen() {
             activeOpacity={0.8}
           >
             <Text style={{ fontSize: 15, fontWeight: "700", color: TEXT_DARK }}>
-              Nastavi s Google računom
+              {t("auth.continueWithGoogle")}
             </Text>
           </TouchableOpacity>
 
@@ -252,13 +226,11 @@ export default function LoginScreen() {
             onPress={() => router.push("/register")}
             activeOpacity={0.85}
           >
-            <Text style={s.outlineBtnText}>Kreiraj račun</Text>
+            <Text style={s.outlineBtnText}>{t("auth.createAccount")}</Text>
           </TouchableOpacity>
         </View>
 
-        <Text style={s.bottomNote}>
-          Prijavom prihvaćate Uvjete korištenja i Pravila privatnosti
-        </Text>
+        <Text style={s.bottomNote}>{t("auth.loginTerms")}</Text>
       </ScrollView>
     </KeyboardAvoidingView>
   );
