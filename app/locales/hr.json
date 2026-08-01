@@ -87,6 +87,28 @@
     "passwordMinLength": "Lozinka mora imati najmanje 6 znakova",
     "notLoggedIn": "Niste prijavljeni. Odjavite se i ponovno prijavite."
   },
+  "validation": {
+    "enterFirstName": "Molimo unesite svoje ime.",
+    "enterLastName": "Molimo unesite svoje prezime.",
+    "enterEmail": "Molimo unesite svoju email adresu.",
+    "invalidEmail": "Email adresa nije u ispravnom formatu (npr. ime@email.com).",
+    "emailTaken": "Ova email adresa je već registrirana. Pokušajte se prijaviti ili koristite drugu adresu.",
+    "enterUsername": "Molimo odaberite korisničko ime.",
+    "usernameMinLength": "Korisničko ime mora imati najmanje 3 znaka.",
+    "usernameChars": "Korisničko ime smije sadržavati samo slova i brojeve, bez razmaka i posebnih znakova.",
+    "usernameTaken": "Ovo korisničko ime je already zauzeto. Odaberite drugo.",
+    "enterPassword": "Molimo unesite lozinku.",
+    "passwordMin": "Lozinka mora imati najmanje 6 znakova.",
+    "enterBirthDate": "Molimo unesite datum rođenja u formatu GGGG-MM-DD (npr. 1995-03-21).",
+    "invalidDateFormat": "Datum rođenja mora biti u formatu GGGG-MM-DD (npr. 1995-03-21).",
+    "invalidDate": "Uneseni datum rođenja ne postoji. Provjerite dan i mjesec.",
+    "futureDate": "Datum rođenja ne može biti u budućnosti.",
+    "tooYoung": "Morate imati najmanje 13 godina za registraciju.",
+    "unrealisticAge": "Provjerite uneseni datum rođenja.",
+    "registerFailed": "Registracija nije uspjela. Pokušajte ponovno.",
+    "duplicateGeneric": "Korisničko ime ili email adresa već postoje u sustavu.",
+    "invalidCredentials": "Neispravno korisničko ime ili lozinka."
+  },
   "languages": {
     "hr": "Hrvatski",
     "en": "English",

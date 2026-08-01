@@ -87,6 +87,28 @@
     "passwordMinLength": "La password deve avere almeno 6 caratteri",
     "notLoggedIn": "Non sei connesso. Disconnettiti e riconnettiti."
   },
+  "validation": {
+    "enterFirstName": "Inserisci il tuo nome.",
+    "enterLastName": "Inserisci il tuo cognome.",
+    "enterEmail": "Inserisci il tuo indirizzo email.",
+    "invalidEmail": "L'indirizzo email non è in un formato valido (es. nome@email.com).",
+    "emailTaken": "Questo indirizzo email è già registrato. Prova ad accedere o usa un altro indirizzo.",
+    "enterUsername": "Scegli un nome utente.",
+    "usernameMinLength": "Il nome utente deve avere almeno 3 caratteri.",
+    "usernameChars": "Il nome utente può contenere solo lettere e numeri, senza spazi o caratteri speciali.",
+    "usernameTaken": "Questo nome utente è già occupato. Scegline un altro.",
+    "enterPassword": "Inserisci una password.",
+    "passwordMin": "La password deve avere almeno 6 caratteri.",
+    "enterBirthDate": "Inserisci la data di nascita nel formato AAAA-MM-GG (es. 1995-03-21).",
+    "invalidDateFormat": "La data di nascita deve essere nel formato AAAA-MM-GG (es. 1995-03-21).",
+    "invalidDate": "La data di nascita inserita non esiste. Controlla giorno e mese.",
+    "futureDate": "La data di nascita non può essere nel futuro.",
+    "tooYoung": "Devi avere almeno 13 anni per registrarti.",
+    "unrealisticAge": "Controlla la data di nascita inserita.",
+    "registerFailed": "Registrazione non riuscita. Riprova.",
+    "duplicateGeneric": "Nome utente o email già esistenti nel sistema.",
+    "invalidCredentials": "Nome utente o password errati."
+  },
   "languages": {
     "hr": "Hrvatski",
     "en": "English",

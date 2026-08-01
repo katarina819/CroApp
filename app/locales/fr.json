@@ -87,6 +87,28 @@
     "passwordMinLength": "Le mot de passe doit comporter au moins 6 caractères",
     "notLoggedIn": "Vous n'êtes pas connecté. Veuillez vous déconnecter et vous reconnecter."
   },
+  "validation": {
+    "enterFirstName": "Veuillez entrer votre prénom.",
+    "enterLastName": "Veuillez entrer votre nom.",
+    "enterEmail": "Veuillez entrer votre adresse e-mail.",
+    "invalidEmail": "L'adresse e-mail n'est pas dans un format valide (ex. nom@email.com).",
+    "emailTaken": "Cette adresse e-mail est déjà enregistrée. Essayez de vous connecter ou utilisez une autre adresse.",
+    "enterUsername": "Veuillez choisir un nom d'utilisateur.",
+    "usernameMinLength": "Le nom d'utilisateur doit comporter au moins 3 caractères.",
+    "usernameChars": "Le nom d'utilisateur ne peut contenir que des lettres et des chiffres, sans espaces ni caractères spéciaux.",
+    "usernameTaken": "Ce nom d'utilisateur est déjà pris. Choisissez-en un autre.",
+    "enterPassword": "Veuillez entrer un mot de passe.",
+    "passwordMin": "Le mot de passe doit comporter au moins 6 caractères.",
+    "enterBirthDate": "Veuillez entrer votre date de naissance au format AAAA-MM-JJ (ex. 1995-03-21).",
+    "invalidDateFormat": "La date de naissance doit être au format AAAA-MM-JJ (ex. 1995-03-21).",
+    "invalidDate": "La date de naissance saisie n'existe pas. Vérifiez le jour et le mois.",
+    "futureDate": "La date de naissance ne peut pas être dans le futur.",
+    "tooYoung": "Vous devez avoir au moins 13 ans pour vous inscrire.",
+    "unrealisticAge": "Vérifiez la date de naissance saisie.",
+    "registerFailed": "L'inscription a échoué. Veuillez réessayer.",
+    "duplicateGeneric": "Ce nom d'utilisateur ou cet e-mail existe déjà dans le système.",
+    "invalidCredentials": "Nom d'utilisateur ou mot de passe incorrect."
+  },
   "languages": {
     "hr": "Hrvatski",
     "en": "English",

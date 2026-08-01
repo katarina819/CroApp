@@ -87,6 +87,28 @@
     "passwordMinLength": "Password must be at least 6 characters",
     "notLoggedIn": "You are not logged in. Please log out and log in again."
   },
+  "validation": {
+    "enterFirstName": "Please enter your first name.",
+    "enterLastName": "Please enter your last name.",
+    "enterEmail": "Please enter your email address.",
+    "invalidEmail": "The email address is not in a valid format (e.g. name@email.com).",
+    "emailTaken": "This email address is already registered. Try logging in or use a different address.",
+    "enterUsername": "Please choose a username.",
+    "usernameMinLength": "Username must be at least 3 characters long.",
+    "usernameChars": "Username can only contain letters and numbers, no spaces or special characters.",
+    "usernameTaken": "This username is already taken. Please choose another.",
+    "enterPassword": "Please enter a password.",
+    "passwordMin": "Password must be at least 6 characters long.",
+    "enterBirthDate": "Please enter your date of birth in YYYY-MM-DD format (e.g. 1995-03-21).",
+    "invalidDateFormat": "Date of birth must be in YYYY-MM-DD format (e.g. 1995-03-21).",
+    "invalidDate": "The entered date of birth does not exist. Check the day and month.",
+    "futureDate": "Date of birth cannot be in the future.",
+    "tooYoung": "You must be at least 13 years old to register.",
+    "unrealisticAge": "Please check the entered date of birth.",
+    "registerFailed": "Registration failed. Please try again.",
+    "duplicateGeneric": "This username or email already exists in the system.",
+    "invalidCredentials": "Incorrect username or password."
+  },
   "languages": {
     "hr": "Hrvatski",
     "en": "English",

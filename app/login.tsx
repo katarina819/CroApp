@@ -2,6 +2,7 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { router } from "expo-router";
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import {
   ActivityIndicator,
   Alert,
@@ -16,6 +17,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import LanguageSelector from "../components/LanguageSelector";
 import { useGoogleAuth } from "../hooks/useGoogleAuth";
 import { API_ENDPOINTS } from "./config/api";
 
@@ -56,6 +58,7 @@ const ws = StyleSheet.create({
 
 // ─── Glavni Login Screen ──────────────────────────────────────────────────────
 export default function LoginScreen() {
+  const { t } = useTranslation();
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -87,10 +90,10 @@ export default function LoginScreen() {
           router.replace("/(tabs)");
         }
       } else {
-        Alert.alert("Greška", "Google prijava nije uspjela.");
+        Alert.alert(t("common.error"), t("validation.invalidCredentials"));
       }
     } catch {
-      Alert.alert("Greška", "Provjeri internetsku vezu.");
+      Alert.alert(t("common.error"), t("common.networkError"));
     } finally {
       setIsLoading(false);
     }
@@ -98,7 +101,7 @@ export default function LoginScreen() {
 
   const handleLogin = async () => {
     if (!username.trim() || !password.trim()) {
-      Alert.alert("Greška", "Molimo unesite korisničko ime i lozinku");
+      Alert.alert(t("common.error"), t("validation.enterUsername"));
       return;
     }
     setIsLoading(true);
@@ -114,14 +117,14 @@ export default function LoginScreen() {
         await AsyncStorage.setItem("userId", data.userId.toString());
         await AsyncStorage.setItem("firstName", data.firstName);
         await AsyncStorage.setItem("lastName", data.lastName);
-        Alert.alert("Dobrodošli!", `${data.firstName}`, [
-          { text: "Nastavi", onPress: () => router.replace("/(tabs)") },
+        Alert.alert(t("auth.welcome"), `${data.firstName}`, [
+          { text: t("common.ok"), onPress: () => router.replace("/(tabs)") },
         ]);
       } else {
-        Alert.alert("Greška", data.message || "Prijava nije uspjela.");
+        Alert.alert(t("common.error"), t("validation.invalidCredentials"));
       }
     } catch {
-      Alert.alert("Greška", "Došlo je do greške. Pokušajte ponovno.");
+      Alert.alert(t("common.error"), t("common.networkError"));
     } finally {
       setIsLoading(false);
     }
@@ -141,7 +144,11 @@ export default function LoginScreen() {
         showsVerticalScrollIndicator={false}
       >
         {/* Logo sekcija — na zelenoj pozadini */}
+        {/* Logo sekcija — na zelenoj pozadini */}
         <View style={s.logoSection}>
+          <View style={{ position: "absolute", top: 0, right: 0 }}>
+            <LanguageSelector />
+          </View>
           <Image
             source={require("../assets/images/vara_icon.png")}
             style={{ width: 130, height: 130, borderRadius: 24 }}

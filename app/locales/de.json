@@ -87,6 +87,28 @@
     "passwordMinLength": "Passwort muss mindestens 6 Zeichen haben",
     "notLoggedIn": "Sie sind nicht angemeldet. Bitte melden Sie sich ab und wieder an."
   },
+  "validation": {
+    "enterFirstName": "Bitte geben Sie Ihren Vornamen ein.",
+    "enterLastName": "Bitte geben Sie Ihren Nachnamen ein.",
+    "enterEmail": "Bitte geben Sie Ihre E-Mail-Adresse ein.",
+    "invalidEmail": "Die E-Mail-Adresse hat kein gültiges Format (z.B. name@email.com).",
+    "emailTaken": "Diese E-Mail-Adresse ist bereits registriert. Versuchen Sie sich anzumelden oder nutzen Sie eine andere Adresse.",
+    "enterUsername": "Bitte wählen Sie einen Benutzernamen.",
+    "usernameMinLength": "Der Benutzername muss mindestens 3 Zeichen lang sein.",
+    "usernameChars": "Der Benutzername darf nur Buchstaben und Zahlen enthalten, keine Leerzeichen oder Sonderzeichen.",
+    "usernameTaken": "Dieser Benutzername ist bereits vergeben. Bitte wählen Sie einen anderen.",
+    "enterPassword": "Bitte geben Sie ein Passwort ein.",
+    "passwordMin": "Das Passwort muss mindestens 6 Zeichen lang sein.",
+    "enterBirthDate": "Bitte geben Sie Ihr Geburtsdatum im Format JJJJ-MM-TT ein (z.B. 1995-03-21).",
+    "invalidDateFormat": "Das Geburtsdatum muss im Format JJJJ-MM-TT sein (z.B. 1995-03-21).",
+    "invalidDate": "Das eingegebene Geburtsdatum existiert nicht. Überprüfen Sie Tag und Monat.",
+    "futureDate": "Das Geburtsdatum darf nicht in der Zukunft liegen.",
+    "tooYoung": "Sie müssen mindestens 13 Jahre alt sein, um sich zu registrieren.",
+    "unrealisticAge": "Bitte überprüfen Sie das eingegebene Geburtsdatum.",
+    "registerFailed": "Registrierung fehlgeschlagen. Bitte versuchen Sie es erneut.",
+    "duplicateGeneric": "Dieser Benutzername oder diese E-Mail existiert bereits im System.",
+    "invalidCredentials": "Falscher Benutzername oder falsches Passwort."
+  },
   "languages": {
     "hr": "Hrvatski",
     "en": "English",

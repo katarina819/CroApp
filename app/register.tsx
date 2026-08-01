@@ -29,10 +29,11 @@ interface RegisterData {
   password: string;
   birthDate: string;
   email?: string | null;
+  language: string;
 }
 
 export default function RegisterScreen() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const [form, setForm] = useState({
     firstName: "",
     lastName: "",
@@ -93,7 +94,8 @@ export default function RegisterScreen() {
       Alert.alert(t("common.error"), t("validation.enterEmail"));
       return false;
     }
-    if (!form.email.includes("@")) {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(form.email.trim())) {
       Alert.alert(t("common.error"), t("validation.invalidEmail"));
       return false;
     }
@@ -101,20 +103,68 @@ export default function RegisterScreen() {
       Alert.alert(t("common.error"), t("validation.enterUsername"));
       return false;
     }
+    if (form.username.trim().length < 3) {
+      Alert.alert(t("common.error"), t("validation.usernameMinLength"));
+      return false;
+    }
     if (!/^[a-zA-Z0-9]+$/.test(form.username)) {
       Alert.alert(t("common.error"), t("validation.usernameChars"));
+      return false;
+    }
+    if (!form.password.trim()) {
+      Alert.alert(t("common.error"), t("validation.enterPassword"));
       return false;
     }
     if (form.password.length < 6) {
       Alert.alert(t("common.error"), t("validation.passwordMin"));
       return false;
     }
-    if (!form.birthDate) {
+    if (!form.birthDate.trim()) {
       Alert.alert(t("common.error"), t("validation.enterBirthDate"));
       return false;
     }
+
+    const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
+    if (!dateRegex.test(form.birthDate.trim())) {
+      Alert.alert(t("common.error"), t("validation.invalidDateFormat"));
+      return false;
+    }
+
+    const [year, month, day] = form.birthDate.trim().split("-").map(Number);
+    const parsedDate = new Date(year, month - 1, day);
+    const isValidDate =
+      parsedDate.getFullYear() === year &&
+      parsedDate.getMonth() === month - 1 &&
+      parsedDate.getDate() === day;
+
+    if (!isValidDate) {
+      Alert.alert(t("common.error"), t("validation.invalidDate"));
+      return false;
+    }
+
+    const today = new Date();
+    if (parsedDate > today) {
+      Alert.alert(t("common.error"), t("validation.futureDate"));
+      return false;
+    }
+
+    const age =
+      today.getFullYear() -
+      year -
+      (today < new Date(today.getFullYear(), month - 1, day) ? 1 : 0);
+
+    if (age < 13) {
+      Alert.alert(t("common.error"), t("validation.tooYoung"));
+      return false;
+    }
+    if (age > 120) {
+      Alert.alert(t("common.error"), t("validation.unrealisticAge"));
+      return false;
+    }
+
     return true;
   };
+
   const handleRegister = async () => {
     if (!validateForm()) return;
     setIsLoading(true);
@@ -126,6 +176,7 @@ export default function RegisterScreen() {
         birthDate: form.birthDate,
         username: form.username.trim(),
         email: form.email.trim() || null,
+        language: i18n.language,
       };
       const response = await fetch(API_ENDPOINTS.REGISTER, {
         method: "POST",
@@ -137,11 +188,22 @@ export default function RegisterScreen() {
           { text: t("auth.loginBtn"), onPress: () => router.push("/login") },
         ]);
       } else {
-        const text = await response.text();
-        Alert.alert(t("common.error"), text || t("validation.registerFailed"));
+        const errorData = await response.json().catch(() => null);
+        if (errorData?.field === "username" && errorData?.code === "taken") {
+          Alert.alert(t("common.error"), t("validation.usernameTaken"));
+        } else if (
+          errorData?.field === "email" &&
+          errorData?.code === "taken"
+        ) {
+          Alert.alert(t("common.error"), t("validation.emailTaken"));
+        } else if (response.status === 409) {
+          Alert.alert(t("common.error"), t("validation.duplicateGeneric"));
+        } else {
+          Alert.alert(t("common.error"), t("validation.registerFailed"));
+        }
       }
     } catch {
-      Alert.alert("Greška", "Provjeri internetsku vezu.");
+      Alert.alert(t("common.error"), t("common.networkError"));
     } finally {
       setIsLoading(false);
     }
