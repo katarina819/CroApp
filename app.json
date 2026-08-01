@@ -16,7 +16,9 @@
         "NSLocationAlwaysAndWhenInUseUsageDescription": "VARA koristi tvoju lokaciju za prikaz restorana, kafića, plaža i drugih zanimljivih mjesta u tvojoj blizini.",
         "CFBundleURLTypes": [
           {
-            "CFBundleURLSchemes": ["vara"]
+            "CFBundleURLSchemes": [
+              "vara"
+            ]
           }
         ]
       }
@@ -57,7 +59,10 @@
               "host": "*"
             }
           ],
-          "category": ["BROWSABLE", "DEFAULT"]
+          "category": [
+            "BROWSABLE",
+            "DEFAULT"
+          ]
         }
       ]
     },
@@ -101,7 +106,9 @@
           }
         }
       ],
-      "expo-video"
+      "expo-video",
+      "@react-native-community/datetimepicker",
+      "@react-native-google-signin/google-signin"
     ],
     "experiments": {
       "typedRoutes": true,

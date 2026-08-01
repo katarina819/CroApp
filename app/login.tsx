@@ -16,6 +16,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import { useGoogleAuth } from "../hooks/useGoogleAuth";
 import { API_ENDPOINTS } from "./config/api";
 
 // ─── Stiliziran VARA natpis ───────────────────────────────────────────────────
@@ -60,6 +61,40 @@ export default function LoginScreen() {
   const [isLoading, setIsLoading] = useState(false);
   const [usernameFocused, setUsernameFocused] = useState(false);
   const [passwordFocused, setPasswordFocused] = useState(false);
+
+  const { promptAsync } = useGoogleAuth(async (idToken) => {
+    setIsLoading(true);
+    try {
+      const res = await fetch(API_ENDPOINTS.GOOGLE_AUTH, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ idToken }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        await AsyncStorage.multiSet([
+          ["token", data.token],
+          ["userId", String(data.userId)],
+          ["firstName", data.firstName],
+          ["lastName", data.lastName],
+          ["needsBirthDate", String(data.needsBirthDate)],
+        ]);
+        if (data.needsPassword) {
+          router.replace("/set-password");
+        } else if (data.needsBirthDate) {
+          router.replace("/complete-profile");
+        } else {
+          router.replace("/(tabs)");
+        }
+      } else {
+        Alert.alert("Greška", "Google prijava nije uspjela.");
+      }
+    } catch {
+      Alert.alert("Greška", "Provjeri internetsku vezu.");
+    } finally {
+      setIsLoading(false);
+    }
+  });
 
   const handleLogin = async () => {
     if (!username.trim() || !password.trim()) {
@@ -181,6 +216,28 @@ export default function LoginScreen() {
             <Text style={s.dividerText}>ili</Text>
             <View style={s.dividerLine} />
           </View>
+
+          <TouchableOpacity
+            style={{
+              flexDirection: "row",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: 10,
+              borderRadius: 14,
+              paddingVertical: 16,
+              marginBottom: 14,
+              borderWidth: 1.5,
+              borderColor: "#D1DADB",
+              backgroundColor: "#FFFFFF",
+            }}
+            onPress={() => promptAsync()}
+            disabled={isLoading}
+            activeOpacity={0.8}
+          >
+            <Text style={{ fontSize: 15, fontWeight: "700", color: TEXT_DARK }}>
+              Nastavi s Google računom
+            </Text>
+          </TouchableOpacity>
 
           {/* Registracija */}
           <TouchableOpacity

@@ -5,6 +5,8 @@ import { useEffect, useRef, useState } from "react";
 import { Image, StyleSheet, Text, View } from "react-native";
 import Svg, { Defs, LinearGradient, Path, Stop } from "react-native-svg";
 import { API_BASE_URL } from "../app/config/api";
+const AVATAR_MALE = require("../assets/images/avatar-male.png");
+const AVATAR_FEMALE = require("../assets/images/avatar-female.png");
 
 interface UserAvatarProps {
   userId?: number;
@@ -177,36 +179,20 @@ export default function UserAvatar({
   }
   if (isMale) {
     return (
-      <View
-        style={[
-          {
-            width: size,
-            height: size,
-            borderRadius: radius,
-            overflow: "hidden",
-          },
-          style,
-        ]}
-      >
-        <MaleIcon size={size} />
-      </View>
+      <Image
+        source={AVATAR_MALE}
+        style={[{ width: size, height: size, borderRadius: radius }, style]}
+        resizeMode="cover"
+      />
     );
   }
   if (isFemale) {
     return (
-      <View
-        style={[
-          {
-            width: size,
-            height: size,
-            borderRadius: radius,
-            overflow: "hidden",
-          },
-          style,
-        ]}
-      >
-        <FemaleIcon size={size} />
-      </View>
+      <Image
+        source={AVATAR_FEMALE}
+        style={[{ width: size, height: size, borderRadius: radius }, style]}
+        resizeMode="cover"
+      />
     );
   }
 

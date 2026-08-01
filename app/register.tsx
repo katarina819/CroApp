@@ -1,8 +1,10 @@
 // app/register.tsx — VARA redesign v2 (puna zelena pozadina)
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { router } from "expo-router";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import LanguageSelector from "../components/LanguageSelector";
+import { useGoogleAuth } from "../hooks/useGoogleAuth";
 
 import {
   ActivityIndicator,
@@ -40,6 +42,40 @@ export default function RegisterScreen() {
     birthDate: "",
   });
   const [isLoading, setIsLoading] = useState(false);
+
+  const { request, promptAsync } = useGoogleAuth(async (idToken) => {
+    setIsLoading(true);
+    try {
+      const res = await fetch(API_ENDPOINTS.GOOGLE_AUTH, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ idToken }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        await AsyncStorage.multiSet([
+          ["token", data.token],
+          ["userId", String(data.userId)],
+          ["firstName", data.firstName],
+          ["lastName", data.lastName],
+          ["needsBirthDate", String(data.needsBirthDate)],
+        ]);
+        if (data.needsPassword) {
+          router.replace("/set-password");
+        } else if (data.needsBirthDate) {
+          router.replace("/complete-profile");
+        } else {
+          router.replace("/(tabs)");
+        }
+      } else {
+        Alert.alert("Greška", "Google prijava nije uspjela.");
+      }
+    } catch {
+      Alert.alert("Greška", "Provjeri internetsku vezu.");
+    } finally {
+      setIsLoading(false);
+    }
+  });
 
   const handleChange = (name: string, value: string) =>
     setForm({ ...form, [name]: value });
@@ -209,6 +245,43 @@ export default function RegisterScreen() {
             ) : (
               <Text style={s.btnText}>Registriraj se</Text>
             )}
+          </TouchableOpacity>
+
+          <View
+            style={{
+              flexDirection: "row",
+              alignItems: "center",
+              marginTop: 20,
+              marginBottom: 4,
+            }}
+          >
+            <View style={{ flex: 1, height: 1, backgroundColor: "#D1DADB" }} />
+            <Text style={{ marginHorizontal: 10, color: MUTED, fontSize: 12 }}>
+              ILI
+            </Text>
+            <View style={{ flex: 1, height: 1, backgroundColor: "#D1DADB" }} />
+          </View>
+
+          <TouchableOpacity
+            style={{
+              flexDirection: "row",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: 10,
+              borderRadius: 14,
+              paddingVertical: 14,
+              marginTop: 12,
+              borderWidth: 1.5,
+              borderColor: "#D1DADB",
+              backgroundColor: "#FFFFFF",
+            }}
+            onPress={() => promptAsync()}
+            disabled={!request || isLoading}
+            activeOpacity={0.8}
+          >
+            <Text style={{ fontSize: 15, fontWeight: "700", color: TEXT }}>
+              Nastavi s Google računom
+            </Text>
           </TouchableOpacity>
 
           <TouchableOpacity
