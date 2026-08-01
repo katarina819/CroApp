@@ -4,6 +4,7 @@ import {
   isSuccessResponse,
   statusCodes,
 } from "@react-native-google-signin/google-signin";
+import { Alert } from "react-native";
 
 GoogleSignin.configure({
   webClientId:
@@ -19,7 +20,13 @@ export function useGoogleAuth(onSuccess: (idToken: string) => void) {
 
       if (isSuccessResponse(response)) {
         const idToken = response.data.idToken;
-        if (idToken) onSuccess(idToken);
+        if (idToken) {
+          onSuccess(idToken);
+        } else {
+          Alert.alert("Debug", "Nema idToken u odgovoru!"); // 🔥 DODANO
+        }
+      } else {
+        Alert.alert("Debug", `Response type: ${response.type}`); // 🔥 DODANO
       }
     } catch (error) {
       if (isErrorWithCode(error)) {
@@ -31,12 +38,18 @@ export function useGoogleAuth(onSuccess: (idToken: string) => void) {
             break;
           case statusCodes.PLAY_SERVICES_NOT_AVAILABLE:
             console.warn("Play Services nisu dostupni");
+            Alert.alert("Debug", "Play Services nisu dostupni"); // 🔥 DODANO
             break;
           default:
             console.error("Google Sign-In error:", error);
+            Alert.alert(
+              "Debug",
+              `Kod: ${error.code}\nPoruka: ${error.message}`,
+            ); // 🔥 DODANO
         }
       } else {
         console.error("Unknown Google Sign-In error:", error);
+        Alert.alert("Debug", `Nepoznata greška: ${String(error)}`); // 🔥 DODANO
       }
     }
   };
