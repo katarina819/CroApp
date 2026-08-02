@@ -98,6 +98,7 @@
   },
   "forgotPassword": {
     "step1Title": "Forgot your password?",
+    "checkSpamNote": "If you don't see the email, please check your spam/junk folder.",
     "step1Desc": "Enter your email to receive a code",
     "emailLabel": "Email",
     "emailPlaceholder": "your@email.com",
@@ -202,11 +203,16 @@
   },
   "map": {
     "title": "Map",
+    "locationRequiredTitle": "Location required",
+    "locationRequiredMsg": "To use the VARA app, you need to enable location sharing. Open settings and turn on location permission.",
+    "openSettings": "Open settings",
     "commentPlaceholder": "Leave a comment...",
     "visitedPlacesCount": "{{count}} visited places",
     "categoriesCount": "{{count}} categories",
     "results": "results",
-
+    "todHintMorning": "🌅 Morning (06–12h): cafés, parks, landmarks, museums",
+    "todHintAfternoon": "☀️ Afternoon (12–18h): restaurants, beaches, cinemas, markets",
+    "todHintEvening": "🌙 Evening (18–24h): clubs, theaters, restaurants, spas",
     "hideControls": "Hide",
     "showControls": "Show",
     "zoomIn": "Zoom in",

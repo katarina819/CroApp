@@ -23,6 +23,7 @@ import {
   Image,
   ImageBackground,
   KeyboardAvoidingView,
+  Linking,
   Modal,
   Platform,
   ScrollView,
@@ -9373,7 +9374,17 @@ export default function DashboardScreen() {
   const requestLocationPermission = async () => {
     const { status } = await Location.requestForegroundPermissionsAsync();
     if (status !== "granted") {
-      Alert.alert(t("map.locationError"), t("map.locationDenied"));
+      Alert.alert(
+        t("map.locationRequiredTitle"),
+        t("map.locationRequiredMsg"),
+        [
+          { text: t("common.cancel"), style: "cancel" },
+          {
+            text: t("map.openSettings"),
+            onPress: () => Linking.openSettings(),
+          },
+        ],
+      );
       return;
     }
     setLocationPermission(true);
@@ -10371,10 +10382,7 @@ export default function DashboardScreen() {
           <TouchableOpacity
             style={[s.todBtn, activeTimeOfDay === "jutro" && s.todBtnA]}
             onPress={() => {
-              showTodHint(
-                "jutro",
-                "🌅 Jutro (06–12h): kafići, parkovi, znamenitosti, muzeji",
-              );
+              showTodHint("jutro", t("map.todHintMorning"));
               applyTimeOfDay("jutro");
             }}
           >
@@ -10389,10 +10397,7 @@ export default function DashboardScreen() {
           <TouchableOpacity
             style={[s.todBtn, activeTimeOfDay === "poslijepodne" && s.todBtnA]}
             onPress={() => {
-              showTodHint(
-                "poslijepodne",
-                "☀️ Poslijepodne (12–18h): restorani, plaže, kina, tržnice",
-              );
+              showTodHint("poslijepodne", t("map.todHintAfternoon"));
               applyTimeOfDay("poslijepodne");
             }}
           >
@@ -10407,10 +10412,7 @@ export default function DashboardScreen() {
           <TouchableOpacity
             style={[s.todBtn, activeTimeOfDay === "vecer" && s.todBtnA]}
             onPress={() => {
-              showTodHint(
-                "vecer",
-                "🌙 Večer (18–24h): klubovi, kazališta, restorani, spa",
-              );
+              showTodHint("vecer", t("map.todHintEvening"));
               applyTimeOfDay("vecer");
             }}
           >

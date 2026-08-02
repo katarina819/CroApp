@@ -48,7 +48,9 @@ export default function ForgotPasswordScreen() {
         setStep("code");
         Alert.alert(
           t("forgotPassword.codeSentTitle"),
-          t("forgotPassword.codeSentDesc", { contact }),
+          t("forgotPassword.codeSentDesc", { contact }) +
+            "\n\n" +
+            t("forgotPassword.checkSpamNote"),
         );
       } else if (response.status === 404) {
         Alert.alert(

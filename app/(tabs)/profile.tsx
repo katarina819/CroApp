@@ -3001,6 +3001,20 @@ function SettingsModal({
     await i18n.changeLanguage(langCode);
     setCurrentLang(langCode);
     await AsyncStorage.setItem("appLanguage", langCode);
+
+    try {
+      const token = await AsyncStorage.getItem("token");
+      await fetch(`${API_BASE_URL}/api/auth/language`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ language: langCode }),
+      });
+    } catch (err) {
+      console.warn("Nije uspjelo spremanje jezika na server:", err);
+    }
   };
 
   const saveSettings = async () => {

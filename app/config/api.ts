@@ -25,6 +25,7 @@ export const API_ENDPOINTS = {
   GOOGLE_AUTH: `${API_BASE_URL}/api/auth/google`,
   COMPLETE_PROFILE: `${API_BASE_URL}/api/auth/complete-profile`,
   SET_PASSWORD: `${API_BASE_URL}/api/auth/set-password`,
+  UPDATE_LANGUAGE: `${API_BASE_URL}/api/auth/language`,
 
   // VIDEO
   VIDEOS: `${API_BASE_URL}/api/video`,
