@@ -126,6 +126,18 @@
     "invalidCode": "The code is incorrect or has expired.",
     "backToLogin": "← Back to login"
   },
+  "password": {
+    "minLength": "Min. 6 characters",
+    "strength": {
+      "empty": "",
+      "weak": "Weak password",
+      "medium": "Moderately strong password",
+      "strong": "Strong password"
+    },
+    "suggestStrong": "Suggest a strong password",
+    "suggestedTitle": "Suggested strong password",
+    "suggestedBody": "The password has been filled into both fields and temporarily saved on the device until you set it."
+  },
   "validation": {
     "enterFirstName": "Please enter your first name.",
     "enterLastName": "Please enter your last name.",
@@ -306,6 +318,10 @@
   },
   "videos": {
     "title": "Videos",
+    "savedToBoxTitle": "Saved to Box",
+    "savedToBoxDesc": "You can view this video in your profile, under Box.",
+    "addedToWishlistTitle": "Added to Wishlist",
+    "addedToWishlistDesc": "You can view this video in your profile, under Wishlist.",
     "quickMessage1": "Great video! 🔥",
     "quickMessage2": "Excellent! 👏",
     "quickMessage3": "Hey! 👋",

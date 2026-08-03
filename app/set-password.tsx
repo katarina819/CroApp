@@ -1,21 +1,92 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { router } from "expo-router";
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import {
-    ActivityIndicator,
-    Alert,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View,
+  ActivityIndicator,
+  Alert,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from "react-native";
 import { API_ENDPOINTS } from "./config/api";
 
+type PasswordStrength = "empty" | "weak" | "medium" | "strong";
+
+function getPasswordStrength(password: string): PasswordStrength {
+  if (!password) return "empty";
+  if (password.length < 6) return "weak";
+
+  let score = 0;
+  if (password.length >= 10) score++;
+  if (/[a-z]/.test(password) && /[A-Z]/.test(password)) score++;
+  if (/\d/.test(password)) score++;
+  if (/[^a-zA-Z0-9]/.test(password)) score++;
+
+  if (score <= 1) return "weak";
+  if (score <= 2) return "medium";
+  return "strong";
+}
+
+function generateStrongPassword(length = 14): string {
+  const lower = "abcdefghijkmnpqrstuvwxyz";
+  const upper = "ABCDEFGHJKLMNPQRSTUVWXYZ";
+  const digits = "23456789";
+  const symbols = "!@#$%^&*_-+=";
+  const all = lower + upper + digits + symbols;
+
+  let pwd =
+    lower[Math.floor(Math.random() * lower.length)] +
+    upper[Math.floor(Math.random() * upper.length)] +
+    digits[Math.floor(Math.random() * digits.length)] +
+    symbols[Math.floor(Math.random() * symbols.length)];
+
+  for (let i = pwd.length; i < length; i++) {
+    pwd += all[Math.floor(Math.random() * all.length)];
+  }
+
+  return pwd
+    .split("")
+    .sort(() => Math.random() - 0.5)
+    .join("");
+}
+
+const STRENGTH_COLORS: Record<
+  PasswordStrength,
+  { color: string; barWidth: `${number}%` }
+> = {
+  empty: { color: "#D1DADB", barWidth: "0%" },
+  weak: { color: "#C0392B", barWidth: "33%" },
+  medium: { color: "#E29A1E", barWidth: "66%" },
+  strong: { color: "#4CAF50", barWidth: "100%" },
+};
+
+const STORAGE_GENERATED_PASSWORD = "vara_generated_password_v1";
+
 export default function SetPasswordScreen() {
+  const { t } = useTranslation();
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [saving, setSaving] = useState(false);
+
+  const handleGenerateStrongPassword = async () => {
+    const generated = generateStrongPassword();
+    setPassword(generated);
+    setConfirmPassword(generated);
+
+    try {
+      await AsyncStorage.setItem(STORAGE_GENERATED_PASSWORD, generated);
+    } catch {
+      // tiho ignoriraj — spremanje lokalne kopije nije kritično za tok registracije
+    }
+
+    Alert.alert(
+      t("password.suggestedTitle"),
+      `${generated}\n\n${t("password.suggestedBody")}`,
+    );
+  };
 
   const handleSave = async () => {
     if (password.length < 6) {
@@ -38,6 +109,8 @@ export default function SetPasswordScreen() {
         body: JSON.stringify({ password }),
       });
       if (res.ok) {
+        await AsyncStorage.removeItem(STORAGE_GENERATED_PASSWORD);
+
         const needsBirthDate = await AsyncStorage.getItem("needsBirthDate");
         if (needsBirthDate === "true") {
           router.replace("/complete-profile");
@@ -53,6 +126,8 @@ export default function SetPasswordScreen() {
       setSaving(false);
     }
   };
+
+  const strength = getPasswordStrength(password);
 
   return (
     <View style={s.root}>
@@ -70,6 +145,68 @@ export default function SetPasswordScreen() {
         value={password}
         onChangeText={setPassword}
       />
+
+      {/* Uvjet lozinke + indikator jačine + generator */}
+      <View style={{ marginTop: -6, marginBottom: 14 }}>
+        <Text
+          style={{
+            fontSize: 12,
+            color: "rgba(255,255,255,0.65)",
+            marginBottom: 6,
+          }}
+        >
+          {t("password.minLength")}
+        </Text>
+
+        {password.length > 0 && (
+          <View style={{ marginBottom: 8 }}>
+            <View
+              style={{
+                height: 4,
+                borderRadius: 2,
+                backgroundColor: "rgba(255,255,255,0.25)",
+                overflow: "hidden",
+              }}
+            >
+              <View
+                style={{
+                  height: "100%",
+                  width: STRENGTH_COLORS[strength].barWidth,
+                  backgroundColor: STRENGTH_COLORS[strength].color,
+                }}
+              />
+            </View>
+            <Text
+              style={{
+                fontSize: 12,
+                fontWeight: "700",
+                marginTop: 4,
+                color: STRENGTH_COLORS[strength].color,
+              }}
+            >
+              {t(`password.strength.${strength}`)}
+            </Text>
+          </View>
+        )}
+
+        <TouchableOpacity
+          onPress={handleGenerateStrongPassword}
+          disabled={saving}
+          style={{ alignSelf: "flex-start" }}
+        >
+          <Text
+            style={{
+              fontSize: 13,
+              fontWeight: "700",
+              color: "#8BC97B",
+              textDecorationLine: "underline",
+            }}
+          >
+            {t("password.suggestStrong")}
+          </Text>
+        </TouchableOpacity>
+      </View>
+
       <TextInput
         style={s.input}
         placeholder="Potvrdi lozinku"

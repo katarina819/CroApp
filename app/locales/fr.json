@@ -126,6 +126,18 @@
     "invalidCode": "Le code est incorrect ou a expiré.",
     "backToLogin": "← Retour à la connexion"
   },
+  "password": {
+    "minLength": "Min. 6 caractères",
+    "strength": {
+      "empty": "",
+      "weak": "Mot de passe faible",
+      "medium": "Mot de passe moyennement fort",
+      "strong": "Mot de passe fort"
+    },
+    "suggestStrong": "Suggérer un mot de passe fort",
+    "suggestedTitle": "Mot de passe fort suggéré",
+    "suggestedBody": "Le mot de passe a été rempli dans les deux champs et enregistré temporairement sur l'appareil jusqu'à ce que vous le définissiez."
+  },
   "validation": {
     "enterFirstName": "Veuillez entrer votre prénom.",
     "enterLastName": "Veuillez entrer votre nom.",
@@ -302,6 +314,10 @@
   },
   "videos": {
     "title": "Vidéos",
+    "savedToBoxTitle": "Enregistré dans le Coffre",
+    "savedToBoxDesc": "Vous pouvez revoir cette vidéo dans votre profil, dans la section Coffre.",
+    "addedToWishlistTitle": "Ajouté à la liste de souhaits",
+    "addedToWishlistDesc": "Vous pouvez revoir cette vidéo dans votre profil, dans la section Liste de souhaits.",
     "quickMessage1": "Super vidéo ! 🔥",
     "quickMessage2": "Excellent ! 👏",
     "quickMessage3": "Hé ! 👋",

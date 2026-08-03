@@ -825,6 +825,7 @@ function AvatarSection({ onUpdate }: { onUpdate: () => void }) {
         text: t("profile.selectAvatar"),
         onPress: () => setShowAvatarModal(true),
       },
+      { text: t("profile.initialsAvatar"), onPress: selectInitials },
       {
         text: t("profile.noPhoto"),
         onPress: async () => {

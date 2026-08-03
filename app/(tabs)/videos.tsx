@@ -1545,6 +1545,7 @@ export default function VideosScreen() {
           },
           body: JSON.stringify({ videoId }),
         });
+        Alert.alert(t("videos.savedToBoxTitle"), t("videos.savedToBoxDesc"));
       } else {
         const userId = await AsyncStorage.getItem("userId");
         await fetch(
@@ -1582,6 +1583,10 @@ export default function VideosScreen() {
           },
           body: JSON.stringify({ videoId, notes: "" }),
         });
+        Alert.alert(
+          t("videos.addedToWishlistTitle"),
+          t("videos.addedToWishlistDesc"),
+        );
       } else {
         const userId = await AsyncStorage.getItem("userId");
         await fetch(

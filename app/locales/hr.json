@@ -135,7 +135,7 @@
     "enterUsername": "Molimo odaberite korisničko ime.",
     "usernameMinLength": "Korisničko ime mora imati najmanje 3 znaka.",
     "usernameChars": "Korisničko ime smije sadržavati samo slova i brojeve, bez razmaka i posebnih znakova.",
-    "usernameTaken": "Ovo korisničko ime je already zauzeto. Odaberite drugo.",
+    "usernameTaken": "Ovo korisničko ime je već zauzeto. Odaberite drugo.",
     "enterPassword": "Molimo unesite lozinku.",
     "passwordMin": "Lozinka mora imati najmanje 6 znakova.",
     "enterBirthDate": "Molimo unesite datum rođenja u formatu GGGG-MM-DD (npr. 1995-03-21).",
@@ -189,6 +189,18 @@
     "messages": "Poruke",
     "search": "Pretraga",
     "profile": "Profil"
+  },
+  "password": {
+    "minLength": "Min. 6 znakova",
+    "strength": {
+      "empty": "",
+      "weak": "Slaba lozinka",
+      "medium": "Umjereno jaka lozinka",
+      "strong": "Jaka lozinka"
+    },
+    "suggestStrong": "Predloži jaku lozinku",
+    "suggestedTitle": "Predložena jaka lozinka",
+    "suggestedBody": "Lozinka je popunjena u oba polja i privremeno spremljena na uređaju dok je ne postaviš."
   },
   "map": {
     "title": "Karta",
@@ -301,6 +313,10 @@
   },
   "videos": {
     "title": "Videi",
+    "savedToBoxTitle": "Spremljeno u Spremnik",
+    "savedToBoxDesc": "Video možeš pogledati u svom profilu, u dijelu Spremnik.",
+    "addedToWishlistTitle": "Dodano na Listu želja",
+    "addedToWishlistDesc": "Video možeš pogledati u svom profilu, u dijelu Lista želja.",
     "quickMessage1": "Super video! ",
     "quickMessage2": "Odlično! ",
     "quickMessage3": "Hej! ",

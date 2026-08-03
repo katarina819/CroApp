@@ -18,6 +18,7 @@ import {
   ActivityIndicator,
   Alert,
   Animated,
+  AppState,
   Dimensions,
   FlatList,
   Image,
@@ -1704,7 +1705,7 @@ function PlaceDetailModal({
                     onPress={() => setWantReturn((v) => !v)}
                   >
                     <Text style={dm.returnTxt}>
-                      {wantReturn ? "✅ " : "⬜ "}
+                      {wantReturn ? " " : "⬜ "}
                       {t("map.wantToReturn")}
                     </Text>
                   </TouchableOpacity>
@@ -9083,6 +9084,8 @@ export default function DashboardScreen() {
     }));
   }, [t]);
   const mapRef = useRef<MapView>(null);
+  const permissionRequestInProgress = useRef(false);
+  const hasShownPermissionAlert = useRef(false);
 
   const [userLocation, setUserLocation] = useState<{
     latitude: number;
@@ -9245,7 +9248,7 @@ export default function DashboardScreen() {
   }, [selectedAgeGroups, getAgeGroups]);
 
   const [notifPrefs, setNotifPrefs] = useState<NotifPrefs>({
-    appEnabled: true,
+    appEnabled: false,
     emailEnabled: false,
     email: "",
     categories: [],
@@ -9343,13 +9346,27 @@ export default function DashboardScreen() {
 
     loadJSON<string[]>(STORAGE_HIDDEN, []).then(setHiddenPlaceIds);
     loadJSON<NotifPrefs>(STORAGE_NOTIFS, {
-      appEnabled: true,
+      appEnabled: false,
       emailEnabled: false,
       email: "",
       categories: [],
     }).then(setNotifPrefs);
     requestLocationPermission();
   }, []);
+
+  useEffect(() => {
+    const sub = AppState.addEventListener("change", (nextState) => {
+      if (nextState === "active") {
+        Location.getForegroundPermissionsAsync().then(({ status }) => {
+          if (status === "granted" && !locationPermission) {
+            setLocationPermission(true);
+            getLocationFast();
+          }
+        });
+      }
+    });
+    return () => sub.remove();
+  }, [locationPermission]);
 
   // PRONAĐI useEffect koji resetira displayLimit:
   useEffect(() => {
@@ -9372,23 +9389,52 @@ export default function DashboardScreen() {
   // Korak 1: Balanced (brzo ~1-3s) → odmah centrira kartu
   // Korak 2: High (točno, 5-10s) → tiho ažurira u pozadini
   const requestLocationPermission = async () => {
-    const { status } = await Location.requestForegroundPermissionsAsync();
-    if (status !== "granted") {
-      Alert.alert(
-        t("map.locationRequiredTitle"),
-        t("map.locationRequiredMsg"),
-        [
-          { text: t("common.cancel"), style: "cancel" },
-          {
-            text: t("map.openSettings"),
-            onPress: () => Linking.openSettings(),
-          },
-        ],
-      );
-      return;
+    if (permissionRequestInProgress.current) return;
+    permissionRequestInProgress.current = true;
+
+    try {
+      const { status: currentStatus, canAskAgain } =
+        await Location.getForegroundPermissionsAsync();
+
+      let finalStatus = currentStatus;
+
+      if (
+        currentStatus === Location.PermissionStatus.UNDETERMINED &&
+        canAskAgain
+      ) {
+        const req = await Location.requestForegroundPermissionsAsync();
+        finalStatus = req.status;
+      }
+
+      if (finalStatus !== Location.PermissionStatus.GRANTED) {
+        setTimeout(() => {
+          if (!hasShownPermissionAlert.current) {
+            hasShownPermissionAlert.current = true;
+            Alert.alert(
+              t("map.locationRequiredTitle"),
+              t("map.locationRequiredMsg"),
+              [
+                { text: t("common.cancel"), style: "cancel" },
+                {
+                  text: t("map.openSettings"),
+                  onPress: () => {
+                    hasShownPermissionAlert.current = false;
+                    Linking.openSettings();
+                  },
+                },
+              ],
+            );
+          }
+        }, 400);
+        return;
+      }
+
+      hasShownPermissionAlert.current = false;
+      setLocationPermission(true);
+      getLocationFast();
+    } finally {
+      permissionRequestInProgress.current = false;
     }
-    setLocationPermission(true);
-    getLocationFast();
   };
 
   const getLocationFast = async () => {

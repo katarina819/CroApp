@@ -300,8 +300,24 @@
     "notifSettings": "Benachrichtigungseinstellungen",
     "distance": "{{dist}} km von Ihnen entfernt"
   },
+  "password": {
+    "minLength": "Min. 6 Zeichen",
+    "strength": {
+      "empty": "",
+      "weak": "Schwaches Passwort",
+      "medium": "Mäßig starkes Passwort",
+      "strong": "Starkes Passwort"
+    },
+    "suggestStrong": "Starkes Passwort vorschlagen",
+    "suggestedTitle": "Vorgeschlagenes starkes Passwort",
+    "suggestedBody": "Das Passwort wurde in beide Felder eingetragen und vorübergehend auf dem Gerät gespeichert, bis du es festlegst."
+  },
   "videos": {
     "title": "Videos",
+    "savedToBoxTitle": "Im Speicher gespeichert",
+    "savedToBoxDesc": "Du kannst das Video in deinem Profil unter Speicher ansehen.",
+    "addedToWishlistTitle": "Zur Wunschliste hinzugefügt",
+    "addedToWishlistDesc": "Du kannst das Video in deinem Profil unter Wunschliste ansehen.",
     "quickMessage1": "Super Video! ",
     "quickMessage2": "Ausgezeichnet! ",
     "quickMessage3": "Hallo! ",

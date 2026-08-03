@@ -126,6 +126,18 @@
     "invalidCode": "Il codice non è corretto o è scaduto.",
     "backToLogin": "← Torna all'accesso"
   },
+  "password": {
+    "minLength": "Min. 6 caratteri",
+    "strength": {
+      "empty": "",
+      "weak": "Password debole",
+      "medium": "Password moderatamente forte",
+      "strong": "Password forte"
+    },
+    "suggestStrong": "Suggerisci una password forte",
+    "suggestedTitle": "Password forte suggerita",
+    "suggestedBody": "La password è stata inserita in entrambi i campi e salvata temporaneamente sul dispositivo finché non la imposti."
+  },
   "validation": {
     "enterFirstName": "Inserisci il tuo nome.",
     "enterLastName": "Inserisci il tuo cognome.",
@@ -302,6 +314,10 @@
   },
   "videos": {
     "title": "Video",
+    "savedToBoxTitle": "Salvato nel Contenitore",
+    "savedToBoxDesc": "Puoi rivedere questo video nel tuo profilo, nella sezione Contenitore.",
+    "addedToWishlistTitle": "Aggiunto alla Lista dei desideri",
+    "addedToWishlistDesc": "Puoi rivedere questo video nel tuo profilo, nella sezione Lista dei desideri.",
     "quickMessage1": "Video fantastico! 🔥",
     "quickMessage2": "Eccellente! 👏",
     "quickMessage3": "Ehi! 👋",
