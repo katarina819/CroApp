@@ -816,41 +816,10 @@ function AvatarSection({ onUpdate }: { onUpdate: () => void }) {
   const { profile, updateAvatar, refreshProfile, resetProfile } = useUser();
   const [loading, setLoading] = useState(false);
   const [showAvatarModal, setShowAvatarModal] = useState(false);
+  const [showPhotoSourceModal, setShowPhotoSourceModal] = useState(false);
 
-  const pickAndUpload = async () => {
-    Alert.alert(t("profile.profilePicture"), t("profile.selectSource"), [
-      { text: t("profile.gallery"), onPress: () => pickImage("gallery") },
-      { text: t("profile.camera"), onPress: () => pickImage("camera") },
-      {
-        text: t("profile.selectAvatar"),
-        onPress: () => setShowAvatarModal(true),
-      },
-      { text: t("profile.initialsAvatar"), onPress: selectInitials },
-      {
-        text: t("profile.noPhoto"),
-        onPress: async () => {
-          setLoading(true);
-          try {
-            const token = await AsyncStorage.getItem("token");
-            const res = await fetch(`${API_BASE_URL}/api/auth/profile-photo`, {
-              method: "DELETE",
-              headers: { Authorization: `Bearer ${token}` },
-            });
-            if (res.ok) {
-              updateAvatar("");
-              await refreshProfile();
-              onUpdate();
-              Alert.alert(t("common.success"), t("profile.photoRemoved"));
-            }
-          } catch {
-            Alert.alert(t("common.error"), t("profile.photoRemoveError"));
-          } finally {
-            setLoading(false);
-          }
-        },
-      },
-      { text: t("common.cancel"), style: "cancel" },
-    ]);
+  const pickAndUpload = () => {
+    setShowPhotoSourceModal(true);
   };
 
   const selectInitials = async () => {
@@ -1176,6 +1145,104 @@ function AvatarSection({ onUpdate }: { onUpdate: () => void }) {
               </Text>
             </TouchableOpacity>
           </View>
+        </TouchableOpacity>
+      </Modal>
+
+      <Modal
+        visible={showPhotoSourceModal}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setShowPhotoSourceModal(false)}
+      >
+        <TouchableOpacity
+          style={[avModal.overlay, { backgroundColor: V.overlay }]}
+          activeOpacity={1}
+          onPress={() => setShowPhotoSourceModal(false)}
+        >
+          <TouchableOpacity
+            activeOpacity={1}
+            onPress={(e) => e.stopPropagation()}
+            style={[
+              avModal.container,
+              { backgroundColor: V.forestDeep, borderColor: V.borderGreen },
+            ]}
+          >
+            <View
+              style={[avModal.handle, { backgroundColor: V.borderGreen }]}
+            />
+            <Text style={[avModal.title, { color: V.silverBright }]}>
+              {t("profile.profilePicture")}
+            </Text>
+            <Text style={[avModal.subtitle, { color: V.silverDim }]}>
+              {t("profile.selectSource")}
+            </Text>
+
+            {[
+              {
+                icon: "images-outline",
+                label: t("profile.gallery"),
+                onPress: () => {
+                  setShowPhotoSourceModal(false);
+                  pickImage("gallery");
+                },
+              },
+              {
+                icon: "camera-outline",
+                label: t("profile.camera"),
+                onPress: () => {
+                  setShowPhotoSourceModal(false);
+                  pickImage("camera");
+                },
+              },
+              {
+                icon: "person-circle-outline",
+                label: t("profile.selectAvatar"),
+                onPress: () => {
+                  setShowPhotoSourceModal(false);
+                  setShowAvatarModal(true);
+                },
+              },
+              {
+                icon: "text-outline",
+                label: t("profile.initialsAvatar"),
+                onPress: () => {
+                  setShowPhotoSourceModal(false);
+                  selectInitials();
+                },
+              },
+            ].map((opt, i, arr) => (
+              <TouchableOpacity
+                key={i}
+                onPress={opt.onPress}
+                style={{
+                  flexDirection: "row",
+                  alignItems: "center",
+                  gap: 12,
+                  paddingVertical: 14,
+                  width: "100%",
+                  borderBottomWidth:
+                    i < arr.length - 1 ? StyleSheet.hairlineWidth : 0,
+                  borderBottomColor: V.borderDim,
+                }}
+              >
+                <Ionicons name={opt.icon as any} size={20} color={V.visited} />
+                <Text
+                  style={{ fontSize: 15, color: V.silver, fontWeight: "500" }}
+                >
+                  {opt.label}
+                </Text>
+              </TouchableOpacity>
+            ))}
+
+            <TouchableOpacity
+              style={avModal.cancelBtn}
+              onPress={() => setShowPhotoSourceModal(false)}
+            >
+              <Text style={[avModal.cancelText, { color: V.silverDim }]}>
+                {t("common.close")}
+              </Text>
+            </TouchableOpacity>
+          </TouchableOpacity>
         </TouchableOpacity>
       </Modal>
     </>
@@ -2590,10 +2657,10 @@ function WishlistTab() {
     );
   };
 
-  const toggleGoing = async (item: WishlistItem) => {
+  const setGoingStatus = async (item: WishlistItem, value: boolean) => {
     const token = await AsyncStorage.getItem("token");
-    const newVal =
-      item.isGoing === true ? false : item.isGoing === false ? undefined : true;
+    // Ako je korisnik kliknuo na već aktivno stanje → resetiraj na neodlučeno
+    const newVal = item.isGoing === value ? undefined : value;
     try {
       const res = await fetch(
         `${API_BASE_URL}/api/wishlistvideo/update/${item.videoId}`,
@@ -2689,17 +2756,71 @@ function WishlistTab() {
                     {t("profile.addedOn")}{" "}
                     {new Date(item.addedAt).toLocaleDateString("hr-HR")}
                   </Text>
-                  <TouchableOpacity onPress={() => toggleGoing(item)}>
-                    <Text style={tab.goingBadge}>
-                      {item.isGoing === true
-                        ? "✅ " + t("profile.visited")
-                        : item.isGoing === false
-                          ? t("profile.notVisited")
-                          : "⭕ " + t("profile.undecided")}
-                    </Text>
-                  </TouchableOpacity>
+                  <View
+                    style={{
+                      flexDirection: "row",
+                      gap: 8,
+                      marginTop: 6,
+                      flexWrap: "wrap",
+                    }}
+                  >
+                    <TouchableOpacity
+                      onPress={() => setGoingStatus(item, true)}
+                      style={{
+                        paddingHorizontal: 10,
+                        paddingVertical: 5,
+                        borderRadius: 14,
+                        borderWidth: 1,
+                        backgroundColor:
+                          item.isGoing === true ? V.visited : V.forestMid,
+                        borderColor:
+                          item.isGoing === true ? V.borderGreen : V.borderDim,
+                      }}
+                    >
+                      <Text
+                        style={{
+                          fontSize: 12,
+                          fontWeight: "600",
+                          color:
+                            item.isGoing === true
+                              ? V.silverBright
+                              : V.silverDim,
+                        }}
+                      >
+                        {item.isGoing === true ? "✅ " : ""}
+                        {t("profile.visited")}
+                      </Text>
+                    </TouchableOpacity>
+
+                    <TouchableOpacity
+                      onPress={() => setGoingStatus(item, false)}
+                      style={{
+                        paddingHorizontal: 10,
+                        paddingVertical: 5,
+                        borderRadius: 14,
+                        borderWidth: 1,
+                        backgroundColor:
+                          item.isGoing === false ? V.danger : V.forestMid,
+                        borderColor:
+                          item.isGoing === false ? "#C05050" : V.borderDim,
+                      }}
+                    >
+                      <Text
+                        style={{
+                          fontSize: 12,
+                          fontWeight: "600",
+                          color:
+                            item.isGoing === false
+                              ? V.silverBright
+                              : V.silverDim,
+                        }}
+                      >
+                        {item.isGoing === false ? "❌ " : ""}
+                        {t("profile.notVisited")}
+                      </Text>
+                    </TouchableOpacity>
+                  </View>
                 </View>
-                {/* UKLONJENO: ikona smeća (trash-outline) */}
               </TouchableOpacity>
             )}
           />

@@ -199,6 +199,7 @@
   "placesWord": "Orte",
   "map": {
     "title": "Karte",
+    "members": "Mitglieder",
     "locationRequiredTitle": "Standort erforderlich",
     "locationRequiredMsg": "Um die VARA-App zu nutzen, müssen Sie die Standortfreigabe aktivieren. Öffnen Sie die Einstellungen und aktivieren Sie die Standortberechtigung.",
     "openSettings": "Einstellungen öffnen",

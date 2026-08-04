@@ -587,7 +587,7 @@ function PulsingDot({ color }: { color: string }) {
   );
 }
 
-function InterestiGrid({
+const InterestiGrid = React.memo(function InterestiGrid({
   interests,
   onToggle,
   DC,
@@ -659,7 +659,7 @@ function InterestiGrid({
       })}
     </View>
   );
-}
+});
 
 // ---------------------------------------------------------------------------
 // SimpleMarker - IKONE SE PRIKAZUJU ISPRAVNO
@@ -669,6 +669,7 @@ function InterestiGrid({
 // ---------------------------------------------------------------------------
 // SimpleMarker - IDENTIČAN PATTERN kao PlaceMarker u dashboard.tsx
 // ---------------------------------------------------------------------------
+
 function SimpleMarker({
   activity,
   color,
@@ -1098,6 +1099,12 @@ export function PlanMyDayModal({
     });
     setShowDetailModal(true);
   };
+
+  const handleToggleInterest = React.useCallback((id: string) => {
+    setInterests((prev) =>
+      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id],
+    );
+  }, []);
 
   // ---------------------------------------------------------------------------
   // Render — LOADING
@@ -1550,7 +1557,11 @@ export function PlanMyDayModal({
                               companions === o.val ? DC.border : DC.borderDim,
                             gap: 10,
                           }}
-                          onPress={() => setCompanions(o.val)}
+                          onPress={() =>
+                            setCompanions((prev) =>
+                              prev === o.val ? null : o.val,
+                            )
+                          }
                         >
                           <Text style={{ fontSize: 22 }}>{o.emoji}</Text>
                           <View style={{ flex: 1 }}>
@@ -1621,7 +1632,11 @@ export function PlanMyDayModal({
                             borderColor:
                               transport === o.val ? DC.border : DC.borderDim,
                           }}
-                          onPress={() => setTransport(o.val)}
+                          onPress={() =>
+                            setTransport((prev) =>
+                              prev === o.val ? null : o.val,
+                            )
+                          }
                         >
                           <Text
                             style={{
@@ -1714,7 +1729,9 @@ export function PlanMyDayModal({
                             borderColor:
                               activityRadius === r ? DC.border : DC.borderDim,
                           }}
-                          onPress={() => setActivityRadius(r)}
+                          onPress={() =>
+                            setActivityRadius((prev) => (prev === r ? null : r))
+                          }
                         >
                           <Text
                             style={{
@@ -1765,13 +1782,7 @@ export function PlanMyDayModal({
                     </View>
                     <InterestiGrid
                       interests={interests}
-                      onToggle={(id) =>
-                        setInterests((prev) =>
-                          prev.includes(id)
-                            ? prev.filter((x) => x !== id)
-                            : [...prev, id],
-                        )
-                      }
+                      onToggle={handleToggleInterest}
                       DC={DC}
                       t={t}
                     />

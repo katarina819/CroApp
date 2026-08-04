@@ -2,12 +2,12 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as Localization from "expo-localization";
 import i18n from "i18next";
 import { initReactI18next } from "react-i18next";
-
 import de from "../locales/de.json";
 import en from "../locales/en.json";
 import fr from "../locales/fr.json";
 import hr from "../locales/hr.json";
 import it from "../locales/it.json";
+import { API_BASE_URL } from "./api";
 
 const LANGUAGE_KEY = "vara_language";
 
@@ -29,6 +29,20 @@ const getStoredLanguage = async (): Promise<string> => {
 export const saveLanguage = async (lang: string) => {
   await AsyncStorage.setItem(LANGUAGE_KEY, lang);
   i18n.changeLanguage(lang);
+
+  try {
+    const token = await AsyncStorage.getItem("token"); // provjeri da li je ovo stvarni ključ u tvom kodu!
+    if (token) {
+      await fetch(`${API_BASE_URL}/api/auth/language`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ language: lang }),
+      });
+    }
+  } catch {}
 };
 
 i18n.use(initReactI18next).init({

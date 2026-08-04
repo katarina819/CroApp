@@ -314,6 +314,7 @@
   },
   "videos": {
     "title": "Video",
+    "members": "membri",
     "savedToBoxTitle": "Salvato nel Contenitore",
     "savedToBoxDesc": "Puoi rivedere questo video nel tuo profilo, nella sezione Contenitore.",
     "addedToWishlistTitle": "Aggiunto alla Lista dei desideri",

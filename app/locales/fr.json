@@ -314,6 +314,7 @@
   },
   "videos": {
     "title": "Vidéos",
+    "members": "membres",
     "savedToBoxTitle": "Enregistré dans le Coffre",
     "savedToBoxDesc": "Vous pouvez revoir cette vidéo dans votre profil, dans la section Coffre.",
     "addedToWishlistTitle": "Ajouté à la liste de souhaits",

@@ -349,12 +349,34 @@ export default function ChatScreen() {
       let uid = await AsyncStorage.getItem("userId");
       if (!uid || uid === "0") {
         try {
-          const payload = JSON.parse(atob(token!.split(".")[1]));
+          const base64Payload = token!.split(".")[1];
+          const base64 = base64Payload.replace(/-/g, "+").replace(/_/g, "/");
+          const padded = base64.padEnd(
+            base64.length + ((4 - (base64.length % 4)) % 4),
+            "=",
+          );
+          // Ručno dekodiranje base64 → string, bez atob (koji ne postoji u RN)
+          const binaryStr = (globalThis as any).Buffer
+            ? (globalThis as any).Buffer.from(padded, "base64").toString(
+                "utf-8",
+              )
+            : decodeURIComponent(
+                padded
+                  .split("")
+                  .map(
+                    (c) =>
+                      "%" + ("00" + c.charCodeAt(0).toString(16)).slice(-2),
+                  )
+                  .join(""),
+              );
+          const payload = JSON.parse(binaryStr);
           uid =
             payload[
               "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier"
             ];
-        } catch {}
+        } catch (e) {
+          console.error("JWT decode error:", e);
+        }
       }
       const formData = new FormData();
       formData.append("Video", {

@@ -204,6 +204,7 @@
   },
   "map": {
     "title": "Karta",
+    "members": "članova",
     "locationRequiredTitle": "Lokacija je potrebna",
     "locationRequiredMsg": "Za korištenje VARA aplikacije potrebno je omogućiti dijeljenje lokacije. Otvorite postavke i uključite dozvolu za lokaciju.",
     "openSettings": "Otvori postavke",

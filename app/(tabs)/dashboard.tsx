@@ -6,6 +6,7 @@
 //   4. Strogi filteri dolaze iz locationService.ts (v5)
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as Location from "expo-location";
+import { useFocusEffect } from "expo-router";
 import React, {
   useCallback,
   useEffect,
@@ -9086,6 +9087,7 @@ export default function DashboardScreen() {
   const mapRef = useRef<MapView>(null);
   const permissionRequestInProgress = useRef(false);
   const hasShownPermissionAlert = useRef(false);
+  const hasRequestedLocationOnce = useRef(false);
 
   const [userLocation, setUserLocation] = useState<{
     latitude: number;
@@ -9351,7 +9353,6 @@ export default function DashboardScreen() {
       email: "",
       categories: [],
     }).then(setNotifPrefs);
-    requestLocationPermission();
   }, []);
 
   useEffect(() => {
@@ -9367,6 +9368,15 @@ export default function DashboardScreen() {
     });
     return () => sub.remove();
   }, [locationPermission]);
+
+  useFocusEffect(
+    useCallback(() => {
+      if (!hasRequestedLocationOnce.current) {
+        hasRequestedLocationOnce.current = true;
+        requestLocationPermission();
+      }
+    }, []),
+  );
 
   // PRONAĐI useEffect koji resetira displayLimit:
   useEffect(() => {

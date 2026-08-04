@@ -22,6 +22,51 @@ import {
 } from "react-native";
 import { API_ENDPOINTS } from "./config/api";
 
+type PasswordStrength = "empty" | "weak" | "medium" | "strong";
+
+function getPasswordStrength(password: string): PasswordStrength {
+  if (!password) return "empty";
+  if (password.length < 6) return "weak";
+  let score = 0;
+  if (password.length >= 10) score++;
+  if (/[a-z]/.test(password) && /[A-Z]/.test(password)) score++;
+  if (/\d/.test(password)) score++;
+  if (/[^a-zA-Z0-9]/.test(password)) score++;
+  if (score <= 1) return "weak";
+  if (score <= 2) return "medium";
+  return "strong";
+}
+
+function generateStrongPassword(length = 14): string {
+  const lower = "abcdefghijkmnpqrstuvwxyz";
+  const upper = "ABCDEFGHJKLMNPQRSTUVWXYZ";
+  const digits = "23456789";
+  const symbols = "!@#$%^&*_-+=";
+  const all = lower + upper + digits + symbols;
+  let pwd =
+    lower[Math.floor(Math.random() * lower.length)] +
+    upper[Math.floor(Math.random() * upper.length)] +
+    digits[Math.floor(Math.random() * digits.length)] +
+    symbols[Math.floor(Math.random() * symbols.length)];
+  for (let i = pwd.length; i < length; i++) {
+    pwd += all[Math.floor(Math.random() * all.length)];
+  }
+  return pwd
+    .split("")
+    .sort(() => Math.random() - 0.5)
+    .join("");
+}
+
+const STRENGTH_COLORS: Record<
+  PasswordStrength,
+  { color: string; barWidth: `${number}%` }
+> = {
+  empty: { color: "#D1DADB", barWidth: "0%" },
+  weak: { color: "#C0392B", barWidth: "33%" },
+  medium: { color: "#E29A1E", barWidth: "66%" },
+  strong: { color: "#4CAF50", barWidth: "100%" },
+};
+
 interface RegisterData {
   firstName: string;
   lastName: string;
@@ -261,14 +306,90 @@ export default function RegisterScreen() {
             autoCapitalize="none"
             editable={!isLoading}
           />
-          <Field
-            label={`${t("auth.password").toUpperCase()} *`}
-            placeholder={t("auth.passwordPlaceholder")}
-            value={form.password}
-            onChangeText={(v) => handleChange("password", v)}
-            secureTextEntry
-            editable={!isLoading}
-          />
+          <View style={s.fieldWrap}>
+            <Text style={s.label}>{t("auth.password").toUpperCase()} *</Text>
+            <TextInput
+              style={s.input}
+              placeholder={t("auth.passwordPlaceholder")}
+              placeholderTextColor="#9AA9A7"
+              value={form.password}
+              onChangeText={(v) => handleChange("password", v)}
+              secureTextEntry
+              editable={!isLoading}
+            />
+
+            <Text
+              style={{
+                fontSize: 12,
+                marginTop: 6,
+                color:
+                  form.password.length === 0
+                    ? MUTED
+                    : form.password.length < 6
+                      ? "#C0392B"
+                      : "#4CAF50",
+              }}
+            >
+              {t("password.minLength")}
+            </Text>
+
+            {form.password.length > 0 && (
+              <View style={{ marginTop: 6 }}>
+                <View
+                  style={{
+                    height: 4,
+                    borderRadius: 2,
+                    backgroundColor: "#E8EEEE",
+                    overflow: "hidden",
+                  }}
+                >
+                  <View
+                    style={{
+                      height: "100%",
+                      width:
+                        STRENGTH_COLORS[getPasswordStrength(form.password)]
+                          .barWidth,
+                      backgroundColor:
+                        STRENGTH_COLORS[getPasswordStrength(form.password)]
+                          .color,
+                    }}
+                  />
+                </View>
+                <Text
+                  style={{
+                    fontSize: 12,
+                    fontWeight: "700",
+                    marginTop: 4,
+                    color:
+                      STRENGTH_COLORS[getPasswordStrength(form.password)].color,
+                  }}
+                >
+                  {t(`password.strength.${getPasswordStrength(form.password)}`)}
+                </Text>
+              </View>
+            )}
+
+            <TouchableOpacity
+              onPress={() => {
+                const generated = generateStrongPassword();
+                setForm((prev) => ({ ...prev, password: generated }));
+                Alert.alert(t("password.suggestedTitle"), generated);
+              }}
+              disabled={isLoading}
+              style={{ marginTop: 8, alignSelf: "flex-start" }}
+            >
+              <Text
+                style={{
+                  fontSize: 13,
+                  fontWeight: "700",
+                  color: GREEN_MID,
+                  textDecorationLine: "underline",
+                }}
+              >
+                {t("password.suggestStrong")}
+              </Text>
+            </TouchableOpacity>
+          </View>
           <View style={s.fieldWrap}>
             <Text style={s.label}>{t("auth.birthDate").toUpperCase()} *</Text>
             <View style={{ flexDirection: "row", gap: 8 }}>

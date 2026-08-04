@@ -151,7 +151,12 @@ export default function SetPasswordScreen() {
         <Text
           style={{
             fontSize: 12,
-            color: "rgba(255,255,255,0.65)",
+            color:
+              password.length === 0
+                ? "rgba(255,255,255,0.65)"
+                : password.length < 6
+                  ? "#C0392B" // crveno
+                  : "#4CAF50", // zeleno
             marginBottom: 6,
           }}
         >
