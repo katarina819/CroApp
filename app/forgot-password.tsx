@@ -26,6 +26,8 @@ export default function ForgotPasswordScreen() {
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   const handleRequestCode = async () => {
     if (!contact.trim()) {
@@ -232,33 +234,65 @@ export default function ForgotPasswordScreen() {
             <Text style={styles.label}>
               {t("forgotPassword.newPasswordLabel")}
             </Text>
-            <TextInput
-              style={styles.input}
-              placeholder={t("forgotPassword.newPasswordPlaceholder")}
-              placeholderTextColor="#999"
-              value={newPassword}
-              onChangeText={setNewPassword}
-              secureTextEntry
-              autoFocus
-              editable={!isLoading}
-            />
+            <View style={{ position: "relative", justifyContent: "center" }}>
+              <TextInput
+                style={styles.input}
+                placeholder={t("forgotPassword.newPasswordPlaceholder")}
+                placeholderTextColor="#999"
+                value={newPassword}
+                onChangeText={setNewPassword}
+                secureTextEntry={!showNewPassword}
+                autoFocus
+                editable={!isLoading}
+              />
+              <TouchableOpacity
+                style={{
+                  position: "absolute",
+                  right: 14,
+                  height: "100%",
+                  justifyContent: "center",
+                }}
+                onPress={() => setShowNewPassword((v) => !v)}
+                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+              >
+                <Text style={{ fontSize: 18 }}>
+                  {showNewPassword ? "🙈" : "👁️"}
+                </Text>
+              </TouchableOpacity>
+            </View>
             <Text style={[styles.label, { marginTop: 12 }]}>
               {t("forgotPassword.confirmPasswordLabel")}
             </Text>
-            <TextInput
-              style={[
-                styles.input,
-                confirmPassword && newPassword !== confirmPassword
-                  ? styles.inputError
-                  : null,
-              ]}
-              placeholder={t("forgotPassword.confirmPasswordPlaceholder")}
-              placeholderTextColor="#999"
-              value={confirmPassword}
-              onChangeText={setConfirmPassword}
-              secureTextEntry
-              editable={!isLoading}
-            />
+            <View style={{ position: "relative", justifyContent: "center" }}>
+              <TextInput
+                style={[
+                  styles.input,
+                  confirmPassword && newPassword !== confirmPassword
+                    ? styles.inputError
+                    : null,
+                ]}
+                placeholder={t("forgotPassword.confirmPasswordPlaceholder")}
+                placeholderTextColor="#999"
+                value={confirmPassword}
+                onChangeText={setConfirmPassword}
+                secureTextEntry={!showConfirmPassword}
+                editable={!isLoading}
+              />
+              <TouchableOpacity
+                style={{
+                  position: "absolute",
+                  right: 14,
+                  height: "100%",
+                  justifyContent: "center",
+                }}
+                onPress={() => setShowConfirmPassword((v) => !v)}
+                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+              >
+                <Text style={{ fontSize: 18 }}>
+                  {showConfirmPassword ? "🙈" : "👁️"}
+                </Text>
+              </TouchableOpacity>
+            </View>
             {confirmPassword && newPassword !== confirmPassword && (
               <Text style={styles.errorText}>{t("auth.passwordMismatch")}</Text>
             )}

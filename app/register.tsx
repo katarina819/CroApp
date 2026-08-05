@@ -89,6 +89,7 @@ export default function RegisterScreen() {
   });
   const [isLoading, setIsLoading] = useState(false);
   const [showPicker, setShowPicker] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   const { request, promptAsync } = useGoogleAuth((profile) => {
     const usernameBase = profile.email
@@ -308,15 +309,31 @@ export default function RegisterScreen() {
           />
           <View style={s.fieldWrap}>
             <Text style={s.label}>{t("auth.password").toUpperCase()} *</Text>
-            <TextInput
-              style={s.input}
-              placeholder={t("auth.passwordPlaceholder")}
-              placeholderTextColor="#9AA9A7"
-              value={form.password}
-              onChangeText={(v) => handleChange("password", v)}
-              secureTextEntry
-              editable={!isLoading}
-            />
+            <View style={{ position: "relative", justifyContent: "center" }}>
+              <TextInput
+                style={s.input}
+                placeholder={t("auth.passwordPlaceholder")}
+                placeholderTextColor="#9AA9A7"
+                value={form.password}
+                onChangeText={(v) => handleChange("password", v)}
+                secureTextEntry={!showPassword}
+                editable={!isLoading}
+              />
+              <TouchableOpacity
+                style={{
+                  position: "absolute",
+                  right: 14,
+                  height: "100%",
+                  justifyContent: "center",
+                }}
+                onPress={() => setShowPassword((v) => !v)}
+                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+              >
+                <Text style={{ fontSize: 18 }}>
+                  {showPassword ? "🙈" : "👁️"}
+                </Text>
+              </TouchableOpacity>
+            </View>
 
             <Text
               style={{

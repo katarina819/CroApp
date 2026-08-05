@@ -64,6 +64,7 @@ export default function LoginScreen() {
   const [isLoading, setIsLoading] = useState(false);
   const [usernameFocused, setUsernameFocused] = useState(false);
   const [passwordFocused, setPasswordFocused] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   const { promptAsync } = useGoogleAuth((profile) => {
     const usernameBase = profile.email
@@ -156,17 +157,33 @@ export default function LoginScreen() {
           {/* Lozinka */}
           <View style={s.fieldWrap}>
             <Text style={s.label}>{t("auth.password").toUpperCase()}</Text>
-            <TextInput
-              style={[s.input, passwordFocused && s.inputFocused]}
-              placeholder={t("auth.passwordPlaceholder")}
-              placeholderTextColor="#9AA9A7"
-              value={password}
-              onChangeText={setPassword}
-              secureTextEntry
-              editable={!isLoading}
-              onFocus={() => setPasswordFocused(true)}
-              onBlur={() => setPasswordFocused(false)}
-            />
+            <View style={{ position: "relative", justifyContent: "center" }}>
+              <TextInput
+                style={[s.input, passwordFocused && s.inputFocused]}
+                placeholder={t("auth.passwordPlaceholder")}
+                placeholderTextColor="#9AA9A7"
+                value={password}
+                onChangeText={setPassword}
+                secureTextEntry={!showPassword}
+                editable={!isLoading}
+                onFocus={() => setPasswordFocused(true)}
+                onBlur={() => setPasswordFocused(false)}
+              />
+              <TouchableOpacity
+                style={{
+                  position: "absolute",
+                  right: 14,
+                  height: "100%",
+                  justifyContent: "center",
+                }}
+                onPress={() => setShowPassword((v) => !v)}
+                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+              >
+                <Text style={{ fontSize: 18 }}>
+                  {showPassword ? "🙈" : "👁️"}
+                </Text>
+              </TouchableOpacity>
+            </View>
           </View>
 
           {/* Zaboravili ste lozinku */}

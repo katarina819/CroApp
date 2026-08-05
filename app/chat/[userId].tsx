@@ -346,70 +346,51 @@ export default function ChatScreen() {
     setSendingMedia(true);
     try {
       const token = await AsyncStorage.getItem("token");
-      let uid = await AsyncStorage.getItem("userId");
-      if (!uid || uid === "0") {
-        try {
-          const base64Payload = token!.split(".")[1];
-          const base64 = base64Payload.replace(/-/g, "+").replace(/_/g, "/");
-          const padded = base64.padEnd(
-            base64.length + ((4 - (base64.length % 4)) % 4),
-            "=",
-          );
-          // Ručno dekodiranje base64 → string, bez atob (koji ne postoji u RN)
-          const binaryStr = (globalThis as any).Buffer
-            ? (globalThis as any).Buffer.from(padded, "base64").toString(
-                "utf-8",
-              )
-            : decodeURIComponent(
-                padded
-                  .split("")
-                  .map(
-                    (c) =>
-                      "%" + ("00" + c.charCodeAt(0).toString(16)).slice(-2),
-                  )
-                  .join(""),
-              );
-          const payload = JSON.parse(binaryStr);
-          uid =
-            payload[
-              "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier"
-            ];
-        } catch (e) {
-          console.error("JWT decode error:", e);
-        }
+      if (!token) {
+        Alert.alert("Greška", "Niste prijavljeni.");
+        return;
       }
+
       const formData = new FormData();
-      formData.append("Video", {
+      formData.append("file", {
         uri: mediaPreview.uri,
         type: mediaPreview.type === "video" ? "video/mp4" : "image/jpeg",
         name:
           mediaPreview.type === "video" ? "chat_video.mp4" : "chat_image.jpg",
       } as any);
-      formData.append("Title", "Chat Media");
-      formData.append("Location", "Chat");
-      formData.append("Description", "");
-      formData.append("UserId", uid || "");
-      const uploadRes = await fetch(`${API_BASE_URL}/api/video/upload`, {
+
+      const uploadRes = await fetch(`${API_BASE_URL}/api/upload/media`, {
         method: "POST",
         headers: { Authorization: `Bearer ${token}` },
         body: formData,
       });
-      if (!uploadRes.ok) throw new Error("Upload failed");
-      const uploadData = await uploadRes.json();
-      const mediaUrl = uploadData.videoUrl || uploadData.url;
+
+      const rawText = await uploadRes.text();
+      if (!uploadRes.ok) {
+        console.error("Upload failed:", uploadRes.status, rawText);
+        throw new Error(rawText || "Upload failed");
+      }
+
+      const uploadData = JSON.parse(rawText);
+      const mediaUrl = uploadData.url;
+      if (!mediaUrl) throw new Error("Backend nije vratio url medija");
+
       const mediaContent =
         mediaPreview.type === "video"
           ? `${VIDEO_PREFIX}${JSON.stringify({ id: Date.now(), title: "Video", url: mediaUrl })}`
           : `__CROMAP_IMAGE__${JSON.stringify({ url: mediaUrl })}`;
+
       const ok = await sendMessage(otherUserId, mediaContent);
       if (ok) {
         setMediaPreview(null);
         setShowMediaPreview(false);
         await loadMessages(true);
+      } else {
+        Alert.alert("Greška", "Medij je uploadan, ali poruka nije poslana.");
       }
-    } catch (e) {
-      console.error("Send media error:", e);
-      Alert.alert("Greška", "Nije moguće poslati medij");
+    } catch (e: any) {
+      console.error("Send media error:", e?.message ?? e);
+      Alert.alert("Greška", e?.message ?? "Nije moguće poslati medij");
     } finally {
       setSendingMedia(false);
     }
@@ -758,7 +739,7 @@ export default function ChatScreen() {
               <ActivityIndicator size="small" color={V.silverBright} />
             ) : (
               <Ionicons
-                name={inputText.trim() ? "send" : "attach"}
+                name={inputText.trim() ? "send" : "send-outline"}
                 size={18}
                 color={V.silverBright}
               />

@@ -70,6 +70,8 @@ export default function SetPasswordScreen() {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [saving, setSaving] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   const handleGenerateStrongPassword = async () => {
     const generated = generateStrongPassword();
@@ -137,14 +139,28 @@ export default function SetPasswordScreen() {
         si se putem Googlea.
       </Text>
 
-      <TextInput
-        style={s.input}
-        placeholder="Nova lozinka"
-        placeholderTextColor="#9AA9A7"
-        secureTextEntry
-        value={password}
-        onChangeText={setPassword}
-      />
+      <View style={{ position: "relative", justifyContent: "center" }}>
+        <TextInput
+          style={s.input}
+          placeholder="Nova lozinka"
+          placeholderTextColor="#9AA9A7"
+          secureTextEntry={!showPassword}
+          value={password}
+          onChangeText={setPassword}
+        />
+        <TouchableOpacity
+          style={{
+            position: "absolute",
+            right: 14,
+            height: "100%",
+            justifyContent: "center",
+          }}
+          onPress={() => setShowPassword((v) => !v)}
+          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+        >
+          <Text style={{ fontSize: 18 }}>{showPassword ? "🙈" : "👁️"}</Text>
+        </TouchableOpacity>
+      </View>
 
       {/* Uvjet lozinke + indikator jačine + generator */}
       <View style={{ marginTop: -6, marginBottom: 14 }}>
@@ -212,14 +228,30 @@ export default function SetPasswordScreen() {
         </TouchableOpacity>
       </View>
 
-      <TextInput
-        style={s.input}
-        placeholder="Potvrdi lozinku"
-        placeholderTextColor="#9AA9A7"
-        secureTextEntry
-        value={confirmPassword}
-        onChangeText={setConfirmPassword}
-      />
+      <View style={{ position: "relative", justifyContent: "center" }}>
+        <TextInput
+          style={s.input}
+          placeholder="Potvrdi lozinku"
+          placeholderTextColor="#9AA9A7"
+          secureTextEntry={!showConfirmPassword}
+          value={confirmPassword}
+          onChangeText={setConfirmPassword}
+        />
+        <TouchableOpacity
+          style={{
+            position: "absolute",
+            right: 14,
+            height: "100%",
+            justifyContent: "center",
+          }}
+          onPress={() => setShowConfirmPassword((v) => !v)}
+          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+        >
+          <Text style={{ fontSize: 18 }}>
+            {showConfirmPassword ? "🙈" : "👁️"}
+          </Text>
+        </TouchableOpacity>
+      </View>
 
       <TouchableOpacity
         style={[s.saveBtn, saving && { opacity: 0.6 }]}

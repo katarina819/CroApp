@@ -2276,6 +2276,17 @@ export function ActivityGroupsModal({
     category: "cafe",
   });
 
+  const [locationSuggestions, setLocationSuggestions] = useState<
+    { name: string; lat: number; lon: number }[]
+  >([]);
+
+  const [showLocationSuggestions, setShowLocationSuggestions] = useState(false);
+  const [locationVerified, setLocationVerified] = useState(false);
+  const [verifyingLocation, setVerifyingLocation] = useState(false);
+  const locationSearchTimeout = useRef<ReturnType<typeof setTimeout> | null>(
+    null,
+  );
+
   useEffect(() => {
     if (visible) {
       loadGroups();
@@ -2483,6 +2494,57 @@ export function ActivityGroupsModal({
       );
       setGroups(active);
     }
+  };
+
+  // NOVO — dohvat prijedloga lokacija preko OpenStreetMap Nominatim API-ja
+  const searchLocationSuggestions = async (query: string) => {
+    if (query.trim().length < 3) {
+      setLocationSuggestions([]);
+      setShowLocationSuggestions(false);
+      return;
+    }
+    try {
+      const res = await fetch(
+        `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(
+          query,
+        )}&limit=5&addressdetails=1`,
+        { headers: { "Accept-Language": "hr" } },
+      );
+      if (!res.ok) return;
+      const data = await res.json();
+      const suggestions = (data || []).map((item: any) => ({
+        name: item.display_name,
+        lat: parseFloat(item.lat),
+        lon: parseFloat(item.lon),
+      }));
+      setLocationSuggestions(suggestions);
+      setShowLocationSuggestions(suggestions.length > 0);
+    } catch {
+      // tiho ignoriraj — korisnik samo neće vidjeti prijedloge
+    }
+  };
+
+  // NOVO — debounce da ne šaljemo zahtjev na svaki keystroke
+  const handleLocationInputChange = (text: string) => {
+    setNewGroup((p) => ({ ...p, locationName: text }));
+    setLocationVerified(false); // korisnik je promijenio tekst → poništi kvačicu
+    if (locationSearchTimeout.current)
+      clearTimeout(locationSearchTimeout.current);
+    locationSearchTimeout.current = setTimeout(() => {
+      searchLocationSuggestions(text);
+    }, 400);
+  };
+
+  // NOVO — kad korisnik klikne prijedlog
+  const selectLocationSuggestion = (suggestion: {
+    name: string;
+    lat: number;
+    lon: number;
+  }) => {
+    setNewGroup((p) => ({ ...p, locationName: suggestion.name }));
+    setLocationVerified(true);
+    setShowLocationSuggestions(false);
+    setLocationSuggestions([]);
   };
 
   // ============================================================
@@ -3571,11 +3633,68 @@ export function ActivityGroupsModal({
                 placeholder={t("groups.locationPlaceholder")}
                 placeholderTextColor={DC.textDim}
                 value={newGroup.locationName}
-                onChangeText={(v) =>
-                  setNewGroup((p) => ({ ...p, locationName: v }))
-                }
+                onChangeText={handleLocationInputChange}
                 maxLength={100}
               />
+              <View
+                style={{
+                  flexDirection: "row",
+                  alignItems: "center",
+                  marginTop: 8,
+                  gap: 6,
+                }}
+              >
+                {locationVerified ? (
+                  <Text
+                    style={{
+                      color: "#34c759",
+                      fontSize: 14,
+                      fontWeight: "700",
+                    }}
+                  >
+                    ✓ Lokacija potvrđena
+                  </Text>
+                ) : newGroup.locationName.trim().length >= 3 ? (
+                  <Text style={{ color: DC.textDim, fontSize: 12 }}>
+                    Odaberite lokaciju s popisa da je potvrdite
+                  </Text>
+                ) : null}
+              </View>
+
+              {/* ★★★ NOVO — dropdown s prijedlozima ★★★ */}
+              {showLocationSuggestions && locationSuggestions.length > 0 && (
+                <View
+                  style={{
+                    backgroundColor: DC.card,
+                    borderRadius: 10,
+                    borderWidth: 1,
+                    borderColor: DC.border,
+                    marginTop: 6,
+                    overflow: "hidden",
+                  }}
+                >
+                  {locationSuggestions.map((sug, idx) => (
+                    <TouchableOpacity
+                      key={idx}
+                      style={{
+                        paddingHorizontal: 14,
+                        paddingVertical: 12,
+                        borderBottomWidth:
+                          idx < locationSuggestions.length - 1 ? 1 : 0,
+                        borderBottomColor: DC.borderDim,
+                      }}
+                      onPress={() => selectLocationSuggestion(sug)}
+                    >
+                      <Text
+                        style={{ color: DC.text, fontSize: 13 }}
+                        numberOfLines={2}
+                      >
+                        📍 {sug.name}
+                      </Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              )}
             </View>
 
             {/* ── KRATKI OPIS ── */}
