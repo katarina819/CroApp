@@ -21,6 +21,7 @@ import {
   View,
 } from "react-native";
 import {
+  GestureHandlerRootView,
   PanGestureHandler,
   PinchGestureHandler,
   State,
@@ -106,7 +107,8 @@ function VideoBubble({ url, onPress }: { url: string; onPress?: () => void }) {
           player={player}
           style={{ width: "100%", height: "100%" }}
           contentFit="contain"
-          nativeControls
+          nativeControls={false}
+          pointerEvents="none"
         />
         <View
           style={{
@@ -357,27 +359,29 @@ function FullscreenMediaViewer({
       transparent={false}
       onRequestClose={onClose}
     >
-      <SafeAreaView style={{ flex: 1, backgroundColor: "#000" }}>
-        <View
-          style={{
-            flexDirection: "row",
-            justifyContent: "flex-end",
-            padding: 16,
-          }}
-        >
-          <TouchableOpacity onPress={onClose} hitSlop={12}>
-            <Ionicons name="close" size={30} color="#fff" />
-          </TouchableOpacity>
-        </View>
-        <View
-          style={{ flex: 1, justifyContent: "center", alignItems: "center" }}
-        >
-          {media?.type === "image" && <ZoomableImage uri={media.url} />}
-          {media?.type === "video" && (
-            <FullscreenVideoPlayer key={media.url} url={media.url} />
-          )}
-        </View>
-      </SafeAreaView>
+      <GestureHandlerRootView style={{ flex: 1 }}>
+        <SafeAreaView style={{ flex: 1, backgroundColor: "#000" }}>
+          <View
+            style={{
+              flexDirection: "row",
+              justifyContent: "flex-end",
+              padding: 16,
+            }}
+          >
+            <TouchableOpacity onPress={onClose} hitSlop={12}>
+              <Ionicons name="close" size={30} color="#fff" />
+            </TouchableOpacity>
+          </View>
+          <View
+            style={{ flex: 1, justifyContent: "center", alignItems: "center" }}
+          >
+            {media?.type === "image" && <ZoomableImage uri={media.url} />}
+            {media?.type === "video" && (
+              <FullscreenVideoPlayer key={media.url} url={media.url} />
+            )}
+          </View>
+        </SafeAreaView>
+      </GestureHandlerRootView>
     </Modal>
   );
 }
