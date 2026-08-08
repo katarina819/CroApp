@@ -251,6 +251,8 @@ export default function ForgotPasswordScreen() {
                   right: 14,
                   height: "100%",
                   justifyContent: "center",
+                  zIndex: 10,
+                  elevation: 10,
                 }}
                 onPress={() => setShowNewPassword((v) => !v)}
                 hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
@@ -286,6 +288,8 @@ export default function ForgotPasswordScreen() {
                   right: 14,
                   height: "100%",
                   justifyContent: "center",
+                  zIndex: 10,
+                  elevation: 10,
                 }}
                 onPress={() => setShowConfirmPassword((v) => !v)}
                 hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}

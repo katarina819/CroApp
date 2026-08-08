@@ -2678,58 +2678,43 @@ export function ActivityGroupsModal({
   };
 
   // NOVO — dohvat prijedloga lokacija preko OpenStreetMap Nominatim API-ja
+  // NOVO — dohvat prijedloga lokacija preko backend autocomplete endpointa
+  // (identičan princip kao u videos.tsx / UploadModal, koji radi ispravno)
   const searchLocationSuggestions = async (query: string) => {
-    if (query.trim().length < 3) {
+    if (query.trim().length < 2) {
       setLocationSuggestions([]);
       setShowLocationSuggestions(false);
       return;
     }
-    if (!GOOGLE_KEY) return;
     try {
       const res = await fetch(
-        `https://maps.googleapis.com/maps/api/place/autocomplete/json?input=${encodeURIComponent(
-          query,
-        )}&components=country:hr&language=hr&key=${GOOGLE_KEY}`,
+        `${API_BASE_URL}/api/locationsearch/autocomplete?query=${encodeURIComponent(
+          query.trim(),
+        )}`,
       );
       if (!res.ok) {
         console.log("Autocomplete HTTP error", res.status);
-        return;
-      }
-      const data = await res.json();
-      if (data.status !== "OK") {
-        console.log("Autocomplete status:", data.status, data.error_message);
         setLocationSuggestions([]);
         setShowLocationSuggestions(false);
         return;
       }
-      // Za svaki prijedlog dohvati koordinate preko Place Details
-      const suggestions = await Promise.all(
-        data.predictions.slice(0, 5).map(async (p: any) => {
-          try {
-            const detRes = await fetch(
-              `https://maps.googleapis.com/maps/api/place/details/json?place_id=${p.place_id}&fields=geometry&key=${GOOGLE_KEY}`,
-            );
-            const det = await detRes.json();
-            const loc = det.result?.geometry?.location;
-            return {
-              name: p.description,
-              lat: loc?.lat ?? 0,
-              lon: loc?.lng ?? 0,
-            };
-          } catch {
-            return null;
-          }
-        }),
-      );
-      const valid = suggestions.filter((s) => s !== null) as {
-        name: string;
-        lat: number;
-        lon: number;
-      }[];
-      setLocationSuggestions(valid);
-      setShowLocationSuggestions(valid.length > 0);
+      const data = await res.json();
+      // Backend vraća [{ displayName, lat, lon }] — mapiramo u { name, lat, lon }
+      // koji ostatak ActivityGroupsModal-a (JSX dropdown, selectLocationSuggestion) već očekuje
+      const suggestions = (Array.isArray(data) ? data : [])
+        .map((s: any) => ({
+          name: s.displayName,
+          lat: parseFloat(s.lat),
+          lon: parseFloat(s.lon),
+        }))
+        .filter((s) => s.name);
+
+      setLocationSuggestions(suggestions);
+      setShowLocationSuggestions(suggestions.length > 0);
     } catch (e) {
       console.log("Location suggestion error:", e);
+      setLocationSuggestions([]);
+      setShowLocationSuggestions(false);
     }
   };
 

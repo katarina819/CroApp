@@ -8,6 +8,7 @@ import { useTranslation } from "react-i18next";
 import {
   ActivityIndicator,
   Alert,
+  Animated,
   FlatList,
   Image,
   KeyboardAvoidingView,
@@ -19,6 +20,11 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import {
+  PanGestureHandler,
+  PinchGestureHandler,
+  State,
+} from "react-native-gesture-handler";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useTheme } from "../../components/AdaptiveThemeProvider";
 import {
@@ -199,6 +205,143 @@ function parseImageMessage(content: string): string | null {
   }
 }
 
+// ─── Zumabilna slika (pinch-to-zoom + pomicanje) ──────────────────────────────
+function ZoomableImage({ uri }: { uri: string }) {
+  const scale = useRef(new Animated.Value(1)).current;
+  const translateX = useRef(new Animated.Value(0)).current;
+  const translateY = useRef(new Animated.Value(0)).current;
+
+  const lastScale = useRef(1);
+  const lastTranslateX = useRef(0);
+  const lastTranslateY = useRef(0);
+
+  const onPinchEvent = Animated.event([{ nativeEvent: { scale } }], {
+    useNativeDriver: true,
+  });
+
+  const onPinchStateChange = (event: any) => {
+    if (event.nativeEvent.oldState === State.ACTIVE) {
+      lastScale.current *= event.nativeEvent.scale;
+      lastScale.current = Math.max(1, Math.min(lastScale.current, 5));
+      scale.setOffset(lastScale.current);
+      scale.setValue(1);
+
+      if (lastScale.current <= 1) {
+        lastTranslateX.current = 0;
+        lastTranslateY.current = 0;
+        translateX.setOffset(0);
+        translateY.setOffset(0);
+        translateX.setValue(0);
+        translateY.setValue(0);
+      }
+    }
+  };
+
+  const onPanEvent = Animated.event(
+    [
+      {
+        nativeEvent: {
+          translationX: translateX,
+          translationY: translateY,
+        },
+      },
+    ],
+    { useNativeDriver: true },
+  );
+
+  const onPanStateChange = (event: any) => {
+    if (event.nativeEvent.oldState === State.ACTIVE) {
+      lastTranslateX.current += event.nativeEvent.translationX;
+      lastTranslateY.current += event.nativeEvent.translationY;
+      translateX.setOffset(lastTranslateX.current);
+      translateX.setValue(0);
+      translateY.setOffset(lastTranslateY.current);
+      translateY.setValue(0);
+    }
+  };
+
+  const onDoubleTap = () => {
+    lastScale.current = 1;
+    lastTranslateX.current = 0;
+    lastTranslateY.current = 0;
+    Animated.parallel([
+      Animated.spring(scale, { toValue: 1, useNativeDriver: true }),
+      Animated.spring(translateX, { toValue: 0, useNativeDriver: true }),
+      Animated.spring(translateY, { toValue: 0, useNativeDriver: true }),
+    ]).start(() => {
+      scale.setOffset(0);
+      scale.setValue(1);
+      translateX.setOffset(0);
+      translateX.setValue(0);
+      translateY.setOffset(0);
+      translateY.setValue(0);
+    });
+  };
+
+  const lastTap = useRef(0);
+  const handleTap = () => {
+    const now = Date.now();
+    if (now - lastTap.current < 280) onDoubleTap();
+    lastTap.current = now;
+  };
+
+  return (
+    <PanGestureHandler
+      onGestureEvent={onPanEvent}
+      onHandlerStateChange={onPanStateChange}
+      minPointers={2}
+      maxPointers={2}
+    >
+      <Animated.View style={{ flex: 1, width: "100%", height: "100%" }}>
+        <PinchGestureHandler
+          onGestureEvent={onPinchEvent}
+          onHandlerStateChange={onPinchStateChange}
+        >
+          <Animated.View
+            style={{ flex: 1, width: "100%", height: "100%" }}
+            onTouchEnd={handleTap}
+          >
+            <Animated.Image
+              source={{ uri }}
+              style={{
+                width: "100%",
+                height: "100%",
+                transform: [{ scale }, { translateX }, { translateY }],
+              }}
+              resizeMode="contain"
+            />
+          </Animated.View>
+        </PinchGestureHandler>
+      </Animated.View>
+    </PanGestureHandler>
+  );
+}
+
+// ─── Fullscreen video player — zasebna komponenta, remounta se po URL-u ──────
+function FullscreenVideoPlayer({ url }: { url: string }) {
+  const player = useVideoPlayer(url, (p) => {
+    p.loop = false;
+    p.play();
+  });
+
+  useEffect(() => {
+    return () => {
+      try {
+        player?.pause();
+      } catch {}
+    };
+  }, [player]);
+
+  return (
+    <VideoView
+      player={player}
+      style={{ width: "100%", height: "100%" }}
+      contentFit="contain"
+      nativeControls
+    />
+  );
+}
+
 // ─── Fullscreen Media Viewer ───────────────────────────────────────────────────
 function FullscreenMediaViewer({
   media,
@@ -207,22 +350,6 @@ function FullscreenMediaViewer({
   media: { type: "image" | "video"; url: string } | null;
   onClose: () => void;
 }) {
-  const player = useVideoPlayer(
-    media?.type === "video" ? media.url : "",
-    (p) => {
-      p.loop = false;
-      p.play();
-    },
-  );
-
-  useEffect(() => {
-    return () => {
-      try {
-        player?.pause();
-      } catch {}
-    };
-  }, [player, media?.url]);
-
   return (
     <Modal
       visible={!!media}
@@ -245,20 +372,9 @@ function FullscreenMediaViewer({
         <View
           style={{ flex: 1, justifyContent: "center", alignItems: "center" }}
         >
-          {media?.type === "image" && (
-            <Image
-              source={{ uri: media.url }}
-              style={{ width: "100%", height: "100%" }}
-              resizeMode="contain"
-            />
-          )}
+          {media?.type === "image" && <ZoomableImage uri={media.url} />}
           {media?.type === "video" && (
-            <VideoView
-              player={player}
-              style={{ width: "100%", height: "100%" }}
-              contentFit="contain"
-              nativeControls
-            />
+            <FullscreenVideoPlayer key={media.url} url={media.url} />
           )}
         </View>
       </SafeAreaView>

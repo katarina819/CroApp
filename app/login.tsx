@@ -175,6 +175,8 @@ export default function LoginScreen() {
                   right: 14,
                   height: "100%",
                   justifyContent: "center",
+                  zIndex: 10,
+                  elevation: 10,
                 }}
                 onPress={() => setShowPassword((v) => !v)}
                 hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
