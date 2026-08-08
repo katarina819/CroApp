@@ -79,17 +79,6 @@ function VideoBubble({ url, onPress }: { url: string; onPress?: () => void }) {
   const { isDark } = useTheme();
   const V = useMemo(() => getV(isDark), [isDark]);
 
-  const player = useVideoPlayer(url, (p) => {
-    p.loop = false;
-    p.muted = false;
-  });
-  useEffect(() => {
-    return () => {
-      try {
-        if (player) player.pause();
-      } catch {}
-    };
-  }, []);
   return (
     <TouchableOpacity activeOpacity={0.85} onPress={onPress}>
       <View
@@ -101,39 +90,21 @@ function VideoBubble({ url, onPress }: { url: string; onPress?: () => void }) {
           backgroundColor: "#000",
           borderWidth: 1,
           borderColor: V.borderGreen,
+          justifyContent: "center",
+          alignItems: "center",
         }}
       >
-        <VideoView
-          player={player}
-          style={{ width: "100%", height: "100%" }}
-          contentFit="contain"
-          nativeControls={false}
-          pointerEvents="none"
-        />
         <View
           style={{
-            position: "absolute",
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
+            width: 52,
+            height: 52,
+            borderRadius: 26,
+            backgroundColor: "rgba(0,0,0,0.45)",
             justifyContent: "center",
             alignItems: "center",
           }}
-          pointerEvents="none"
         >
-          <View
-            style={{
-              width: 44,
-              height: 44,
-              borderRadius: 22,
-              backgroundColor: "rgba(0,0,0,0.45)",
-              justifyContent: "center",
-              alignItems: "center",
-            }}
-          >
-            <Ionicons name="expand-outline" size={20} color="#fff" />
-          </View>
+          <Ionicons name="play" size={24} color="#fff" />
         </View>
       </View>
     </TouchableOpacity>
@@ -209,6 +180,8 @@ function parseImageMessage(content: string): string | null {
 
 // ─── Zumabilna slika (pinch-to-zoom + pomicanje) ──────────────────────────────
 function ZoomableImage({ uri }: { uri: string }) {
+  const [containerSize, setContainerSize] = useState({ width: 0, height: 0 });
+
   const scale = useRef(new Animated.Value(1)).current;
   const translateX = useRef(new Animated.Value(0)).current;
   const translateY = useRef(new Animated.Value(0)).current;
@@ -216,6 +189,22 @@ function ZoomableImage({ uri }: { uri: string }) {
   const lastScale = useRef(1);
   const lastTranslateX = useRef(0);
   const lastTranslateY = useRef(0);
+
+  // refs za povezivanje gesta da rade ISTOVREMENO umjesto da se otimaju
+  const pinchRef = useRef(null);
+  const panRef = useRef(null);
+
+  const clamp = (value: number, min: number, max: number) =>
+    Math.min(Math.max(value, min), max);
+
+  // izračun maksimalno dozvoljenog pomaka na temelju trenutnog zooma,
+  // tako da rub slike nikad ne prijeđe rub ekrana (nema crnog prostora)
+  const getBounds = () => {
+    const s = lastScale.current;
+    const maxX = Math.max(0, (containerSize.width * (s - 1)) / 2);
+    const maxY = Math.max(0, (containerSize.height * (s - 1)) / 2);
+    return { maxX, maxY };
+  };
 
   const onPinchEvent = Animated.event([{ nativeEvent: { scale } }], {
     useNativeDriver: true,
@@ -227,12 +216,22 @@ function ZoomableImage({ uri }: { uri: string }) {
       lastScale.current = Math.max(1, Math.min(lastScale.current, 5));
       scale.setOffset(lastScale.current);
       scale.setValue(1);
+      scale.flattenOffset();
 
       if (lastScale.current <= 1) {
         lastTranslateX.current = 0;
         lastTranslateY.current = 0;
         translateX.setOffset(0);
         translateY.setOffset(0);
+        translateX.setValue(0);
+        translateY.setValue(0);
+      } else {
+        // nakon zooma, odmah stisni postojeći pomak unutar novih granica
+        const { maxX, maxY } = getBounds();
+        lastTranslateX.current = clamp(lastTranslateX.current, -maxX, maxX);
+        lastTranslateY.current = clamp(lastTranslateY.current, -maxY, maxY);
+        translateX.setOffset(lastTranslateX.current);
+        translateY.setOffset(lastTranslateY.current);
         translateX.setValue(0);
         translateY.setValue(0);
       }
@@ -253,8 +252,14 @@ function ZoomableImage({ uri }: { uri: string }) {
 
   const onPanStateChange = (event: any) => {
     if (event.nativeEvent.oldState === State.ACTIVE) {
-      lastTranslateX.current += event.nativeEvent.translationX;
-      lastTranslateY.current += event.nativeEvent.translationY;
+      const { maxX, maxY } = getBounds();
+
+      const rawX = lastTranslateX.current + event.nativeEvent.translationX;
+      const rawY = lastTranslateY.current + event.nativeEvent.translationY;
+
+      lastTranslateX.current = clamp(rawX, -maxX, maxX);
+      lastTranslateY.current = clamp(rawY, -maxY, maxY);
+
       translateX.setOffset(lastTranslateX.current);
       translateX.setValue(0);
       translateY.setOffset(lastTranslateY.current);
@@ -288,34 +293,47 @@ function ZoomableImage({ uri }: { uri: string }) {
   };
 
   return (
-    <PanGestureHandler
-      onGestureEvent={onPanEvent}
-      onHandlerStateChange={onPanStateChange}
-      minPointers={2}
-      maxPointers={2}
+    <View
+      style={{ flex: 1, width: "100%", height: "100%" }}
+      onLayout={(e) => {
+        const { width, height } = e.nativeEvent.layout;
+        setContainerSize({ width, height });
+      }}
     >
-      <Animated.View style={{ flex: 1, width: "100%", height: "100%" }}>
-        <PinchGestureHandler
-          onGestureEvent={onPinchEvent}
-          onHandlerStateChange={onPinchStateChange}
-        >
-          <Animated.View
-            style={{ flex: 1, width: "100%", height: "100%" }}
-            onTouchEnd={handleTap}
+      <PanGestureHandler
+        ref={panRef}
+        simultaneousHandlers={pinchRef}
+        onGestureEvent={onPanEvent}
+        onHandlerStateChange={onPanStateChange}
+        minPointers={1}
+        maxPointers={2}
+        avgTouches
+      >
+        <Animated.View style={{ flex: 1, width: "100%", height: "100%" }}>
+          <PinchGestureHandler
+            ref={pinchRef}
+            simultaneousHandlers={panRef}
+            onGestureEvent={onPinchEvent}
+            onHandlerStateChange={onPinchStateChange}
           >
-            <Animated.Image
-              source={{ uri }}
-              style={{
-                width: "100%",
-                height: "100%",
-                transform: [{ scale }, { translateX }, { translateY }],
-              }}
-              resizeMode="contain"
-            />
-          </Animated.View>
-        </PinchGestureHandler>
-      </Animated.View>
-    </PanGestureHandler>
+            <Animated.View
+              style={{ flex: 1, width: "100%", height: "100%" }}
+              onTouchEnd={handleTap}
+            >
+              <Animated.Image
+                source={{ uri }}
+                style={{
+                  width: "100%",
+                  height: "100%",
+                  transform: [{ scale }, { translateX }, { translateY }],
+                }}
+                resizeMode="contain"
+              />
+            </Animated.View>
+          </PinchGestureHandler>
+        </Animated.View>
+      </PanGestureHandler>
+    </View>
   );
 }
 
