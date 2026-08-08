@@ -3086,16 +3086,40 @@ function SettingsModal({
   const currentMinute = new Date().getMinutes();
   const getZone = (h: number) => {
     if (h >= 5 && h <= 6)
-      return { label: "Svitanje", emoji: "🌅", scheme: "light" as const };
+      return {
+        label: t("profile.zoneDawn"),
+        emoji: "🌅",
+        scheme: "light" as const,
+      };
     if (h >= 7 && h <= 10)
-      return { label: "Jutro", emoji: "🌤", scheme: "light" as const };
+      return {
+        label: t("profile.zoneMorning"),
+        emoji: "🌤",
+        scheme: "light" as const,
+      };
     if (h >= 11 && h <= 16)
-      return { label: "Dan", emoji: "☀️", scheme: "light" as const };
+      return {
+        label: t("profile.zoneDay"),
+        emoji: "☀️",
+        scheme: "light" as const,
+      };
     if (h >= 17 && h <= 19)
-      return { label: "Večer", emoji: "🌇", scheme: "light" as const };
+      return {
+        label: t("profile.zoneEvening"),
+        emoji: "🌇",
+        scheme: "light" as const,
+      };
     if (h >= 20 && h <= 22)
-      return { label: "Noć", emoji: "🌙", scheme: "dark" as const };
-    return { label: "Duboka noć", emoji: "🌑", scheme: "dark" as const };
+      return {
+        label: t("profile.zoneNight"),
+        emoji: "🌙",
+        scheme: "dark" as const,
+      };
+    return {
+      label: t("profile.zoneDeepNight"),
+      emoji: "🌑",
+      scheme: "dark" as const,
+    };
   };
   const {
     label: autoZoneLabel,
@@ -3474,8 +3498,8 @@ function SettingsModal({
                 <View style={{ flex: 1 }}>
                   <Text style={themeStyles.autoInfoTitle}>{autoZoneLabel}</Text>
                   <Text style={themeStyles.autoInfoSub}>
-                    {currentHour}:{String(currentMinute).padStart(2, "0")} —
-                    tema se automatski prilagođava
+                    {currentHour}:{String(currentMinute).padStart(2, "0")} —{" "}
+                    {t("profile.themeAutoAdjusting")}
                   </Text>
                 </View>
                 <View
@@ -3493,7 +3517,9 @@ function SettingsModal({
                       color: autoScheme === "dark" ? "#c0b0ff" : "#6a5000",
                     }}
                   >
-                    {autoScheme === "dark" ? "TAMNA" : "SVJETLA"}
+                    {autoScheme === "dark"
+                      ? t("profile.darkShort")
+                      : t("profile.lightShort")}
                   </Text>
                 </View>
               </View>

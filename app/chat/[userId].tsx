@@ -68,7 +68,7 @@ export function parseVideoMessage(content: string): VideoSharePayload | null {
 }
 
 // UKLONI cijeli vbStyles StyleSheet.create blok i zamijeni VideoBubble s ovim:
-function VideoBubble({ url }: { url: string }) {
+function VideoBubble({ url, onPress }: { url: string; onPress?: () => void }) {
   const { isDark } = useTheme();
   const V = useMemo(() => getV(isDark), [isDark]);
 
@@ -84,51 +84,108 @@ function VideoBubble({ url }: { url: string }) {
     };
   }, []);
   return (
-    <View
-      style={{
-        width: 240,
-        height: 160,
-        borderRadius: 12,
-        overflow: "hidden",
-        backgroundColor: "#000",
-        borderWidth: 1,
-        borderColor: V.borderGreen,
-      }}
-    >
-      <VideoView
-        player={player}
-        style={{ width: "100%", height: "100%" }}
-        contentFit="contain"
-        nativeControls
-      />
-    </View>
+    <TouchableOpacity activeOpacity={0.85} onPress={onPress}>
+      <View
+        style={{
+          width: 240,
+          height: 160,
+          borderRadius: 12,
+          overflow: "hidden",
+          backgroundColor: "#000",
+          borderWidth: 1,
+          borderColor: V.borderGreen,
+        }}
+      >
+        <VideoView
+          player={player}
+          style={{ width: "100%", height: "100%" }}
+          contentFit="contain"
+          nativeControls
+        />
+        <View
+          style={{
+            position: "absolute",
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            justifyContent: "center",
+            alignItems: "center",
+          }}
+          pointerEvents="none"
+        >
+          <View
+            style={{
+              width: 44,
+              height: 44,
+              borderRadius: 22,
+              backgroundColor: "rgba(0,0,0,0.45)",
+              justifyContent: "center",
+              alignItems: "center",
+            }}
+          >
+            <Ionicons name="expand-outline" size={20} color="#fff" />
+          </View>
+        </View>
+      </View>
+    </TouchableOpacity>
+  );
+}
+
+function MediaPreviewVideo({ uri }: { uri: string }) {
+  const { isDark } = useTheme();
+  const V = useMemo(() => getV(isDark), [isDark]);
+  const styles = useMemo(() => getStyles(V, isDark), [V, isDark]);
+
+  const player = useVideoPlayer(uri, (p) => {
+    p.loop = true;
+    p.play();
+  });
+
+  useEffect(() => {
+    return () => {
+      try {
+        player?.pause();
+      } catch {}
+    };
+  }, [player]);
+
+  return (
+    <VideoView
+      player={player}
+      style={styles.previewMedia}
+      contentFit="contain"
+      nativeControls
+    />
   );
 }
 
 // ─── Image Bubble ──────────────────────────────────────────────────────────────
 // ZAMIJENI postojeći ImageBubble:
-function ImageBubble({ url }: { url: string }) {
+function ImageBubble({ url, onPress }: { url: string; onPress?: () => void }) {
   const { isDark } = useTheme();
   const V = useMemo(() => getV(isDark), [isDark]);
 
   return (
-    <View
-      style={{
-        width: 200,
-        height: 200,
-        borderRadius: 12,
-        overflow: "hidden",
-        backgroundColor: V.forestMid,
-        borderWidth: 1,
-        borderColor: V.borderGreen,
-      }}
-    >
-      <Image
-        source={{ uri: url }}
-        style={{ width: "100%", height: "100%" }}
-        resizeMode="cover"
-      />
-    </View>
+    <TouchableOpacity activeOpacity={0.85} onPress={onPress}>
+      <View
+        style={{
+          width: 200,
+          height: 200,
+          borderRadius: 12,
+          overflow: "hidden",
+          backgroundColor: V.forestMid,
+          borderWidth: 1,
+          borderColor: V.borderGreen,
+        }}
+      >
+        <Image
+          source={{ uri: url }}
+          style={{ width: "100%", height: "100%" }}
+          resizeMode="cover"
+        />
+      </View>
+    </TouchableOpacity>
   );
 }
 
@@ -140,6 +197,73 @@ function parseImageMessage(content: string): string | null {
   } catch {
     return null;
   }
+}
+
+// ─── Fullscreen Media Viewer ───────────────────────────────────────────────────
+function FullscreenMediaViewer({
+  media,
+  onClose,
+}: {
+  media: { type: "image" | "video"; url: string } | null;
+  onClose: () => void;
+}) {
+  const player = useVideoPlayer(
+    media?.type === "video" ? media.url : "",
+    (p) => {
+      p.loop = false;
+      p.play();
+    },
+  );
+
+  useEffect(() => {
+    return () => {
+      try {
+        player?.pause();
+      } catch {}
+    };
+  }, [player, media?.url]);
+
+  return (
+    <Modal
+      visible={!!media}
+      animationType="fade"
+      transparent={false}
+      onRequestClose={onClose}
+    >
+      <SafeAreaView style={{ flex: 1, backgroundColor: "#000" }}>
+        <View
+          style={{
+            flexDirection: "row",
+            justifyContent: "flex-end",
+            padding: 16,
+          }}
+        >
+          <TouchableOpacity onPress={onClose} hitSlop={12}>
+            <Ionicons name="close" size={30} color="#fff" />
+          </TouchableOpacity>
+        </View>
+        <View
+          style={{ flex: 1, justifyContent: "center", alignItems: "center" }}
+        >
+          {media?.type === "image" && (
+            <Image
+              source={{ uri: media.url }}
+              style={{ width: "100%", height: "100%" }}
+              resizeMode="contain"
+            />
+          )}
+          {media?.type === "video" && (
+            <VideoView
+              player={player}
+              style={{ width: "100%", height: "100%" }}
+              contentFit="contain"
+              nativeControls
+            />
+          )}
+        </View>
+      </SafeAreaView>
+    </Modal>
+  );
 }
 
 // ─── Helper: ispravna konstrukcija avatar URL-a ────────────────────────────────
@@ -257,7 +381,10 @@ export default function ChatScreen() {
     type: "image" | "video";
   } | null>(null);
   const [showMediaPreview, setShowMediaPreview] = useState(false);
-
+  const [fullscreenMedia, setFullscreenMedia] = useState<{
+    type: "image" | "video";
+    url: string;
+  } | null>(null);
   const flatListRef = useRef<FlatList>(null);
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const inputRef = useRef<TextInput>(null);
@@ -578,8 +705,22 @@ export default function ChatScreen() {
               (videoPayload || imageUrl) && { maxWidth: "85%" },
             ]}
           >
-            {videoPayload && <VideoBubble url={videoPayload.url} />}
-            {!videoPayload && imageUrl && <ImageBubble url={imageUrl} />}
+            {videoPayload && (
+              <VideoBubble
+                url={videoPayload.url}
+                onPress={() =>
+                  setFullscreenMedia({ type: "video", url: videoPayload.url })
+                }
+              />
+            )}
+            {!videoPayload && imageUrl && (
+              <ImageBubble
+                url={imageUrl}
+                onPress={() =>
+                  setFullscreenMedia({ type: "image", url: imageUrl })
+                }
+              />
+            )}
             {!videoPayload && !imageUrl && (
               <View
                 style={[
@@ -774,16 +915,8 @@ export default function ChatScreen() {
             </TouchableOpacity>
           </View>
           <View style={styles.previewContainer}>
-            {mediaPreview?.type === "video" ? (
-              <VideoView
-                player={useVideoPlayer(mediaPreview.uri, (p) => {
-                  p.loop = true;
-                  p.play();
-                })}
-                style={styles.previewMedia}
-                contentFit="contain"
-                nativeControls
-              />
+            {mediaPreview?.type === "video" && mediaPreview.uri ? (
+              <MediaPreviewVideo uri={mediaPreview.uri} />
             ) : (
               <Image
                 source={{ uri: mediaPreview?.uri }}
@@ -794,6 +927,12 @@ export default function ChatScreen() {
           </View>
         </SafeAreaView>
       </Modal>
+
+      {/* ── Fullscreen Media Viewer (klik na sliku/video u chatu) ── */}
+      <FullscreenMediaViewer
+        media={fullscreenMedia}
+        onClose={() => setFullscreenMedia(null)}
+      />
     </SafeAreaView>
   );
 }

@@ -255,8 +255,10 @@ export default function ForgotPasswordScreen() {
                 onPress={() => setShowNewPassword((v) => !v)}
                 hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
               >
-                <Text style={{ fontSize: 18 }}>
-                  {showNewPassword ? "🙈" : "👁️"}
+                <Text
+                  style={{ fontSize: 18, opacity: showNewPassword ? 1 : 0.5 }}
+                >
+                  👁️
                 </Text>
               </TouchableOpacity>
             </View>
@@ -288,8 +290,13 @@ export default function ForgotPasswordScreen() {
                 onPress={() => setShowConfirmPassword((v) => !v)}
                 hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
               >
-                <Text style={{ fontSize: 18 }}>
-                  {showConfirmPassword ? "🙈" : "👁️"}
+                <Text
+                  style={{
+                    fontSize: 18,
+                    opacity: showConfirmPassword ? 1 : 0.5,
+                  }}
+                >
+                  👁️
                 </Text>
               </TouchableOpacity>
             </View>

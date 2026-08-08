@@ -5,6 +5,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { router, useLocalSearchParams } from "expo-router";
 import { VideoView, useVideoPlayer } from "expo-video";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import {
   ActivityIndicator,
   Alert,
@@ -82,6 +83,7 @@ function VideoPreviewModal({
   title: string;
   onClose: () => void;
 }) {
+  const { t } = useTranslation();
   const playerRef = useRef<any>(null);
   const [isPlayerReady, setIsPlayerReady] = useState(false);
 
@@ -141,7 +143,7 @@ function VideoPreviewModal({
         <View style={vpModal.header}>
           <TouchableOpacity onPress={onClose}>
             <Text style={{ color: "#c0c0c0", fontSize: 15, fontWeight: "600" }}>
-              Zatvori
+              {t("common.close")}
             </Text>
           </TouchableOpacity>
           <Text style={vpModal.title} numberOfLines={1}>
@@ -204,6 +206,7 @@ function ImagePreviewModal({
   title: string;
   onClose: () => void;
 }) {
+  const { t } = useTranslation();
   return (
     <Modal
       visible={visible}
@@ -223,7 +226,7 @@ function ImagePreviewModal({
         >
           <TouchableOpacity onPress={onClose}>
             <Text style={{ color: "#c0c0c0", fontSize: 15, fontWeight: "600" }}>
-              Zatvori
+              {t("common.close")}
             </Text>
           </TouchableOpacity>
           <Text
@@ -262,6 +265,7 @@ function ImagePreviewModal({
 
 export default function UserProfileScreen() {
   const { isDark } = useTheme();
+  const { t } = useTranslation();
   const V = useMemo(() => getVara(isDark), [isDark]);
   const styles = useMemo(() => makeStyles(V), [V]);
   const { userId } = useLocalSearchParams<{ userId: string }>();
@@ -472,12 +476,14 @@ export default function UserProfileScreen() {
     try {
       if (!isGolden) {
         Alert.alert(
-          "Dodaj Zlatnog prijatelja",
-          `Dodati ${profile?.firstName} ${profile?.lastName} u Zlatne prijatelje?`,
+          t("userProfile.addGolden"),
+          t("userProfile.addGoldenDesc", {
+            name: `${profile?.firstName} ${profile?.lastName}`,
+          }),
           [
-            { text: "Odustani", style: "cancel" },
+            { text: t("common.cancel"), style: "cancel" },
             {
-              text: "Dodaj ⭐",
+              text: t("userProfile.addGoldenBtn"),
               onPress: async () => {
                 const res = await fetch(
                   `${API_BASE_URL}/api/golden-friends/add/${numericUserId}`,
@@ -492,8 +498,10 @@ export default function UserProfileScreen() {
                 if (res.ok) {
                   setIsGolden(true);
                   Alert.alert(
-                    "⭐ Dodano!",
-                    `${profile?.firstName} je sada tvoj Golden Friend`,
+                    "⭐",
+                    t("userProfile.goldenAdded", {
+                      name: profile?.firstName ?? "",
+                    }),
                   );
                 }
               },
@@ -502,12 +510,12 @@ export default function UserProfileScreen() {
         );
       } else {
         Alert.alert(
-          "Ukloni Golden Frienda",
-          `Ukloniti ${profile?.firstName} iz Golden Friends?`,
+          t("userProfile.removeGolden"),
+          t("userProfile.removeGoldenDesc", { name: profile?.firstName ?? "" }),
           [
-            { text: "Odustani", style: "cancel" },
+            { text: t("common.cancel"), style: "cancel" },
             {
-              text: "Ukloni",
+              text: t("common.remove"),
               style: "destructive",
               onPress: async () => {
                 const res = await fetch(
@@ -534,12 +542,14 @@ export default function UserProfileScreen() {
     const token = await AsyncStorage.getItem("token");
     if (!isBlocked) {
       Alert.alert(
-        "Blokiraj korisnika",
-        `Blokiranjem korisnika ${profile?.firstName} ${profile?.lastName} nećete vidjeti njihov sadržaj niti primati poruke od njega/nje.`,
+        t("userProfile.blockUser"),
+        t("userProfile.blockUserDesc", {
+          name: `${profile?.firstName} ${profile?.lastName}`,
+        }),
         [
-          { text: "Odustani", style: "cancel" },
+          { text: t("common.cancel"), style: "cancel" },
           {
-            text: "Blokiraj",
+            text: t("userProfile.blockBtn"),
             style: "destructive",
             onPress: async () => {
               const res = await fetch(
@@ -555,8 +565,10 @@ export default function UserProfileScreen() {
               if (res.ok) {
                 setIsBlocked(true);
                 Alert.alert(
-                  "Blokirano",
-                  `${profile?.firstName} je blokiran/a.`,
+                  t("userProfile.blocked"),
+                  t("userProfile.blockedMsg", {
+                    name: profile?.firstName ?? "",
+                  }),
                 );
               }
             },
@@ -565,12 +577,14 @@ export default function UserProfileScreen() {
       );
     } else {
       Alert.alert(
-        "Odblokiraj korisnika",
-        `Odblokirati ${profile?.firstName} ${profile?.lastName}?`,
+        t("userProfile.unblockUser"),
+        t("userProfile.unblockDesc", {
+          name: `${profile?.firstName} ${profile?.lastName}`,
+        }),
         [
-          { text: "Odustani", style: "cancel" },
+          { text: t("common.cancel"), style: "cancel" },
           {
-            text: "Odblokiraj",
+            text: t("userProfile.unblockBtn"),
             onPress: async () => {
               const res = await fetch(
                 `${API_BASE_URL}/api/block/unblock/${numericUserId}`,
@@ -605,12 +619,14 @@ export default function UserProfileScreen() {
         }),
       });
       if (res.ok) {
-        Alert.alert("Poslano!", `Poruka je poslana @${profile?.username}`);
+        Alert.alert(
+          t("userProfile.messageSent", { username: profile?.username ?? "" }),
+        );
         setMessage("");
         setShowCompose(false);
       }
     } catch {
-      Alert.alert("Greška", "Poruka nije poslana");
+      Alert.alert(t("common.error"), t("userProfile.messageFailed"));
     } finally {
       setSending(false);
     }
@@ -705,17 +721,19 @@ export default function UserProfileScreen() {
           <View style={styles.statsRow}>
             <View style={styles.stat}>
               <Text style={styles.statNum}>{profile?.followersCount ?? 0}</Text>
-              <Text style={styles.statLabel}>Pratitelji</Text>
+              <Text style={styles.statLabel}>{t("userProfile.followers")}</Text>
             </View>
             <View style={styles.statDivider} />
             <View style={styles.stat}>
               <Text style={styles.statNum}>{profile?.followingCount ?? 0}</Text>
-              <Text style={styles.statLabel}>Praćeni</Text>
+              <Text style={styles.statLabel}>{t("userProfile.following")}</Text>
             </View>
             <View style={styles.statDivider} />
             <View style={styles.stat}>
               <Text style={styles.statNum}>{activityCount}</Text>
-              <Text style={styles.statLabel}>Aktivnosti</Text>
+              <Text style={styles.statLabel}>
+                {t("userProfile.activities")}
+              </Text>
             </View>
           </View>
 
@@ -737,7 +755,9 @@ export default function UserProfileScreen() {
                     isFollowing && styles.followingBtnText,
                   ]}
                 >
-                  {isFollowing ? "✓ Praćenje" : "Prati"}
+                  {isFollowing
+                    ? t("userProfile.following2")
+                    : t("userProfile.follow")}
                 </Text>
               )}
             </TouchableOpacity>
@@ -747,7 +767,7 @@ export default function UserProfileScreen() {
               onPress={() => setShowCompose(true)}
             >
               <Ionicons name="paper-plane-outline" size={18} color="#667eea" />
-              <Text style={styles.msgBtnText}>Poruka</Text>
+              <Text style={styles.msgBtnText}>{t("userProfile.message")}</Text>
             </TouchableOpacity>
 
             <TouchableOpacity
@@ -767,7 +787,7 @@ export default function UserProfileScreen() {
             <View style={styles.blockedBanner}>
               <Ionicons name="ban" size={16} color="#ff4757" />
               <Text style={styles.blockedText}>
-                Ovaj korisnik je blokiran. Dodirnite ⋮ za odblokiravanje.
+                {t("userProfile.blockedBanner")}
               </Text>
             </View>
           )}
@@ -776,13 +796,13 @@ export default function UserProfileScreen() {
         {/* Media grid */}
         <View style={styles.mediaSection}>
           <Text style={styles.mediaSectionTitle}>
-            Aktivnost ({activityCount})
+            {t("userProfile.activities")} ({activityCount})
           </Text>
           {media.length === 0 ? (
             <View style={styles.emptyMedia}>
               <Ionicons name="images-outline" size={48} color="#ddd" />
               <Text style={styles.emptyMediaText}>
-                Nema objavljenog sadržaja
+                {t("userProfile.noContent")}
               </Text>
             </View>
           ) : (
@@ -869,7 +889,7 @@ export default function UserProfileScreen() {
             edges={["top"]}
           >
             <View style={styles.composeHeader}>
-              <Text style={styles.composeTitle}>Poruke</Text>
+              <Text style={styles.composeTitle}>{t("messages.title")}</Text>
               <TouchableOpacity onPress={() => setShowCompose(false)}>
                 <Text
                   style={{
@@ -878,13 +898,15 @@ export default function UserProfileScreen() {
                     fontWeight: "600",
                   }}
                 >
-                  Zatvori
+                  {t("common.close")}
                 </Text>
               </TouchableOpacity>
             </View>
             <TextInput
               style={[styles.composeInput, { flex: 1 }]}
-              placeholder={`Napiši poruku za ${profile?.firstName}...`}
+              placeholder={t("userProfile.writeMessage", {
+                name: profile?.firstName ?? "",
+              })}
               placeholderTextColor={V.silverDim}
               value={message}
               onChangeText={setMessage}
@@ -932,7 +954,7 @@ export default function UserProfileScreen() {
                       fontWeight: "700",
                     }}
                   >
-                    Pošalji
+                    {t("userProfile.send")}
                   </Text>
                 )}
               </TouchableOpacity>

@@ -179,8 +179,8 @@ export default function LoginScreen() {
                 onPress={() => setShowPassword((v) => !v)}
                 hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
               >
-                <Text style={{ fontSize: 18 }}>
-                  {showPassword ? "🙈" : "👁️"}
+                <Text style={{ fontSize: 18, opacity: showPassword ? 1 : 0.5 }}>
+                  👁️
                 </Text>
               </TouchableOpacity>
             </View>

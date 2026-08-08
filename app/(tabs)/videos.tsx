@@ -33,8 +33,16 @@ import {
 import { StoryBadge } from "../../app/StoryBadge";
 import { useTheme } from "../../components/AdaptiveThemeProvider";
 import { API_BASE_URL } from "../config/api";
+import { placeCategories } from "../services/locationService";
 
 const { width } = Dimensions.get("window");
+const AGE_GROUP_IDS = [
+  "minors",
+  "youth",
+  "students",
+  "adults",
+  "retired",
+] as const;
 
 // ─── VARA Paleta — identična dashboard.tsx / varaTheme.ts ────────────────────
 const V = {
@@ -998,6 +1006,19 @@ export function UploadModal({
     null,
   );
   const [description, setDescription] = useState("");
+  const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
+  const [selectedAgeGroups, setSelectedAgeGroups] = useState<string[]>([]);
+  const [showCategoryPicker, setShowCategoryPicker] = useState(false);
+  const [showAgeGroupPicker, setShowAgeGroupPicker] = useState(false);
+
+  const toggleCategory = (id: string) =>
+    setSelectedCategories((prev) =>
+      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id],
+    );
+  const toggleAgeGroup = (id: string) =>
+    setSelectedAgeGroups((prev) =>
+      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id],
+    );
   const [uploading, setUploading] = useState(false);
   const [step, setStep] = useState<"pick" | "preview">("pick");
 
@@ -1113,6 +1134,17 @@ export function UploadModal({
       );
       return;
     }
+    if (selectedCategories.length === 0) {
+      Alert.alert(t("common.error"), "Odaberite barem jednu kategoriju.");
+      return;
+    }
+    if (selectedAgeGroups.length === 0) {
+      Alert.alert(
+        t("common.error"),
+        "Odaberite barem jednu skupinu 'Primjereno za'.",
+      );
+      return;
+    }
     if (!userId || userId === "0") {
       Alert.alert(t("common.error"), t("auth.notLoggedIn"));
       return;
@@ -1140,7 +1172,15 @@ export function UploadModal({
       } as any);
       formData.append("Title", title.trim());
       formData.append("Location", location.trim());
-      formData.append("Description", description.trim() || "Nema opisa");
+      const categoriesLabel = selectedCategories
+        .map((id) => t(`categories.${id}`, { defaultValue: id }))
+        .join(", ");
+      const ageGroupsLabel = selectedAgeGroups
+        .map((id) => t(`ageGroups.${id}`, { defaultValue: id }))
+        .join(", ");
+      const finalDescription = `📂 Kategorije: ${categoriesLabel}\n👥 Primjereno za: ${ageGroupsLabel}\n\n${description.trim() || "Nema opisa"}`;
+
+      formData.append("Description", finalDescription);
       formData.append("UserId", userId);
       formData.append("MediaType", mediaType);
 
@@ -1367,6 +1407,90 @@ export function UploadModal({
                   )}
                 </View>
 
+                <Text style={upload.fieldLabel}>
+                  Kategorije *
+                  <Text style={{ color: "#C05050", fontSize: 12 }}>
+                    {" "}
+                    (obavezno)
+                  </Text>
+                </Text>
+                <TouchableOpacity
+                  style={[
+                    upload.fieldInput,
+                    {
+                      flexDirection: "row",
+                      alignItems: "center",
+                      justifyContent: "space-between",
+                    },
+                  ]}
+                  onPress={() => setShowCategoryPicker(true)}
+                >
+                  <Text
+                    style={{
+                      color: selectedCategories.length
+                        ? VT.textPrimary
+                        : VT.placeholder,
+                      flex: 1,
+                    }}
+                    numberOfLines={1}
+                  >
+                    {selectedCategories.length
+                      ? selectedCategories
+                          .map((id) =>
+                            t(`categories.${id}`, { defaultValue: id }),
+                          )
+                          .join(", ")
+                      : "Odaberi kategorije..."}
+                  </Text>
+                  <Ionicons
+                    name="chevron-down"
+                    size={18}
+                    color={VT.textMuted}
+                  />
+                </TouchableOpacity>
+
+                <Text style={upload.fieldLabel}>
+                  Primjereno za *
+                  <Text style={{ color: "#C05050", fontSize: 12 }}>
+                    {" "}
+                    (obavezno)
+                  </Text>
+                </Text>
+                <TouchableOpacity
+                  style={[
+                    upload.fieldInput,
+                    {
+                      flexDirection: "row",
+                      alignItems: "center",
+                      justifyContent: "space-between",
+                    },
+                  ]}
+                  onPress={() => setShowAgeGroupPicker(true)}
+                >
+                  <Text
+                    style={{
+                      color: selectedAgeGroups.length
+                        ? VT.textPrimary
+                        : VT.placeholder,
+                      flex: 1,
+                    }}
+                    numberOfLines={1}
+                  >
+                    {selectedAgeGroups.length
+                      ? selectedAgeGroups
+                          .map((id) =>
+                            t(`ageGroups.${id}`, { defaultValue: id }),
+                          )
+                          .join(", ")
+                      : "Odaberi primjereno za..."}
+                  </Text>
+                  <Ionicons
+                    name="chevron-down"
+                    size={18}
+                    color={VT.textMuted}
+                  />
+                </TouchableOpacity>
+
                 <Text style={upload.fieldLabel}>Opis (opcionalno)</Text>
                 <TextInput
                   style={[
@@ -1435,6 +1559,166 @@ export function UploadModal({
               </>
             )}
           </ScrollView>
+
+          <Modal
+            visible={showCategoryPicker}
+            transparent
+            animationType="slide"
+            onRequestClose={() => setShowCategoryPicker(false)}
+          >
+            <View
+              style={{
+                flex: 1,
+                justifyContent: "flex-end",
+                backgroundColor: "rgba(0,0,0,0.5)",
+              }}
+            >
+              <View
+                style={{
+                  backgroundColor: VT.bg,
+                  borderTopLeftRadius: 20,
+                  borderTopRightRadius: 20,
+                  maxHeight: "75%",
+                  padding: 16,
+                }}
+              >
+                <Text
+                  style={{
+                    fontSize: 17,
+                    fontWeight: "800",
+                    color: VT.textPrimary,
+                    marginBottom: 12,
+                  }}
+                >
+                  Odaberi kategorije
+                </Text>
+                <ScrollView>
+                  {Object.keys(placeCategories).map((id) => {
+                    const active = selectedCategories.includes(id);
+                    return (
+                      <TouchableOpacity
+                        key={id}
+                        onPress={() => toggleCategory(id)}
+                        style={{
+                          flexDirection: "row",
+                          alignItems: "center",
+                          justifyContent: "space-between",
+                          paddingVertical: 12,
+                          borderBottomWidth: 1,
+                          borderBottomColor: VT.border,
+                        }}
+                      >
+                        <Text style={{ color: VT.textPrimary, fontSize: 15 }}>
+                          {t(`categories.${id}`, { defaultValue: id })}
+                        </Text>
+                        {active && (
+                          <Ionicons
+                            name="checkmark-circle"
+                            size={22}
+                            color={VT.accent}
+                          />
+                        )}
+                      </TouchableOpacity>
+                    );
+                  })}
+                </ScrollView>
+                <TouchableOpacity
+                  style={{
+                    backgroundColor: VT.bgLight,
+                    borderRadius: 12,
+                    paddingVertical: 14,
+                    alignItems: "center",
+                    marginTop: 12,
+                  }}
+                  onPress={() => setShowCategoryPicker(false)}
+                >
+                  <Text style={{ color: VT.textPrimary, fontWeight: "700" }}>
+                    Potvrdi
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </Modal>
+
+          <Modal
+            visible={showAgeGroupPicker}
+            transparent
+            animationType="slide"
+            onRequestClose={() => setShowAgeGroupPicker(false)}
+          >
+            <View
+              style={{
+                flex: 1,
+                justifyContent: "flex-end",
+                backgroundColor: "rgba(0,0,0,0.5)",
+              }}
+            >
+              <View
+                style={{
+                  backgroundColor: VT.bg,
+                  borderTopLeftRadius: 20,
+                  borderTopRightRadius: 20,
+                  maxHeight: "75%",
+                  padding: 16,
+                }}
+              >
+                <Text
+                  style={{
+                    fontSize: 17,
+                    fontWeight: "800",
+                    color: VT.textPrimary,
+                    marginBottom: 12,
+                  }}
+                >
+                  Odaberi primjereno za
+                </Text>
+                <ScrollView>
+                  {AGE_GROUP_IDS.map((id) => {
+                    const active = selectedAgeGroups.includes(id);
+                    return (
+                      <TouchableOpacity
+                        key={id}
+                        onPress={() => toggleAgeGroup(id)}
+                        style={{
+                          flexDirection: "row",
+                          alignItems: "center",
+                          justifyContent: "space-between",
+                          paddingVertical: 12,
+                          borderBottomWidth: 1,
+                          borderBottomColor: VT.border,
+                        }}
+                      >
+                        <Text style={{ color: VT.textPrimary, fontSize: 15 }}>
+                          {t(`ageGroups.${id}`, { defaultValue: id })}
+                        </Text>
+                        {active && (
+                          <Ionicons
+                            name="checkmark-circle"
+                            size={22}
+                            color={VT.accent}
+                          />
+                        )}
+                      </TouchableOpacity>
+                    );
+                  })}
+                </ScrollView>
+                <TouchableOpacity
+                  style={{
+                    backgroundColor: VT.bgLight,
+                    borderRadius: 12,
+                    paddingVertical: 14,
+                    alignItems: "center",
+                    marginTop: 12,
+                  }}
+                  onPress={() => setShowAgeGroupPicker(false)}
+                >
+                  <Text style={{ color: VT.textPrimary, fontWeight: "700" }}>
+                    Potvrdi
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </Modal>
         </SafeAreaView>
       </KeyboardAvoidingView>
     </Modal>

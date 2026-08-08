@@ -158,7 +158,9 @@ export default function SetPasswordScreen() {
           onPress={() => setShowPassword((v) => !v)}
           hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
         >
-          <Text style={{ fontSize: 18 }}>{showPassword ? "🙈" : "👁️"}</Text>
+          <Text style={{ fontSize: 18, opacity: showPassword ? 1 : 0.5 }}>
+            👁️
+          </Text>
         </TouchableOpacity>
       </View>
 
@@ -247,8 +249,10 @@ export default function SetPasswordScreen() {
           onPress={() => setShowConfirmPassword((v) => !v)}
           hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
         >
-          <Text style={{ fontSize: 18 }}>
-            {showConfirmPassword ? "🙈" : "👁️"}
+          <Text
+            style={{ fontSize: 18, opacity: showConfirmPassword ? 1 : 0.5 }}
+          >
+            👁️
           </Text>
         </TouchableOpacity>
       </View>

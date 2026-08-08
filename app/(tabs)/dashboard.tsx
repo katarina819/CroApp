@@ -310,6 +310,7 @@ interface NotifPrefs {
   emailEnabled: boolean;
   email: string;
   categories: string[];
+  ageGroups?: string[];
 }
 
 interface VenueItem {
@@ -1936,6 +1937,100 @@ function NotificationSettingsModal({
         : [...prev.categories, cat],
     }));
 
+  const AGE_GROUPS_DISPLAY = [
+    {
+      id: "minors",
+      label: t("ageGroups.minors"),
+      icon: maloletnikIcon,
+      desc: "< 18",
+      cats: ["park", "cinema", "beach", "museum", "escapeRoom"],
+      color: "#3498DB",
+    },
+    {
+      id: "youth",
+      label: t("ageGroups.youth"),
+      icon: mladiIcon,
+      desc: "18–25",
+      cats: [
+        "club",
+        "cinema",
+        "beach",
+        "escapeRoom",
+        "paintball",
+        "park",
+        "cafe",
+      ],
+      color: "#9B59B6",
+    },
+    {
+      id: "students",
+      label: t("ageGroups.students"),
+      icon: studentIcon,
+      desc: t("ageGroups.studentDesc"),
+      cats: [
+        "cafe",
+        "cinema",
+        "museum",
+        "theater",
+        "park",
+        "escapeRoom",
+        "restaurant",
+      ],
+      color: "#667eea",
+    },
+    {
+      id: "adults",
+      label: t("ageGroups.adults"),
+      icon: odrasliIcon,
+      desc: "26–60",
+      cats: [
+        "restaurant",
+        "cafe",
+        "spa",
+        "theater",
+        "museum",
+        "landmark",
+        "market",
+        "accommodation",
+      ],
+      color: "#E67E22",
+    },
+    {
+      id: "retired",
+      label: t("ageGroups.retired"),
+      icon: umirovljenikIcon,
+      desc: "60+",
+      cats: [
+        "restaurant",
+        "cafe",
+        "spa",
+        "museum",
+        "landmark",
+        "park",
+        "market",
+      ],
+      color: "#27AE60",
+    },
+  ];
+
+  const toggleAgeGroup = (grpId: string) => {
+    const grp = AGE_GROUPS_DISPLAY.find((g) => g.id === grpId);
+    if (!grp) return;
+    setP((prev) => {
+      const currentAgeGroups = prev.ageGroups || [];
+      const isActive = currentAgeGroups.includes(grpId);
+      const newAgeGroups = isActive
+        ? currentAgeGroups.filter((x) => x !== grpId)
+        : [...currentAgeGroups, grpId];
+
+      const newCategories = isActive
+        ? prev.categories.filter((c) => !grp.cats.includes(c))
+        : [...new Set([...prev.categories, ...grp.cats])];
+
+      return { ...prev, ageGroups: newAgeGroups, categories: newCategories };
+    });
+  };
+
   return (
     <Modal
       visible={visible}
@@ -2177,6 +2272,92 @@ function NotificationSettingsModal({
                         </Text>
                       </View>
                     )}
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+          </View>
+
+          {/* Primjereno za */}
+          <View
+            style={{
+              padding: 16,
+              borderBottomWidth: 1,
+              borderBottomColor: DC.borderDim,
+            }}
+          >
+            <View
+              style={{
+                flexDirection: "row",
+                justifyContent: "space-between",
+                alignItems: "center",
+                marginBottom: 12,
+              }}
+            >
+              <Text
+                style={{ fontSize: 14, fontWeight: "700", color: DC.textSub }}
+              >
+                {t("map.forAgeGroup")}
+              </Text>
+              {(p.ageGroups || []).length > 0 && (
+                <TouchableOpacity
+                  onPress={() => setP((prev) => ({ ...prev, ageGroups: [] }))}
+                >
+                  <Text
+                    style={{
+                      fontSize: 13,
+                      color: DC.accent,
+                      fontWeight: "600",
+                    }}
+                  >
+                    {t("map.clearAgeFilter")}
+                  </Text>
+                </TouchableOpacity>
+              )}
+            </View>
+            <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
+              {AGE_GROUPS_DISPLAY.map((grp) => {
+                const active = (p.ageGroups || []).includes(grp.id);
+                return (
+                  <TouchableOpacity
+                    key={grp.id}
+                    style={{
+                      flexDirection: "row",
+                      alignItems: "center",
+                      gap: 6,
+                      paddingHorizontal: 14,
+                      paddingVertical: 10,
+                      borderRadius: 10,
+                      backgroundColor: active ? grp.color : DC.card,
+                      borderWidth: 1.5,
+                      borderColor: active ? grp.color : DC.borderDim,
+                    }}
+                    onPress={() => toggleAgeGroup(grp.id)}
+                  >
+                    <Image
+                      source={grp.icon}
+                      style={{ width: 60, height: 60 }}
+                      resizeMode="contain"
+                    />
+                    <View>
+                      <Text
+                        style={{
+                          fontSize: 13,
+                          fontWeight: "700",
+                          color: active ? "#fff" : DC.text,
+                        }}
+                      >
+                        {grp.label}
+                      </Text>
+                      <Text
+                        style={{
+                          fontSize: 10,
+                          color: active ? "rgba(255,255,255,0.75)" : DC.textDim,
+                        }}
+                      >
+                        {grp.desc}
+                      </Text>
+                    </View>
                   </TouchableOpacity>
                 );
               })}
@@ -2503,24 +2684,52 @@ export function ActivityGroupsModal({
       setShowLocationSuggestions(false);
       return;
     }
+    if (!GOOGLE_KEY) return;
     try {
       const res = await fetch(
-        `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(
+        `https://maps.googleapis.com/maps/api/place/autocomplete/json?input=${encodeURIComponent(
           query,
-        )}&limit=5&addressdetails=1`,
-        { headers: { "Accept-Language": "hr" } },
+        )}&components=country:hr&language=hr&key=${GOOGLE_KEY}`,
       );
-      if (!res.ok) return;
+      if (!res.ok) {
+        console.log("Autocomplete HTTP error", res.status);
+        return;
+      }
       const data = await res.json();
-      const suggestions = (data || []).map((item: any) => ({
-        name: item.display_name,
-        lat: parseFloat(item.lat),
-        lon: parseFloat(item.lon),
-      }));
-      setLocationSuggestions(suggestions);
-      setShowLocationSuggestions(suggestions.length > 0);
-    } catch {
-      // tiho ignoriraj — korisnik samo neće vidjeti prijedloge
+      if (data.status !== "OK") {
+        console.log("Autocomplete status:", data.status, data.error_message);
+        setLocationSuggestions([]);
+        setShowLocationSuggestions(false);
+        return;
+      }
+      // Za svaki prijedlog dohvati koordinate preko Place Details
+      const suggestions = await Promise.all(
+        data.predictions.slice(0, 5).map(async (p: any) => {
+          try {
+            const detRes = await fetch(
+              `https://maps.googleapis.com/maps/api/place/details/json?place_id=${p.place_id}&fields=geometry&key=${GOOGLE_KEY}`,
+            );
+            const det = await detRes.json();
+            const loc = det.result?.geometry?.location;
+            return {
+              name: p.description,
+              lat: loc?.lat ?? 0,
+              lon: loc?.lng ?? 0,
+            };
+          } catch {
+            return null;
+          }
+        }),
+      );
+      const valid = suggestions.filter((s) => s !== null) as {
+        name: string;
+        lat: number;
+        lon: number;
+      }[];
+      setLocationSuggestions(valid);
+      setShowLocationSuggestions(valid.length > 0);
+    } catch (e) {
+      console.log("Location suggestion error:", e);
     }
   };
 

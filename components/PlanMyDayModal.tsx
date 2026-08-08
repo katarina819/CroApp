@@ -895,10 +895,10 @@ export function PlanMyDayModal({
   // Aktivne aktivnosti za dan
   const activeDayActivities: DayActivity[] = useMemo(() => {
     if (geocodedCoords && Object.keys(allVenues).length > 0) {
-      return getTimeBasedActivities(allVenues, activeDay, geocodedCoords); // ← dodaj geocodedCoords
+      return getTimeBasedActivities(allVenues, activeDay, geocodedCoords, t); // ← dodaj geocodedCoords
     }
     return [];
-  }, [allVenues, activeDay, geocodedCoords]);
+  }, [allVenues, activeDay, geocodedCoords, t]);
 
   // Auto-fit karte
   useEffect(() => {
@@ -1065,6 +1065,7 @@ export function PlanMyDayModal({
           geocoded
             ? { latitude: geocoded.latitude, longitude: geocoded.longitude }
             : null,
+          t,
         );
         planText += `DAN ${d + 1}\n${"─".repeat(40)}\n\n`;
         activities.forEach((act) => {
@@ -1172,7 +1173,6 @@ export function PlanMyDayModal({
         <View
           style={{
             flexDirection: "row",
-            justifyContent: "space-between",
             alignItems: "center",
             padding: 20,
             paddingTop: Platform.OS === "ios" ? 54 : 36,
@@ -1181,34 +1181,55 @@ export function PlanMyDayModal({
             backgroundColor: DC.bg,
           }}
         >
-          {step === "result" ? (
-            <TouchableOpacity onPress={() => setStep("form")}>
-              <Text
-                style={{ fontSize: 15, color: DC.accent, fontWeight: "700" }}
-              >
-                {t("plan.newPlan")}
+          <View style={{ flexShrink: 0 }}>
+            {step === "result" ? (
+              <TouchableOpacity onPress={() => setStep("form")}>
+                <Text
+                  style={{ fontSize: 15, color: DC.accent, fontWeight: "700" }}
+                  numberOfLines={1}
+                >
+                  {t("plan.newPlan")}
+                </Text>
+              </TouchableOpacity>
+            ) : (
+              <Text style={{ fontSize: 20, fontWeight: "800", color: DC.text }}>
+                {t("plan.planTrip")}
               </Text>
-            </TouchableOpacity>
-          ) : (
-            <Text style={{ fontSize: 20, fontWeight: "800", color: DC.text }}>
-              {t("plan.planTrip")}
-            </Text>
-          )}
+            )}
+          </View>
+
           {step === "result" && (
-            <Text style={{ fontSize: 17, fontWeight: "800", color: DC.text }}>
+            <Text
+              style={{
+                flex: 1,
+                fontSize: 17,
+                fontWeight: "800",
+                color: DC.text,
+                textAlign: "center",
+                marginHorizontal: 8,
+              }}
+              numberOfLines={1}
+              ellipsizeMode="tail"
+            >
               {destination}
             </Text>
           )}
 
           {step === "result" ? (
             <View
-              style={{ flexDirection: "row", gap: 12, alignItems: "center" }}
+              style={{
+                flexDirection: "row",
+                gap: 12,
+                alignItems: "center",
+                flexShrink: 0,
+              }}
             >
               <TouchableOpacity
                 onPress={() => Share.share({ message: result }).catch(() => {})}
               >
                 <Text
                   style={{ fontSize: 14, color: DC.textDim, fontWeight: "600" }}
+                  numberOfLines={1}
                 >
                   {t("plan.share")}
                 </Text>
@@ -1216,15 +1237,17 @@ export function PlanMyDayModal({
               <TouchableOpacity onPress={handleClose}>
                 <Text
                   style={{ fontSize: 14, color: DC.textDim, fontWeight: "600" }}
+                  numberOfLines={1}
                 >
                   {t("common.close")}
                 </Text>
               </TouchableOpacity>
             </View>
           ) : (
-            <TouchableOpacity onPress={handleClose}>
+            <TouchableOpacity onPress={handleClose} style={{ flexShrink: 0 }}>
               <Text
                 style={{ fontSize: 14, color: DC.textDim, fontWeight: "600" }}
+                numberOfLines={1}
               >
                 {t("common.close")}
               </Text>
