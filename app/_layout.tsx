@@ -3,14 +3,65 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as Linking from "expo-linking";
 import { Stack, router } from "expo-router";
 import { useEffect, useState } from "react";
-import { ActivityIndicator, Text, View } from "react-native";
+import { ActivityIndicator, AppState, Text, View } from "react-native";
 import { AdaptiveThemeProvider } from "../components/AdaptiveThemeProvider"; // ← NOVO
+import { API_BASE_URL } from "./config/api";
 import "./config/i18n"; // ← dodaj ovo kao prvi import
 import { UserProvider } from "./contexts/UserContext";
+
+const trackSessionTime = async (minutes: number) => {
+  try {
+    const token = await AsyncStorage.getItem("token");
+    if (!token) return;
+    await fetch(`${API_BASE_URL}/api/activity/track/session`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ minutes }),
+    });
+  } catch {}
+};
 
 export default function RootLayout() {
   const [ready, setReady] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Praćenje vremena provedenog u aplikaciji — MORA biti ovdje, u root
+  // layoutu koji živi cijelo trajanje sesije, ne unutar profil taba. Prije
+  // je ovo bilo u ProfileScreen-u, pa se mjerilo samo vrijeme provedeno na
+  // profil tabu (koje se gotovo uvijek zaokruži na 0 minuta), a ne stvarno
+  // ukupno korištenje aplikacije — otud je arhiva aktivnosti uvijek
+  // pokazivala 0 minuta.
+  useEffect(() => {
+    let sessionStart = Date.now();
+    let isTracking = false;
+    const trackCurrentSession = async () => {
+      if (isTracking) return;
+      isTracking = true;
+      const minutes = Math.floor((Date.now() - sessionStart) / (1000 * 60));
+      if (minutes > 0) await trackSessionTime(minutes);
+      isTracking = false;
+    };
+    const subscription = AppState.addEventListener(
+      "change",
+      async (nextAppState) => {
+        if (nextAppState === "background" || nextAppState === "inactive") {
+          await trackCurrentSession();
+        } else if (nextAppState === "active") {
+          sessionStart = Date.now();
+        }
+      },
+    );
+    return () => {
+      subscription.remove();
+      const finalMinutes = Math.floor(
+        (Date.now() - sessionStart) / (1000 * 60),
+      );
+      if (finalMinutes > 0) trackSessionTime(finalMinutes);
+    };
+  }, []);
 
   useEffect(() => {
     // Handle deep link kada je app zatvorena (cold start)

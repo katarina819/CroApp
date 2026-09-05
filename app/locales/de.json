@@ -807,6 +807,8 @@
     "generate": "✨ Plan mit echten Orten generieren",
     "generateHint": "KI wird echte Orte in {{destination}} finden und einen detaillierten Plan erstellen",
     "destinationRequired": "Bitte geben Sie eine Stadt, einen Ort oder eine Adresse ein.",
+    "destinationNotVerified": "Wähle ein Ziel aus der Vorschlagsliste, damit wir bestätigen können, dass es existiert.",
+    "destinationPickFromList": "Wähle einen Ort aus der Liste, um ihn zu bestätigen",
     "markedVisited": "✅ Besucht!",
     "addedToArchive": "{{name}} zum Archiv hinzugefügt.",
     "notFound": "⚠️ Nicht gefunden",

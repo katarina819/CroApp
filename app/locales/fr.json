@@ -837,6 +837,8 @@
     "generate": "✨ Générer un plan avec de vrais lieux",
     "generateHint": "L'IA trouvera de vrais lieux à {{destination}} et créera un plan détaillé",
     "destinationRequired": "Veuillez entrer une ville, un lieu ou une adresse.",
+    "destinationNotVerified": "Choisissez une destination dans la liste suggérée pour confirmer qu'elle existe.",
+    "destinationPickFromList": "Choisissez un lieu dans la liste pour le confirmer",
     "markedVisited": "✅ Visité !",
     "addedToArchive": "{{name}} ajouté à l'archive.",
     "notFound": "⚠️ Non trouvé",

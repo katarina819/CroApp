@@ -837,6 +837,8 @@
     "generate": "✨ Generiraj plan s pravim mjestima",
     "generateHint": "AI će pronaći stvarna mjesta u {{destination}} i izraditi konkretan plan",
     "destinationRequired": "Unesite grad, mjesto ili adresu destinacije.",
+    "destinationNotVerified": "Odaberite destinaciju s popisa ponuđenih mjesta kako bismo potvrdili da postoji.",
+    "destinationPickFromList": "Odaberite mjesto s popisa da potvrdite da postoji",
     "markedVisited": "✅ Posjećeno!",
     "addedToArchive": "{{name}} dodano u arhivu.",
     "notFound": "⚠️ Nije pronađeno",

@@ -834,6 +834,19 @@ export function PlanMyDayModal({
 
   const [step, setStep] = useState<PlanStep>("form");
   const [destination, setDestination] = useState("");
+  // Provjera postoji li uneseno mjesto/grad — prije se bilo koji tekst
+  // prihvaćao bez ikakve provjere, pa je tipfeler u nazivu grada tiho
+  // proizvodio prazan/pokvaren plan bez ijedne poruke greške.
+  const [locationValid, setLocationValid] = useState(false);
+  const [locationSuggestions, setLocationSuggestions] = useState<
+    { displayName: string; lat: string; lon: string }[]
+  >([]);
+  const [showLocationSuggestions, setShowLocationSuggestions] =
+    useState(false);
+  const [searchingLocation, setSearchingLocation] = useState(false);
+  const locationDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(
+    null,
+  );
   const [numDays, setNumDays] = useState(1);
   const [planStyle, setPlanStyle] = useState<PlanStyle>("kulturno");
   const [spontaneous, setSpontaneous] = useState(false);
@@ -1025,9 +1038,54 @@ export function PlanMyDayModal({
     }
   };
 
+  const searchDestination = (query: string) => {
+    setDestination(query);
+    setLocationValid(false);
+
+    if (locationDebounceRef.current) clearTimeout(locationDebounceRef.current);
+
+    if (query.trim().length < 2) {
+      setLocationSuggestions([]);
+      setShowLocationSuggestions(false);
+      return;
+    }
+
+    locationDebounceRef.current = setTimeout(async () => {
+      setSearchingLocation(true);
+      try {
+        const res = await fetch(
+          `${API_BASE_URL}/api/locationsearch/autocomplete?query=${encodeURIComponent(query.trim())}`,
+        );
+        if (res.ok) {
+          const data = await res.json();
+          setLocationSuggestions(data);
+          setShowLocationSuggestions(data.length > 0);
+        }
+      } catch {
+        setLocationSuggestions([]);
+      } finally {
+        setSearchingLocation(false);
+      }
+    }, 400);
+  };
+
+  const selectDestination = (suggestion: { displayName: string }) => {
+    setDestination(suggestion.displayName);
+    setLocationValid(true);
+    setShowLocationSuggestions(false);
+    setLocationSuggestions([]);
+  };
+
   const generate = React.useCallback(async () => {
     if (!destination.trim()) {
       Alert.alert(t("plan.destination"), t("plan.destinationRequired"));
+      return;
+    }
+    if (!locationValid) {
+      Alert.alert(
+        t("plan.destination"),
+        t("plan.destinationNotVerified"),
+      );
       return;
     }
 
@@ -1086,7 +1144,14 @@ export function PlanMyDayModal({
       Alert.alert(t("common.error"), t("plan.planError"));
       setStep("form");
     }
-  }, [destination, activityRadius, interests, spontaneous, numDays]);
+  }, [
+    destination,
+    locationValid,
+    activityRadius,
+    interests,
+    spontaneous,
+    numDays,
+  ]);
 
   const openVenueDetail = (activity: DayActivity) => {
     if (!activity.venue) return;
@@ -1331,24 +1396,87 @@ export function PlanMyDayModal({
                 >
                   {t("plan.whereGoing")}?
                 </Text>
-                <TextInput
-                  style={{
-                    backgroundColor: DC.card,
-                    borderRadius: 12,
-                    borderWidth: 1.5,
-                    borderColor: DC.inputBorder,
-                    paddingHorizontal: 16,
-                    paddingVertical: 13,
-                    fontSize: 16,
-                    color: DC.text,
-                    fontWeight: "600",
-                  }}
-                  placeholder={t("plan.destinationExample")}
-                  placeholderTextColor={DC.textDim}
-                  value={destination}
-                  onChangeText={setDestination}
-                  autoCapitalize="words"
-                />
+                <View style={{ position: "relative", justifyContent: "center" }}>
+                  <TextInput
+                    style={{
+                      backgroundColor: DC.card,
+                      borderRadius: 12,
+                      borderWidth: 1.5,
+                      borderColor: locationValid ? "#4CAF50" : DC.inputBorder,
+                      paddingHorizontal: 16,
+                      paddingVertical: 13,
+                      paddingRight: 40,
+                      fontSize: 16,
+                      color: DC.text,
+                      fontWeight: "600",
+                    }}
+                    placeholder={t("plan.destinationExample")}
+                    placeholderTextColor={DC.textDim}
+                    value={destination}
+                    onChangeText={searchDestination}
+                    autoCapitalize="words"
+                  />
+                  {searchingLocation && (
+                    <ActivityIndicator
+                      size="small"
+                      color={DC.textDim}
+                      style={{ position: "absolute", right: 14 }}
+                    />
+                  )}
+                  {!searchingLocation && locationValid && (
+                    <Text
+                      style={{
+                        position: "absolute",
+                        right: 14,
+                        color: "#4CAF50",
+                        fontSize: 18,
+                        fontWeight: "700",
+                      }}
+                    >
+                      ✓
+                    </Text>
+                  )}
+                </View>
+                {!locationValid && destination.trim().length > 0 && (
+                  <Text
+                    style={{ fontSize: 12, color: DC.textDim, marginTop: 6 }}
+                  >
+                    {t("plan.destinationPickFromList")}
+                  </Text>
+                )}
+                {showLocationSuggestions && (
+                  <View
+                    style={{
+                      backgroundColor: DC.card,
+                      borderWidth: 1,
+                      borderColor: DC.inputBorder,
+                      borderRadius: 10,
+                      marginTop: 4,
+                      maxHeight: 220,
+                      overflow: "hidden",
+                    }}
+                  >
+                    <ScrollView keyboardShouldPersistTaps="handled" nestedScrollEnabled>
+                      {locationSuggestions.map((s, idx) => (
+                        <TouchableOpacity
+                          key={`${s.lat}_${s.lon}_${idx}`}
+                          style={{
+                            paddingHorizontal: 14,
+                            paddingVertical: 12,
+                            borderBottomWidth:
+                              idx < locationSuggestions.length - 1 ? 1 : 0,
+                            borderBottomColor: DC.inputBorder,
+                          }}
+                          onPress={() => selectDestination(s)}
+                        >
+                          <Text style={{ color: DC.text, fontSize: 14 }}>
+                            {s.displayName}
+                          </Text>
+                        </TouchableOpacity>
+                      ))}
+                    </ScrollView>
+                  </View>
+                )}
               </View>
 
               {/* KOLIKO DANA */}

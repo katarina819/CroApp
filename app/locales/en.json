@@ -814,6 +814,8 @@
     "generate": "✨ Generate plan with real places",
     "generateHint": "AI will find real places in {{destination}} and create a detailed plan",
     "destinationRequired": "Please enter a city, place or address.",
+    "destinationNotVerified": "Pick a destination from the suggested list so we can confirm it exists.",
+    "destinationPickFromList": "Pick a place from the list to confirm it exists",
     "markedVisited": "✅ Visited!",
     "addedToArchive": "{{name}} added to archive.",
     "notFound": "⚠️ Not found",

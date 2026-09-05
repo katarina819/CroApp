@@ -9,7 +9,6 @@ import { useTranslation } from "react-i18next";
 import {
   ActivityIndicator,
   Alert,
-  AppState,
   Dimensions,
   FlatList,
   Image,
@@ -4126,21 +4125,6 @@ function SettingsModal({
 }
 
 // ─── Session Tracking ─────────────────────────────────────────────────────────
-const trackSessionTime = async (minutes: number) => {
-  try {
-    const token = await AsyncStorage.getItem("token");
-    if (!token) return;
-    await fetch(`${API_BASE_URL}/api/activity/track/session`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify({ minutes }),
-    });
-  } catch {}
-};
-
 // ─── Main Profile Screen ──────────────────────────────────────────────────────
 export default function ProfileScreen() {
   const { refreshProfile } = useUser();
@@ -4167,35 +4151,6 @@ export default function ProfileScreen() {
         setPendingRequestsCount(Array.isArray(data) ? data.length : 0);
       }
     } catch {}
-  }, []);
-
-  useEffect(() => {
-    let sessionStart = Date.now();
-    let isTracking = false;
-    const trackCurrentSession = async () => {
-      if (isTracking) return;
-      isTracking = true;
-      const minutes = Math.floor((Date.now() - sessionStart) / (1000 * 60));
-      if (minutes > 0) await trackSessionTime(minutes);
-      isTracking = false;
-    };
-    const subscription = AppState.addEventListener(
-      "change",
-      async (nextAppState) => {
-        if (nextAppState === "background" || nextAppState === "inactive") {
-          await trackCurrentSession();
-        } else if (nextAppState === "active") {
-          sessionStart = Date.now();
-        }
-      },
-    );
-    return () => {
-      subscription.remove();
-      const finalMinutes = Math.floor(
-        (Date.now() - sessionStart) / (1000 * 60),
-      );
-      if (finalMinutes > 0) trackSessionTime(finalMinutes);
-    };
   }, []);
 
   const load = useCallback(async () => {
@@ -4465,14 +4420,24 @@ export default function ProfileScreen() {
         visible={showFollowers}
         type="followers"
         userId={profile?.id ?? null}
-        onClose={() => setShowFollowers(false)}
+        // load() se prije zvao samo iz onUpdate (npr. nakon blokiranja
+        // nekoga iz liste) — samo GLEDANJE liste nikad nije osvježilo
+        // brojku na glavnom ekranu, pa je "Pratitelji: 0" znao ostati
+        // vidljiv i nakon što je modal već pokazao stvarnih 1.
+        onClose={() => {
+          setShowFollowers(false);
+          load();
+        }}
         onUpdate={load}
       />
       <FollowListModal
         visible={showFollowing}
         type="following"
         userId={profile?.id ?? null}
-        onClose={() => setShowFollowing(false)}
+        onClose={() => {
+          setShowFollowing(false);
+          load();
+        }}
         onUpdate={load}
       />
       <FollowRequestsModal
