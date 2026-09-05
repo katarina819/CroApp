@@ -164,14 +164,17 @@ export const getConversationMessages = async (
 };
 
 /**
- * Pošalji poruku korisniku.
+ * Pošalji poruku korisniku. Vraća i status kod da pozivatelj može
+ * razlikovati "previše zahtjeva" (429, privremeno, pokušaj kasnije) od
+ * stvarnog neuspjeha — dosad se oboje prikazivalo kao ista generička
+ * "poruka nije poslana" greška.
  */
 export const sendMessage = async (
   receiverId: number,
   content: string,
-): Promise<boolean> => {
+): Promise<{ ok: boolean; rateLimited: boolean }> => {
   const token = await getToken();
-  if (!token) return false;
+  if (!token) return { ok: false, rateLimited: false };
 
   const res = await fetch(`${API_BASE_URL}/api/message/send`, {
     method: "POST",
@@ -181,7 +184,7 @@ export const sendMessage = async (
     },
     body: JSON.stringify({ receiverId, content }),
   });
-  return res.ok;
+  return { ok: res.ok, rateLimited: res.status === 429 };
 };
 
 /**

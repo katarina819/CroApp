@@ -1791,7 +1791,15 @@ export default function MessagesScreen() {
     useCallback(() => {
       setLoading(true);
       loadConversations();
-      pollRef.current = setInterval(() => loadConversations(true), 8000);
+      // getConversations() nije jeftin poziv — za svakog pratitelja/
+      // praćenog radi zaseban fetch avatara PLUS zaseban fetch poruka, pa
+      // je za korisnika s recimo 20 kontakata svako osvježavanje ~42
+      // zahtjeva. Na 8s to je već ~300+ zahtjeva/min SAMO od ovog popisa,
+      // što je moglo iscrpiti opći rate limit i uzrokovati nasumične
+      // "failed to send" greške na sasvim drugim akcijama (follow, slanje
+      // poruke). Pojedinačni otvoreni chat i dalje osvježava svake 4s -
+      // ovdje je riječ samo o sažetku popisa razgovora.
+      pollRef.current = setInterval(() => loadConversations(true), 20000);
       return () => {
         if (pollRef.current) clearInterval(pollRef.current);
       };

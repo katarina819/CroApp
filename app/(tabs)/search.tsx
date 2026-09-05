@@ -566,10 +566,16 @@ export default function SearchScreen() {
           setFollowingMap((p) => ({ ...p, [userId]: true }));
         }
       }
-    } catch {
+    } catch (e: any) {
       setFollowingMap((p) => ({ ...p, [userId]: isFollowing }));
       setPendingMap((p) => ({ ...p, [userId]: isPending }));
-      Alert.alert(t("common.error"), t("search.followFailed"));
+      const isRateLimited = e?.message?.includes("429");
+      Alert.alert(
+        t("common.error"),
+        isRateLimited
+          ? "Previše zahtjeva u kratkom vremenu. Pričekaj malo pa pokušaj ponovo."
+          : t("search.followFailed"),
+      );
     } finally {
       setLoadingFollow((p) => ({ ...p, [userId]: false }));
     }

@@ -658,11 +658,16 @@ export default function ChatScreen() {
           ? `${VIDEO_PREFIX}${JSON.stringify({ id: Date.now(), title: "Video", url: mediaUrl })}`
           : `__CROMAP_IMAGE__${JSON.stringify({ url: mediaUrl })}`;
 
-      const ok = await sendMessage(otherUserId, mediaContent);
+      const { ok, rateLimited } = await sendMessage(otherUserId, mediaContent);
       if (ok) {
         setMediaPreview(null);
         setShowMediaPreview(false);
         await loadMessages(true);
+      } else if (rateLimited) {
+        Alert.alert(
+          "Prebrzo",
+          "Previše zahtjeva u kratkom vremenu. Pričekaj malo pa pokušaj ponovo.",
+        );
       } else {
         Alert.alert("Greška", "Medij je uploadan, ali poruka nije poslana.");
       }
@@ -736,11 +741,15 @@ export default function ChatScreen() {
     setInputText("");
     setSending(true);
     try {
-      const ok = await sendMessage(otherUserId, text);
+      const { ok, rateLimited } = await sendMessage(otherUserId, text);
       if (!ok) {
         setMessages((prev) => prev.filter((m) => m.id !== optimisticMsg.id));
         setInputText(text);
-        setError("Poruka nije poslana. Pokušaj ponovo.");
+        setError(
+          rateLimited
+            ? "Previše zahtjeva u kratkom vremenu. Pričekaj malo pa pokušaj ponovo."
+            : "Poruka nije poslana. Pokušaj ponovo.",
+        );
       } else {
         await loadMessages(true);
       }
