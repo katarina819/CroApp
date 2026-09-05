@@ -311,7 +311,11 @@ function VideoItemComponent({
     ? item.filePath
     : `${API_BASE_URL}${item.filePath?.startsWith("/") ? item.filePath : "/" + item.filePath}`;
 
-  const player = useVideoPlayer(mediaUrl, (p) => {
+  // Izvor se učitava tek kad je stavka aktivna (na ekranu) — prije se svaki
+  // mount odmah počeo baffer(irat)i svoj video čim bi FlatList prikazao
+  // stranicu unutar zadanog windowSize-a, pa je nekoliko videa istovremeno
+  // trošilo mrežu i memoriju iako je vidljiv samo jedan.
+  const player = useVideoPlayer(isActive ? mediaUrl : null, (p) => {
     p.loop = true;
     p.muted = false;
   });
@@ -503,10 +507,8 @@ function CommentsModal({
           () => scrollViewRef.current?.scrollToEnd({ animated: true }),
           100,
         );
-        await fetch(`${API_BASE_URL}/api/activity/track/comment`, {
-          method: "POST",
-          headers: { Authorization: `Bearer ${token}` },
-        }).catch(() => {});
+        // Trigger na "comments" tablici već ažurira activity_logs — poziv na
+        // /api/activity/track/comment ovdje bi svaki komentar brojao dvaput.
       }
     } catch (e) {
       console.error(e);
@@ -1228,10 +1230,9 @@ export function UploadModal({
         body: formData,
       });
       if (res.ok) {
-        await fetch(`${API_BASE_URL}/api/activity/track/post`, {
-          method: "POST",
-          headers: { Authorization: `Bearer ${token}` },
-        }).catch(() => {});
+        // Trigger na "videos" tablici već ažurira activity_logs.posts —
+        // poziv na /api/activity/track/post ovdje bi svaku objavu brojao
+        // dvaput.
         Alert.alert(
           t("common.success"),
           t("videos.publishSuccess", {
@@ -1783,26 +1784,47 @@ export default function VideosScreen() {
   const [selectedVideoForShare, setSelectedVideoForShare] =
     useState<VideoItem | null>(null);
   const [showUploadModal, setShowUploadModal] = useState(false);
+  const [page, setPage] = useState(1);
+  const [hasMore, setHasMore] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
   const flatListRef = useRef<FlatList>(null);
 
-  const loadVideos = async () => {
+  const PAGE_SIZE = 15;
+
+  // Feed sada dolazi po stranicama umjesto da se cijela tablica videa
+  // učita odjednom na svako otvaranje taba — bez ovoga je /api/video
+  // vraćao SVE videe u bazi u jednom odgovoru, što je bilo sve sporije
+  // (i teže za memoriju) kako je raslo videa.
+  const loadVideos = async (pageToLoad = 1) => {
     const token = await AsyncStorage.getItem("token");
     if (!token) return;
-    setLoading(true);
+    if (pageToLoad === 1) setLoading(true);
+    else setLoadingMore(true);
     try {
-      const res = await fetch(`${API_BASE_URL}/api/video`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      if (res.ok) setVideos(await res.json());
+      const res = await fetch(
+        `${API_BASE_URL}/api/video?page=${pageToLoad}&pageSize=${PAGE_SIZE}`,
+        { headers: { Authorization: `Bearer ${token}` } },
+      );
+      if (res.ok) {
+        const data: VideoItem[] = await res.json();
+        setVideos((prev) => (pageToLoad === 1 ? data : [...prev, ...data]));
+        setHasMore(data.length === PAGE_SIZE);
+        setPage(pageToLoad);
+      }
     } catch {
       Alert.alert(t("common.error"), t("videos.loadFailed"));
     } finally {
       setLoading(false);
+      setLoadingMore(false);
     }
   };
 
+  const loadMoreVideos = () => {
+    if (!loadingMore && hasMore) loadVideos(page + 1);
+  };
+
   useEffect(() => {
-    loadVideos();
+    loadVideos(1);
   }, []);
 
   const handleLikeToggle = async (videoId: number) => {
@@ -1821,6 +1843,11 @@ export default function VideosScreen() {
       ),
     );
     try {
+      // Napomena: ne zovemo ovdje i /api/activity/track/like — baza već
+      // ima trigger na "likes" tablici koji atomično (i ispravno u oba
+      // smjera, like/unlike) ažurira activity_logs. Poziv odavde je
+      // dupliciralo brojanje (i čak nije razlikovalo like od unlike, pa je
+      // unlike znao "poništiti" pravi trigger-ov decrement).
       await fetch(`${API_BASE_URL}/api/like/toggle`, {
         method: "POST",
         headers: {
@@ -1829,10 +1856,6 @@ export default function VideosScreen() {
         },
         body: JSON.stringify({ videoId }),
       });
-      await fetch(`${API_BASE_URL}/api/activity/track/like`, {
-        method: "POST",
-        headers: { Authorization: `Bearer ${token}` },
-      }).catch(() => {});
     } catch {
       setVideos((prev) =>
         prev.map((v) =>
@@ -2022,6 +2045,22 @@ export default function VideosScreen() {
         viewabilityConfig={{ itemVisiblePercentThreshold: 50 }}
         snapToInterval={containerHeight}
         decelerationRate="fast"
+        onEndReached={loadMoreVideos}
+        onEndReachedThreshold={0.5}
+        ListFooterComponent={
+          loadingMore ? (
+            <View style={{ height: containerHeight, justifyContent: "center" }}>
+              <ActivityIndicator color="#fff" />
+            </View>
+          ) : null
+        }
+        // Svaka stavka nosi svoj video player, pa se broj istovremeno
+        // mountanih stavki mora agresivno ograničiti (zadani windowSize=21
+        // bi držao montirano i do ~10 ekrana iznad/ispod trenutnog).
+        windowSize={3}
+        initialNumToRender={1}
+        maxToRenderPerBatch={2}
+        removeClippedSubviews={Platform.OS === "android"}
       />
 
       <CommentsModal

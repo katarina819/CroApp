@@ -9761,6 +9761,20 @@ export default function DashboardScreen() {
   };
 
   const getLocationFast = async () => {
+    // Prikaži zadnju poznatu (keširanu) lokaciju ODMAH — to je gotovo
+    // trenutno jer ne čeka novi GPS fix. Prije se čekao pravi
+    // getCurrentPositionAsync prije ikakvog prikaza na karti, što je na
+    // slabijem signalu ili u zatvorenom prostoru znalo trajati nekoliko
+    // sekundi praznog/centriranog ekrana.
+    let shownFromCache = false;
+    try {
+      const lastKnown = await Location.getLastKnownPositionAsync();
+      if (lastKnown) {
+        applyLocation(lastKnown.coords.latitude, lastKnown.coords.longitude);
+        shownFromCache = true;
+      }
+    } catch {}
+
     try {
       const fastLoc = await Location.getCurrentPositionAsync({
         accuracy: Location.Accuracy.Balanced,
@@ -9773,16 +9787,11 @@ export default function DashboardScreen() {
         })
         .catch(() => {});
     } catch {
-      // NOVO: prvo pokušaj zadnju poznatu lokaciju umjesto odmah alerta
-      try {
-        const lastKnown = await Location.getLastKnownPositionAsync();
-        if (lastKnown) {
-          applyLocation(lastKnown.coords.latitude, lastKnown.coords.longitude);
-          return;
-        }
-      } catch {}
+      // Već prikazujemo keširanu lokaciju — svježi fix u pozadini nije
+      // uspio, ali korisnik nije gledao u prazan ekran u međuvremenu.
+      if (shownFromCache) return;
 
-      // NOVO: pričekaj i pokušaj još jednom prije nego prikažeš alert
+      // Pričekaj i pokušaj još jednom prije nego prikažeš alert
       try {
         await new Promise((resolve) => setTimeout(resolve, 2000));
         const retryLoc = await Location.getCurrentPositionAsync({
