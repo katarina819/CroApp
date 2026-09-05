@@ -133,9 +133,18 @@ export function useAdaptiveTheme(): AdaptiveThemeState {
       .catch(() => {});
   }, []);
 
-  // Provjera vremena svakih 60 sekundi
+  // Provjera vremena svakih 60 sekundi — state se osvježava samo kad se
+  // stvarno promijeni zona/minuta, ne stvara novi objekt bespotrebno na
+  // svaki tick (to bi inače re-renderiralo cijelo stablo preko konteksta).
   useEffect(() => {
-    const tick = () => setTimeData(getCurrentTimeData());
+    const tick = () => {
+      const next = getCurrentTimeData();
+      setTimeData((prev) =>
+        prev.hour === next.hour && prev.minute === next.minute
+          ? prev
+          : next,
+      );
+    };
     tick(); // odmah pri montiranju
 
     intervalRef.current = setInterval(tick, 60 * 1000);
@@ -145,6 +154,7 @@ export function useAdaptiveTheme(): AdaptiveThemeState {
   }, []);
 
   // Primijeni Appearance promjenu (utječe na React Native dark mode)
+  const appliedSchemeRef = useRef<ColorSchemeName>(null);
   useEffect(() => {
     let targetScheme: ColorSchemeName;
     if (manualOverride === "auto") {
@@ -154,6 +164,8 @@ export function useAdaptiveTheme(): AdaptiveThemeState {
     } else {
       targetScheme = "light";
     }
+    if (appliedSchemeRef.current === targetScheme) return;
+    appliedSchemeRef.current = targetScheme;
     // Postavi sistemski ColorScheme (React Native 0.72+)
     try {
       Appearance.setColorScheme(targetScheme);

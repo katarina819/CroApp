@@ -1,5 +1,5 @@
 // components/AdaptiveThemeProvider.tsx
-import React, { createContext, useContext, useEffect, useRef } from "react";
+import React, { createContext, useContext, useEffect, useMemo, useRef } from "react";
 import { Animated, StyleSheet } from "react-native";
 import {
   AdaptiveThemeState,
@@ -131,17 +131,26 @@ export function AdaptiveThemeProvider({
     ? { backgroundColor: `rgb(${rgb.r}, ${rgb.g}, ${rgb.b})` }
     : { backgroundColor: "transparent" };
 
-  const extendedColors = {
-    ...actualColors,
-    card: actualColors.backgroundCard,
-    primary: actualColors.tint,
-  };
+  // Memoizirano — bez ovoga bi se na svaki render (npr. svaki minutni "tick"
+  // u useAdaptiveTheme) stvarao novi objekt, pa bi se SVI potrošači
+  // useTheme() diljem aplikacije nepotrebno re-renderirali.
+  const extendedColors = useMemo(
+    () => ({
+      ...actualColors,
+      card: actualColors.backgroundCard,
+      primary: actualColors.tint,
+    }),
+    [actualColors],
+  );
 
-  const contextValue: ThemeContextType = {
-    ...theme,
-    isDark: actualIsDark,
-    colors: extendedColors,
-  };
+  const contextValue: ThemeContextType = useMemo(
+    () => ({
+      ...theme,
+      isDark: actualIsDark,
+      colors: extendedColors,
+    }),
+    [theme, actualIsDark, extendedColors],
+  );
 
   return (
     <AdaptiveThemeContext.Provider value={contextValue}>

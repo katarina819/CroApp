@@ -15,6 +15,7 @@ import {
   Text,
   TextInput,
   TouchableOpacity,
+  useWindowDimensions,
   View,
 } from "react-native";
 import LanguageSelector from "../components/LanguageSelector";
@@ -56,23 +57,68 @@ const ws = StyleSheet.create({
   },
 });
 
+// ─── Polje s labelom, primjerom unosa, pomoćnim tekstom i zelenim rubom
+// kad je ispravno popunjeno ───────────────────────────────────────────────────
+function FormField(props: {
+  label: string;
+  placeholder: string;
+  helperText: string;
+  value: string;
+  onChangeText: (v: string) => void;
+  isValid: boolean;
+  secureTextEntry?: boolean;
+  autoCapitalize?: "none" | "sentences" | "words" | "characters";
+  autoFocus?: boolean;
+  editable?: boolean;
+  rightAdornment?: React.ReactNode;
+}) {
+  const [focused, setFocused] = useState(false);
+  const showValid = props.isValid && props.value.length > 0;
+
+  return (
+    <View style={s.fieldWrap}>
+      <Text style={s.label}>{props.label.toUpperCase()}</Text>
+      <View style={{ position: "relative", justifyContent: "center" }}>
+        <TextInput
+          style={[
+            s.input,
+            focused && s.inputFocused,
+            showValid && s.inputValid,
+          ]}
+          placeholder={props.placeholder}
+          placeholderTextColor="#9AA9A7"
+          value={props.value}
+          onChangeText={props.onChangeText}
+          autoCapitalize={props.autoCapitalize ?? "sentences"}
+          autoFocus={props.autoFocus}
+          editable={props.editable}
+          secureTextEntry={props.secureTextEntry}
+          onFocus={() => setFocused(true)}
+          onBlur={() => setFocused(false)}
+        />
+        {showValid && !props.rightAdornment && (
+          <Text style={s.validCheckmark}>✓</Text>
+        )}
+        {props.rightAdornment}
+      </View>
+      <Text style={s.helperText}>{props.helperText}</Text>
+    </View>
+  );
+}
+
 // ─── Glavni Login Screen ──────────────────────────────────────────────────────
 export default function LoginScreen() {
   const { t } = useTranslation();
+  const { width } = useWindowDimensions();
+  const isCompact = width < 360;
+
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const [usernameFocused, setUsernameFocused] = useState(false);
-  const [passwordFocused, setPasswordFocused] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
-  const { promptAsync } = useGoogleAuth((profile) => {
-    const usernameBase = profile.email
-      .split("@")[0]
-      .toLowerCase()
-      .replace(/[^a-z0-9]/g, "");
-    setUsername(usernameBase);
-  });
+  const { promptAsync, isLoading: isGoogleLoading } = useGoogleAuth();
+  const isBusy = isLoading || isGoogleLoading;
 
   const handleLogin = async () => {
     if (!username.trim() || !password.trim()) {
@@ -119,14 +165,17 @@ export default function LoginScreen() {
         showsVerticalScrollIndicator={false}
       >
         {/* Logo sekcija — na zelenoj pozadini */}
-        {/* Logo sekcija — na zelenoj pozadini */}
-        <View style={s.logoSection}>
+        <View style={[s.logoSection, isCompact && s.logoSectionCompact]}>
           <View style={{ position: "absolute", top: 0, right: 0 }}>
             <LanguageSelector />
           </View>
           <Image
             source={require("../assets/images/vara_icon.png")}
-            style={{ width: 130, height: 130, borderRadius: 24 }}
+            style={{
+              width: isCompact ? 92 : 130,
+              height: isCompact ? 92 : 130,
+              borderRadius: 24,
+            }}
             resizeMode="contain"
           />
           <VaraWordmark />
@@ -137,47 +186,30 @@ export default function LoginScreen() {
         <View style={s.card}>
           <Text style={s.cardTitle}>{t("auth.login")}</Text>
 
-          {/* Korisničko ime */}
-          <View style={s.fieldWrap}>
-            <Text style={s.label}>{t("auth.username").toUpperCase()}</Text>
-            <TextInput
-              style={[s.input, usernameFocused && s.inputFocused]}
-              placeholder={t("auth.usernamePlaceholder")}
-              placeholderTextColor="#9AA9A7"
-              value={username}
-              onChangeText={setUsername}
-              autoCapitalize="none"
-              autoFocus
-              editable={!isLoading}
-              onFocus={() => setUsernameFocused(true)}
-              onBlur={() => setUsernameFocused(false)}
-            />
-          </View>
+          <FormField
+            label={t("auth.username")}
+            placeholder="npr. ana_horvat"
+            helperText="Unesi korisničko ime, email ili telefon kojim si se registrirao/la"
+            value={username}
+            onChangeText={setUsername}
+            isValid={username.trim().length > 0}
+            autoCapitalize="none"
+            autoFocus
+            editable={!isBusy}
+          />
 
-          {/* Lozinka */}
-          <View style={s.fieldWrap}>
-            <Text style={s.label}>{t("auth.password").toUpperCase()}</Text>
-            <View style={{ position: "relative", justifyContent: "center" }}>
-              <TextInput
-                style={[s.input, passwordFocused && s.inputFocused]}
-                placeholder={t("auth.passwordPlaceholder")}
-                placeholderTextColor="#9AA9A7"
-                value={password}
-                onChangeText={setPassword}
-                secureTextEntry={!showPassword}
-                editable={!isLoading}
-                onFocus={() => setPasswordFocused(true)}
-                onBlur={() => setPasswordFocused(false)}
-              />
+          <FormField
+            label={t("auth.password")}
+            placeholder="Unesi lozinku"
+            helperText="Lozinka koju si postavio/la prilikom registracije"
+            value={password}
+            onChangeText={setPassword}
+            isValid={password.length > 0}
+            secureTextEntry={!showPassword}
+            editable={!isBusy}
+            rightAdornment={
               <TouchableOpacity
-                style={{
-                  position: "absolute",
-                  right: 14,
-                  height: "100%",
-                  justifyContent: "center",
-                  zIndex: 10,
-                  elevation: 10,
-                }}
+                style={s.eyeButton}
                 onPress={() => setShowPassword((v) => !v)}
                 hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
               >
@@ -185,8 +217,8 @@ export default function LoginScreen() {
                   👁️
                 </Text>
               </TouchableOpacity>
-            </View>
-          </View>
+            }
+          />
 
           {/* Zaboravili ste lozinku */}
           <TouchableOpacity
@@ -198,9 +230,9 @@ export default function LoginScreen() {
 
           {/* Prijavi se gumb */}
           <TouchableOpacity
-            style={[s.btn, isLoading && s.btnDisabled]}
+            style={[s.btn, isBusy && s.btnDisabled]}
             onPress={handleLogin}
-            disabled={isLoading}
+            disabled={isBusy}
             activeOpacity={0.85}
           >
             {isLoading ? (
@@ -218,25 +250,18 @@ export default function LoginScreen() {
           </View>
 
           <TouchableOpacity
-            style={{
-              flexDirection: "row",
-              alignItems: "center",
-              justifyContent: "center",
-              gap: 10,
-              borderRadius: 14,
-              paddingVertical: 16,
-              marginBottom: 14,
-              borderWidth: 1.5,
-              borderColor: "#D1DADB",
-              backgroundColor: "#FFFFFF",
-            }}
+            style={s.googleBtn}
             onPress={() => promptAsync()}
-            disabled={isLoading}
+            disabled={isBusy}
             activeOpacity={0.8}
           >
-            <Text style={{ fontSize: 15, fontWeight: "700", color: TEXT_DARK }}>
-              {t("auth.continueWithGoogle")}
-            </Text>
+            {isGoogleLoading ? (
+              <ActivityIndicator color={TEXT_DARK} />
+            ) : (
+              <Text style={s.googleBtnText}>
+                {t("auth.continueWithGoogle")}
+              </Text>
+            )}
           </TouchableOpacity>
 
           {/* Registracija */}
@@ -244,6 +269,7 @@ export default function LoginScreen() {
             style={s.outlineBtn}
             onPress={() => router.push("/register")}
             activeOpacity={0.85}
+            disabled={isBusy}
           >
             <Text style={s.outlineBtnText}>{t("auth.createAccount")}</Text>
           </TouchableOpacity>
@@ -259,6 +285,7 @@ export default function LoginScreen() {
 const GREEN_DEEPEST = "#0D2406";
 const GREEN_DARK = "#1B3F0E";
 const GREEN_MID = "#2D6418";
+const VALID_GREEN = "#4CAF50";
 const SILVER = "#9AA9A7";
 const SILVER_LIGHT = "#E8EEEE";
 const TEXT_DARK = "#142F09";
@@ -284,6 +311,9 @@ const s = StyleSheet.create({
     marginBottom: 28,
     width: "100%",
   },
+  logoSectionCompact: {
+    marginBottom: 16,
+  },
   tagline: {
     fontSize: 14,
     color: "rgba(200,225,200,0.65)",
@@ -293,12 +323,14 @@ const s = StyleSheet.create({
     fontWeight: "400",
   },
 
-  // Bijela kartica
+  // Bijela kartica — ograničena širina na velikim (desktop/web/tablet) ekranima
   card: {
     backgroundColor: "#FFFFFF",
     borderRadius: 24,
     padding: 28,
     width: "100%",
+    maxWidth: 440,
+    alignSelf: "center",
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 8 },
     shadowOpacity: 0.35,
@@ -315,7 +347,7 @@ const s = StyleSheet.create({
 
   // Polje za unos
   fieldWrap: {
-    marginBottom: 18,
+    marginBottom: 16,
   },
   label: {
     fontSize: 11,
@@ -323,6 +355,11 @@ const s = StyleSheet.create({
     color: TEXT_MID,
     letterSpacing: 1.2,
     marginBottom: 7,
+  },
+  helperText: {
+    fontSize: 12,
+    color: TEXT_MID,
+    marginTop: 6,
   },
   input: {
     backgroundColor: SILVER_LIGHT,
@@ -342,6 +379,25 @@ const s = StyleSheet.create({
     shadowOpacity: 0.15,
     shadowRadius: 6,
     elevation: 2,
+  },
+  inputValid: {
+    borderColor: VALID_GREEN,
+    backgroundColor: "#FFFFFF",
+  },
+  validCheckmark: {
+    position: "absolute",
+    right: 14,
+    color: VALID_GREEN,
+    fontSize: 16,
+    fontWeight: "700",
+  },
+  eyeButton: {
+    position: "absolute",
+    right: 14,
+    height: "100%",
+    justifyContent: "center",
+    zIndex: 10,
+    elevation: 10,
   },
 
   // Zaboravili lozinku
@@ -395,6 +451,25 @@ const s = StyleSheet.create({
   dividerText: {
     fontSize: 13,
     color: TEXT_MID,
+  },
+
+  // Google gumb
+  googleBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 10,
+    borderRadius: 14,
+    paddingVertical: 16,
+    marginBottom: 14,
+    borderWidth: 1.5,
+    borderColor: "#D1DADB",
+    backgroundColor: "#FFFFFF",
+  },
+  googleBtnText: {
+    fontSize: 15,
+    fontWeight: "700",
+    color: TEXT_DARK,
   },
 
   // Outline gumb (registracija)

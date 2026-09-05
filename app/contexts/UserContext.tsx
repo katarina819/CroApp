@@ -1,6 +1,12 @@
 // contexts/UserContext.tsx
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import React, { createContext, useCallback, useContext, useState } from "react";
+import React, {
+  createContext,
+  useCallback,
+  useContext,
+  useMemo,
+  useState,
+} from "react";
 import { API_BASE_URL } from "../config/api";
 
 interface UserProfile {
@@ -73,12 +79,16 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
     loadProfile();
   }, [loadProfile]);
 
+  // Memoizirano — inače bi Provider na svaki render UserProvider-a
+  // (uključujući onaj izazvan bilo kojim drugim contextom iznad njega)
+  // proslijedio novi objekt i re-renderirao sve potrošače useUser().
+  const value = useMemo(
+    () => ({ profile, loading, refreshProfile, updateAvatar, resetProfile }),
+    [profile, loading, refreshProfile, updateAvatar, resetProfile],
+  );
+
   return (
-    <UserContext.Provider
-      value={{ profile, loading, refreshProfile, updateAvatar, resetProfile }}
-    >
-      {children}
-    </UserContext.Provider>
+    <UserContext.Provider value={value}>{children}</UserContext.Provider>
   );
 }
 
