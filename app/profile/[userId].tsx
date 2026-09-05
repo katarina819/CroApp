@@ -275,6 +275,7 @@ export default function UserProfileScreen() {
   const [media, setMedia] = useState<PublicMedia[]>([]);
   const [loading, setLoading] = useState(true);
   const [isFollowing, setIsFollowing] = useState(false);
+  const [isRequestPending, setIsRequestPending] = useState(false);
   const [isGolden, setIsGolden] = useState(false);
   const [isBlocked, setIsBlocked] = useState(false);
   const [followLoading, setFollowLoading] = useState(false);
@@ -393,6 +394,17 @@ export default function UserProfileScreen() {
       } catch {}
 
       try {
+        const rRes = await fetch(
+          `${API_BASE_URL}/api/follow/request-status/${numericUserId}`,
+          { headers: { Authorization: `Bearer ${token}` } },
+        );
+        if (rRes.ok) {
+          const data = await rRes.json();
+          setIsRequestPending(data.pending ?? false);
+        }
+      } catch {}
+
+      try {
         const gRes = await fetch(
           `${API_BASE_URL}/api/golden-friends/is-golden/${numericUserId}`,
           { headers: { Authorization: `Bearer ${token}` } },
@@ -420,50 +432,78 @@ export default function UserProfileScreen() {
     }
   };
 
-  // Follow / Unfollow
+  // Follow / Unfollow / zahtjev za praćenje (privatni profili)
   const handleFollow = async () => {
     const token = await AsyncStorage.getItem("token");
     setFollowLoading(true);
+
+    // Napomena: ranije su ovi pozivi ciljali /api/follow/follow/{id} i
+    // /api/follow/unfollow/{id}, koji ne postoje na backendu (stvarne rute
+    // su POST/DELETE /api/follow/{id}) — svaki follow/unfollow s ovog ekrana
+    // je tiho propao (404) i optimistička promjena se odmah vraćala natrag.
+
+    if (isRequestPending) {
+      // Otkaži poslani zahtjev za praćenje
+      setIsRequestPending(false);
+      try {
+        const res = await fetch(
+          `${API_BASE_URL}/api/follow/request/${numericUserId}`,
+          { method: "DELETE", headers: { Authorization: `Bearer ${token}` } },
+        );
+        if (!res.ok) throw new Error();
+      } catch {
+        setIsRequestPending(true);
+      } finally {
+        setFollowLoading(false);
+      }
+      return;
+    }
+
     const prev = isFollowing;
     setIsFollowing(!prev);
-    if (profile) {
+    if (profile && prev) {
+      // Odmah smanji brojač samo za unfollow — za follow ne znamo unaprijed
+      // hoće li ovo postati stvarni follow ili tek zahtjev na čekanju.
       setProfile((p) =>
-        p
-          ? {
-              ...p,
-              followersCount: prev
-                ? p.followersCount - 1
-                : p.followersCount + 1,
-            }
-          : p,
+        p ? { ...p, followersCount: p.followersCount - 1 } : p,
       );
     }
     try {
-      const res = isFollowing
-        ? await fetch(`${API_BASE_URL}/api/follow/unfollow/${numericUserId}`, {
-            method: "DELETE",
-            headers: { Authorization: `Bearer ${token}` },
-          })
-        : await fetch(`${API_BASE_URL}/api/follow/follow/${numericUserId}`, {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: `Bearer ${token}`,
-            },
-          });
-      if (!res.ok) throw new Error();
+      if (prev) {
+        const res = await fetch(`${API_BASE_URL}/api/follow/${numericUserId}`, {
+          method: "DELETE",
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (!res.ok) throw new Error();
+      } else {
+        const res = await fetch(`${API_BASE_URL}/api/follow/${numericUserId}`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+        });
+        if (!res.ok) throw new Error();
+        const data = await res.json().catch(() => ({}));
+        if (data.pending) {
+          // Privatan profil — zahtjev poslan, ne prati se odmah
+          setIsFollowing(false);
+          setIsRequestPending(true);
+        } else {
+          setProfile((p) =>
+            p ? { ...p, followersCount: p.followersCount + 1 } : p,
+          );
+        }
+      }
     } catch {
       setIsFollowing(prev);
-      setProfile((p) =>
-        p
-          ? {
-              ...p,
-              followersCount: prev
-                ? p.followersCount + 1
-                : p.followersCount - 1,
-            }
-          : p,
-      );
+      if (!prev) {
+        // pokušaj follow-a nije uspio, ništa nije promijenjeno na serveru
+      } else {
+        setProfile((p) =>
+          p ? { ...p, followersCount: p.followersCount + 1 } : p,
+        );
+      }
     } finally {
       setFollowLoading(false);
     }
@@ -739,25 +779,31 @@ export default function UserProfileScreen() {
 
           <View style={styles.actionRow}>
             <TouchableOpacity
-              style={[styles.followBtn, isFollowing && styles.followingBtn]}
+              style={[
+                styles.followBtn,
+                (isFollowing || isRequestPending) && styles.followingBtn,
+              ]}
               onPress={handleFollow}
               disabled={followLoading}
             >
               {followLoading ? (
                 <ActivityIndicator
                   size="small"
-                  color={isFollowing ? "#667eea" : "#fff"}
+                  color={isFollowing || isRequestPending ? "#667eea" : "#fff"}
                 />
               ) : (
                 <Text
                   style={[
                     styles.followBtnText,
-                    isFollowing && styles.followingBtnText,
+                    (isFollowing || isRequestPending) &&
+                      styles.followingBtnText,
                   ]}
                 >
                   {isFollowing
                     ? t("userProfile.following2")
-                    : t("userProfile.follow")}
+                    : isRequestPending
+                      ? t("userProfile.requested")
+                      : t("userProfile.follow")}
                 </Text>
               )}
             </TouchableOpacity>

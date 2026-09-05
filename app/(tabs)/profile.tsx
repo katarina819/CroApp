@@ -1530,13 +1530,14 @@ function FollowListModal({
           if (checkFollow.ok) {
             const followData = await checkFollow.json();
             if (followData.isFollowing === true) {
-              await fetch(
-                `${API_BASE_URL}/api/follow/unfollow/${targetUserId}`,
-                {
-                  method: "DELETE",
-                  headers: { Authorization: `Bearer ${token}` },
-                },
-              );
+              // Ispravljeno: stvarna ruta je DELETE /api/follow/{id}, ne
+              // /api/follow/unfollow/{id} (koja ne postoji na backendu i
+              // tiho je vraćala 404, pa se praćenje nikad nije uklonilo
+              // prilikom blokiranja).
+              await fetch(`${API_BASE_URL}/api/follow/${targetUserId}`, {
+                method: "DELETE",
+                headers: { Authorization: `Bearer ${token}` },
+              });
             }
           }
         } catch {}
@@ -1727,6 +1728,152 @@ function FollowListModal({
                         />
                       )}
                     </TouchableOpacity>
+                  </View>
+                </View>
+              );
+            }}
+          />
+        )}
+      </SafeAreaView>
+    </Modal>
+  );
+}
+
+// ─── Follow Requests (potvrda praćenja za privatne profile) ──────────────────
+function FollowRequestsModal({
+  visible,
+  onClose,
+  onUpdate,
+}: {
+  visible: boolean;
+  onClose: () => void;
+  onUpdate?: () => void;
+}) {
+  const { t } = useTranslation();
+  const { isDark } = useTheme();
+  const V = useMemo(() => getVara(isDark), [isDark]);
+  const fl = useMemo(() => makeFlStyles(V), [V]);
+  const [list, setList] = useState<FollowUser[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [processingId, setProcessingId] = useState<number | null>(null);
+
+  useEffect(() => {
+    if (!visible) return;
+    loadList();
+  }, [visible]);
+
+  const loadList = async () => {
+    setLoading(true);
+    try {
+      const token = await AsyncStorage.getItem("token");
+      const res = await fetch(`${API_BASE_URL}/api/follow/requests`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (res.ok) setList(await res.json());
+    } catch {
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const respond = async (requesterId: number, accept: boolean) => {
+    setProcessingId(requesterId);
+    try {
+      const token = await AsyncStorage.getItem("token");
+      const res = await fetch(
+        `${API_BASE_URL}/api/follow/requests/${requesterId}/${accept ? "accept" : "decline"}`,
+        {
+          method: "POST",
+          headers: { Authorization: `Bearer ${token}` },
+        },
+      );
+      if (res.ok) {
+        setList((prev) => prev.filter((u) => u.id !== requesterId));
+        onUpdate?.();
+      }
+    } catch {
+    } finally {
+      setProcessingId(null);
+    }
+  };
+
+  return (
+    <Modal
+      visible={visible}
+      animationType="slide"
+      transparent={false}
+      onRequestClose={onClose}
+    >
+      <SafeAreaView
+        style={{ flex: 1, backgroundColor: V.forestDeep }}
+        edges={["top"]}
+      >
+        <View style={fl.header}>
+          <TouchableOpacity onPress={onClose}>
+            <Ionicons name="close" size={28} color={V.silver} />
+          </TouchableOpacity>
+          <Text style={fl.title}>{t("profile.followRequests")}</Text>
+          <View style={{ width: 28 }} />
+        </View>
+
+        {loading ? (
+          <ActivityIndicator style={{ marginTop: 40 }} color={V.visited} />
+        ) : list.length === 0 ? (
+          <View style={fl.empty}>
+            <View style={fl.emptyIconWrap}>
+              <Ionicons
+                name="person-add-outline"
+                size={44}
+                color={V.borderGreen}
+              />
+            </View>
+            <Text style={fl.emptyText}>{t("profile.noFollowRequests")}</Text>
+          </View>
+        ) : (
+          <FlatList
+            data={list}
+            keyExtractor={(u) => u.id.toString()}
+            contentContainerStyle={{ paddingHorizontal: 16 }}
+            renderItem={({ item }) => {
+              const isProcessing = processingId === item.id;
+              return (
+                <View style={fl.row}>
+                  <View style={fl.avatarContainer}>
+                    <UserAvatar
+                      avatar={item.avatar}
+                      firstName={item.firstName}
+                      lastName={item.lastName}
+                      size={50}
+                    />
+                  </View>
+                  <View style={fl.userInfo}>
+                    <Text style={fl.name}>
+                      {item.firstName} {item.lastName}
+                    </Text>
+                    <Text style={fl.username}>@{item.username}</Text>
+                  </View>
+                  <View style={fl.actionButtons}>
+                    {isProcessing ? (
+                      <ActivityIndicator color={V.visited} />
+                    ) : (
+                      <>
+                        <TouchableOpacity
+                          style={[
+                            fl.goldenBtn,
+                            { backgroundColor: V.visited, borderColor: V.visited },
+                          ]}
+                          onPress={() => respond(item.id, true)}
+                        >
+                          <Ionicons name="checkmark" size={22} color="#fff" />
+                        </TouchableOpacity>
+                        <TouchableOpacity
+                          style={fl.blockBtn}
+                          onPress={() => respond(item.id, false)}
+                        >
+                          <Ionicons name="close" size={22} color={V.silverDim} />
+                        </TouchableOpacity>
+                      </>
+                    )}
                   </View>
                 </View>
               );
@@ -3994,6 +4141,21 @@ export default function ProfileScreen() {
   const [showSettings, setShowSettings] = useState(false);
   const [showFollowers, setShowFollowers] = useState(false);
   const [showFollowing, setShowFollowing] = useState(false);
+  const [showFollowRequests, setShowFollowRequests] = useState(false);
+  const [pendingRequestsCount, setPendingRequestsCount] = useState(0);
+
+  const loadPendingRequestsCount = useCallback(async () => {
+    try {
+      const token = await AsyncStorage.getItem("token");
+      const res = await fetch(`${API_BASE_URL}/api/follow/requests`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setPendingRequestsCount(Array.isArray(data) ? data.length : 0);
+      }
+    } catch {}
+  }, []);
 
   useEffect(() => {
     let sessionStart = Date.now();
@@ -4067,7 +4229,8 @@ export default function ProfileScreen() {
     useCallback(() => {
       load();
       refreshProfile();
-    }, [load, refreshProfile]),
+      loadPendingRequestsCount();
+    }, [load, refreshProfile, loadPendingRequestsCount]),
   );
 
   useEffect(() => {
@@ -4125,15 +4288,46 @@ export default function ProfileScreen() {
           <Text style={[styles.headerTitle, { color: V.silverBright }]}>
             {t("profile.profileHeader")}
           </Text>
-          <TouchableOpacity
-            style={[
-              styles.settingsBtn,
-              { backgroundColor: V.forestMid, borderColor: V.borderGreen },
-            ]}
-            onPress={() => setShowSettings(true)}
-          >
-            <Ionicons name="settings-outline" size={22} color={V.silver} />
-          </TouchableOpacity>
+          <View style={{ flexDirection: "row", gap: 10 }}>
+            <TouchableOpacity
+              style={[
+                styles.settingsBtn,
+                { backgroundColor: V.forestMid, borderColor: V.borderGreen },
+              ]}
+              onPress={() => setShowFollowRequests(true)}
+            >
+              <Ionicons name="person-add-outline" size={20} color={V.silver} />
+              {pendingRequestsCount > 0 && (
+                <View
+                  style={{
+                    position: "absolute",
+                    top: -4,
+                    right: -4,
+                    backgroundColor: "#C05050",
+                    borderRadius: 9,
+                    minWidth: 18,
+                    height: 18,
+                    alignItems: "center",
+                    justifyContent: "center",
+                    paddingHorizontal: 3,
+                  }}
+                >
+                  <Text style={{ color: "#fff", fontSize: 11, fontWeight: "700" }}>
+                    {pendingRequestsCount > 99 ? "99+" : pendingRequestsCount}
+                  </Text>
+                </View>
+              )}
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[
+                styles.settingsBtn,
+                { backgroundColor: V.forestMid, borderColor: V.borderGreen },
+              ]}
+              onPress={() => setShowSettings(true)}
+            >
+              <Ionicons name="settings-outline" size={22} color={V.silver} />
+            </TouchableOpacity>
+          </View>
         </View>
 
         <ScreenTimeCountdown />
@@ -4268,6 +4462,14 @@ export default function ProfileScreen() {
         userId={profile?.id ?? null}
         onClose={() => setShowFollowing(false)}
         onUpdate={load}
+      />
+      <FollowRequestsModal
+        visible={showFollowRequests}
+        onClose={() => setShowFollowRequests(false)}
+        onUpdate={() => {
+          load();
+          loadPendingRequestsCount();
+        }}
       />
     </SafeAreaView>
   );

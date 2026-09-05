@@ -429,6 +429,7 @@ export default function SearchScreen() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [followingMap, setFollowingMap] = useState<Record<number, boolean>>({});
+  const [pendingMap, setPendingMap] = useState<Record<number, boolean>>({});
   const [loadingFollow, setLoadingFollow] = useState<Record<number, boolean>>(
     {},
   );
@@ -476,6 +477,23 @@ export default function SearchScreen() {
           setFollowingMap(map);
         }
       } catch {}
+      try {
+        // Korisnici s privatnim profilom ne prate se odmah — ovo označava
+        // koje smo zahtjeve već poslali pa gumb ne izgleda kao da još
+        // uvijek ništa nismo poduzeli.
+        const pendingRes = await fetch(
+          `${API_BASE_URL}/api/follow/requests/sent`,
+          { headers: { Authorization: `Bearer ${token}` } },
+        );
+        if (pendingRes.ok) {
+          const ids: number[] = await pendingRes.json();
+          const map: Record<number, boolean> = {};
+          ids.forEach((id) => {
+            map[id] = true;
+          });
+          setPendingMap(map);
+        }
+      } catch {}
     } catch {
       if (!silent) Alert.alert(t("common.error"), t("search.loadFailed"));
     } finally {
@@ -513,24 +531,44 @@ export default function SearchScreen() {
   const handleFollow = async (userId: number) => {
     const token = await AsyncStorage.getItem("token");
     const isFollowing = followingMap[userId];
+    const isPending = pendingMap[userId];
     setLoadingFollow((p) => ({ ...p, [userId]: true }));
-    setFollowingMap((p) => ({ ...p, [userId]: !isFollowing }));
+
     try {
-      const res = isFollowing
-        ? await fetch(`${API_BASE_URL}/api/follow/${userId}`, {
-            method: "DELETE",
-            headers: { Authorization: `Bearer ${token}` },
-          })
-        : await fetch(`${API_BASE_URL}/api/follow/${userId}`, {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: `Bearer ${token}`,
-            },
-          });
-      if (!res.ok) throw new Error(`Status ${res.status}`);
+      if (isPending) {
+        // Otkaži poslani zahtjev za praćenje
+        setPendingMap((p) => ({ ...p, [userId]: false }));
+        const res = await fetch(`${API_BASE_URL}/api/follow/request/${userId}`, {
+          method: "DELETE",
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (!res.ok) throw new Error(`Status ${res.status}`);
+      } else if (isFollowing) {
+        setFollowingMap((p) => ({ ...p, [userId]: false }));
+        const res = await fetch(`${API_BASE_URL}/api/follow/${userId}`, {
+          method: "DELETE",
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (!res.ok) throw new Error(`Status ${res.status}`);
+      } else {
+        const res = await fetch(`${API_BASE_URL}/api/follow/${userId}`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+        });
+        if (!res.ok) throw new Error(`Status ${res.status}`);
+        const data = await res.json().catch(() => ({}));
+        if (data.pending) {
+          setPendingMap((p) => ({ ...p, [userId]: true }));
+        } else {
+          setFollowingMap((p) => ({ ...p, [userId]: true }));
+        }
+      }
     } catch {
       setFollowingMap((p) => ({ ...p, [userId]: isFollowing }));
+      setPendingMap((p) => ({ ...p, [userId]: isPending }));
       Alert.alert(t("common.error"), t("search.followFailed"));
     } finally {
       setLoadingFollow((p) => ({ ...p, [userId]: false }));
@@ -541,6 +579,7 @@ export default function SearchScreen() {
     const firstName = item.firstname || item.firstName || "";
     const lastName = item.lastname || item.lastName || "";
     const isFollowing = followingMap[item.id] || false;
+    const isPending = pendingMap[item.id] || false;
     const isLoadingThis = loadingFollow[item.id] || false;
 
     return (
@@ -581,23 +620,30 @@ export default function SearchScreen() {
         {/* Akcije */}
         <View style={styles.actions}>
           <TouchableOpacity
-            style={[styles.followBtn, isFollowing && styles.followingBtn]}
+            style={[
+              styles.followBtn,
+              (isFollowing || isPending) && styles.followingBtn,
+            ]}
             onPress={() => handleFollow(item.id)}
             disabled={isLoadingThis}
           >
             {isLoadingThis ? (
               <ActivityIndicator
                 size="small"
-                color={isFollowing ? V.accent : V.textPrimary}
+                color={isFollowing || isPending ? V.accent : V.textPrimary}
               />
             ) : (
               <Text
                 style={[
                   styles.followBtnText,
-                  isFollowing && styles.followingBtnText,
+                  (isFollowing || isPending) && styles.followingBtnText,
                 ]}
               >
-                {isFollowing ? t("search.following") : t("search.follow")}
+                {isFollowing
+                  ? t("search.following")
+                  : isPending
+                    ? t("userProfile.requested")
+                    : t("search.follow")}
               </Text>
             )}
           </TouchableOpacity>
