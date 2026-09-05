@@ -148,6 +148,40 @@ export const placeCategories: Record<
   },
 };
 
+// ─── Auto-popunjavanje kategorije i "primjereno za" na temelju adrese ─────────
+// Nominatim uz svaki rezultat pretrage vraća i OSM "class"/"type" (npr.
+// class=amenity, type=restaurant), što odgovara osmTag vrijednostima gore
+// (npr. "amenity=restaurant"). Reverznim pretraživanjem po tome možemo
+// pogoditi kategoriju objave čim korisnik odabere lokaciju.
+export function inferCategoryFromOsmTag(
+  osmClass?: string | null,
+  osmType?: string | null,
+): string | null {
+  if (!osmClass) return null;
+  const entry = Object.entries(placeCategories).find(([, def]) => {
+    const [tagClass, tagType] = def.osmTag.split("=");
+    if (tagClass !== osmClass) return false;
+    return tagType === "*" || tagType === osmType;
+  });
+  return entry ? entry[0] : null;
+}
+
+// Grupe kojima objekt ovog tipa obično NIJE prikladan — ostalo se
+// pretpostavlja kao prikladno svima. Samo je noćni klub isključen za
+// maloljetnike; sve ostale kategorije (plaže, muzeji, restorani...) su
+// pretpostavljeno primjerene svim dobnim skupinama dok korisnik ne izmijeni.
+const AGE_GROUP_EXCLUSIONS: Record<string, string[]> = {
+  club: ["minors"],
+};
+
+export function inferAgeGroupsForCategory(
+  categoryId: string | null,
+  allAgeGroupIds: readonly string[],
+): string[] {
+  const excluded = (categoryId && AGE_GROUP_EXCLUSIONS[categoryId]) || [];
+  return allAgeGroupIds.filter((id) => !excluded.includes(id));
+}
+
 interface CategoryRule {
   queries: string[];
   whitelist: { key: string; values: string[] }[];

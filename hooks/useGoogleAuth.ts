@@ -39,6 +39,12 @@ export function useGoogleAuth() {
     setIsLoading(true);
     try {
       await GoogleSignin.hasPlayServices();
+      // Bez ovoga Google zna ponuditi samo "predloženi" (zadnje korišteni)
+      // račun kroz brzi "One Tap" izbornik; ako ga korisnik odbije jer želi
+      // prijaviti se drugim računom, taj izbornik nema opciju "drugi račun"
+      // i cijela prijava se prekida s response.type "cancelled". Odjavom
+      // prije prijave uvijek se prikazuje puni birač računa.
+      await GoogleSignin.signOut().catch(() => {});
       const response = await GoogleSignin.signIn();
 
       if (!isSuccessResponse(response)) {

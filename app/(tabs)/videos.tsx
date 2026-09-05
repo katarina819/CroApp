@@ -33,7 +33,11 @@ import {
 import { StoryBadge } from "../../app/StoryBadge";
 import { useTheme } from "../../components/AdaptiveThemeProvider";
 import { API_BASE_URL } from "../config/api";
-import { placeCategories } from "../services/locationService";
+import {
+  inferAgeGroupsForCategory,
+  inferCategoryFromOsmTag,
+  placeCategories,
+} from "../services/locationService";
 
 const { width } = Dimensions.get("window");
 const AGE_GROUP_IDS = [
@@ -998,7 +1002,13 @@ export function UploadModal({
   const [location, setLocation] = useState("");
   const [locationValid, setLocationValid] = useState(false);
   const [locationSuggestions, setLocationSuggestions] = useState<
-    { displayName: string; lat: string; lon: string }[]
+    {
+      displayName: string;
+      lat: string;
+      lon: string;
+      osmClass?: string;
+      osmType?: string;
+    }[]
   >([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [searchingLocation, setSearchingLocation] = useState(false);
@@ -1100,11 +1110,33 @@ export function UploadModal({
     }, 400);
   };
 
-  const selectLocation = (suggestion: { displayName: string }) => {
+  const selectLocation = (suggestion: {
+    displayName: string;
+    osmClass?: string;
+    osmType?: string;
+  }) => {
     setLocation(suggestion.displayName);
     setLocationValid(true);
     setShowSuggestions(false);
     setLocationSuggestions([]);
+
+    // Automatski predloži kategoriju i "primjereno za" na temelju adrese —
+    // korisnik i dalje može ručno izmijeniti odabir, ovo samo popunjava
+    // razumnu početnu vrijednost umjesto praznih obaveznih polja.
+    const inferredCategory = inferCategoryFromOsmTag(
+      suggestion.osmClass,
+      suggestion.osmType,
+    );
+    if (inferredCategory) {
+      setSelectedCategories((prev) =>
+        prev.length > 0 ? prev : [inferredCategory],
+      );
+      setSelectedAgeGroups((prev) =>
+        prev.length > 0
+          ? prev
+          : inferAgeGroupsForCategory(inferredCategory, AGE_GROUP_IDS),
+      );
+    }
   };
 
   const uploadMedia = async () => {
@@ -1178,7 +1210,13 @@ export function UploadModal({
       const ageGroupsLabel = selectedAgeGroups
         .map((id) => t(`ageGroups.${id}`, { defaultValue: id }))
         .join(", ");
-      const finalDescription = `📂 Kategorije: ${categoriesLabel}\n👥 Primjereno za: ${ageGroupsLabel}\n\n${description.trim() || "Nema opisa"}`;
+      // Opis se prikazuje samo ako ga je korisnik stvarno unio — bez
+      // placeholder teksta ("Nema opisa") kad je polje prazno, kako se
+      // prazna sekcija ne bi prikazivala u objavi.
+      let finalDescription = `📂 Kategorije: ${categoriesLabel}\n👥 Primjereno za: ${ageGroupsLabel}`;
+      if (description.trim()) {
+        finalDescription += `\n\n${description.trim()}`;
+      }
 
       formData.append("Description", finalDescription);
       formData.append("UserId", userId);

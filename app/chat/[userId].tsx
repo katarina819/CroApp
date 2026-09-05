@@ -182,7 +182,15 @@ function parseImageMessage(content: string): string | null {
 function ZoomableImage({ uri }: { uri: string }) {
   const [containerSize, setContainerSize] = useState({ width: 0, height: 0 });
 
-  const scale = useRef(new Animated.Value(1)).current;
+  // Animated.Value.setOffset/flattenOffset kombiniraju vrijednosti
+  // ZBRAJANJEM, a zumiranje se sastavlja MNOŽENJEM — stari kod je to
+  // pomiješao (setOffset(lastScale) + setValue(1) + flattenOffset dâ
+  // lastScale + 1, ne lastScale), pa je slika pri svakom otpuštanju prstiju
+  // neočekivano skočila veća. Zato se "potvrđeni" zoom (baseScale) i zoom
+  // trenutne geste (pinchScale, uvijek počinje od 1) drže odvojeno i množe.
+  const baseScale = useRef(new Animated.Value(1)).current;
+  const pinchScale = useRef(new Animated.Value(1)).current;
+  const scale = useRef(Animated.multiply(baseScale, pinchScale)).current;
   const translateX = useRef(new Animated.Value(0)).current;
   const translateY = useRef(new Animated.Value(0)).current;
 
@@ -206,17 +214,17 @@ function ZoomableImage({ uri }: { uri: string }) {
     return { maxX, maxY };
   };
 
-  const onPinchEvent = Animated.event([{ nativeEvent: { scale } }], {
-    useNativeDriver: true,
-  });
+  const onPinchEvent = Animated.event(
+    [{ nativeEvent: { scale: pinchScale } }],
+    { useNativeDriver: true },
+  );
 
   const onPinchStateChange = (event: any) => {
     if (event.nativeEvent.oldState === State.ACTIVE) {
       lastScale.current *= event.nativeEvent.scale;
       lastScale.current = Math.max(1, Math.min(lastScale.current, 5));
-      scale.setOffset(lastScale.current);
-      scale.setValue(1);
-      scale.flattenOffset();
+      baseScale.setValue(lastScale.current);
+      pinchScale.setValue(1);
 
       if (lastScale.current <= 1) {
         lastTranslateX.current = 0;
@@ -267,17 +275,22 @@ function ZoomableImage({ uri }: { uri: string }) {
     }
   };
 
+  // Dvostruki dodir sada prebacuje između uvećano/normalno (kao u
+  // Instagramu/Twitteru) umjesto da uvijek samo vraća na 1x — pincanje
+  // dvama prstima je nespretno na manjim ekranima, ovo je brži način
+  // za uvećati sliku.
   const onDoubleTap = () => {
-    lastScale.current = 1;
+    const nextScale = lastScale.current > 1.01 ? 1 : 2.5;
+    lastScale.current = nextScale;
     lastTranslateX.current = 0;
     lastTranslateY.current = 0;
     Animated.parallel([
-      Animated.spring(scale, { toValue: 1, useNativeDriver: true }),
+      Animated.spring(baseScale, { toValue: nextScale, useNativeDriver: true }),
       Animated.spring(translateX, { toValue: 0, useNativeDriver: true }),
       Animated.spring(translateY, { toValue: 0, useNativeDriver: true }),
     ]).start(() => {
-      scale.setOffset(0);
-      scale.setValue(1);
+      baseScale.setValue(nextScale);
+      pinchScale.setValue(1);
       translateX.setOffset(0);
       translateX.setValue(0);
       translateY.setOffset(0);
