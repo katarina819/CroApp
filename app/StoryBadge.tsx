@@ -20,7 +20,11 @@ export function StoryBadge({ userId, size = 56, children }: StoryBadgeProps) {
   useEffect(() => {
     if (!userId || userId === 0) return;
     checkHasStory();
-    const interval = setInterval(checkHasStory, 30000);
+    // Svaki mountani StoryBadge (jedan po avataru — u listi pratitelja to
+    // može biti desetke odjednom) pollao je NEOVISNO svakih 30s; produženo
+    // na 90s da se smanji potrošnja baterije/mreže bez da priče postanu
+    // primjetno "zastarjele".
+    const interval = setInterval(checkHasStory, 90000);
     return () => clearInterval(interval);
   }, [userId]);
 

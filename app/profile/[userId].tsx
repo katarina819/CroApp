@@ -276,6 +276,10 @@ export default function UserProfileScreen() {
   const [loading, setLoading] = useState(true);
   const [isFollowing, setIsFollowing] = useState(false);
   const [isRequestPending, setIsRequestPending] = useState(false);
+  // Neke fotografije (uglavnom snimljene prije migracije na Cloudflare R2)
+  // više ne postoje na serveru — bez ovoga bi <Image> ostao prazan umjesto
+  // da se prikažu inicijali.
+  const [imageFailed, setImageFailed] = useState(false);
   const [isGolden, setIsGolden] = useState(false);
   const [isBlocked, setIsBlocked] = useState(false);
   const [followLoading, setFollowLoading] = useState(false);
@@ -292,6 +296,10 @@ export default function UserProfileScreen() {
     if (!numericUserId) return;
     loadProfile();
   }, [numericUserId]);
+
+  useEffect(() => {
+    setImageFailed(false);
+  }, [profile?.avatar]);
 
   const loadProfile = async () => {
     setLoading(true);
@@ -740,11 +748,12 @@ export default function UserProfileScreen() {
                 style={styles.avatar}
                 resizeMode="cover"
               />
-            ) : avatarUrl ? (
+            ) : avatarUrl && !imageFailed ? (
               <Image
                 source={{ uri: avatarUrl }}
                 style={styles.avatar}
                 resizeMode="cover"
+                onError={() => setImageFailed(true)}
               />
             ) : (
               <View style={styles.avatarPlaceholder}>

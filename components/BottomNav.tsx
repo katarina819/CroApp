@@ -115,7 +115,15 @@ export default function BottomNav() {
             <TouchableOpacity
               key={tab.route}
               style={s.tab}
-              onPress={() => router.push(tab.route as any)}
+              onPress={() => {
+                // replace, ne push: push slaže svaki posjećeni tab na
+                // navigacijski stog i nikad ga ne skida (nema "back" gumba
+                // koji bi ga skinuo), pa su svi prije posjećeni tabovi
+                // ostajali montirani zauvijek u pozadini — zajedno sa SVIM
+                // svojim pollinzima (npr. StoryBadge svakih 30s, poruke
+                // svakih 8s), što je trošilo bateriju/mrežu i memoriju.
+                if (!active) router.replace(tab.route as any);
+              }}
               activeOpacity={1}
               pressRetentionOffset={0}
             >

@@ -817,6 +817,10 @@ function AvatarSection({ onUpdate }: { onUpdate: () => void }) {
   const [loading, setLoading] = useState(false);
   const [showAvatarModal, setShowAvatarModal] = useState(false);
   const [showPhotoSourceModal, setShowPhotoSourceModal] = useState(false);
+  // Neke fotografije (uglavnom snimljene prije migracije na Cloudflare R2)
+  // više ne postoje na serveru — bez ovoga bi <Image> ostao prazan umjesto
+  // da se prikažu inicijali.
+  const [imageFailed, setImageFailed] = useState(false);
 
   const pickAndUpload = () => {
     setShowPhotoSourceModal(true);
@@ -940,6 +944,10 @@ function AvatarSection({ onUpdate }: { onUpdate: () => void }) {
   const initials =
     `${profile?.firstName?.[0] ?? ""}${profile?.lastName?.[0] ?? ""}`.toUpperCase();
 
+  useEffect(() => {
+    setImageFailed(false);
+  }, [profile?.avatar]);
+
   return (
     <>
       <TouchableOpacity
@@ -952,8 +960,12 @@ function AvatarSection({ onUpdate }: { onUpdate: () => void }) {
             <AvatarMale size={96} />
           ) : isFemaleAvatar ? (
             <AvatarFemale size={96} />
-          ) : avatarUrl ? (
-            <Image source={{ uri: avatarUrl }} style={av.img} />
+          ) : avatarUrl && !imageFailed ? (
+            <Image
+              source={{ uri: avatarUrl }}
+              style={av.img}
+              onError={() => setImageFailed(true)}
+            />
           ) : (
             <View
               style={[
@@ -3484,7 +3496,7 @@ function SettingsModal({
             <Text style={sm.sectionTitle}>{t("profile.language")}</Text>
             <View style={langStyles.currentLang}>
               <Text style={langStyles.currentLangLabel}>
-                {t("profile.currentLanguage")}
+                {t("profile.currentLanguage")}{" "}
                 <Text style={langStyles.currentLangValue}>
                   {LANGUAGES.find((l) => l.code === currentLang)?.flag}{" "}
                   {LANGUAGES.find((l) => l.code === currentLang)?.label}

@@ -121,6 +121,10 @@ export default function UserAvatar({
     propAvatar,
   );
   // ────────────
+  // Neke slike (uglavnom snimljene prije migracije na Cloudflare R2) više
+  // ne postoje na serveru — bez ovoga bi <Image> samo tiho ostao prazan.
+  // Sad se u tom slučaju vraćamo na inicijale umjesto praznog kruga.
+  const [imageFailed, setImageFailed] = useState(false);
   const mountedRef = useRef(true);
 
   useEffect(() => {
@@ -135,6 +139,7 @@ export default function UserAvatar({
     if (propAvatar !== undefined && propAvatar !== null && propAvatar !== "") {
       setFetchedAvatar(propAvatar);
       setResolvedUrl(resolveAvatarUrl(propAvatar));
+      setImageFailed(false);
       return;
     }
     if (userId) {
@@ -151,6 +156,7 @@ export default function UserAvatar({
               // ── DODANO: spremi cijeli avatar string ──
               setFetchedAvatar(data.avatar ?? null);
               setResolvedUrl(resolveAvatarUrl(data.avatar));
+              setImageFailed(false);
               if (data.firstName) setFetchedFirstName(data.firstName);
               if (data.lastName) setFetchedLastName(data.lastName);
             }
@@ -169,11 +175,12 @@ export default function UserAvatar({
   const isFemale = fetchedAvatar === "avatar:female";
   // ───────────────────────────────────────────────────────────
 
-  if (resolvedUrl && !isMale && !isFemale) {
+  if (resolvedUrl && !isMale && !isFemale && !imageFailed) {
     return (
       <Image
         source={{ uri: resolvedUrl }}
         style={[{ width: size, height: size, borderRadius: radius }, style]}
+        onError={() => setImageFailed(true)}
       />
     );
   }
