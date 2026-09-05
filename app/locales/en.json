@@ -94,7 +94,18 @@
     "forgotPasswordDesc": "Enter your email to receive a code",
     "emailOnly": "Email",
     "backToLogin": "Back to login",
-    "notLoggedIn": "You are not logged in. Please log out and log in again."
+    "notLoggedIn": "You are not logged in. Please log out and log in again.",
+    "usernameHelperLogin": "Enter the username you used to register",
+    "passwordHelperLogin": "The password you set when you registered",
+    "firstNameHelper": "Your real first name",
+    "lastNameHelper": "Your last name",
+    "emailHelperRegister": "We'll use this for login and notifications",
+    "usernameHelperRegister": "At least 3 characters, letters and numbers only (no spaces)",
+    "birthDatePlaceholder": "YYYY-MM-DD",
+    "birthDateHelper": "Format: year-month-day (YYYY-MM-DD), e.g. 1998-05-21",
+    "googleErrorGeneric": "Google sign-in failed. Please try again.",
+    "googlePlayServicesUnavailable": "Google Play Services are not available on this device.",
+    "googleErrorConfig": "Google sign-in isn't available right now due to a configuration issue. Please sign in with your username and password, or try again later."
   },
   "forgotPassword": {
     "step1Title": "Forgot your password?",

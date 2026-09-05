@@ -94,7 +94,18 @@
     "forgotPasswordDesc": "Geben Sie Ihre E-Mail ein, um einen Code zu erhalten",
     "emailOnly": "E-Mail",
     "backToLogin": "Zurück zur Anmeldung",
-    "notLoggedIn": "Sie sind nicht angemeldet. Bitte melden Sie sich ab und wieder an."
+    "notLoggedIn": "Sie sind nicht angemeldet. Bitte melden Sie sich ab und wieder an.",
+    "usernameHelperLogin": "Gib den Benutzernamen ein, mit dem du dich registriert hast",
+    "passwordHelperLogin": "Das Passwort, das du bei der Registrierung festgelegt hast",
+    "firstNameHelper": "Dein richtiger Vorname",
+    "lastNameHelper": "Dein Nachname",
+    "emailHelperRegister": "Wir verwenden diese Adresse für die Anmeldung und Benachrichtigungen",
+    "usernameHelperRegister": "Mindestens 3 Zeichen, nur Buchstaben und Zahlen (keine Leerzeichen)",
+    "birthDatePlaceholder": "JJJJ-MM-TT",
+    "birthDateHelper": "Format: Jahr-Monat-Tag (JJJJ-MM-TT), z. B. 1998-05-21",
+    "googleErrorGeneric": "Die Google-Anmeldung ist fehlgeschlagen. Bitte versuchen Sie es erneut.",
+    "googlePlayServicesUnavailable": "Google Play-Dienste sind auf diesem Gerät nicht verfügbar.",
+    "googleErrorConfig": "Die Google-Anmeldung ist derzeit aufgrund eines Konfigurationsproblems nicht verfügbar. Melden Sie sich mit Benutzername und Passwort an oder versuchen Sie es später erneut."
   },
   "forgotPassword": {
     "step1Title": "Passwort vergessen?",

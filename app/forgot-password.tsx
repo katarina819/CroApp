@@ -7,6 +7,7 @@ import {
   KeyboardAvoidingView,
   Platform,
   ScrollView,
+  StatusBar,
   StyleSheet,
   Text,
   TextInput,
@@ -142,7 +143,9 @@ export default function ForgotPasswordScreen() {
       style={styles.container}
       behavior={Platform.OS === "ios" ? "padding" : "height"}
     >
+      <StatusBar barStyle="light-content" backgroundColor="#0D2406" />
       <ScrollView contentContainerStyle={styles.scroll}>
+        <View style={styles.card}>
         {/* Progress dots */}
         <View style={styles.progress}>
           {(["email", "code", "newPassword"] as Step[]).map((s, i) => (
@@ -171,7 +174,7 @@ export default function ForgotPasswordScreen() {
             <TextInput
               style={styles.input}
               placeholder={t("forgotPassword.emailPlaceholder")}
-              placeholderTextColor="#999"
+              placeholderTextColor="#9AA9A7"
               value={contact}
               onChangeText={setContact}
               keyboardType="email-address"
@@ -202,7 +205,7 @@ export default function ForgotPasswordScreen() {
             <TextInput
               style={[styles.input, styles.codeInput]}
               placeholder="123456"
-              placeholderTextColor="#999"
+              placeholderTextColor="#9AA9A7"
               value={code}
               onChangeText={(t) => setCode(t.replace(/\D/g, "").slice(0, 6))}
               keyboardType="number-pad"
@@ -238,7 +241,7 @@ export default function ForgotPasswordScreen() {
               <TextInput
                 style={styles.input}
                 placeholder={t("forgotPassword.newPasswordPlaceholder")}
-                placeholderTextColor="#999"
+                placeholderTextColor="#9AA9A7"
                 value={newPassword}
                 onChangeText={setNewPassword}
                 secureTextEntry={!showNewPassword}
@@ -276,7 +279,7 @@ export default function ForgotPasswordScreen() {
                     : null,
                 ]}
                 placeholder={t("forgotPassword.confirmPasswordPlaceholder")}
-                placeholderTextColor="#999"
+                placeholderTextColor="#9AA9A7"
                 value={confirmPassword}
                 onChangeText={setConfirmPassword}
                 secureTextEntry={!showConfirmPassword}
@@ -326,51 +329,85 @@ export default function ForgotPasswordScreen() {
         <TouchableOpacity style={styles.backBtn} onPress={() => router.back()}>
           <Text style={styles.backText}>{t("forgotPassword.backToLogin")}</Text>
         </TouchableOpacity>
+        </View>
       </ScrollView>
     </KeyboardAvoidingView>
   );
 }
 
+// Ista paleta kao login.tsx/register.tsx — prije je ovaj ekran koristio
+// posve drugu (svijetloplavu/ljubičastu #667eea na sivoj #f5f7fa) shemu
+// boja koja nije imala veze s ostatkom aplikacije.
+const GREEN_DEEPEST = "#0D2406";
+const GREEN_DARK = "#1B3F0E";
+const GREEN_MID = "#2D6418";
+const VALID_GREEN = "#4CAF50";
+const SILVER = "#9AA9A7";
+const SILVER_LIGHT = "#E8EEEE";
+const TEXT_DARK = "#142F09";
+const TEXT_MID = "#5C6765";
+
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#f5f7fa" },
+  container: { flex: 1, backgroundColor: GREEN_DARK },
   scroll: {
     flexGrow: 1,
     paddingHorizontal: 24,
     paddingVertical: 60,
     alignItems: "center",
+    justifyContent: "center",
   },
-  progress: { flexDirection: "row", gap: 8, marginBottom: 32 },
-  dot: { width: 10, height: 10, borderRadius: 5, backgroundColor: "#ddd" },
-  dotActive: { backgroundColor: "#667eea", width: 24 },
-  dotDone: { backgroundColor: "#34c759" },
-  icon: { fontSize: 56, marginBottom: 16 },
+  card: {
+    backgroundColor: "#FFFFFF",
+    borderRadius: 24,
+    padding: 28,
+    width: "100%",
+    maxWidth: 440,
+    alignItems: "center",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.35,
+    shadowRadius: 24,
+    elevation: 12,
+  },
+  progress: { flexDirection: "row", gap: 8, marginBottom: 28 },
+  dot: { width: 10, height: 10, borderRadius: 5, backgroundColor: "#D1DADB" },
+  dotActive: { backgroundColor: GREEN_MID, width: 24 },
+  dotDone: { backgroundColor: VALID_GREEN },
+  icon: { fontSize: 48, marginBottom: 14 },
   title: {
-    fontSize: 26,
-    fontWeight: "bold",
-    color: "#333",
+    fontSize: 24,
+    fontWeight: "800",
+    color: TEXT_DARK,
     textAlign: "center",
     marginBottom: 8,
+    letterSpacing: 0.3,
   },
   subtitle: {
-    fontSize: 15,
-    color: "#666",
+    fontSize: 14,
+    color: TEXT_MID,
     textAlign: "center",
-    marginBottom: 32,
+    marginBottom: 28,
   },
   form: { width: "100%" },
-  label: { fontSize: 14, fontWeight: "500", color: "#333", marginBottom: 8 },
+  label: {
+    fontSize: 11,
+    fontWeight: "700",
+    color: TEXT_MID,
+    letterSpacing: 1.2,
+    marginBottom: 7,
+  },
   input: {
-    backgroundColor: "#fff",
+    backgroundColor: SILVER_LIGHT,
     borderRadius: 12,
     paddingHorizontal: 16,
     paddingVertical: 14,
     fontSize: 16,
-    borderWidth: 1,
-    borderColor: "#e0e0e0",
-    color: "#333",
+    borderWidth: 1.5,
+    borderColor: "#D1DADB",
+    color: TEXT_DARK,
     marginBottom: 8,
   },
-  inputError: { borderColor: "#ff3b30" },
+  inputError: { borderColor: "#C0392B" },
   codeInput: {
     textAlign: "center",
     fontSize: 28,
@@ -378,22 +415,27 @@ const styles = StyleSheet.create({
     letterSpacing: 12,
   },
   button: {
-    backgroundColor: "#667eea",
-    borderRadius: 12,
+    backgroundColor: GREEN_MID,
+    borderRadius: 14,
     paddingVertical: 16,
     marginTop: 12,
     alignItems: "center",
-    shadowColor: "#667eea",
+    shadowColor: GREEN_DEEPEST,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 5,
+    shadowRadius: 10,
+    elevation: 6,
   },
-  buttonDisabled: { backgroundColor: "#a0aec0", opacity: 0.7 },
-  buttonText: { color: "#fff", fontSize: 16, fontWeight: "600" },
+  buttonDisabled: { backgroundColor: SILVER, shadowOpacity: 0, elevation: 0 },
+  buttonText: {
+    color: "#FFFFFF",
+    fontSize: 16,
+    fontWeight: "700",
+    letterSpacing: 0.5,
+  },
   resendBtn: { marginTop: 16, alignItems: "center" },
-  resendText: { color: "#667eea", fontSize: 14 },
-  backBtn: { marginTop: 32 },
-  backText: { color: "#999", fontSize: 14 },
-  errorText: { color: "#ff3b30", fontSize: 12, marginBottom: 4 },
+  resendText: { color: GREEN_MID, fontSize: 14, fontWeight: "600" },
+  backBtn: { marginTop: 28 },
+  backText: { color: TEXT_MID, fontSize: 14 },
+  errorText: { color: "#C0392B", fontSize: 12, marginBottom: 4 },
 });

@@ -189,7 +189,7 @@ export default function LoginScreen() {
           <FormField
             label={t("auth.username")}
             placeholder="npr. ana_horvat"
-            helperText="Unesi korisničko ime, email ili telefon kojim si se registrirao/la"
+            helperText={t("auth.usernameHelperLogin")}
             value={username}
             onChangeText={setUsername}
             isValid={username.trim().length > 0}
@@ -201,7 +201,7 @@ export default function LoginScreen() {
           <FormField
             label={t("auth.password")}
             placeholder="Unesi lozinku"
-            helperText="Lozinka koju si postavio/la prilikom registracije"
+            helperText={t("auth.passwordHelperLogin")}
             value={password}
             onChangeText={setPassword}
             isValid={password.length > 0}

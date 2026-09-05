@@ -297,7 +297,7 @@ export default function RegisterScreen() {
                   <Text style={s.validCheckmark}>✓</Text>
                 )}
               </View>
-              <Text style={s.helperText}>Tvoje pravo ime</Text>
+              <Text style={s.helperText}>{t("auth.firstNameHelper")}</Text>
             </View>
             <View style={[s.fieldWrap, s.half]}>
               <Text style={s.label}>{t("auth.lastName").toUpperCase()} *</Text>
@@ -317,14 +317,14 @@ export default function RegisterScreen() {
                   <Text style={s.validCheckmark}>✓</Text>
                 )}
               </View>
-              <Text style={s.helperText}>Tvoje prezime</Text>
+              <Text style={s.helperText}>{t("auth.lastNameHelper")}</Text>
             </View>
           </View>
 
           <Field
             label={`${t("auth.email").toUpperCase()} *`}
             placeholder="npr. ana.horvat@gmail.com"
-            helperText="Koristit ćemo ga za prijavu i obavijesti"
+            helperText={t("auth.emailHelperRegister")}
             value={form.email}
             onChangeText={(v) => handleChange("email", v)}
             keyboardType="email-address"
@@ -335,7 +335,7 @@ export default function RegisterScreen() {
           <Field
             label={`${t("auth.username").toUpperCase()} *`}
             placeholder="npr. ana_horvat"
-            helperText="Najmanje 3 znaka, samo slova i brojevi (bez razmaka)"
+            helperText={t("auth.usernameHelperRegister")}
             value={form.username}
             onChangeText={(v) => handleChange("username", v)}
             autoCapitalize="none"
@@ -453,7 +453,7 @@ export default function RegisterScreen() {
               <View style={{ flex: 1, justifyContent: "center" }}>
                 <TextInput
                   style={[s.input, isBirthDateValid && s.inputValid]}
-                  placeholder="GGGG-MM-DD, npr. 1998-05-21"
+                  placeholder={t("auth.birthDatePlaceholder")}
                   placeholderTextColor="#9AA9A7"
                   value={form.birthDate}
                   onChangeText={(v) => handleChange("birthDate", v)}
@@ -476,9 +476,7 @@ export default function RegisterScreen() {
                 <Text style={{ fontSize: 18 }}>📅</Text>
               </TouchableOpacity>
             </View>
-            <Text style={s.helperText}>
-              Format godina-mjesec-dan, ili odaberi datum putem kalendara
-            </Text>
+            <Text style={s.helperText}>{t("auth.birthDateHelper")}</Text>
           </View>
           {showPicker && (
             <DateTimePicker

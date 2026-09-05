@@ -8,6 +8,7 @@ import {
 import { router } from "expo-router";
 import { useState } from "react";
 import { Alert } from "react-native";
+import { useTranslation } from "react-i18next";
 import { API_ENDPOINTS } from "../app/config/api";
 
 GoogleSignin.configure({
@@ -33,6 +34,7 @@ interface GoogleAuthResponse {
 // bez ovoga gumb "Nastavi s Google računom" samo bi popunio polja, a
 // korisnik ne bi bio stvarno prijavljen.
 export function useGoogleAuth() {
+  const { t } = useTranslation();
   const [isLoading, setIsLoading] = useState(false);
 
   const signIn = async () => {
@@ -53,7 +55,7 @@ export function useGoogleAuth() {
 
       const { idToken } = response.data;
       if (!idToken) {
-        Alert.alert("Greška", "Google prijava nije vratila token.");
+        Alert.alert(t("common.error"), t("auth.googleErrorGeneric"));
         return;
       }
 
@@ -67,7 +69,7 @@ export function useGoogleAuth() {
         await res.json();
 
       if (!res.ok) {
-        Alert.alert("Greška", data?.message || "Google prijava nije uspjela.");
+        Alert.alert(t("common.error"), data?.message || t("auth.googleErrorGeneric"));
         return;
       }
 
@@ -89,20 +91,36 @@ export function useGoogleAuth() {
       }
     } catch (error) {
       if (isErrorWithCode(error)) {
+        // Android vraća DEVELOPER_ERROR kao numerički kod "10" (nije dio
+        // statusCodes enuma iz JS SDK-a) — uzrok je uvijek pogrešna
+        // konfiguracija na Google Cloud Console strani (SHA-1 certifikat
+        // ili OAuth client ID ne odgovaraju aplikaciji), nikad nešto što
+        // korisnik može sam ispraviti. Bez ove provjere korisnik bi vidio
+        // generičku poruku ili sirovi "DEVELOPER_ERROR" tekst iz nativnog
+        // sloja, što mu ništa ne govori o tome što se dogodilo.
+        const isDeveloperError =
+          String(error.code) === "10" ||
+          /developer_error/i.test(error.message ?? "");
+
         switch (error.code) {
           case statusCodes.SIGN_IN_CANCELLED:
           case statusCodes.IN_PROGRESS:
             break;
           case statusCodes.PLAY_SERVICES_NOT_AVAILABLE:
-            Alert.alert("Greška", "Google Play usluge nisu dostupne.");
+            Alert.alert(t("common.error"), t("auth.googlePlayServicesUnavailable"));
             break;
           default:
             console.error("Google Sign-In error:", error);
-            Alert.alert("Greška", "Google prijava nije uspjela.");
+            Alert.alert(
+              t("common.error"),
+              isDeveloperError
+                ? t("auth.googleErrorConfig")
+                : t("auth.googleErrorGeneric"),
+            );
         }
       } else {
         console.error("Unknown Google Sign-In error:", error);
-        Alert.alert("Greška", "Google prijava nije uspjela.");
+        Alert.alert(t("common.error"), t("auth.googleErrorGeneric"));
       }
     } finally {
       setIsLoading(false);

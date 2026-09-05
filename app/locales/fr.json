@@ -94,7 +94,18 @@
     "forgotPasswordDesc": "Entrez votre email pour recevoir un code",
     "emailOnly": "Email",
     "backToLogin": "Retour à la connexion",
-    "notLoggedIn": "Vous n'êtes pas connecté. Veuillez vous déconnecter et vous reconnecter."
+    "notLoggedIn": "Vous n'êtes pas connecté. Veuillez vous déconnecter et vous reconnecter.",
+    "usernameHelperLogin": "Entrez le nom d'utilisateur utilisé lors de votre inscription",
+    "passwordHelperLogin": "Le mot de passe que vous avez défini lors de l'inscription",
+    "firstNameHelper": "Votre vrai prénom",
+    "lastNameHelper": "Votre nom de famille",
+    "emailHelperRegister": "Nous l'utiliserons pour la connexion et les notifications",
+    "usernameHelperRegister": "Au moins 3 caractères, lettres et chiffres uniquement (sans espaces)",
+    "birthDatePlaceholder": "AAAA-MM-JJ",
+    "birthDateHelper": "Format : année-mois-jour (AAAA-MM-JJ), ex. 1998-05-21",
+    "googleErrorGeneric": "La connexion Google a échoué. Veuillez réessayer.",
+    "googlePlayServicesUnavailable": "Les services Google Play ne sont pas disponibles sur cet appareil.",
+    "googleErrorConfig": "La connexion Google est actuellement indisponible en raison d'un problème de configuration. Connectez-vous avec votre nom d'utilisateur et votre mot de passe ou réessayez plus tard."
   },
   "forgotPassword": {
     "step1Title": "Mot de passe oublié ?",

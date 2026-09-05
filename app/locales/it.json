@@ -94,7 +94,18 @@
     "forgotPasswordDesc": "Inserisci la tua email per ricevere un codice",
     "emailOnly": "Email",
     "backToLogin": "Torna all'accesso",
-    "notLoggedIn": "Non sei connesso. Disconnettiti e riconnettiti."
+    "notLoggedIn": "Non sei connesso. Disconnettiti e riconnettiti.",
+    "usernameHelperLogin": "Inserisci il nome utente usato per la registrazione",
+    "passwordHelperLogin": "La password impostata al momento della registrazione",
+    "firstNameHelper": "Il tuo vero nome",
+    "lastNameHelper": "Il tuo cognome",
+    "emailHelperRegister": "La useremo per l'accesso e le notifiche",
+    "usernameHelperRegister": "Almeno 3 caratteri, solo lettere e numeri (senza spazi)",
+    "birthDatePlaceholder": "AAAA-MM-GG",
+    "birthDateHelper": "Formato: anno-mese-giorno (AAAA-MM-GG), es. 1998-05-21",
+    "googleErrorGeneric": "Accesso con Google non riuscito. Riprova.",
+    "googlePlayServicesUnavailable": "I servizi Google Play non sono disponibili su questo dispositivo.",
+    "googleErrorConfig": "L'accesso con Google non è al momento disponibile per un problema di configurazione. Accedi con nome utente e password o riprova più tardi."
   },
   "forgotPassword": {
     "step1Title": "Password dimenticata?",

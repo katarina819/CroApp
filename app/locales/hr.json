@@ -94,7 +94,18 @@
     "forgotPasswordDesc": "Unesite email za dobivanje koda",
     "emailOnly": "Email",
     "backToLogin": "Povratak na prijavu",
-    "notLoggedIn": "Niste prijavljeni. Odjavite se i ponovno prijavite."
+    "notLoggedIn": "Niste prijavljeni. Odjavite se i ponovno prijavite.",
+    "usernameHelperLogin": "Unesi korisničko ime kojim si se registrirao/la",
+    "passwordHelperLogin": "Lozinka koju si postavio/la prilikom registracije",
+    "firstNameHelper": "Tvoje pravo ime",
+    "lastNameHelper": "Tvoje prezime",
+    "emailHelperRegister": "Koristit ćemo ga za prijavu i obavijesti",
+    "usernameHelperRegister": "Najmanje 3 znaka, samo slova i brojevi (bez razmaka)",
+    "birthDatePlaceholder": "GGGG-MM-DD",
+    "birthDateHelper": "Format: godina-mjesec-dan (GGGG-MM-DD), npr. 1998-05-21",
+    "googleErrorGeneric": "Google prijava nije uspjela. Pokušajte ponovno.",
+    "googlePlayServicesUnavailable": "Google Play usluge nisu dostupne na ovom uređaju.",
+    "googleErrorConfig": "Google prijava trenutno nije dostupna zbog problema u postavkama aplikacije. Prijavite se korisničkim imenom i lozinkom ili pokušajte kasnije."
   },
   "forgotPassword": {
     "step1Title": "Zaboravili ste lozinku?",
