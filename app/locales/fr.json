@@ -43,7 +43,8 @@
     "permissionRequired": "Autorisation requise",
     "galleryPermission": "Autorisez l'accès à la galerie dans les paramètres",
     "cameraPermission": "Autorisez l'accès à l'appareil photo dans les paramètres",
-    "mediaPermission": "Autorisez l'accès aux médias dans les paramètres"
+    "mediaPermission": "Autorisez l'accès aux médias dans les paramètres",
+    "tooManyRequests": "Trop de requêtes en peu de temps. Patientez un instant et réessayez."
   },
   "auth": {
     "login": "Connexion",
@@ -446,7 +447,6 @@
     "loadFailed": "Impossible de charger les utilisateurs",
     "messageFailedCheckConnection": "Impossible d'envoyer le message. Vérifiez votre connexion."
   },
-
   "archive": {
     "markHint": "Marquer les lieux comme visités sur la carte",
     "noFilterResults": "Aucun lieu pour le filtre sélectionné"
@@ -536,7 +536,16 @@
     "blockedDesc": "Utilisateur bloqué et retiré de la liste d'abonnements",
     "unblocked": "Débloqué",
     "unblockedDesc": "Utilisateur débloqué",
-    "blockError": "Impossible de bloquer l'utilisateur"
+    "blockError": "Impossible de bloquer l'utilisateur",
+    "requestSentTitle": "Demande envoyée",
+    "requestSentMessage": "Votre demande d'abonnement a été envoyée à {{name}}. Vous le verrez dès qu'elle sera acceptée.",
+    "accepted": "Demande acceptée",
+    "acceptedMessage": "{{name}} vous suit maintenant.",
+    "declined": "Demande refusée",
+    "declinedMessage": "La demande de {{name}} a été refusée.",
+    "respondFailed": "Impossible de répondre à la demande. Veuillez réessayer.",
+    "requestsLoadFailed": "Les demandes d'abonnement ne peuvent pas être chargées pour le moment.",
+    "requestsOnlyPrivateHint": "Une demande n'est nécessaire que pour les profils privés. Les profils publics sont suivis immédiatement, sans approbation."
   },
   "activity": {
     "loadFailed": "Les statistiques d'activité ne peuvent pas être chargées pour le moment. Vérifiez votre connexion Internet et réessayez.",

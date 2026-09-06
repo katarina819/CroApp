@@ -1715,6 +1715,7 @@ function FollowRequestsModal({
   const fl = useMemo(() => makeFlStyles(V), [V]);
   const [list, setList] = useState<FollowUser[]>([]);
   const [loading, setLoading] = useState(false);
+  const [loadFailed, setLoadFailed] = useState(false);
   const [processingId, setProcessingId] = useState<number | null>(null);
 
   useEffect(() => {
@@ -1729,14 +1730,29 @@ function FollowRequestsModal({
       const res = await fetch(`${API_BASE_URL}/api/follow/requests`, {
         headers: { Authorization: `Bearer ${token}` },
       });
-      if (res.ok) setList(await res.json());
+      if (res.ok) {
+        setList(await res.json());
+        setLoadFailed(false);
+      } else {
+        // Greška se dosad tiho gutala pa je ekran izgledao isto kao da
+        // zahtjeva nema — a razlika je bitna (npr. backend nedostupan ili
+        // tablica follow_requests još nije stvorena u bazi).
+        setList([]);
+        setLoadFailed(true);
+      }
     } catch {
+      setList([]);
+      setLoadFailed(true);
     } finally {
       setLoading(false);
     }
   };
 
-  const respond = async (requesterId: number, accept: boolean) => {
+  const respond = async (
+    requesterId: number,
+    accept: boolean,
+    requesterName?: string,
+  ) => {
     setProcessingId(requesterId);
     try {
       const token = await AsyncStorage.getItem("token");
@@ -1750,8 +1766,19 @@ function FollowRequestsModal({
       if (res.ok) {
         setList((prev) => prev.filter((u) => u.id !== requesterId));
         onUpdate?.();
+        // Dosad se red samo tiho maknuo s popisa — kod odbijanja je
+        // izgledalo kao da klik nije ništa napravio.
+        Alert.alert(
+          accept ? t("follow.accepted") : t("follow.declined"),
+          accept
+            ? t("follow.acceptedMessage", { name: requesterName ?? "" })
+            : t("follow.declinedMessage", { name: requesterName ?? "" }),
+        );
+      } else {
+        Alert.alert(t("common.error"), t("follow.respondFailed"));
       }
     } catch {
+      Alert.alert(t("common.error"), t("follow.respondFailed"));
     } finally {
       setProcessingId(null);
     }
@@ -1778,6 +1805,13 @@ function FollowRequestsModal({
 
         {loading ? (
           <ActivityIndicator style={{ marginTop: 40 }} color={V.visited} />
+        ) : loadFailed ? (
+          <View style={fl.empty}>
+            <View style={fl.emptyIconWrap}>
+              <Ionicons name="cloud-offline-outline" size={44} color={V.borderGreen} />
+            </View>
+            <Text style={fl.emptyText}>{t("follow.requestsLoadFailed")}</Text>
+          </View>
         ) : list.length === 0 ? (
           <View style={fl.empty}>
             <View style={fl.emptyIconWrap}>
@@ -1788,6 +1822,12 @@ function FollowRequestsModal({
               />
             </View>
             <Text style={fl.emptyText}>{t("profile.noFollowRequests")}</Text>
+            {/* Zahtjev nastaje SAMO kad je profil primatelja privatan —
+                javni profil se zaprati odmah. Bez ovog objašnjenja prazan
+                popis izgleda kao kvar. */}
+            <Text style={[fl.emptyText, { fontSize: 12, marginTop: 8, opacity: 0.75 }]}>
+              {t("follow.requestsOnlyPrivateHint")}
+            </Text>
           </View>
         ) : (
           <FlatList
@@ -1822,13 +1862,27 @@ function FollowRequestsModal({
                             fl.goldenBtn,
                             { backgroundColor: V.visited, borderColor: V.visited },
                           ]}
-                          onPress={() => respond(item.id, true)}
+                          onPress={() =>
+                            respond(
+                              item.id,
+                              true,
+                              `${item.firstName ?? ""} ${item.lastName ?? ""}`.trim() ||
+                                item.username,
+                            )
+                          }
                         >
                           <Ionicons name="checkmark" size={22} color="#fff" />
                         </TouchableOpacity>
                         <TouchableOpacity
                           style={fl.blockBtn}
-                          onPress={() => respond(item.id, false)}
+                          onPress={() =>
+                            respond(
+                              item.id,
+                              false,
+                              `${item.firstName ?? ""} ${item.lastName ?? ""}`.trim() ||
+                                item.username,
+                            )
+                          }
                         >
                           <Ionicons name="close" size={22} color={V.silverDim} />
                         </TouchableOpacity>

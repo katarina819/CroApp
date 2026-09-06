@@ -43,7 +43,8 @@
     "permissionRequired": "Permission required",
     "galleryPermission": "Allow gallery access in settings",
     "cameraPermission": "Allow camera access in settings",
-    "mediaPermission": "Allow media access in settings"
+    "mediaPermission": "Allow media access in settings",
+    "tooManyRequests": "Too many requests in a short time. Please wait a moment and try again."
   },
   "auth": {
     "login": "Login",
@@ -525,7 +526,16 @@
     "blockedDesc": "User has been blocked and removed from following list",
     "unblocked": "Unblocked",
     "unblockedDesc": "User has been unblocked",
-    "blockError": "Unable to block user"
+    "blockError": "Unable to block user",
+    "requestSentTitle": "Request sent",
+    "requestSentMessage": "Your follow request was sent to {{name}}. You'll see it here once they accept.",
+    "accepted": "Request accepted",
+    "acceptedMessage": "{{name}} is now following you.",
+    "declined": "Request declined",
+    "declinedMessage": "{{name}}'s request was declined.",
+    "respondFailed": "Couldn't respond to the request. Please try again.",
+    "requestsLoadFailed": "Follow requests can't be loaded right now.",
+    "requestsOnlyPrivateHint": "A request is only needed for private profiles. Public profiles are followed immediately, without approval."
   },
   "activity": {
     "loadFailed": "Activity statistics can't be loaded right now. Check your internet connection and try again.",
@@ -564,7 +574,6 @@
     "goldenConfirmMsg": "Are you sure you want to add {{name}} to your Golden Friends?",
     "goldenConfirmBtn": "Add ⭐",
     "addedOn": "Added:",
-
     "themeLight": "Light",
     "themeAuto": "Automatic",
     "themeAutoSub": "by time of day",
@@ -794,7 +803,6 @@
     "markPlace": "Mark",
     "visitedMark": "Visited",
     "visitedDone": "✓ Visited",
-
     "share": "Share",
     "findingPlaces": "Finding real places for {{destination}}...",
     "mapLegend": "Marker legend",

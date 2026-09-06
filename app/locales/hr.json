@@ -43,7 +43,8 @@
     "permissionRequired": "Dozvola potrebna",
     "galleryPermission": "Dozvolite pristup galeriji u postavkama",
     "cameraPermission": "Dozvolite pristup kameri u postavkama",
-    "mediaPermission": "Dozvolite pristup medijima u postavkama"
+    "mediaPermission": "Dozvolite pristup medijima u postavkama",
+    "tooManyRequests": "Previše zahtjeva u kratkom vremenu. Pričekaj malo pa pokušaj ponovo."
   },
   "auth": {
     "login": "Prijava",
@@ -525,7 +526,16 @@
     "blockedDesc": "Korisnik je blokiran i uklonjen iz popisa praćenih",
     "unblocked": "Odblokirano",
     "unblockedDesc": "Korisnik je odblokiran",
-    "blockError": "Nije moguće blokirati korisnika"
+    "blockError": "Nije moguće blokirati korisnika",
+    "requestSentTitle": "Zahtjev poslan",
+    "requestSentMessage": "Zahtjev za praćenje poslan je korisniku {{name}}. Vidjet ćeš kad ga prihvati.",
+    "accepted": "Zahtjev prihvaćen",
+    "acceptedMessage": "{{name}} te sada prati.",
+    "declined": "Zahtjev odbijen",
+    "declinedMessage": "Zahtjev korisnika {{name}} je odbijen.",
+    "respondFailed": "Nije moguće odgovoriti na zahtjev. Pokušaj ponovno.",
+    "requestsLoadFailed": "Zahtjeve za praćenje trenutno nije moguće dohvatiti.",
+    "requestsOnlyPrivateHint": "Zahtjev se traži samo za privatne profile. Javni profil se zaprati odmah, bez odobravanja."
   },
   "activity": {
     "loadFailed": "Statistiku aktivnosti trenutno nije moguće dohvatiti. Provjeri internetsku vezu i pokušaj ponovno.",
@@ -581,7 +591,6 @@
     "mapProblemDesc": "Opiši lokaciju ili podatak koji nedostaje / koji je netočan na karti.",
     "appProblemPlaceholder": "Npr. aplikacija se zamrzla na ekranu s kartom...",
     "mapProblemPlaceholder": "Npr. nedostaje restoran u centru Splita...",
-
     "profileHeader": "Profil",
     "box": "Spremnik",
     "publicProfileLabel": "Javni profil",
@@ -697,7 +706,6 @@
     "deleteAccountWarning": "Ovo će trajno obrisati vaš račun i sve podatke. Jeste li sigurni?",
     "language": "Jezik",
     "languageDesc": "Odaberi jezik sučelja",
-
     "theme": "Tema",
     "themeDesc": "Automatska prilagodba teme dobu dana",
     "uploading": "Prenosim...",
@@ -806,7 +814,6 @@
     "markPlace": "Označi",
     "visitedMark": "Obišao",
     "visitedDone": "✓ Obišao",
-
     "share": "Dijeli",
     "findingPlaces": "Pronalazim stvarna mjesta za {{destination}}...",
     "breakfast": "Doručak",

@@ -1,8 +1,8 @@
 // app/(tabs)/search.tsx — VARA tema (usklađena s dashboard.tsx)
 import { Ionicons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { router } from "expo-router";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { router, useFocusEffect } from "expo-router";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
   ActivityIndicator,
@@ -509,6 +509,17 @@ export default function SearchScreen() {
     loadData();
   }, []);
 
+  // Osvježi stanje svaki put kad se korisnik vrati na pretragu. Bez ovoga
+  // pošiljatelj nikad ne bi doznao ishod svog zahtjeva: ako ga primatelj
+  // odbije, zahtjev nestaje u bazi, ali gumb bi ovdje zauvijek pisao
+  // "Zatraženo". Sad se nakon odbijanja vrati na "Prati", a nakon
+  // prihvaćanja na "Praćenje".
+  useFocusEffect(
+    useCallback(() => {
+      loadData(true);
+    }, []),
+  );
+
   useEffect(() => {
     if (searchTimeout.current) clearTimeout(searchTimeout.current);
     searchTimeout.current = setTimeout(() => {
@@ -565,6 +576,21 @@ export default function SearchScreen() {
         const data = await res.json().catch(() => ({}));
         if (data.pending) {
           setPendingMap((p) => ({ ...p, [userId]: true }));
+          // Pošiljatelj dosad nije dobio nikakvu potvrdu — gumb bi samo
+          // promijenio natpis, pa se nije znalo je li zahtjev uopće poslan.
+          // (Zahtjev nastaje samo kad je profil primatelja privatan; javni
+          // profil se zaprati odmah, bez odobravanja.)
+          const target = users.find((u) => u.id === userId);
+          const targetName =
+            `${target?.firstname || target?.firstName || ""} ${
+              target?.lastname || target?.lastName || ""
+            }`.trim() ||
+            target?.username ||
+            "";
+          Alert.alert(
+            t("follow.requestSentTitle"),
+            t("follow.requestSentMessage", { name: targetName }),
+          );
         } else {
           setFollowingMap((p) => ({ ...p, [userId]: true }));
         }
@@ -575,9 +601,7 @@ export default function SearchScreen() {
       const isRateLimited = e?.message?.includes("429");
       Alert.alert(
         t("common.error"),
-        isRateLimited
-          ? "Previše zahtjeva u kratkom vremenu. Pričekaj malo pa pokušaj ponovo."
-          : t("search.followFailed"),
+        isRateLimited ? t("common.tooManyRequests") : t("search.followFailed"),
       );
     } finally {
       setLoadingFollow((p) => ({ ...p, [userId]: false }));

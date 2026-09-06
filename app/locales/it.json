@@ -43,7 +43,8 @@
     "permissionRequired": "Autorizzazione necessaria",
     "galleryPermission": "Consenti l'accesso alla galleria nelle impostazioni",
     "cameraPermission": "Consenti l'accesso alla fotocamera nelle impostazioni",
-    "mediaPermission": "Consenti l'accesso ai media nelle impostazioni"
+    "mediaPermission": "Consenti l'accesso ai media nelle impostazioni",
+    "tooManyRequests": "Troppe richieste in poco tempo. Attendi un momento e riprova."
   },
   "auth": {
     "login": "Accesso",
@@ -535,7 +536,16 @@
     "blockedDesc": "Utente bloccato e rimosso dalla lista dei seguiti",
     "unblocked": "Sbloccato",
     "unblockedDesc": "Utente sbloccato",
-    "blockError": "Impossibile bloccare l'utente"
+    "blockError": "Impossibile bloccare l'utente",
+    "requestSentTitle": "Richiesta inviata",
+    "requestSentMessage": "La tua richiesta è stata inviata a {{name}}. Lo vedrai non appena verrà accettata.",
+    "accepted": "Richiesta accettata",
+    "acceptedMessage": "{{name}} ora ti segue.",
+    "declined": "Richiesta rifiutata",
+    "declinedMessage": "La richiesta di {{name}} è stata rifiutata.",
+    "respondFailed": "Impossibile rispondere alla richiesta. Riprova.",
+    "requestsLoadFailed": "Al momento non è possibile caricare le richieste.",
+    "requestsOnlyPrivateHint": "La richiesta serve solo per i profili privati. I profili pubblici si seguono subito, senza approvazione."
   },
   "activity": {
     "loadFailed": "Al momento non è possibile caricare le statistiche di attività. Controlla la connessione a Internet e riprova.",
@@ -555,7 +565,6 @@
     "commentsChart": "💬 Commenti",
     "postsChart": "📤 Post"
   },
-
   "profile": {
     "title": "Profilo",
     "zoneDawn": "Alba",

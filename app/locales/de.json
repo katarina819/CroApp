@@ -43,7 +43,8 @@
     "permissionRequired": "Berechtigung erforderlich",
     "galleryPermission": "Erlauben Sie den Zugriff auf die Galerie in den Einstellungen",
     "cameraPermission": "Erlauben Sie den Zugriff auf die Kamera in den Einstellungen",
-    "mediaPermission": "Erlauben Sie den Zugriff auf Medien in den Einstellungen"
+    "mediaPermission": "Erlauben Sie den Zugriff auf Medien in den Einstellungen",
+    "tooManyRequests": "Zu viele Anfragen in kurzer Zeit. Bitte kurz warten und erneut versuchen."
   },
   "auth": {
     "login": "Anmeldung",
@@ -506,7 +507,16 @@
     "blockedDesc": "Benutzer wurde blockiert und aus der Folgeliste entfernt",
     "unblocked": "Entsperrt",
     "unblockedDesc": "Benutzer wurde entsperrt",
-    "blockError": "Benutzer kann nicht blockiert werden"
+    "blockError": "Benutzer kann nicht blockiert werden",
+    "requestSentTitle": "Anfrage gesendet",
+    "requestSentMessage": "Deine Follower-Anfrage wurde an {{name}} gesendet. Du siehst es, sobald sie angenommen wird.",
+    "accepted": "Anfrage angenommen",
+    "acceptedMessage": "{{name}} folgt dir jetzt.",
+    "declined": "Anfrage abgelehnt",
+    "declinedMessage": "Die Anfrage von {{name}} wurde abgelehnt.",
+    "respondFailed": "Auf die Anfrage konnte nicht geantwortet werden. Bitte erneut versuchen.",
+    "requestsLoadFailed": "Follower-Anfragen können derzeit nicht geladen werden.",
+    "requestsOnlyPrivateHint": "Eine Anfrage ist nur bei privaten Profilen nötig. Öffentlichen Profilen folgt man sofort, ohne Bestätigung."
   },
   "activity": {
     "loadFailed": "Die Aktivitätsstatistik kann derzeit nicht geladen werden. Prüfen Sie Ihre Internetverbindung und versuchen Sie es erneut.",
