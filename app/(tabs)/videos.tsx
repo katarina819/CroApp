@@ -362,12 +362,22 @@ function VideoItemComponent({
   }, [isActive, player, item.mediaType]);
 
   const togglePlayback = () => {
-    if (player.playing) {
-      player.pause();
-      setIsPaused(true);
-    } else {
+    // ✅ FIX: prije se odluka temeljila na "player.playing" — expo-video
+    // taj native flag ažurira asinkrono (kroz event, ne odmah pri pozivu
+    // play()/pause()), pa je odmah nakon jednog dodira još uvijek
+    // prijavljivao STARU vrijednost. Prvi dodir bi zato ponekad tiho
+    // promašio (isti poziv se ponovio), a nakon pauze bi drugi dodir
+    // pročitao "playing: true" iako je video već pauziran, pa bi opet
+    // pozvao pause() umjesto play() — otud "treba više klikova da stane"
+    // i "ne može se ponovno pokrenuti". Sad je jedini izvor istine naše
+    // vlastito React stanje (isPaused), isto ono koje već kontrolira
+    // prikaz ikone ▶, pa je odluka uvijek dosljedna s onim što se vidi.
+    if (isPaused) {
       player.play();
       setIsPaused(false);
+    } else {
+      player.pause();
+      setIsPaused(true);
     }
   };
 

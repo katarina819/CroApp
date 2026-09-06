@@ -30,6 +30,17 @@ export interface Conversation {
 const getToken = async (): Promise<string | null> =>
   AsyncStorage.getItem("token");
 
+// Poruke sa slikom/videom se šalju kao poseban tekstualni marker + JSON
+// (npr. "__CROMAP_IMAGE__{"url":"..."}") koji chat ekran prepoznaje i
+// prikazuje kao pravu sliku/video. Popis razgovora prije nije znao za taj
+// format pa je korisniku prikazivao sirovi marker i URL umjesto razumljivog
+// pregleda poput drugih aplikacija za poruke.
+function formatLastMessagePreview(content: string): string {
+  if (content?.startsWith("__CROMAP_IMAGE__")) return "📷 Slika";
+  if (content?.startsWith("__CROMAP_VIDEO__")) return "🎬 Video";
+  return content;
+}
+
 export const getCurrentUserId = async (): Promise<number | null> => {
   const stored = await AsyncStorage.getItem("userId");
   if (stored && stored !== "0") return parseInt(stored, 10);
@@ -119,7 +130,7 @@ export const getConversations = async (): Promise<Conversation[]> => {
         const messages = await messagesRes.json();
         if (messages.length > 0) {
           const lastMsg = messages[messages.length - 1];
-          lastMessage = lastMsg.content;
+          lastMessage = formatLastMessagePreview(lastMsg.content);
           timestamp = lastMsg.sentAt;
           unreadCount = messages.filter(
             (m: any) => !m.isRead && m.receiverId === userId,
