@@ -153,6 +153,22 @@ export const placeCategories: Record<
 // class=amenity, type=restaurant), što odgovara osmTag vrijednostima gore
 // (npr. "amenity=restaurant"). Reverznim pretraživanjem po tome možemo
 // pogoditi kategoriju objave čim korisnik odabere lokaciju.
+// Dodatni OSM class/type parovi po kategoriji, uz onaj jedan definiran u
+// placeCategories.osmTag (koji koristi i Overpass pretraga obližnjih mjesta,
+// pa ga ne diramo). Nominatim za širi naziv poput "Velebit" zna vratiti
+// natural=ridge/saddle/volcano ili place=mountain umjesto natural=peak —
+// bez ovoga bi pogađanje kategorije tiho promašilo i polje bi ostalo prazno.
+const EXTRA_OSM_MATCHES: Record<string, { class: string; type: string }[]> = {
+  mountain: [
+    { class: "natural", type: "peak" },
+    { class: "natural", type: "hill" },
+    { class: "natural", type: "ridge" },
+    { class: "natural", type: "saddle" },
+    { class: "natural", type: "volcano" },
+    { class: "place", type: "mountain" },
+  ],
+};
+
 export function inferCategoryFromOsmTag(
   osmClass?: string | null,
   osmType?: string | null,
@@ -163,15 +179,23 @@ export function inferCategoryFromOsmTag(
     if (tagClass !== osmClass) return false;
     return tagType === "*" || tagType === osmType;
   });
-  return entry ? entry[0] : null;
+  if (entry) return entry[0];
+
+  const extraEntry = Object.entries(EXTRA_OSM_MATCHES).find(([, matches]) =>
+    matches.some((m) => m.class === osmClass && m.type === osmType),
+  );
+  return extraEntry ? extraEntry[0] : null;
 }
 
 // Grupe kojima objekt ovog tipa obično NIJE prikladan — ostalo se
-// pretpostavlja kao prikladno svima. Samo je noćni klub isključen za
-// maloljetnike; sve ostale kategorije (plaže, muzeji, restorani...) su
-// pretpostavljeno primjerene svim dobnim skupinama dok korisnik ne izmijeni.
+// pretpostavlja kao prikladno svima. Noćni klub i planine isključuju
+// maloljetnike (planinarenje/vrhovi zahtijevaju nadzor/iskustvo koje se ne
+// pretpostavlja za djecu bez pratnje); sve ostale kategorije (plaže, muzeji,
+// restorani...) su pretpostavljeno primjerene svim dobnim skupinama dok
+// korisnik ne izmijeni.
 const AGE_GROUP_EXCLUSIONS: Record<string, string[]> = {
   club: ["minors"],
+  mountain: ["minors"],
 };
 
 export function inferAgeGroupsForCategory(

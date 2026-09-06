@@ -19,6 +19,7 @@ import {
   Dimensions,
   FlatList,
   Image,
+  Keyboard,
   KeyboardAvoidingView,
   Modal,
   Platform,
@@ -1462,7 +1463,18 @@ export function UploadModal({
                       justifyContent: "space-between",
                     },
                   ]}
-                  onPress={() => setShowCategoryPicker(true)}
+                  onPress={() => {
+                    // ✅ FIX: bez ovoga, blur polja lokacije (zatvaranje
+                    // tastature) i otvaranje ovog modala ("slide" animacija)
+                    // događali su se u istom trenu — na Androidu se
+                    // KeyboardAvoidingView (koji smanjuje visinu forme dok
+                    // je tastatura otvorena) i animacija modala natežu oko
+                    // visine ekrana istovremeno, što se vidi kao da ekran
+                    // "vibrira"/trese na trenutak. Explicitni Keyboard.dismiss()
+                    // prije otvaranja modala razdvaja ta dva pomicanja.
+                    Keyboard.dismiss();
+                    setShowCategoryPicker(true);
+                  }}
                 >
                   <Text
                     style={{
@@ -1504,7 +1516,10 @@ export function UploadModal({
                       justifyContent: "space-between",
                     },
                   ]}
-                  onPress={() => setShowAgeGroupPicker(true)}
+                  onPress={() => {
+                    Keyboard.dismiss();
+                    setShowAgeGroupPicker(true);
+                  }}
                 >
                   <Text
                     style={{

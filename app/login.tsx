@@ -138,9 +138,11 @@ export default function LoginScreen() {
         await AsyncStorage.setItem("userId", data.userId.toString());
         await AsyncStorage.setItem("firstName", data.firstName);
         await AsyncStorage.setItem("lastName", data.lastName);
-        Alert.alert(t("auth.welcome"), `${data.firstName}`, [
-          { text: t("common.ok"), onPress: () => router.replace("/(tabs)") },
-        ]);
+        Alert.alert(
+          t("auth.welcome"),
+          t("auth.welcomeMessage", { name: data.firstName }),
+          [{ text: t("common.ok"), onPress: () => router.replace("/(tabs)") }],
+        );
       } else {
         Alert.alert(t("common.error"), t("validation.invalidCredentials"));
       }

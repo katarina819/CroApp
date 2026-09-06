@@ -9766,12 +9766,23 @@ export default function DashboardScreen() {
     // getCurrentPositionAsync prije ikakvog prikaza na karti, što je na
     // slabijem signalu ili u zatvorenom prostoru znalo trajati nekoliko
     // sekundi praznog/centriranog ekrana.
+    //
+    // ✅ FIX: dosad je applyLocation (svaki put s animateToRegion letom
+    // kamere) zvan i do 3 puta zaredom — jednom za keširanu, jednom za
+    // "Balanced" i jednom za "High" preciznost, svaki put na blago
+    // drukčije koordinate. Tri preklapajuća 800ms leta kamere u manje od
+    // sekunde izgledaju kao da se ekran "trese"/vibrira. Sad kamera leti
+    // SAMO na prvi uspješan fix — svaki sljedeći, precizniji fix samo tiho
+    // ažurira userLocation/mapRegion (za plavu točku i buduće pretrage)
+    // bez ponovnog pomicanja kamere.
     let shownFromCache = false;
+    let hasCenteredCamera = false;
     try {
       const lastKnown = await Location.getLastKnownPositionAsync();
       if (lastKnown) {
-        applyLocation(lastKnown.coords.latitude, lastKnown.coords.longitude);
+        applyLocation(lastKnown.coords.latitude, lastKnown.coords.longitude, true);
         shownFromCache = true;
+        hasCenteredCamera = true;
       }
     } catch {}
 
@@ -9779,11 +9790,16 @@ export default function DashboardScreen() {
       const fastLoc = await Location.getCurrentPositionAsync({
         accuracy: Location.Accuracy.Balanced,
       });
-      applyLocation(fastLoc.coords.latitude, fastLoc.coords.longitude);
+      applyLocation(
+        fastLoc.coords.latitude,
+        fastLoc.coords.longitude,
+        !hasCenteredCamera,
+      );
+      hasCenteredCamera = true;
 
       Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.High })
         .then((precLoc) => {
-          applyLocation(precLoc.coords.latitude, precLoc.coords.longitude);
+          applyLocation(precLoc.coords.latitude, precLoc.coords.longitude, false);
         })
         .catch(() => {});
     } catch {
@@ -9797,7 +9813,11 @@ export default function DashboardScreen() {
         const retryLoc = await Location.getCurrentPositionAsync({
           accuracy: Location.Accuracy.Low,
         });
-        applyLocation(retryLoc.coords.latitude, retryLoc.coords.longitude);
+        applyLocation(
+          retryLoc.coords.latitude,
+          retryLoc.coords.longitude,
+          !hasCenteredCamera,
+        );
       } catch {
         // Tek sada, nakon svih pokušaja, tiho odustani bez alarmantnog alerta
         // (korisnik uvijek može ručno kliknuti "Moja lokacija" gumb na karti)
@@ -9806,7 +9826,11 @@ export default function DashboardScreen() {
     }
   };
 
-  const applyLocation = (latitude: number, longitude: number) => {
+  const applyLocation = (
+    latitude: number,
+    longitude: number,
+    animateCamera: boolean = true,
+  ) => {
     setUserLocation({ latitude, longitude });
     const region = {
       latitude,
@@ -9815,7 +9839,9 @@ export default function DashboardScreen() {
       longitudeDelta: 0.05,
     };
     setMapRegion(region);
-    mapRef.current?.animateToRegion(region, 800);
+    if (animateCamera) {
+      mapRef.current?.animateToRegion(region, 800);
+    }
   };
 
   const getCurrentLocation = async () => {
@@ -10577,7 +10603,17 @@ export default function DashboardScreen() {
       <MapView
         ref={mapRef}
         style={[s.map, StyleSheet.absoluteFillObject]}
-        region={mapRegion || initialRegion}
+        // ✅ FIX: bio je "region={mapRegion || initialRegion}" (kontrolirano)
+        // ZAJEDNO s "onRegionChangeComplete={setMapRegion}" — svaka promjena
+        // regije (i vlastita, iz animateToRegion poziva ispod) vraćala se
+        // natrag kroz setMapRegion u ovaj isti "region" prop, pa je mapa
+        // dobivala naredbu da se pomakne na (sitno drukčiju, zbog
+        // zaokruživanja) poziciju koju je upravo sama prijavila — beskonačna
+        // petlja mikro-pomaka koja izgleda kao da ekran "vibrira" dok
+        // korisnik ručno ne dodirne/pomakne kartu. initialRegion je
+        // nekontroliran (postavlja se samo pri mountu), a stvarno
+        // programsko pomicanje ide isključivo kroz mapRef.animateToRegion.
+        initialRegion={initialRegion}
         onRegionChangeComplete={setMapRegion}
         showsUserLocation={false}
         showsMyLocationButton={false}

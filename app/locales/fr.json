@@ -77,6 +77,7 @@
     "registerSuccess": "Inscription réussie !",
     "language": "Langue",
     "welcome": "Bienvenue,",
+    "welcomeMessage": "Vous êtes connecté(e) avec succès, {{name}} !",
     "loginSuccess": "Connexion réussie !",
     "deleteAccount": "Supprimer le compte",
     "deleteAccountWarning": "Cela supprimera définitivement votre compte. Êtes-vous sûr ?",
