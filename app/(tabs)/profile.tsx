@@ -1838,20 +1838,43 @@ function FollowRequestsModal({
               const isProcessing = processingId === item.id;
               return (
                 <View style={fl.row}>
-                  <View style={fl.avatarContainer}>
+                  {/* Slika i ime otvaraju profil podnositelja zahtjeva —
+                      isto kao u pretrazi i na popisu pratitelja. Modal se
+                      prvo zatvori jer bi inače ostao iznad novog ekrana
+                      (Modal je na Androidu zaseban prozor). Tako se prije
+                      odluke može vidjeti tko je osoba koja te želi pratiti. */}
+                  <TouchableOpacity
+                    style={fl.avatarContainer}
+                    onPress={() => {
+                      onClose();
+                      router.push({
+                        pathname: "/profile/[userId]",
+                        params: { userId: item.id.toString() },
+                      } as any);
+                    }}
+                  >
                     <UserAvatar
                       avatar={item.avatar}
                       firstName={item.firstName}
                       lastName={item.lastName}
                       size={50}
                     />
-                  </View>
-                  <View style={fl.userInfo}>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={fl.userInfo}
+                    onPress={() => {
+                      onClose();
+                      router.push({
+                        pathname: "/profile/[userId]",
+                        params: { userId: item.id.toString() },
+                      } as any);
+                    }}
+                  >
                     <Text style={fl.name}>
                       {item.firstName} {item.lastName}
                     </Text>
                     <Text style={fl.username}>@{item.username}</Text>
-                  </View>
+                  </TouchableOpacity>
                   <View style={fl.actionButtons}>
                     {isProcessing ? (
                       <ActivityIndicator color={V.visited} />
