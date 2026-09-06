@@ -247,278 +247,501 @@ function findVenueByName(
 }
 
 // ---------------------------------------------------------------------------
-// HARDKODIRANI RASPORED — svi koraci uvijek imaju koordinate (fallback)
+// RASPORED DANA — generator koji popunjava dan stvarnim mjestima
 // ---------------------------------------------------------------------------
-// Kraj dana: plan se skraćuje da ne ide preko ovoga (ranije je uvijek imao
-// svih 11 stajališta i završavao oko 23:50 — 16 sati "razgledavanja").
-const DAY_END_MINUTES = 22 * 60 + 30;
-// Spontani plan kreće od TRENUTNOG vremena, ne od 8 ujutro.
-const SPONTANEOUS_MIN_STOPS = 3;
+// Dan traje 08:00–23:00. Ranija verzija je imala fiksnu listu od 11 termina i
+// svaki je bio vezan uz točno jednu kategoriju; ako u okolici te kategorije
+// nije bilo, termin je ispadao — pa je plan za grad bez plaže/muzeja znao
+// imati samo dva večernja stajališta i prazan ostatak dana.
+//
+// Sada se dan gradi kao vremenska crta: tri sidra (doručak, ručak, večera) i
+// između njih se slobodni blokovi popunjavaju iz kataloga aktivnosti. Katalog
+// je težinski ovisan o stilu putovanja (opušteno / kulturno / avantura), a
+// izbor sljedećeg stajališta uzima u obzir udaljenost od prethodnog, pa se
+// dan ne razbacuje po cijelom gradu.
+const DAY_START_MINUTES = 8 * 60;
+const DAY_END_MINUTES = 23 * 60;
+// Više od ovoga nitko ne stigne odraditi u jednom danu.
+const MAX_STOPS_PER_DAY = 14;
+
+interface ActivityTemplate {
+  type: string;
+  duration: number;
+  cost: string;
+  /** Najraniji smisleni početak. */
+  earliest: number;
+  /** Najkasniji smisleni početak. */
+  latest: number;
+  /** Koliko puta u danu se kategorija smije ponoviti (uvijek drugo mjesto). */
+  maxPerDay: number;
+  /**
+   * Trajanje se smije skratiti ako do sljedećeg obroka / kraja dana nema
+   * mjesta za puno trajanje (plaža, park, izlazak — nemaju fiksni termin).
+   * Kino, kazalište i muzej nemaju tu slobodu: predstava traje koliko traje.
+   */
+  flexible?: boolean;
+  descriptionKey: string;
+  fallback: string;
+  /** 0 = kategorija se za taj stil ne nudi. */
+  weights: Record<PlanStyle, number>;
+}
+/** Skraćena aktivnost ispod ovoga nema smisla. */
+const MIN_FLEX_DURATION = 45;
+/** Rezerva između kraja aktivnosti i najkasnijeg termina obroka. */
+const MEAL_TRAVEL_SLACK = 15;
+
+// Opisi su namjerno vremenski neutralni ("Šetnja parkom", a ne "šetnja nakon
+// ručka") — raspored je dinamičan, pa bi svaki opis vezan uz doba dana prije
+// ili kasnije proturječio vremenu uz koje stoji.
+const ACTIVITY_CATALOG: ActivityTemplate[] = [
+  {
+    type: "landmark",
+    duration: 50,
+    cost: "0-5",
+    earliest: 8 * 60,
+    latest: 19 * 60,
+    maxPerDay: 3,
+    descriptionKey: "plan.actLandmark",
+    fallback: "Razgledavanje znamenitosti",
+    weights: { kulturno: 5, opusteno: 3, avantura: 3 },
+  },
+  {
+    type: "museum",
+    duration: 75,
+    cost: "8-15",
+    earliest: 9 * 60,
+    latest: 16 * 60 + 30,
+    maxPerDay: 2,
+    descriptionKey: "plan.actMuseum",
+    fallback: "Obilazak muzeja",
+    weights: { kulturno: 5, opusteno: 2, avantura: 1 },
+  },
+  {
+    type: "market",
+    duration: 40,
+    cost: "0-10",
+    earliest: 8 * 60,
+    latest: 13 * 60 + 30,
+    maxPerDay: 1,
+    descriptionKey: "plan.actMarket",
+    fallback: "Obilazak tržnice",
+    weights: { kulturno: 4, opusteno: 3, avantura: 2 },
+  },
+  {
+    type: "park",
+    duration: 45,
+    cost: "0",
+    earliest: 8 * 60,
+    latest: 20 * 60,
+    maxPerDay: 2,
+    flexible: true,
+    descriptionKey: "plan.actPark",
+    fallback: "Šetnja parkom",
+    weights: { kulturno: 3, opusteno: 5, avantura: 2 },
+  },
+  {
+    type: "cafe",
+    duration: 30,
+    cost: "4-8",
+    earliest: 9 * 60,
+    latest: 20 * 60,
+    maxPerDay: 2,
+    descriptionKey: "plan.actCafe",
+    fallback: "Kava i predah",
+    weights: { kulturno: 3, opusteno: 5, avantura: 2 },
+  },
+  {
+    type: "beach",
+    duration: 120,
+    cost: "0-10",
+    earliest: 9 * 60,
+    latest: 18 * 60,
+    maxPerDay: 1,
+    flexible: true,
+    descriptionKey: "plan.actBeach",
+    fallback: "Odmor na plaži",
+    weights: { kulturno: 2, opusteno: 5, avantura: 3 },
+  },
+  {
+    type: "spa",
+    duration: 90,
+    cost: "20-40",
+    earliest: 10 * 60,
+    latest: 20 * 60,
+    maxPerDay: 1,
+    flexible: true,
+    descriptionKey: "plan.actSpa",
+    fallback: "Spa i wellness",
+    weights: { kulturno: 1, opusteno: 5, avantura: 1 },
+  },
+  {
+    type: "mountain",
+    duration: 180,
+    cost: "0-10",
+    earliest: 8 * 60,
+    latest: 14 * 60,
+    maxPerDay: 1,
+    flexible: true,
+    descriptionKey: "plan.actMountain",
+    fallback: "Planinarski izlet",
+    weights: { kulturno: 1, opusteno: 2, avantura: 5 },
+  },
+  {
+    type: "nationalPark",
+    duration: 210,
+    cost: "10-30",
+    earliest: 8 * 60,
+    latest: 13 * 60,
+    maxPerDay: 1,
+    flexible: true,
+    descriptionKey: "plan.actNationalPark",
+    fallback: "Nacionalni park",
+    weights: { kulturno: 2, opusteno: 3, avantura: 5 },
+  },
+  {
+    type: "cave",
+    duration: 90,
+    cost: "8-20",
+    earliest: 9 * 60,
+    latest: 16 * 60,
+    maxPerDay: 1,
+    flexible: true,
+    descriptionKey: "plan.actCave",
+    fallback: "Obilazak špilje",
+    weights: { kulturno: 3, opusteno: 1, avantura: 5 },
+  },
+  {
+    type: "paintball",
+    duration: 90,
+    cost: "15-30",
+    earliest: 9 * 60,
+    latest: 18 * 60,
+    maxPerDay: 1,
+    descriptionKey: "plan.actPaintball",
+    fallback: "Paintball",
+    weights: { kulturno: 0, opusteno: 1, avantura: 5 },
+  },
+  {
+    type: "escapeRoom",
+    duration: 60,
+    cost: "15-25",
+    earliest: 10 * 60,
+    latest: 21 * 60,
+    maxPerDay: 1,
+    descriptionKey: "plan.actEscapeRoom",
+    fallback: "Escape room",
+    weights: { kulturno: 2, opusteno: 2, avantura: 5 },
+  },
+  {
+    type: "theater",
+    duration: 120,
+    cost: "10-30",
+    earliest: 19 * 60,
+    latest: 20 * 60 + 45,
+    maxPerDay: 1,
+    descriptionKey: "plan.actTheater",
+    fallback: "Predstava u kazalištu",
+    weights: { kulturno: 5, opusteno: 3, avantura: 1 },
+  },
+  {
+    // Kino je večernji program: dok je bilo dostupno od 16h, dvosatna
+    // projekcija znala je pojesti cijelo poslijepodne razgledavanja.
+    type: "cinema",
+    duration: 120,
+    cost: "6-12",
+    earliest: 17 * 60,
+    latest: 20 * 60 + 45,
+    maxPerDay: 1,
+    descriptionKey: "plan.actCinema",
+    fallback: "Kino",
+    weights: { kulturno: 2, opusteno: 4, avantura: 2 },
+  },
+  {
+    type: "club",
+    duration: 120,
+    cost: "15-35",
+    earliest: 20 * 60 + 45,
+    latest: 21 * 60 + 45,
+    maxPerDay: 1,
+    flexible: true,
+    descriptionKey: "plan.actClub",
+    fallback: "Noćni izlazak",
+    weights: { kulturno: 2, opusteno: 3, avantura: 4 },
+  },
+];
+
+/** Procjena vremena putovanja unutar grada iz zračne udaljenosti. */
+function travelMinutesBetween(
+  from: { latitude: number; longitude: number } | null,
+  to: { latitude: number; longitude: number } | null,
+): number {
+  if (!from || !to) return 10;
+  const km = haversineKm(
+    from.latitude,
+    from.longitude,
+    to.latitude,
+    to.longitude,
+  );
+  // ~5 min/km (pješice/kratka vožnja) + 5 min na parkiranje/orijentaciju.
+  return Math.min(60, Math.max(5, Math.round(5 + km * 5)));
+}
 
 function getTimeBasedActivities(
   allVenues: Record<string, VenueItem[]>,
   dayOffset: number = 0,
   fallbackCoords?: { latitude: number; longitude: number } | null,
   t?: (key: string, opts?: any) => string,
-  options?: { spontaneous?: boolean; nowMinutes?: number },
+  options?: {
+    spontaneous?: boolean;
+    nowMinutes?: number;
+    style?: PlanStyle;
+    dayCount?: number;
+  },
 ): DayActivity[] {
-  // Pomoćna: uzmi venue koji još nije korišten u ovom danu
+  const tr = (key: string, fallback: string) => (t ? t(key) : fallback);
+  const style: PlanStyle = options?.style ?? "kulturno";
+  const dayCount = Math.max(1, options?.dayCount ?? 1);
+
+  const startMinutes = options?.spontaneous
+    ? // Spontani plan počinje "sad", zaokruženo na sljedećih 15 minuta.
+      Math.min(
+        DAY_END_MINUTES,
+        Math.max(
+          DAY_START_MINUTES,
+          Math.ceil((options.nowMinutes ?? DAY_START_MINUTES) / 15) * 15,
+        ),
+      )
+    : DAY_START_MINUTES;
+
+  // Svako mjesto se u danu koristi samo jednom.
   const usedVenueNames = new Set<string>();
-  const pickVenue = (type: string, offset: number): VenueItem | null => {
+
+  // Kod višednevnog plana svaki dan dobiva svoj podskup mjesta, inače bi svi
+  // dani izgledali identično (isti muzej, isti park, ista plaža).
+  const preferredForToday = (type: string, venue: VenueItem): boolean => {
     const list = allVenues[type] || [];
-    if (list.length === 0) return null;
-    // Pokušaj pronaći venue koji još nije korišten
-    for (let i = 0; i < list.length; i++) {
-      const idx = (dayOffset + offset + i) % list.length;
-      const v = list[idx];
-      if (!usedVenueNames.has(v.name)) {
-        usedVenueNames.add(v.name);
-        return v;
-      }
-    }
-    // Fallback — uzmi prvi slobodni
-    const v = list[(dayOffset + offset) % list.length];
-    usedVenueNames.add(v.name);
-    return v;
+    if (list.length === 0) return true;
+    const idx = list.findIndex((v) => v.name === venue.name);
+    if (idx < 0) return true;
+    const groups = Math.min(list.length, dayCount);
+    return idx % groups === dayOffset % groups;
   };
 
-  // Raspored dana.
-  //  earliest – najranije vrijeme kad termin ima smisla; raspored ga nikad
-  //             ne stavlja prije toga, pa opisi ostaju istiniti ("šetnja
-  //             nakon ručka" doista dolazi nakon ručka, obrok pada u
-  //             vrijeme obroka).
-  //  latest   – najkasnije vrijeme kad termin još ima smisla (spontani plan
-  //             izbacuje termine kojima je vrijeme prošlo).
-  //  priority – što je broj veći, to se prije izbacuje kad dan ne stane do
-  //             DAY_END_MINUTES. Obroci i glavna znamenitost ostaju zadnji.
-  const schedule = [
+  /** Najbolje slobodno mjesto tražene kategorije — blizu, i "za današnji dan". */
+  const pickVenue = (
+    type: string,
+    from: { latitude: number; longitude: number } | null,
+  ): { venue: VenueItem; travel: number } | null => {
+    const list = allVenues[type] || [];
+    let best: { venue: VenueItem; travel: number; score: number } | null = null;
+    for (const v of list) {
+      if (usedVenueNames.has(v.name)) continue;
+      const travel = travelMinutesBetween(from, v);
+      const score = -travel + (preferredForToday(type, v) ? 30 : 0);
+      if (!best || score > best.score) best = { venue: v, travel, score };
+    }
+    return best ? { venue: best.venue, travel: best.travel } : null;
+  };
+
+  // --- Sidra dana: obroci -------------------------------------------------
+  // Sidro se u plan ubacuje kad dođe njegovo vrijeme; ako mu vrijeme prođe
+  // (spontani plan u 20h nema doručak ni ručak), jednostavno otpada.
+  interface Anchor {
+    type: string;
+    duration: number;
+    cost: string;
+    preferred: number;
+    latest: number;
+    descriptionKey: string;
+    fallback: string;
+  }
+  const anchors: Anchor[] = [
     {
-      earliest: 8 * 60,
-      latest: 11 * 60,
       type: "cafe",
       duration: 45,
       cost: "5-10",
-      priority: 2,
-      description: t ? t("plan.schedBreakfast") : "Doručak",
+      preferred: 8 * 60,
+      latest: 10 * 60 + 30,
+      descriptionKey: "plan.schedBreakfast",
+      fallback: "Doručak",
     },
     {
-      earliest: 8 * 60,
-      latest: 18 * 60,
-      type: "landmark",
-      duration: 50,
-      cost: "0-5",
-      priority: 1,
-      description: t ? t("plan.schedMorningTour") : "Jutarnje razgledavanje",
-    },
-    {
-      earliest: 10 * 60,
-      latest: 17 * 60,
-      type: "museum",
-      duration: 75,
-      cost: "8-15",
-      priority: 4,
-      description: t ? t("plan.schedMuseum") : "Muzej",
-    },
-    {
-      earliest: 7 * 60,
-      latest: 14 * 60,
-      type: "market",
-      duration: 30,
-      cost: "0-10",
-      priority: 5,
-      description: t ? t("plan.schedMarket") : "Tržnica",
-    },
-    {
-      earliest: 11 * 60 + 30,
-      latest: 15 * 60,
       type: "restaurant",
       duration: 60,
       cost: "12-22",
-      priority: 1,
-      description: t ? t("plan.schedLunch") : "Ručak",
+      preferred: 12 * 60 + 30,
+      latest: 15 * 60,
+      descriptionKey: "plan.schedLunch",
+      fallback: "Ručak",
     },
     {
-      // Najranije nakon ručka — opis kaže "šetnja nakon ručka", pa termin ne
-      // smije pasti prije njega.
-      earliest: 13 * 60 + 30,
-      latest: 19 * 60,
-      type: "park",
-      duration: 45,
-      cost: "0",
-      priority: 3,
-      description: t ? t("plan.schedWalk") : "Kratka šetnja nakon ručka",
-    },
-    {
-      earliest: 9 * 60,
-      latest: 18 * 60,
-      type: "beach",
-      duration: 150,
-      cost: "0-10",
-      priority: 2,
-      description: t ? t("plan.schedBeach") : "Plaža",
-    },
-    {
-      earliest: 15 * 60,
-      latest: 19 * 60,
-      type: "cafe",
-      duration: 30,
-      cost: "4-8",
-      priority: 4,
-      description: t ? t("plan.schedAfternoonCoffee") : "Kava/sladoled",
-    },
-    {
-      earliest: 12 * 60,
-      latest: 20 * 60,
-      type: "spa",
-      duration: 60,
-      cost: "20-40",
-      priority: 5,
-      description: t ? t("plan.schedSpa") : "Spa/wellbeing",
-    },
-    {
-      earliest: 18 * 60,
-      latest: 22 * 60,
       type: "restaurant",
       duration: 75,
       cost: "20-40",
-      priority: 1,
-      description: t ? t("plan.schedDinner") : "Večera",
+      preferred: 19 * 60,
+      latest: 21 * 60,
+      descriptionKey: "plan.schedDinner",
+      fallback: "Večera",
     },
-    {
-      earliest: 20 * 60,
-      latest: 23 * 60,
-      type: "club",
-      duration: 180,
-      cost: "15-35",
-      priority: 6,
-      description: t ? t("plan.schedNight") : "Noćni izlazak",
-    },
-  ];
+  ].filter((a) => a.latest >= startMinutes);
 
-  const startMinutes = options?.spontaneous
-    ? // Zaokruži na sljedećih 15 min — spontani plan počinje "sad", a ne u 8h.
-      Math.ceil((options.nowMinutes ?? 8 * 60) / 15) * 15
-    : 8 * 60;
-
-  // 1) Popuni stvarnim mjestima. Ranije se, kad u okolici NEMA mjesta neke
-  //    kategorije, izmišljalo mjesto ("Lokalni Plaže") s koordinatama
-  //    pomaknutima stotinjak metara od centra — pa je plan za Osijek
-  //    sadržavao plažu i spa kojih nema, a marker na karti pokazivao je na
-  //    nasumičnu točku. Sad se takav termin jednostavno izostavi: bolje
-  //    kraći plan od stvarnih mjesta nego duži od izmišljenih.
-  let rawActivities = schedule
-    .map((item, idx) => ({ ...item, venue: pickVenue(item.type, idx) }))
-    .filter((item) => item.venue !== null);
-
-  // 2) Spontani plan: izbaci termine kojima je vrijeme već prošlo
-  //    (doručak u 17h) i one koji bi počeli prekasno.
-  if (options?.spontaneous) {
-    const fitting = rawActivities.filter(
-      (item) => item.latest >= startMinutes && item.earliest + item.duration <= 23 * 60,
-    );
-    // Ako bi ostalo premalo, zadrži barem najvažnije termine.
-    rawActivities =
-      fitting.length >= SPONTANEOUS_MIN_STOPS
-        ? fitting
-        : rawActivities
-            .filter((item) => item.latest >= startMinutes)
-            .slice(0, SPONTANEOUS_MIN_STOPS);
+  // --- Gradnja vremenske crte --------------------------------------------
+  interface PlacedStop {
+    startAt: number;
+    duration: number;
+    cost: string;
+    type: string;
+    venue: VenueItem;
+    description: string;
   }
-
-  // 3) Skrati dan da stane do DAY_END_MINUTES — izbacuj redom najmanje
-  //    važne termine. Prije je plan uvijek imao svih 11 stajališta i trajao
-  //    gotovo 16 sati (08:00–23:50), što nitko ne može odraditi.
-  const TRAVEL_MIN = 15;
-  // Procjena kraja dana mora računati isto kao i konačni raspored (svaki
-  // termin počinje najranije u svom prozoru), inače bi se izbacivalo previše
-  // ili premalo termina.
-  const projectedEnd = (list: typeof rawActivities) => {
-    let c = startMinutes;
-    list.forEach((a) => {
-      c = Math.max(c, a.earliest) + a.duration + TRAVEL_MIN;
-    });
-    return c - (list.length ? TRAVEL_MIN : 0);
-  };
-
-  while (
-    rawActivities.length > SPONTANEOUS_MIN_STOPS &&
-    projectedEnd(rawActivities) > DAY_END_MINUTES
-  ) {
-    let dropIdx = -1;
-    let worstPriority = -1;
-    rawActivities.forEach((a, i) => {
-      if (a.priority > worstPriority) {
-        worstPriority = a.priority;
-        dropIdx = i;
-      }
-    });
-    if (dropIdx === -1) break;
-    rawActivities.splice(dropIdx, 1);
-  }
-
-  // 4) Vremena: svaki termin počinje u svom smislenom prozoru.
-  //
-  // Ranije se vrijeme računalo isključivo zbrajanjem trajanja od 08:00
-  // nadalje, a redoslijed je uz to još i premetala "optimizacija rute" po
-  // blizini. Rezultat su bili rasporedi koji sami sebi proturječe: ručak u
-  // 09:00 i večera u 12:00 kad je pronađeno malo mjesta, "kratka šetnja
-  // NAKON ručka" šest sati poslije ručka, "kava prije večere" u 13:35.
-  //
-  // Sad se ide obrnuto: zadržava se smisleni kronološki redoslijed, a svaki
-  // termin počinje najranije u svom prozoru (earliest) — ako prethodni
-  // termin završi prije toga, u planu jednostavno ostane slobodno vrijeme,
-  // što je iskrenije nego lažno "popunjen" dan. Zbog toga obrok uvijek pada
-  // u vrijeme obroka, a opisi ostaju točni.
-  //
-  // Optimizacija rute po blizini je namjerno uklonjena: ušteda na hodanju
-  // bila je mala, a cijena joj je bio nerazumljiv raspored.
-  const optimized = rawActivities;
+  const placed: PlacedStop[] = [];
+  const usedCount: Record<string, number> = {};
 
   let cursor = startMinutes;
+  let position: { latitude: number; longitude: number } | null =
+    fallbackCoords ?? null;
+  let anchorIdx = 0;
 
-  // Ako u okolici postoji samo jedan restoran, isti se koristi i za ručak i
-  // za večeru — tada opis "Večera — drugi restoran od ručka" nije istinit.
-  const lunch = optimized.find(
-    (a) => a.type === "restaurant" && a.description === (t ? t("plan.schedLunch") : "Ručak"),
-  );
+  const place = (
+    startAt: number,
+    tpl: {
+      type: string;
+      duration: number;
+      cost: string;
+      descriptionKey: string;
+      fallback: string;
+    },
+    venue: VenueItem,
+  ) => {
+    usedVenueNames.add(venue.name);
+    usedCount[tpl.type] = (usedCount[tpl.type] || 0) + 1;
+    placed.push({
+      startAt,
+      duration: tpl.duration,
+      cost: tpl.cost,
+      type: tpl.type,
+      venue,
+      description: tr(tpl.descriptionKey, tpl.fallback),
+    });
+    cursor = startAt + tpl.duration;
+    position = venue;
+  };
 
-  return optimized.map((item, idx) => {
-    // Kreni najranije u vlastitom prozoru, ali nikad prije nego što je
-    // prethodni termin (plus put) gotov.
-    const startAt = Math.max(cursor, item.earliest);
-    const h = Math.floor(startAt / 60);
-    const m = startAt % 60;
-    const timeStr = `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
-    cursor = startAt + item.duration + TRAVEL_MIN;
+  while (cursor < DAY_END_MINUTES && placed.length < MAX_STOPS_PER_DAY) {
+    // 1) Je li na redu obrok?
+    const anchor: Anchor | undefined = anchors[anchorIdx];
+    if (anchor && cursor > anchor.latest) {
+      anchorIdx++;
+      continue;
+    }
+    if (anchor && cursor + 20 >= anchor.preferred) {
+      const found = pickVenue(anchor.type, position);
+      anchorIdx++;
+      if (found) {
+        const startAt = Math.max(cursor + found.travel, anchor.preferred);
+        if (
+          startAt <= anchor.latest &&
+          startAt + anchor.duration <= DAY_END_MINUTES
+        ) {
+          place(startAt, anchor, found.venue);
+          continue;
+        }
+      }
+      continue;
+    }
 
-    const isDinner =
-      item.type === "restaurant" &&
-      item.description === (t ? t("plan.schedDinner") : "Večera");
-    const sameAsLunch =
-      isDinner && !!lunch?.venue && lunch.venue.name === item.venue?.name;
+    // 2) Popuni slobodni blok do sljedećeg obroka (ili do kraja dana).
+    //    Blok mora završiti dovoljno prije najkasnijeg termina obroka da se do
+    //    restorana stigne doći — inače bi dugačka aktivnost (npr. kazalište
+    //    19:00–21:00) pojela večeru, koja bi onda ispala iz plana.
+    const blockEnd = anchor
+      ? Math.min(anchor.latest - MEAL_TRAVEL_SLACK, DAY_END_MINUTES)
+      : DAY_END_MINUTES;
+    // Broj mjesta koja treba ostaviti za preostale obroke — bez ovoga bi
+    // gornja granica broja stajališta znala pojesti večeru.
+    const reserved = anchors.length - anchorIdx;
+    if (placed.length + reserved >= MAX_STOPS_PER_DAY) {
+      if (anchor) {
+        cursor = Math.max(cursor, anchor.preferred);
+        continue;
+      }
+      break;
+    }
 
-    // U spontanom planu razgledavanje zna pasti popodne — tada opis ne smije
-    // tvrditi da je "jutarnje".
-    const description = sameAsLunch
-      ? t
-        ? t("plan.schedDinnerSameVenue")
-        : "Večera"
-      : item.type === "landmark" && startAt >= 12 * 60
-        ? t
-          ? t("plan.schedSightseeing")
-          : "Razgledavanje znamenitosti"
-        : item.description;
+    let bestCandidate: {
+      tpl: ActivityTemplate;
+      venue: VenueItem;
+      startAt: number;
+      duration: number;
+      score: number;
+    } | null = null;
 
+    for (const tpl of ACTIVITY_CATALOG) {
+      const weight = tpl.weights[style];
+      if (weight <= 0) continue;
+      if ((usedCount[tpl.type] || 0) >= tpl.maxPerDay) continue;
+      const found = pickVenue(tpl.type, position);
+      if (!found) continue;
+      const startAt = Math.max(cursor + found.travel, tpl.earliest);
+      if (startAt > tpl.latest) continue;
+      // Aktivnost ne smije "pojesti" sljedeći obrok ni prijeći kraj dana.
+      const room = blockEnd - startAt;
+      const duration = tpl.flexible
+        ? Math.min(tpl.duration, room)
+        : tpl.duration;
+      if (duration > room) continue;
+      if (tpl.flexible && duration < Math.min(tpl.duration, MIN_FLEX_DURATION))
+        continue;
+      // Kazna za čekanje: ako termin počinje tek za sat vremena, dan stoji —
+      // bolje je uzeti nešto što može odmah, pa ovo kasnije.
+      const wait = startAt - (cursor + found.travel);
+      const score =
+        weight * 20 -
+        found.travel -
+        wait * 0.8 -
+        (usedCount[tpl.type] || 0) * 15 -
+        // Skraćena aktivnost je slabija od pune.
+        (tpl.duration - duration) * 0.2;
+      if (!bestCandidate || score > bestCandidate.score) {
+        bestCandidate = { tpl, venue: found.venue, startAt, duration, score };
+      }
+    }
+
+    if (bestCandidate) {
+      place(
+        bestCandidate.startAt,
+        { ...bestCandidate.tpl, duration: bestCandidate.duration },
+        bestCandidate.venue,
+      );
+      continue;
+    }
+
+    // 3) Ništa ne stane u blok — preskoči na sljedeći obrok ili završi dan.
+    if (anchor) {
+      cursor = Math.max(cursor, anchor.preferred);
+      // Ako je i nakon pomaka blok prazan, sidro će se obraditi u sljedećem
+      // krugu; ako ni tada ne uspije, anchorIdx se pomiče i petlja ide dalje.
+      if (cursor >= DAY_END_MINUTES) break;
+      continue;
+    }
+    break;
+  }
+
+  placed.sort((a, b) => a.startAt - b.startAt);
+
+  return placed.map((stop, idx) => {
+    const h = Math.floor(stop.startAt / 60);
+    const m = stop.startAt % 60;
     return {
       id: `act_${idx}`,
-      time: timeStr,
-      venueName: item.venue?.name ?? "",
-      venueType: item.type,
-      venue: item.venue,
-      type: item.type,
-      duration: item.duration,
-      cost: item.cost,
-      description,
+      time: `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`,
+      venueName: stop.venue.name,
+      venueType: stop.type,
+      venue: stop.venue,
+      type: stop.type,
+      duration: stop.duration,
+      cost: stop.cost,
+      description: stop.description,
       order: idx,
     };
   });
@@ -897,8 +1120,7 @@ export function PlanMyDayModal({
   const [locationSuggestions, setLocationSuggestions] = useState<
     { displayName: string; lat: string; lon: string }[]
   >([]);
-  const [showLocationSuggestions, setShowLocationSuggestions] =
-    useState(false);
+  const [showLocationSuggestions, setShowLocationSuggestions] = useState(false);
   const [searchingLocation, setSearchingLocation] = useState(false);
   const locationDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(
     null,
@@ -924,6 +1146,9 @@ export function PlanMyDayModal({
     longitude: number;
   } | null>(null);
   const [generatedNumDays, setGeneratedNumDays] = useState(1);
+  // Stil s kojim je plan generiran — prikaz na karti mora ostati isti i
+  // ako korisnik nakon generiranja promijeni izbor u formi.
+  const [generatedStyle, setGeneratedStyle] = useState<PlanStyle>("kulturno");
   const [expandedCategories, setExpandedCategories] = useState<Set<string>>(
     new Set(),
   );
@@ -970,10 +1195,20 @@ export function PlanMyDayModal({
       return getTimeBasedActivities(allVenues, activeDay, geocodedCoords, t, {
         spontaneous,
         nowMinutes: now.getHours() * 60 + now.getMinutes(),
+        style: generatedStyle,
+        dayCount: generatedNumDays,
       });
     }
     return [];
-  }, [allVenues, activeDay, geocodedCoords, t, spontaneous]);
+  }, [
+    allVenues,
+    activeDay,
+    geocodedCoords,
+    t,
+    spontaneous,
+    generatedStyle,
+    generatedNumDays,
+  ]);
 
   // Auto-fit karte
   useEffect(() => {
@@ -1144,10 +1379,7 @@ export function PlanMyDayModal({
       return;
     }
     if (!locationValid) {
-      Alert.alert(
-        t("plan.destination"),
-        t("plan.destinationNotVerified"),
-      );
+      Alert.alert(t("plan.destination"), t("plan.destinationNotVerified"));
       return;
     }
 
@@ -1173,6 +1405,7 @@ export function PlanMyDayModal({
           : null,
       );
       setGeneratedNumDays(spontaneous ? 1 : numDays);
+      setGeneratedStyle(planStyle);
 
       if (loadingInterval.current) clearInterval(loadingInterval.current);
 
@@ -1193,6 +1426,10 @@ export function PlanMyDayModal({
             // 16h bio neupotrebljiv.
             spontaneous,
             nowMinutes: now.getHours() * 60 + now.getMinutes(),
+            // Vrsta putovanja (opušteno / kulturno / avantura) dosad se nigdje
+            // nije koristila — plan je za sva tri izbora bio identičan.
+            style: planStyle,
+            dayCount: spontaneous ? 1 : numDays,
           },
         );
         planText += `DAN ${d + 1}\n${"─".repeat(40)}\n\n`;
@@ -1476,7 +1713,9 @@ export function PlanMyDayModal({
                 >
                   {t("plan.whereGoing")}?
                 </Text>
-                <View style={{ position: "relative", justifyContent: "center" }}>
+                <View
+                  style={{ position: "relative", justifyContent: "center" }}
+                >
                   <TextInput
                     style={{
                       backgroundColor: DC.card,
@@ -1536,7 +1775,10 @@ export function PlanMyDayModal({
                       overflow: "hidden",
                     }}
                   >
-                    <ScrollView keyboardShouldPersistTaps="handled" nestedScrollEnabled>
+                    <ScrollView
+                      keyboardShouldPersistTaps="handled"
+                      nestedScrollEnabled
+                    >
                       {locationSuggestions.map((s, idx) => (
                         <TouchableOpacity
                           key={`${s.lat}_${s.lon}_${idx}`}
