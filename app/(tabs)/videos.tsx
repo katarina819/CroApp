@@ -533,7 +533,20 @@ function CommentsModal({
     >
       <KeyboardAvoidingView
         style={{ flex: 1 }}
-        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        // ✅ FIX: Android ovdje već sam (na razini prozora aplikacije)
+        // smanjuje vidljivu visinu kad se tipkovnica otvori — Expo bez
+        // eksplicitnog "softwareKeyboardLayoutMode" koristi zadano
+        // "resize" (ekvivalent windowSoftInputMode="adjustResize"). Kad se
+        // POVRH toga doda i KeyboardAvoidingView s behavior="height", cijeli
+        // ekran se smanjuje/vraća DVA PUTA za svaki otvaranje/zatvaranje
+        // tipkovnice — jednom trenutno na razini OS-a, jednom (grubo,
+        // netrzajno) u JS-u. Ta dva međusobno nesinkronizirana skoka
+        // izgledaju kao da cijeli ekran "vibrira", najuočljivije kad se
+        // tipkovnica zatvori (npr. Android "natrag" gumbom dok je polje
+        // opisa fokusirano). Na Androidu prepuštamo posao isključivo
+        // OS-ovom adjustResize-u; "padding" ostaje samo za iOS, koji nema
+        // takvo automatsko ponašanje.
+        behavior={Platform.OS === "ios" ? "padding" : undefined}
       >
         <SafeAreaView style={{ flex: 1, backgroundColor: VT.bg }}>
           {/* ── Header — identičan dashboard NotificationSettingsModal / ActivityGroupsModal ── */}
@@ -698,7 +711,20 @@ function MessengerModal({
     >
       <KeyboardAvoidingView
         style={{ flex: 1 }}
-        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        // ✅ FIX: Android ovdje već sam (na razini prozora aplikacije)
+        // smanjuje vidljivu visinu kad se tipkovnica otvori — Expo bez
+        // eksplicitnog "softwareKeyboardLayoutMode" koristi zadano
+        // "resize" (ekvivalent windowSoftInputMode="adjustResize"). Kad se
+        // POVRH toga doda i KeyboardAvoidingView s behavior="height", cijeli
+        // ekran se smanjuje/vraća DVA PUTA za svaki otvaranje/zatvaranje
+        // tipkovnice — jednom trenutno na razini OS-a, jednom (grubo,
+        // netrzajno) u JS-u. Ta dva međusobno nesinkronizirana skoka
+        // izgledaju kao da cijeli ekran "vibrira", najuočljivije kad se
+        // tipkovnica zatvori (npr. Android "natrag" gumbom dok je polje
+        // opisa fokusirano). Na Androidu prepuštamo posao isključivo
+        // OS-ovom adjustResize-u; "padding" ostaje samo za iOS, koji nema
+        // takvo automatsko ponašanje.
+        behavior={Platform.OS === "ios" ? "padding" : undefined}
       >
         <SafeAreaView style={{ flex: 1, backgroundColor: VT.bg }}>
           {/* ── Header — identičan dashboard stilu ── */}
@@ -1277,7 +1303,20 @@ export function UploadModal({
     >
       <KeyboardAvoidingView
         style={{ flex: 1 }}
-        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        // ✅ FIX: Android ovdje već sam (na razini prozora aplikacije)
+        // smanjuje vidljivu visinu kad se tipkovnica otvori — Expo bez
+        // eksplicitnog "softwareKeyboardLayoutMode" koristi zadano
+        // "resize" (ekvivalent windowSoftInputMode="adjustResize"). Kad se
+        // POVRH toga doda i KeyboardAvoidingView s behavior="height", cijeli
+        // ekran se smanjuje/vraća DVA PUTA za svaki otvaranje/zatvaranje
+        // tipkovnice — jednom trenutno na razini OS-a, jednom (grubo,
+        // netrzajno) u JS-u. Ta dva međusobno nesinkronizirana skoka
+        // izgledaju kao da cijeli ekran "vibrira", najuočljivije kad se
+        // tipkovnica zatvori (npr. Android "natrag" gumbom dok je polje
+        // opisa fokusirano). Na Androidu prepuštamo posao isključivo
+        // OS-ovom adjustResize-u; "padding" ostaje samo za iOS, koji nema
+        // takvo automatsko ponašanje.
+        behavior={Platform.OS === "ios" ? "padding" : undefined}
       >
         <SafeAreaView style={{ flex: 1, backgroundColor: VT.bg }}>
           {/* Header */}
