@@ -504,6 +504,7 @@
     "blockError": "Benutzer kann nicht blockiert werden"
   },
   "activity": {
+    "loadFailed": "Die Aktivitätsstatistik kann derzeit nicht geladen werden. Prüfen Sie Ihre Internetverbindung und versuchen Sie es erneut.",
     "minutes": "Minuten",
     "likes": "Gefällt mir",
     "comments": "Kommentare",

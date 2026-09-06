@@ -523,6 +523,7 @@
     "blockError": "Unable to block user"
   },
   "activity": {
+    "loadFailed": "Activity statistics can't be loaded right now. Check your internet connection and try again.",
     "minutes": "Minutes",
     "likes": "Likes",
     "comments": "Comments",

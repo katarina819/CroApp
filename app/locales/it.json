@@ -533,6 +533,7 @@
     "blockError": "Impossibile bloccare l'utente"
   },
   "activity": {
+    "loadFailed": "Al momento non è possibile caricare le statistiche di attività. Controlla la connessione a Internet e riprova.",
     "minutes": "Minuti",
     "likes": "Mi piace",
     "comments": "Commenti",

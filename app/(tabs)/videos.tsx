@@ -137,6 +137,26 @@ function useKeyboardHeight() {
   return height;
 }
 
+// Razmak koji redak s unosom mora ostaviti pri dnu.
+//
+// Aplikacija radi u "edge-to-edge" načinu (app.json), dakle crta ispod
+// sistemskih traka. U tom načinu visina koju tipkovnica prijavi ne pokriva
+// i pojas trake za navigaciju gestama, pa je odmak samo za visinu
+// tipkovnice bio TAMAN premali — polje za unos ostajalo je vidljivo tek
+// rubom, točno za visinu te trake. Zato se sigurnosni razmak (insets.bottom)
+// dodaje i kad je tipkovnica otvorena, plus mali vizualni odmak da polje ne
+// bude zalijepljeno uz tipkovnicu. Ako na nekom uređaju prijavljena visina
+// ipak već uključuje traku, rezultat je samo nekoliko piksela zraka iznad
+// tipkovnice — što je bezopasno, za razliku od skrivenog polja.
+function useInputBottomOffset() {
+  const keyboardHeight = useKeyboardHeight();
+  const insets = useSafeAreaInsets();
+
+  return keyboardHeight > 0
+    ? keyboardHeight + insets.bottom + 8
+    : insets.bottom;
+}
+
 // ─── Helper: avatar URL ────────────────────────────────────────────────────────
 function buildAvatarUrl(avatar: string | null | undefined): string | null {
   if (!avatar) return null;
@@ -598,8 +618,7 @@ function CommentsModal({
   const [submitting, setSubmitting] = useState(false);
   const scrollViewRef = useRef<ScrollView>(null);
   const commentListKey = useRef(0);
-  const keyboardHeight = useKeyboardHeight();
-  const insets = useSafeAreaInsets();
+  const inputBottomOffset = useInputBottomOffset();
 
   const loadComments = async () => {
     if (!video) return;
@@ -738,7 +757,7 @@ function CommentsModal({
               // tipkovnica skrivena ostavi razmak za Androidovu traku za
               // navigaciju gestama (bijela traka koja je dosad prekrivala
               // polje i gumb za slanje).
-              { marginBottom: keyboardHeight > 0 ? keyboardHeight : insets.bottom },
+              { marginBottom: inputBottomOffset },
             ]}
           >
             <TextInput
@@ -790,8 +809,7 @@ function MessengerModal({
   const modal = useMemo(() => makeModalStyles(VT), [VT]);
   const [message, setMessage] = useState("");
   const [sending, setSending] = useState(false);
-  const keyboardHeight = useKeyboardHeight();
-  const insets = useSafeAreaInsets();
+  const inputBottomOffset = useInputBottomOffset();
 
   const sendMessage = async () => {
     if (!video || !message.trim()) return;
@@ -888,7 +906,7 @@ function MessengerModal({
               modal.inputRow,
               // Isto kao u komentarima: iznad tipkovnice dok se piše, iznad
               // trake za navigaciju gestama kad je tipkovnica skrivena.
-              { marginBottom: keyboardHeight > 0 ? keyboardHeight : insets.bottom },
+              { marginBottom: inputBottomOffset },
             ]}
           >
             <TextInput

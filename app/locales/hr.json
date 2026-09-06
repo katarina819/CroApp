@@ -523,6 +523,7 @@
     "blockError": "Nije moguće blokirati korisnika"
   },
   "activity": {
+    "loadFailed": "Statistiku aktivnosti trenutno nije moguće dohvatiti. Provjeri internetsku vezu i pokušaj ponovno.",
     "minutes": "Minuta",
     "likes": "Lajkovi",
     "comments": "Komentari",

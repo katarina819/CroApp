@@ -1858,6 +1858,7 @@ function ActivityArchive({ userId }: { userId: number | null }) {
   const [data, setData] = useState<DailyActivity[]>([]);
   const [period, setPeriod] = useState<"daily" | "weekly" | "monthly">("daily");
   const [loading, setLoading] = useState(true);
+  const [loadFailed, setLoadFailed] = useState(false);
 
   useEffect(() => {
     if (!userId) return;
@@ -1872,13 +1873,23 @@ function ActivityArchive({ userId }: { userId: number | null }) {
         `${API_BASE_URL}/api/activity/stats?period=${period}`,
         { headers: { Authorization: `Bearer ${token}` } },
       );
-      if (res.ok) setData(await res.json());
+      if (res.ok) {
+        setData(await res.json());
+        setLoadFailed(false);
+      } else {
+        // Neuspjeh se prije tiho progutao pa je ekran pokazivao same nule —
+        // što izgleda identično kao "korisnik nema aktivnosti". Sad se
+        // greška izričito prikaže da se ta dva slučaja mogu razlikovati.
+        setData([]);
+        setLoadFailed(true);
+      }
     } catch {
       // Prije se ovdje generirao NASUMIČAN skup podataka ("15 lajkova, 8
       // komentara, 73 pratitelja"...) kad dohvat ne uspije. Na ekranu koji
       // korisniku prikazuje njegovu stvarnu aktivnost to je gore od
       // prazne liste: izmišljeni brojevi izgledaju kao pravi podaci.
       setData([]);
+      setLoadFailed(true);
     } finally {
       setLoading(false);
     }
@@ -1886,6 +1897,21 @@ function ActivityArchive({ userId }: { userId: number | null }) {
 
   if (loading)
     return <ActivityIndicator color={V.visited} style={{ marginTop: 20 }} />;
+
+  if (loadFailed)
+    return (
+      <Text
+        style={{
+          color: V.silverDim,
+          fontSize: 13,
+          textAlign: "center",
+          paddingHorizontal: 24,
+          paddingVertical: 20,
+        }}
+      >
+        {t("activity.loadFailed")}
+      </Text>
+    );
 
   const totalLikes = data.reduce((s, d) => s + d.likes, 0);
   const totalComments = data.reduce((s, d) => s + d.comments, 0);
