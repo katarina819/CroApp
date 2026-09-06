@@ -524,6 +524,11 @@
     "createFailed": "Impossible de créer le groupe. Vérifiez votre connexion."
   },
   "follow": {
+    "requestTitle": "Nouvelle demande d'abonnement",
+    "requestMessage": "{{name}} souhaite vous suivre. Voulez-vous accepter ?",
+    "accept": "Accepter",
+    "decline": "Refuser",
+    "later": "Plus tard",
     "goldenAdded": "Golden Friend ajouté",
     "goldenRemoved": "Golden Friend retiré",
     "goldenError": "Impossible de modifier le statut Golden Friend",

@@ -513,6 +513,11 @@
     "createFailed": "Unable to create group. Check your internet connection."
   },
   "follow": {
+    "requestTitle": "New follow request",
+    "requestMessage": "{{name}} wants to follow you. Do you want to accept?",
+    "accept": "Accept",
+    "decline": "Decline",
+    "later": "Later",
     "goldenAdded": "Golden Friend added",
     "goldenRemoved": "Golden Friend removed",
     "goldenError": "Unable to change Golden Friend status",

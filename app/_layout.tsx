@@ -5,6 +5,7 @@ import { Stack, router } from "expo-router";
 import { useEffect, useState } from "react";
 import { ActivityIndicator, AppState, Text, View } from "react-native";
 import { AdaptiveThemeProvider } from "../components/AdaptiveThemeProvider"; // ← NOVO
+import FollowRequestNotifier from "../components/FollowRequestNotifier";
 import { API_BASE_URL } from "./config/api";
 import "./config/i18n"; // ← dodaj ovo kao prvi import
 import { UserProvider } from "./contexts/UserContext";
@@ -181,6 +182,11 @@ export default function RootLayout() {
   return (
     <AdaptiveThemeProvider>
       <UserProvider>
+        {/* Obavijest o zahtjevu za praćenje — mora biti ovdje, u layoutu koji
+            živi cijelo vrijeme, da primatelj zahtjev vidi bez obzira na kojem
+            je ekranu (dosad se za njega doznalo samo ručnim otvaranjem
+            Profil → Zahtjevi za praćenje). */}
+        <FollowRequestNotifier />
         {/* Svi ekrani uvijek registrirani – ne uvjetno */}
         <Stack screenOptions={{ headerShown: false }}>
           <Stack.Screen name="login" />

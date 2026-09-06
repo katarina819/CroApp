@@ -97,6 +97,10 @@ interface VideoItem {
   createdAt: string;
   userName?: string;
   userAvatar?: string | null;
+  // Ime i prezime autora stižu zajedno s videom (novi backend), pa avatar i
+  // inicijali ne traže dodatni zahtjev po stavci feeda.
+  userFirstName?: string;
+  userLastName?: string;
   likeCount?: number;
   commentCount?: number;
   isLiked?: boolean;
@@ -179,10 +183,13 @@ interface FetchedProfile {
 // se nije radilo, pa je fallback uvijek padao na golo "?" umjesto pravih
 // inicijala, iako je ime korisnika ionako već dostupno na profilu koji se
 // tu i onako dohvaća radi avatara. Sad se ime dohvaća ISTIM pozivom.
-function useUserProfile(userId: number): FetchedProfile {
+// userId === null znači "pozivatelj već ima podatke" — tada se ne šalje
+// nikakav zahtjev.
+function useUserProfile(userId: number | null): FetchedProfile {
   const [profile, setProfile] = useState<FetchedProfile>({ url: null });
 
   useEffect(() => {
+    if (userId === null) return;
     (async () => {
       try {
         const token = await AsyncStorage.getItem("token");
@@ -230,17 +237,32 @@ function FreshAvatar({
   firstName,
   lastName,
   username,
+  avatar,
   size,
 }: {
   userId: number;
   firstName?: string;
   lastName?: string;
   username?: string;
+  /** Avatar koji je već stigao uz podatke (npr. uz video u feedu). Ako je
+   *  zadan, profil se NE dohvaća posebnim zahtjevom. */
+  avatar?: string | null;
   size: number;
 }) {
-  const profile = useUserProfile(userId);
+  // Ako pozivatelj već ima sve podatke o autoru, nema razloga za mrežni
+  // poziv — feed videa ih sad vraća zajedno s videom, pa je time nestalo
+  // po jedan zahtjev za SVAKI video na ekranu.
+  const hasInlineData = !!(firstName || username);
+  const profile = useUserProfile(hasInlineData ? null : userId);
   const [failed, setFailed] = useState(false);
-  const url = profile.url;
+  // Preset avatari ("avatar:male"/"avatar:female") nisu URL-ovi — prosljeđuju
+  // se takvi kakvi jesu jer se ispod mapiraju na ugrađene slike.
+  const inlineUrl = avatar
+    ? avatar.startsWith("avatar:")
+      ? avatar
+      : buildAvatarUrl(avatar)
+    : null;
+  const url = profile.url ?? inlineUrl;
   // Dohvaćeni profil ima prednost (uvijek točan), propovi su samo
   // trenutni fallback dok se fetch ne vrati.
   const fName = profile.firstName || firstName;
@@ -571,7 +593,14 @@ function VideoItemComponent({
       <View style={vs.bottomInfo}>
         <View style={vs.userInfo}>
           <StoryBadge userId={item.userId} size={40}>
-            <FreshAvatar userId={item.userId} size={40} />
+            <FreshAvatar
+              userId={item.userId}
+              firstName={item.userFirstName}
+              lastName={item.userLastName}
+              username={item.userName}
+              avatar={item.userAvatar}
+              size={40}
+            />
           </StoryBadge>
           <Text style={vs.userName}>
             {item.userName || `User_${item.userId}`}

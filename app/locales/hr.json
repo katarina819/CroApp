@@ -513,6 +513,11 @@
     "notFound": "Nije nađen"
   },
   "follow": {
+    "requestTitle": "Novi zahtjev za praćenje",
+    "requestMessage": "{{name}} te želi pratiti. Želiš li prihvatiti?",
+    "accept": "Prihvati",
+    "decline": "Odbij",
+    "later": "Kasnije",
     "goldenAdded": "Golden Friend dodan",
     "goldenRemoved": "Golden Friend uklonjen",
     "goldenError": "Nije moguće promijeniti status Golden Friend-a",

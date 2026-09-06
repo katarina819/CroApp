@@ -72,8 +72,24 @@ export const getCurrentUserId = async (): Promise<number | null> => {
 
 // ─── API calls ────────────────────────────────────────────────────────────────
 
+/** Avatar iz baze pretvori u nešto što <Image> može prikazati.
+ *  Preset avatari ("avatar:male"/"avatar:female") nisu URL-ovi — za njih
+ *  vraćamo null pa se prikažu inicijali, kao i dosad. */
+const toAvatarUrl = (raw?: string | null): string | null => {
+  if (!raw || raw.trim() === "" || raw.startsWith("avatar:")) return null;
+  return raw.startsWith("http://") || raw.startsWith("https://")
+    ? raw
+    : `${API_BASE_URL}${raw.startsWith("/") ? "" : "/"}${raw}`;
+};
+
 /**
- * Dohvati sve korisnike s kojima imaš razgovor (pratioci i praćeni)
+ * Popis razgovora — SAMO korisnici s kojima stvarno postoji razmijenjena
+ * poruka.
+ *
+ * Backend za to sad ima jedan endpoint (/api/message/conversations) koji sve
+ * vrati u jednom upitu. Dok ta verzija backenda nije objavljena, koristi se
+ * stari način (spoj pratitelja i praćenih), ali sada s filtrom: kontakti bez
+ * ijedne poruke se izbacuju, pa se popis ponaša isto u oba slučaja.
  */
 export const getConversations = async (): Promise<Conversation[]> => {
   const token = await getToken();
@@ -81,6 +97,31 @@ export const getConversations = async (): Promise<Conversation[]> => {
 
   if (!token || !userId) throw new Error("Not authenticated");
 
+  try {
+    const res = await fetch(`${API_BASE_URL}/api/message/conversations`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    if (res.ok) {
+      const rows: any[] = await res.json();
+      return rows.map((r) => ({
+        userId: r.userId,
+        firstName: r.firstName,
+        lastName: r.lastName,
+        username: r.username,
+        avatar: toAvatarUrl(r.avatar),
+        lastMessage: formatLastMessagePreview(
+          r.lastMessage ?? "",
+          r.lastMessageSenderId === userId,
+        ),
+        timestamp: r.timestamp,
+        unreadCount: r.unreadCount ?? 0,
+      }));
+    }
+  } catch {
+    // padamo na stari način ispod
+  }
+
+  // ── Stari način (backend bez /conversations) ──────────────────────────────
   // Dohvati sve korisnike koje korisnik prati i koji prate njega
   const [followingRes, followersRes] = await Promise.all([
     fetch(`${API_BASE_URL}/api/follow/following/${userId}`, {
@@ -100,29 +141,13 @@ export const getConversations = async (): Promise<Conversation[]> => {
     new Map(allUsers.map((u) => [u.id, u])).values(),
   );
 
-  // Za svakog korisnika dohvati zadnju poruku i avatar
+  // Za svakog korisnika dohvati zadnju poruku
   const conversations = await Promise.all(
     uniqueUsers.map(async (user) => {
-      // Dohvati avatar korisnika
-      let avatar = null;
-      try {
-        const userRes = await fetch(
-          `${API_BASE_URL}/api/auth/users/${user.id}`,
-          {
-            headers: { Authorization: `Bearer ${token}` },
-          },
-        );
-        if (userRes.ok) {
-          const userData = await userRes.json();
-          if (userData.avatar) {
-            avatar = userData.avatar.startsWith("http")
-              ? userData.avatar
-              : `${API_BASE_URL}${userData.avatar}`;
-          }
-        }
-      } catch (error) {
-        console.error("Error fetching user avatar:", error);
-      }
+      // Avatar više ne dohvaćamo posebnim zahtjevom po korisniku — popis
+      // pratitelja/praćenih ga već vraća (FollowRepository ga spaja iz
+      // user_profiles), pa je to bio jedan suvišan zahtjev po kontaktu.
+      const avatar = toAvatarUrl(user.avatar);
 
       // Dohvati zadnju poruku
       const messagesRes = await fetch(
@@ -133,7 +158,7 @@ export const getConversations = async (): Promise<Conversation[]> => {
       );
 
       let lastMessage = "";
-      let timestamp = new Date().toISOString();
+      let timestamp = "";
       let unreadCount = 0;
 
       if (messagesRes.ok) {
@@ -164,10 +189,15 @@ export const getConversations = async (): Promise<Conversation[]> => {
     }),
   );
 
-  // Sortiraj po zadnjoj poruci (najnovije prvo)
-  return conversations.sort(
-    (a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime(),
-  );
+  // Zadrži samo kontakte s kojima STVARNO postoji poruka. Prazan timestamp
+  // znači da razgovor nikad nije započet — takvi su se dosad prikazivali u
+  // popisu poruka iako nije razmijenjena nijedna poruka.
+  return conversations
+    .filter((c) => c.timestamp !== "")
+    .sort(
+      (a, b) =>
+        new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime(),
+    );
 };
 
 /**

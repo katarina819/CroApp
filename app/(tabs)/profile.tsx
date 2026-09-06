@@ -1346,65 +1346,61 @@ function FollowListModal({
         type === "followers"
           ? `${API_BASE_URL}/api/follow/followers/${userId}`
           : `${API_BASE_URL}/api/follow/following/${userId}`;
-      const res = await fetch(endpoint, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      // Prije se za SVAKOG korisnika na popisu slalo tri zahtjeva (profil radi
+      // avatara + je li zlatni prijatelj + je li blokiran). Za tridesetak
+      // pratitelja to je bilo devedesetak zahtjeva pri svakom otvaranju
+      // popisa — otud sporo otvaranje, a znalo je i potrošiti limit zahtjeva
+      // pa bi druge akcije počele vraćati grešku. Sada su to tri zahtjeva
+      // ukupno: popis pratitelja (koji već sadrži avatar), popis zlatnih
+      // prijatelja i popis blokiranih — a pripadnost se provjeri u memoriji.
+      const [res, goldenRes, blockedRes] = await Promise.all([
+        fetch(endpoint, { headers: { Authorization: `Bearer ${token}` } }),
+        fetch(`${API_BASE_URL}/api/golden-friends`, {
+          headers: { Authorization: `Bearer ${token}` },
+        }).catch(() => null),
+        fetch(`${API_BASE_URL}/api/block/blocked-users`, {
+          headers: { Authorization: `Bearer ${token}` },
+        }).catch(() => null),
+      ]);
+
+      const goldenIds = new Set<number>();
+      if (goldenRes?.ok) {
+        try {
+          const golden = await goldenRes.json();
+          (Array.isArray(golden) ? golden : []).forEach((g: any) =>
+            goldenIds.add(g.id ?? g.userId ?? g.friendId),
+          );
+        } catch {}
+      }
+
+      const blockedIds = new Set<number>();
+      if (blockedRes?.ok) {
+        try {
+          const blocked = await blockedRes.json();
+          (Array.isArray(blocked) ? blocked : []).forEach((b: any) =>
+            blockedIds.add(b.id ?? b.userId ?? b.blockedId),
+          );
+        } catch {}
+      }
+
       if (res.ok) {
         const data = await res.json();
-        const enhancedData = await Promise.all(
-          data.map(async (user: FollowUser) => {
-            try {
-              const [profileRes, goldenRes, blockedRes] = await Promise.all([
-                fetch(`${API_BASE_URL}/api/auth/users/${user.id}`, {
-                  headers: { Authorization: `Bearer ${token}` },
-                }),
-                fetch(
-                  `${API_BASE_URL}/api/golden-friends/is-golden/${user.id}`,
-                  { headers: { Authorization: `Bearer ${token}` } },
-                ),
-                fetch(`${API_BASE_URL}/api/block/is-blocked/${user.id}`, {
-                  headers: { Authorization: `Bearer ${token}` },
-                }),
-              ]);
+        // Avatar već dolazi uz popis (FollowRepository ga spaja iz
+        // user_profiles), pa dodatni dohvat profila po korisniku nije potreban.
+        const enhancedData = data.map((user: FollowUser) => {
+          const rawAvatar = user.avatar;
+          const cacheBustedAvatar =
+            rawAvatar && !rawAvatar.startsWith("avatar:")
+              ? `${rawAvatar}${rawAvatar.includes("?") ? "&" : "?"}_t=${Date.now()}`
+              : rawAvatar;
 
-              // Svježi avatar iz profila korisnika, ne onaj snimljen u follow zapisu
-              const freshProfile = profileRes.ok
-                ? await profileRes.json()
-                : null;
-              const rawAvatar = freshProfile?.avatar ?? user.avatar;
-
-              const goldenData = goldenRes.ok
-                ? await goldenRes.json()
-                : { isGolden: false };
-              const blockedData = blockedRes.ok
-                ? await blockedRes.json()
-                : { isBlocked: false };
-
-              const cacheBustedAvatar =
-                rawAvatar && !rawAvatar.startsWith("avatar:")
-                  ? `${rawAvatar}${rawAvatar.includes("?") ? "&" : "?"}_t=${Date.now()}`
-                  : rawAvatar;
-
-              return {
-                ...user,
-                avatar: cacheBustedAvatar,
-                isGolden: goldenData.isGolden || false,
-                isBlocked: blockedData.isBlocked || false,
-              };
-            } catch {
-              const cacheBustedAvatar =
-                user.avatar && !user.avatar.startsWith("avatar:")
-                  ? `${user.avatar}${user.avatar.includes("?") ? "&" : "?"}_t=${Date.now()}`
-                  : user.avatar;
-              return {
-                ...user,
-                avatar: cacheBustedAvatar,
-                isGolden: false,
-                isBlocked: false,
-              };
-            }
-          }),
-        );
+          return {
+            ...user,
+            avatar: cacheBustedAvatar,
+            isGolden: goldenIds.has(user.id),
+            isBlocked: blockedIds.has(user.id),
+          };
+        });
         setList(enhancedData);
       }
     } catch (error) {

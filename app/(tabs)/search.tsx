@@ -445,9 +445,25 @@ export default function SearchScreen() {
       const parsedId = parseInt(storedId || "0");
       if (storedId) setCurrentUserId(parsedId);
 
-      const res = await fetch(API_ENDPOINTS.USERS, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      // Tri zahtjeva idu ISTOVREMENO. Prije su se izvršavali jedan za drugim
+      // (await pa await pa await), pa se čekanje zbrajalo — na sporijoj vezi
+      // je to bila razlika između jednog i tri puna kruga do servera prije
+      // nego se ekran uopće prikaže.
+      const [res, followRes, pendingRes] = await Promise.all([
+        fetch(API_ENDPOINTS.USERS, {
+          headers: { Authorization: `Bearer ${token}` },
+        }),
+        fetch(`${API_BASE_URL}/api/follow/following/${parsedId}`, {
+          headers: { Authorization: `Bearer ${token}` },
+        }).catch(() => null),
+        // Korisnici s privatnim profilom ne prate se odmah — ovo označava
+        // koje smo zahtjeve već poslali pa gumb ne izgleda kao da još
+        // uvijek ništa nismo poduzeli.
+        fetch(`${API_BASE_URL}/api/follow/requests/sent`, {
+          headers: { Authorization: `Bearer ${token}` },
+        }).catch(() => null),
+      ]);
+
       if (res.ok) {
         const data: User[] = await res.json();
         const others = data.filter(
@@ -462,13 +478,7 @@ export default function SearchScreen() {
         setFiltered(others);
       }
       try {
-        const followRes = await fetch(
-          `${API_BASE_URL}/api/follow/following/${parsedId}`,
-          {
-            headers: { Authorization: `Bearer ${token}` },
-          },
-        );
-        if (followRes.ok) {
+        if (followRes?.ok) {
           const following = await followRes.json();
           const map: Record<number, boolean> = {};
           following.forEach((u: any) => {
@@ -478,14 +488,7 @@ export default function SearchScreen() {
         }
       } catch {}
       try {
-        // Korisnici s privatnim profilom ne prate se odmah — ovo označava
-        // koje smo zahtjeve već poslali pa gumb ne izgleda kao da još
-        // uvijek ništa nismo poduzeli.
-        const pendingRes = await fetch(
-          `${API_BASE_URL}/api/follow/requests/sent`,
-          { headers: { Authorization: `Bearer ${token}` } },
-        );
-        if (pendingRes.ok) {
+        if (pendingRes?.ok) {
           const ids: number[] = await pendingRes.json();
           const map: Record<number, boolean> = {};
           ids.forEach((id) => {

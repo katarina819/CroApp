@@ -494,6 +494,11 @@
     "createFailed": "Gruppe kann nicht erstellt werden. Überprüfen Sie Ihre Verbindung."
   },
   "follow": {
+    "requestTitle": "Neue Follower-Anfrage",
+    "requestMessage": "{{name}} möchte dir folgen. Möchtest du annehmen?",
+    "accept": "Annehmen",
+    "decline": "Ablehnen",
+    "later": "Später",
     "goldenAdded": "Golden Friend hinzugefügt",
     "goldenRemoved": "Golden Friend entfernt",
     "goldenError": "Golden Friend-Status kann nicht geändert werden",
