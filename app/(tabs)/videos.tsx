@@ -23,6 +23,7 @@ import {
   KeyboardAvoidingView,
   Modal,
   Platform,
+  Pressable,
   SafeAreaView,
   ScrollView,
   StyleSheet,
@@ -31,6 +32,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { StoryBadge } from "../../app/StoryBadge";
 import { useTheme } from "../../components/AdaptiveThemeProvider";
 import { API_BASE_URL } from "../config/api";
@@ -112,8 +114,22 @@ function buildAvatarUrl(avatar: string | null | undefined): string | null {
   return `${API_BASE_URL}${avatar.startsWith("/") ? avatar : `/${avatar}`}`;
 }
 
-function useUserAvatar(userId: number): string | null {
-  const [url, setUrl] = useState<string | null>(null);
+interface FetchedProfile {
+  url: string | null;
+  firstName?: string;
+  lastName?: string;
+  username?: string;
+}
+
+// ✅ FIX: prije se ovdje dohvaćao SAMO avatar, a inicijali (fallback kad
+// avatar ne postoji) ovisili su isključivo o firstName/lastName/username
+// propovima koje POZIVATELJ mora ručno proslijediti — na dva od tri mjesta
+// gdje se FreshAvatar koristi (glavni feed videa, primatelj u porukama) to
+// se nije radilo, pa je fallback uvijek padao na golo "?" umjesto pravih
+// inicijala, iako je ime korisnika ionako već dostupno na profilu koji se
+// tu i onako dohvaća radi avatara. Sad se ime dohvaća ISTIM pozivom.
+function useUserProfile(userId: number): FetchedProfile {
+  const [profile, setProfile] = useState<FetchedProfile>({ url: null });
 
   useEffect(() => {
     (async () => {
@@ -123,28 +139,34 @@ function useUserAvatar(userId: number): string | null {
           headers: { Authorization: `Bearer ${token}` },
         });
         if (!res.ok) return;
-        const profile = await res.json();
+        const data = await res.json();
         const raw =
-          profile.Avatar ||
-          profile.avatar ||
-          profile.avatarUrl ||
-          profile.profileImage ||
-          null;
-        if (!raw) return;
-        if (raw.startsWith("avatar:")) {
-          setUrl(raw);
-          return;
+          data.Avatar || data.avatar || data.avatarUrl || data.profileImage || null;
+
+        let url: string | null = null;
+        if (raw) {
+          if (raw.startsWith("avatar:")) {
+            url = raw;
+          } else {
+            const normalized = raw.startsWith("http")
+              ? raw
+              : `${API_BASE_URL}${raw.startsWith("/") ? "" : "/"}${raw}`;
+            const sep = normalized.includes("?") ? "&" : "?";
+            url = `${normalized}${sep}uid=${Date.now()}`;
+          }
         }
-        const normalized = raw.startsWith("http")
-          ? raw
-          : `${API_BASE_URL}${raw.startsWith("/") ? "" : "/"}${raw}`;
-        const sep = normalized.includes("?") ? "&" : "?";
-        setUrl(`${normalized}${sep}uid=${Date.now()}`);
+
+        setProfile({
+          url,
+          firstName: data.firstName || data.FirstName,
+          lastName: data.lastName || data.LastName,
+          username: data.username || data.Username,
+        });
       } catch {}
     })();
   }, [userId]);
 
-  return url;
+  return profile;
 }
 
 const PRESET_AVATARS_VID: Record<string, any> = {
@@ -165,15 +187,21 @@ function FreshAvatar({
   username?: string;
   size: number;
 }) {
-  const url = useUserAvatar(userId);
+  const profile = useUserProfile(userId);
   const [failed, setFailed] = useState(false);
+  const url = profile.url;
+  // Dohvaćeni profil ima prednost (uvijek točan), propovi su samo
+  // trenutni fallback dok se fetch ne vrati.
+  const fName = profile.firstName || firstName;
+  const lName = profile.lastName || lastName;
+  const uName = profile.username || username;
   const initials =
-    firstName && lastName
-      ? `${firstName[0]}${lastName[0]}`.toUpperCase()
-      : firstName
-        ? firstName[0].toUpperCase()
-        : username
-          ? username.slice(0, 2).toUpperCase()
+    fName && lName
+      ? `${fName[0]}${lName[0]}`.toUpperCase()
+      : fName
+        ? fName[0].toUpperCase()
+        : uName
+          ? uName.slice(0, 2).toUpperCase()
           : "?";
 
   if (url && url.startsWith("avatar:") && PRESET_AVATARS_VID[url]) {
@@ -322,10 +350,26 @@ function VideoItemComponent({
     p.muted = false;
   });
 
+  const [isPaused, setIsPaused] = useState(false);
+
   useEffect(() => {
-    if (isActive && item.mediaType === "video") player.play();
-    else player.pause();
+    if (isActive && item.mediaType === "video") {
+      player.play();
+      setIsPaused(false);
+    } else {
+      player.pause();
+    }
   }, [isActive, player, item.mediaType]);
+
+  const togglePlayback = () => {
+    if (player.playing) {
+      player.pause();
+      setIsPaused(true);
+    } else {
+      player.play();
+      setIsPaused(false);
+    }
+  };
 
   const imageExtensions = [".jpg", ".jpeg", ".png", ".gif", ".webp"];
   const isImage =
@@ -343,12 +387,23 @@ function VideoItemComponent({
           resizeMode="contain"
         />
       ) : (
-        <VideoView
-          player={player}
+        <Pressable
           style={vs.video}
-          contentFit="contain"
-          nativeControls={false}
-        />
+          onPress={togglePlayback}
+          hitSlop={{ top: 0, bottom: 0, left: 0, right: 0 }}
+        >
+          <VideoView
+            player={player}
+            style={vs.video}
+            contentFit="contain"
+            nativeControls={false}
+          />
+          {isPaused && (
+            <View style={vs.pauseOverlay} pointerEvents="none">
+              <Ionicons name="play" size={64} color="rgba(255,255,255,0.85)" />
+            </View>
+          )}
+        </Pressable>
       )}
 
       <View style={vs.rightSidebar}>
@@ -1026,6 +1081,7 @@ export function UploadModal({
   const VT = useMemo(() => getVT(isDark), [isDark]); // ← DODATI
   const modal = useMemo(() => makeModalStyles(VT), [VT]); // ← DODATI
   const upload = useMemo(() => makeUploadStyles(VT), [VT]);
+  const insets = useSafeAreaInsets();
   const [mediaUri, setMediaUri] = useState<string | null>(null);
   const [mediaType, setMediaType] = useState<"video" | "image">("video");
   const [title, setTitle] = useState("");
@@ -1331,10 +1387,20 @@ export function UploadModal({
           </View>
 
           <ScrollView
+            // ✅ FIX: bio je samo "contentContainerStyle" s tamnom
+            // pozadinom — to boja SAMO stvarni sadržaj, ne i cijeli vidljivi
+            // prostor ScrollViewa. Na koraku "Dodaj sadržaj" (svega dva
+            // gumba, puno kraće od visine ekrana) prostor ISPOD sadržaja
+            // ostajao je neobojan, pa je kroz njega prosijavala pozadina
+            // SafeAreaViewa iznad (VT.bg — u svjetlom modu kremasta), što je
+            // izgledalo kao svijetla traka pri dnu ekrana koja ne pripada
+            // VARA temi. Tamna pozadina sad je na samom ScrollView "style"-u
+            // (cijeli vidljivi prostor), ne samo na contentContainerStyle-u.
+            style={{ flex: 1, backgroundColor: V.forestDeep }}
             keyboardShouldPersistTaps="handled"
             contentContainerStyle={{
               padding: 16,
-              backgroundColor: V.forestDeep,
+              paddingBottom: 32,
             }}
           >
             {step === "pick" ? (
@@ -1617,7 +1683,20 @@ export function UploadModal({
                   maxLength={300}
                 />
 
-                <View style={{ flexDirection: "row", gap: 12, marginTop: 24 }}>
+                <View
+                  style={{
+                    flexDirection: "row",
+                    gap: 12,
+                    marginTop: 24,
+                    // ✅ FIX: obična SafeAreaView (iz "react-native", ne
+                    // "react-native-safe-area-context") na Androidu ne
+                    // računa donji "inset" gesta navigacije — gumbi su
+                    // renderirani do samog dna sadržaja, koji Android-ova
+                    // prozirna traka za navigaciju gestama onda djelomično
+                    // prekriva. insets.bottom je stvarna visina te trake.
+                    marginBottom: insets.bottom,
+                  }}
+                >
                   <TouchableOpacity
                     style={[
                       upload.actionBtn,
@@ -2177,6 +2256,12 @@ const vs = StyleSheet.create({
     backgroundColor: "#000",
   },
   video: { width: "100%", height: "100%" },
+  pauseOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "rgba(0,0,0,0.15)",
+  },
   rightSidebar: {
     position: "absolute",
     bottom: 100,
