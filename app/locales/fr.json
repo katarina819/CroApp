@@ -383,6 +383,10 @@
   },
   "messages": {
     "title": "Messages",
+    "userSentYouImage": "L'utilisateur vous a envoyé une image",
+    "userSentYouVideo": "L'utilisateur vous a envoyé une vidéo",
+    "youSentImage": "Vous avez envoyé une image",
+    "youSentVideo": "Vous avez envoyé une vidéo",
     "searchHint": "Recherchez des utilisateurs et envoyez le premier message !",
     "writeMessage": "Écrivez un message pour {{name}}...",
     "noMessages": "Aucun message",

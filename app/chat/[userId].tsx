@@ -181,33 +181,6 @@ function parseImageMessage(content: string): string | null {
 // ─── Zumabilna slika (pinch-to-zoom + pomicanje) ──────────────────────────────
 function ZoomableImage({ uri }: { uri: string }) {
   const [containerSize, setContainerSize] = useState({ width: 0, height: 0 });
-  const [naturalSize, setNaturalSize] = useState({ width: 0, height: 0 });
-
-  // ✅ FIX: getBounds() je granice pomicanja računao na temelju veličine
-  // CIJELOG KONTEJNERA, kao da slika (resizeMode="contain") uvijek
-  // popunjava sav prostor. U stvarnosti "contain" gotovo uvijek ostavlja
-  // prazan prostor sa strane (slika rijetko ima točno omjer ekrana) — pa
-  // su dopuštene granice pomaka bile puno veće od stvarnih rubova slike.
-  // Rezultat: nakon zumiranja i pomicanja, slika bi se mogla odvući daleko
-  // od centra i otkriti velika crna područja umjesto svog ruba. Sad se
-  // prvo izračuna STVARNA prikazana veličina slike unutar "contain" okvira
-  // (na temelju njenog pravog omjera širine/visine), i to se koristi za
-  // granice pomaka — rub slike više nikad ne prijeđe rub ekrana.
-  const displaySize = useMemo(() => {
-    const { width: cw, height: ch } = containerSize;
-    const { width: iw, height: ih } = naturalSize;
-    if (!cw || !ch || !iw || !ih) return { width: cw, height: ch };
-    const containerRatio = cw / ch;
-    const imageRatio = iw / ih;
-    if (imageRatio > containerRatio) {
-      const width = cw;
-      const height = width / imageRatio;
-      return { width, height };
-    }
-    const height = ch;
-    const width = height * imageRatio;
-    return { width, height };
-  }, [containerSize, naturalSize]);
 
   // Animated.Value.setOffset/flattenOffset kombiniraju vrijednosti
   // ZBRAJANJEM, a zumiranje se sastavlja MNOŽENJEM — stari kod je to
@@ -234,10 +207,14 @@ function ZoomableImage({ uri }: { uri: string }) {
 
   // izračun maksimalno dozvoljenog pomaka na temelju trenutnog zooma,
   // tako da rub slike nikad ne prijeđe rub ekrana (nema crnog prostora)
+  // Uz resizeMode="cover" slika UVIJEK točno popunjava kontejner, pa je
+  // njena prikazana veličina jednaka veličini kontejnera — granica pomaka
+  // je zato točno (veličina * (zoom - 1)) / 2 i rub slike nikad ne može
+  // otkriti pozadinu iza sebe.
   const getBounds = () => {
     const s = lastScale.current;
-    const maxX = Math.max(0, (displaySize.width * (s - 1)) / 2);
-    const maxY = Math.max(0, (displaySize.height * (s - 1)) / 2);
+    const maxX = Math.max(0, (containerSize.width * (s - 1)) / 2);
+    const maxY = Math.max(0, (containerSize.height * (s - 1)) / 2);
     return { maxX, maxY };
   };
 
@@ -367,11 +344,14 @@ function ZoomableImage({ uri }: { uri: string }) {
                   height: "100%",
                   transform: [{ scale }, { translateX }, { translateY }],
                 }}
-                resizeMode="contain"
-                onLoad={(e) => {
-                  const { width, height } = e.nativeEvent.source;
-                  setNaturalSize({ width, height });
-                }}
+                // ✅ FIX: bio je "contain" — taj način namjerno uklapa
+                // CIJELU sliku unutar ekrana, pa kad omjer slike ne
+                // odgovara omjeru ekrana (gotovo uvijek), sa strane ili
+                // gore/dolje ostane vidljiva pozadina aplikacije. To su
+                // one trake oko slike (prije crne, sad zelene). "cover"
+                // umjesto toga popunjava cijeli ekran, pa se pozadina
+                // nikad ne vidi — ni u mirovanju ni pri zumiranju.
+                resizeMode="cover"
               />
             </Animated.View>
           </PinchGestureHandler>

@@ -1,5 +1,6 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { API_BASE_URL } from "../app/config/api";
+import i18n from "../app/config/i18n";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -34,10 +35,19 @@ const getToken = async (): Promise<string | null> =>
 // (npr. "__CROMAP_IMAGE__{"url":"..."}") koji chat ekran prepoznaje i
 // prikazuje kao pravu sliku/video. Popis razgovora prije nije znao za taj
 // format pa je korisniku prikazivao sirovi marker i URL umjesto razumljivog
-// pregleda poput drugih aplikacija za poruke.
-function formatLastMessagePreview(content: string): string {
-  if (content?.startsWith("__CROMAP_IMAGE__")) return "📷 Slika";
-  if (content?.startsWith("__CROMAP_VIDEO__")) return "🎬 Video";
+// pregleda poput drugih aplikacija za poruke. Tekst je pune rečenice i
+// prevodi se na jezik koji je korisnik odabrao (bez ikona ispred).
+function formatLastMessagePreview(content: string, sentByMe: boolean): string {
+  if (content?.startsWith("__CROMAP_IMAGE__")) {
+    return sentByMe
+      ? i18n.t("messages.youSentImage")
+      : i18n.t("messages.userSentYouImage");
+  }
+  if (content?.startsWith("__CROMAP_VIDEO__")) {
+    return sentByMe
+      ? i18n.t("messages.youSentVideo")
+      : i18n.t("messages.userSentYouVideo");
+  }
   return content;
 }
 
@@ -130,7 +140,10 @@ export const getConversations = async (): Promise<Conversation[]> => {
         const messages = await messagesRes.json();
         if (messages.length > 0) {
           const lastMsg = messages[messages.length - 1];
-          lastMessage = formatLastMessagePreview(lastMsg.content);
+          lastMessage = formatLastMessagePreview(
+            lastMsg.content,
+            lastMsg.senderId === userId,
+          );
           timestamp = lastMsg.sentAt;
           unreadCount = messages.filter(
             (m: any) => !m.isRead && m.receiverId === userId,

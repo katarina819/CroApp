@@ -382,6 +382,10 @@
   },
   "messages": {
     "title": "Poruke",
+    "userSentYouImage": "Korisnik vam je poslao sliku",
+    "userSentYouVideo": "Korisnik vam je poslao video",
+    "youSentImage": "Poslali ste sliku",
+    "youSentVideo": "Poslali ste video",
     "searchHint": "Pretraži korisnike i pošalji prvu poruku!",
     "writeMessage": "Napiši poruku za {{name}}...",
     "noMessages": "Nema poruka",

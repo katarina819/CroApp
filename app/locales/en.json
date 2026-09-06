@@ -393,6 +393,10 @@
   },
   "messages": {
     "title": "Messages",
+    "userSentYouImage": "The user sent you an image",
+    "userSentYouVideo": "The user sent you a video",
+    "youSentImage": "You sent an image",
+    "youSentVideo": "You sent a video",
     "searchHint": "Search for users and send the first message!",
     "writeMessage": "Write a message for {{name}}...",
     "noMessages": "No messages",

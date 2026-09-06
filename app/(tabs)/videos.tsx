@@ -4,6 +4,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as FileSystem from "expo-file-system/legacy";
 import * as ImagePicker from "expo-image-picker";
 import * as MediaLibrary from "expo-media-library";
+import { useEventListener } from "expo";
 import { VideoView, useVideoPlayer } from "expo-video";
 import React, {
   useCallback,
@@ -350,43 +351,65 @@ function VideoItemComponent({
     p.muted = false;
   });
 
-  const [isPaused, setIsPaused] = useState(false);
-
-  useEffect(() => {
-    if (isActive && item.mediaType === "video") {
-      player.play();
-      setIsPaused(false);
-    } else {
-      player.pause();
-    }
-  }, [isActive, player, item.mediaType]);
-
-  const togglePlayback = () => {
-    // ✅ FIX: prije se odluka temeljila na "player.playing" — expo-video
-    // taj native flag ažurira asinkrono (kroz event, ne odmah pri pozivu
-    // play()/pause()), pa je odmah nakon jednog dodira još uvijek
-    // prijavljivao STARU vrijednost. Prvi dodir bi zato ponekad tiho
-    // promašio (isti poziv se ponovio), a nakon pauze bi drugi dodir
-    // pročitao "playing: true" iako je video već pauziran, pa bi opet
-    // pozvao pause() umjesto play() — otud "treba više klikova da stane"
-    // i "ne može se ponovno pokrenuti". Sad je jedini izvor istine naše
-    // vlastito React stanje (isPaused), isto ono koje već kontrolira
-    // prikaz ikone ▶, pa je odluka uvijek dosljedna s onim što se vidi.
-    if (isPaused) {
-      player.play();
-      setIsPaused(false);
-    } else {
-      player.pause();
-      setIsPaused(true);
-    }
-  };
-
   const imageExtensions = [".jpg", ".jpeg", ".png", ".gif", ".webp"];
   const isImage =
     item.mediaType === "image" ||
     imageExtensions.some((ext) =>
       (item.filePath || "").toLowerCase().includes(ext),
     );
+
+  // ✅ FIX (pauziranje videa): prijašnje verzije su odluku "pauziraj ili
+  // pokreni" donosile iz React state-a (ili iz player.playing), a oboje se
+  // pokazalo nepouzdanim jer JEDAN fizički dodir zna stići kao DVA onPress
+  // poziva u dva različita ciklusa renderiranja: prvi pauzira, drugi (koji
+  // već vidi novo stanje) odmah vrati na play — pa se izvana čini da dodir
+  // "ništa ne radi". Na pauziranom videu isti mehanizam radi obrnuto (play
+  // pa odmah opet pause), zbog čega se video uopće nije dao ponovno
+  // pokrenuti. Sad:
+  //   1) stvarno stanje reprodukcije držimo u ref-u koji se NE resetira
+  //      renderiranjem i koji ispravlja sam player kroz "playingChange",
+  //   2) uzastopni dodiri unutar 350 ms se ignoriraju, pa dvostruka
+  //      dostava istog dodira ne može poništiti samu sebe.
+  const [showPauseIcon, setShowPauseIcon] = useState(false);
+  const isPlayingRef = useRef(false);
+  const lastToggleRef = useRef(0);
+
+  // Player je jedini koji zna pravu istinu — ovime ref ostaje točan i kad
+  // se reprodukcija promijeni bez našeg poziva (kraj videa, greška...).
+  useEventListener(player, "playingChange", ({ isPlaying }) => {
+    isPlayingRef.current = isPlaying;
+  });
+
+  useEffect(() => {
+    // Ranije je ovdje stajalo item.mediaType === "video" — ako backend za
+    // stariju objavu ne vrati mediaType, prikaz bi (preko provjere
+    // ekstenzije) ispravno renderirao video, ali bi ga ovaj efekt odmah
+    // pauzirao. Sad se koristi ista provjera kao i kod renderiranja.
+    if (isActive && !isImage) {
+      player.play();
+      isPlayingRef.current = true;
+      setShowPauseIcon(false);
+    } else {
+      player.pause();
+      isPlayingRef.current = false;
+    }
+  }, [isActive, player, isImage]);
+
+  const togglePlayback = useCallback(() => {
+    const now = Date.now();
+    if (now - lastToggleRef.current < 350) return;
+    lastToggleRef.current = now;
+
+    if (isPlayingRef.current) {
+      player.pause();
+      isPlayingRef.current = false;
+      setShowPauseIcon(true);
+    } else {
+      player.play();
+      isPlayingRef.current = true;
+      setShowPauseIcon(false);
+    }
+  }, [player]);
 
   return (
     <View style={[vs.videoContainer, { height: containerHeight }]}>
@@ -397,23 +420,32 @@ function VideoItemComponent({
           resizeMode="contain"
         />
       ) : (
-        <Pressable
-          style={vs.video}
-          onPress={togglePlayback}
-          hitSlop={{ top: 0, bottom: 0, left: 0, right: 0 }}
-        >
+        <View style={vs.video}>
           <VideoView
             player={player}
             style={vs.video}
             contentFit="contain"
             nativeControls={false}
           />
-          {isPaused && (
-            <View style={vs.pauseOverlay} pointerEvents="none">
-              <Ionicons name="play" size={64} color="rgba(255,255,255,0.85)" />
-            </View>
-          )}
-        </Pressable>
+          {/* Površina za dodir stoji IZNAD native video prikaza, a ne oko
+              njega — native VideoView je zaseban Android view koji zna
+              progutati dodir prije nego dođe do roditeljskog Pressablea. */}
+          <Pressable
+            style={StyleSheet.absoluteFill}
+            onPress={togglePlayback}
+            android_disableSound
+          >
+            {showPauseIcon && (
+              <View style={vs.pauseOverlay}>
+                <Ionicons
+                  name="play"
+                  size={64}
+                  color="rgba(255,255,255,0.85)"
+                />
+              </View>
+            )}
+          </Pressable>
+        </View>
       )}
 
       <View style={vs.rightSidebar}>
