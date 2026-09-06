@@ -862,7 +862,9 @@
     "yourAccommodation": "Ihre Unterkunft",
     "selectAccommodation": "Wählen Sie die Unterkunftsadresse für eine genauere Anzeige",
     "selectBtn": "✓ Diesen Ort auswählen",
-    "planError": "Plan kann nicht generiert werden. Überprüfen Sie Ihre Internetverbindung."
+    "planError": "Plan kann nicht generiert werden. Überprüfen Sie Ihre Internetverbindung.",
+    "schedDinnerSameVenue": "Abendessen (dasselbe Restaurant wie mittags — kein anderes in der Nähe gefunden)",
+    "schedSightseeing": "Besichtigung der Sehenswürdigkeiten"
   },
   "story": {
     "myStory": "Meine Story",

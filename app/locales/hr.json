@@ -889,7 +889,9 @@
     "yourAccommodation": "Vaš smještaj",
     "selectAccommodation": "Odaberite adresu smještaja za precizniji prikaz",
     "selectBtn": "✓ Odaberi ovo mjesto",
-    "planError": "Nije moguće generirati plan. Provjeri internetsku vezu."
+    "planError": "Nije moguće generirati plan. Provjeri internetsku vezu.",
+    "schedDinnerSameVenue": "Večera (isti restoran kao za ručak — drugi nije pronađen u blizini)",
+    "schedSightseeing": "Razgledavanje znamenitosti"
   },
   "story": {
     "myStory": "Moj story",

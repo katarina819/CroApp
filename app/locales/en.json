@@ -867,7 +867,9 @@
     "yourAccommodation": "Your accommodation",
     "selectAccommodation": "Choose accommodation address for more precise display",
     "selectBtn": "✓ Select this place",
-    "planError": "Unable to generate plan. Check your internet connection."
+    "planError": "Unable to generate plan. Check your internet connection.",
+    "schedDinnerSameVenue": "Dinner (same restaurant as lunch — no other one found nearby)",
+    "schedSightseeing": "Sightseeing"
   },
   "schedBreakfast": "Breakfast",
   "schedMorningTour": "Morning sightseeing — least tourist traffic",

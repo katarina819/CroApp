@@ -891,7 +891,9 @@
     "yourAccommodation": "Il tuo alloggio",
     "selectAccommodation": "Scegli l'indirizzo dell'alloggio per una visualizzazione più precisa",
     "selectBtn": "✓ Scegli questo luogo",
-    "planError": "Impossibile generare il piano. Verifica la connessione."
+    "planError": "Impossibile generare il piano. Verifica la connessione.",
+    "schedDinnerSameVenue": "Cena (stesso ristorante del pranzo — non ne è stato trovato un altro nelle vicinanze)",
+    "schedSightseeing": "Visita ai luoghi d'interesse"
   },
   "story": {
     "myStory": "La mia storia",

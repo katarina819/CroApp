@@ -891,7 +891,9 @@
     "yourAccommodation": "Votre hébergement",
     "selectAccommodation": "Choisissez l'adresse de l'hébergement pour un affichage plus précis",
     "selectBtn": "✓ Choisir ce lieu",
-    "planError": "Impossible de générer le plan. Vérifiez votre connexion internet."
+    "planError": "Impossible de générer le plan. Vérifiez votre connexion internet.",
+    "schedDinnerSameVenue": "Dîner (même restaurant qu'au déjeuner — aucun autre trouvé à proximité)",
+    "schedSightseeing": "Visite des sites touristiques"
   },
   "story": {
     "myStory": "Mon story",
