@@ -361,6 +361,8 @@
     "deleteConfirm": "Jeste li sigurni?",
     "deleteFailed": "Brisanje nije uspjelo",
     "comments": "Komentari ({{count}})",
+    "commentsTitle": "Komentari",
+    "commentsWithCount": "Komentari - {{count}}",
     "noComments": "Nema komentara. Budi prvi!",
     "addComment": "Dodaj komentar...",
     "sendMessage": "Pošalji poruku",

@@ -21,7 +21,6 @@ import {
   FlatList,
   Image,
   Keyboard,
-  KeyboardAvoidingView,
   Modal,
   Platform,
   Pressable,
@@ -105,6 +104,37 @@ interface VideoItem {
   isOwner?: boolean;
   isInWishlist?: boolean;
   mediaType?: string;
+}
+
+// ─── Helper: visina tipkovnice ────────────────────────────────────────────────
+// Unutar <Modal>-a na Androidu tipkovnica NE pomiče sadržaj: modal je zaseban
+// prozor koji ne nasljeđuje "adjustResize" postavku aplikacije, pa niti
+// KeyboardAvoidingView (koji se na Androidu oslanja upravo na to) niti sam
+// sustav ne naprave mjesta za tipkovnicu — polje za unos ostane skriveno ispod
+// nje. Zato ovdje mjerimo stvarnu visinu tipkovnice i sami odmaknemo redak s
+// unosom. Kad je tipkovnica skrivena, na isto mjesto ide sigurnosni razmak
+// (insets.bottom) da traka za navigaciju gestama ne prekriva polje i gumb.
+function useKeyboardHeight() {
+  const [height, setHeight] = useState(0);
+
+  useEffect(() => {
+    const showEvent =
+      Platform.OS === "ios" ? "keyboardWillShow" : "keyboardDidShow";
+    const hideEvent =
+      Platform.OS === "ios" ? "keyboardWillHide" : "keyboardDidHide";
+
+    const showSub = Keyboard.addListener(showEvent, (e) =>
+      setHeight(e.endCoordinates?.height ?? 0),
+    );
+    const hideSub = Keyboard.addListener(hideEvent, () => setHeight(0));
+
+    return () => {
+      showSub.remove();
+      hideSub.remove();
+    };
+  }, []);
+
+  return height;
 }
 
 // ─── Helper: avatar URL ────────────────────────────────────────────────────────
@@ -568,6 +598,8 @@ function CommentsModal({
   const [submitting, setSubmitting] = useState(false);
   const scrollViewRef = useRef<ScrollView>(null);
   const commentListKey = useRef(0);
+  const keyboardHeight = useKeyboardHeight();
+  const insets = useSafeAreaInsets();
 
   const loadComments = async () => {
     if (!video) return;
@@ -628,28 +660,17 @@ function CommentsModal({
       visible={visible}
       onRequestClose={onClose}
     >
-      <KeyboardAvoidingView
-        style={{ flex: 1 }}
-        // ✅ FIX: Android ovdje već sam (na razini prozora aplikacije)
-        // smanjuje vidljivu visinu kad se tipkovnica otvori — Expo bez
-        // eksplicitnog "softwareKeyboardLayoutMode" koristi zadano
-        // "resize" (ekvivalent windowSoftInputMode="adjustResize"). Kad se
-        // POVRH toga doda i KeyboardAvoidingView s behavior="height", cijeli
-        // ekran se smanjuje/vraća DVA PUTA za svaki otvaranje/zatvaranje
-        // tipkovnice — jednom trenutno na razini OS-a, jednom (grubo,
-        // netrzajno) u JS-u. Ta dva međusobno nesinkronizirana skoka
-        // izgledaju kao da cijeli ekran "vibrira", najuočljivije kad se
-        // tipkovnica zatvori (npr. Android "natrag" gumbom dok je polje
-        // opisa fokusirano). Na Androidu prepuštamo posao isključivo
-        // OS-ovom adjustResize-u; "padding" ostaje samo za iOS, koji nema
-        // takvo automatsko ponašanje.
-        behavior={Platform.OS === "ios" ? "padding" : undefined}
-      >
+      <View style={{ flex: 1 }}>
         <SafeAreaView style={{ flex: 1, backgroundColor: VT.bg }}>
           {/* ── Header — identičan dashboard NotificationSettingsModal / ActivityGroupsModal ── */}
           <View style={modal.header}>
+            {/* Broj se prikazuje tek kad komentari postoje, i to iz stvarno
+                učitane liste (ne iz zastarjelog commentCount na videu), pa
+                se naslov osvježi odmah nakon objave komentara. */}
             <Text style={modal.headerTitle}>
-              {t("videos.comments", { count: video?.commentCount || 0 })}
+              {comments.length > 0
+                ? t("videos.commentsWithCount", { count: comments.length })
+                : t("videos.commentsTitle")}
             </Text>
             <TouchableOpacity onPress={onClose}>
               <Text style={modal.closeTxt}>{t("common.close")}</Text>
@@ -710,7 +731,16 @@ function CommentsModal({
           )}
 
           {/* ── Input row ── */}
-          <View style={modal.inputRow}>
+          <View
+            style={[
+              modal.inputRow,
+              // Podigni redak iznad tipkovnice dok se piše, a kad je
+              // tipkovnica skrivena ostavi razmak za Androidovu traku za
+              // navigaciju gestama (bijela traka koja je dosad prekrivala
+              // polje i gumb za slanje).
+              { marginBottom: keyboardHeight > 0 ? keyboardHeight : insets.bottom },
+            ]}
+          >
             <TextInput
               style={modal.textInput}
               placeholder={t("videos.addComment")}
@@ -739,7 +769,7 @@ function CommentsModal({
             </TouchableOpacity>
           </View>
         </SafeAreaView>
-      </KeyboardAvoidingView>
+      </View>
     </Modal>
   );
 }
@@ -760,6 +790,8 @@ function MessengerModal({
   const modal = useMemo(() => makeModalStyles(VT), [VT]);
   const [message, setMessage] = useState("");
   const [sending, setSending] = useState(false);
+  const keyboardHeight = useKeyboardHeight();
+  const insets = useSafeAreaInsets();
 
   const sendMessage = async () => {
     if (!video || !message.trim()) return;
@@ -806,23 +838,7 @@ function MessengerModal({
       onRequestClose={onClose}
       statusBarTranslucent
     >
-      <KeyboardAvoidingView
-        style={{ flex: 1 }}
-        // ✅ FIX: Android ovdje već sam (na razini prozora aplikacije)
-        // smanjuje vidljivu visinu kad se tipkovnica otvori — Expo bez
-        // eksplicitnog "softwareKeyboardLayoutMode" koristi zadano
-        // "resize" (ekvivalent windowSoftInputMode="adjustResize"). Kad se
-        // POVRH toga doda i KeyboardAvoidingView s behavior="height", cijeli
-        // ekran se smanjuje/vraća DVA PUTA za svaki otvaranje/zatvaranje
-        // tipkovnice — jednom trenutno na razini OS-a, jednom (grubo,
-        // netrzajno) u JS-u. Ta dva međusobno nesinkronizirana skoka
-        // izgledaju kao da cijeli ekran "vibrira", najuočljivije kad se
-        // tipkovnica zatvori (npr. Android "natrag" gumbom dok je polje
-        // opisa fokusirano). Na Androidu prepuštamo posao isključivo
-        // OS-ovom adjustResize-u; "padding" ostaje samo za iOS, koji nema
-        // takvo automatsko ponašanje.
-        behavior={Platform.OS === "ios" ? "padding" : undefined}
-      >
+      <View style={{ flex: 1 }}>
         <SafeAreaView style={{ flex: 1, backgroundColor: VT.bg }}>
           {/* ── Header — identičan dashboard stilu ── */}
           <View style={modal.header}>
@@ -867,7 +883,14 @@ function MessengerModal({
           <View style={{ flex: 1 }} />
 
           {/* ── Input row ── */}
-          <View style={modal.inputRow}>
+          <View
+            style={[
+              modal.inputRow,
+              // Isto kao u komentarima: iznad tipkovnice dok se piše, iznad
+              // trake za navigaciju gestama kad je tipkovnica skrivena.
+              { marginBottom: keyboardHeight > 0 ? keyboardHeight : insets.bottom },
+            ]}
+          >
             <TextInput
               style={modal.textInput}
               placeholder={t("messages.writeMessage", {
@@ -896,7 +919,7 @@ function MessengerModal({
             </TouchableOpacity>
           </View>
         </SafeAreaView>
-      </KeyboardAvoidingView>
+      </View>
     </Modal>
   );
 }
@@ -1124,6 +1147,7 @@ export function UploadModal({
   const modal = useMemo(() => makeModalStyles(VT), [VT]); // ← DODATI
   const upload = useMemo(() => makeUploadStyles(VT), [VT]);
   const insets = useSafeAreaInsets();
+  const keyboardHeight = useKeyboardHeight();
   const [mediaUri, setMediaUri] = useState<string | null>(null);
   const [mediaType, setMediaType] = useState<"video" | "image">("video");
   const [title, setTitle] = useState("");
@@ -1399,23 +1423,13 @@ export function UploadModal({
       visible={visible}
       onRequestClose={resetModal}
     >
-      <KeyboardAvoidingView
-        style={{ flex: 1 }}
-        // ✅ FIX: Android ovdje već sam (na razini prozora aplikacije)
-        // smanjuje vidljivu visinu kad se tipkovnica otvori — Expo bez
-        // eksplicitnog "softwareKeyboardLayoutMode" koristi zadano
-        // "resize" (ekvivalent windowSoftInputMode="adjustResize"). Kad se
-        // POVRH toga doda i KeyboardAvoidingView s behavior="height", cijeli
-        // ekran se smanjuje/vraća DVA PUTA za svaki otvaranje/zatvaranje
-        // tipkovnice — jednom trenutno na razini OS-a, jednom (grubo,
-        // netrzajno) u JS-u. Ta dva međusobno nesinkronizirana skoka
-        // izgledaju kao da cijeli ekran "vibrira", najuočljivije kad se
-        // tipkovnica zatvori (npr. Android "natrag" gumbom dok je polje
-        // opisa fokusirano). Na Androidu prepuštamo posao isključivo
-        // OS-ovom adjustResize-u; "padding" ostaje samo za iOS, koji nema
-        // takvo automatsko ponašanje.
-        behavior={Platform.OS === "ios" ? "padding" : undefined}
-      >
+      {/* Bez KeyboardAvoidingViewa: on se na Androidu oslanja na to da
+          sustav sam smanji prozor kad se otvori tipkovnica, a prozor
+          <Modal>-a to ne radi (zaseban je prozor i ne nasljeđuje
+          "adjustResize"). Umjesto toga mjerimo visinu tipkovnice i za
+          toliko povećamo donji razmak unutar forme, pa se fokusirano polje
+          uvijek može doskrolati iznad tipkovnice. */}
+      <View style={{ flex: 1 }}>
         <SafeAreaView style={{ flex: 1, backgroundColor: VT.bg }}>
           {/* Header */}
           <View style={modal.header}>
@@ -1442,7 +1456,7 @@ export function UploadModal({
             keyboardShouldPersistTaps="handled"
             contentContainerStyle={{
               padding: 16,
-              paddingBottom: 32,
+              paddingBottom: 32 + keyboardHeight,
             }}
           >
             {step === "pick" ? (
@@ -1953,7 +1967,7 @@ export function UploadModal({
             </View>
           </Modal>
         </SafeAreaView>
-      </KeyboardAvoidingView>
+      </View>
     </Modal>
   );
 }

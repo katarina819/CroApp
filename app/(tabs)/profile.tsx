@@ -1094,57 +1094,10 @@ function AvatarSection({ onUpdate }: { onUpdate: () => void }) {
                 </Text>
               </TouchableOpacity>
 
-              <TouchableOpacity
-                style={[
-                  avModal.option,
-                  { borderColor: V.borderDim, backgroundColor: V.forestMid },
-                  !avatarUrl &&
-                    !isMaleAvatar &&
-                    !isFemaleAvatar && {
-                      borderColor: V.borderGreen,
-                      backgroundColor: V.forestLight,
-                    },
-                ]}
-                onPress={selectInitials}
-                activeOpacity={0.8}
-              >
-                <View
-                  style={[
-                    avModal.avatarWrapper,
-                    avModal.initialsWrapper,
-                    {
-                      backgroundColor: V.forestLight,
-                      borderColor: V.borderGreen,
-                    },
-                  ]}
-                >
-                  <Text
-                    style={[avModal.initialsText, { color: V.silverBright }]}
-                  >
-                    {initials}
-                  </Text>
-                  {!avatarUrl && !isMaleAvatar && !isFemaleAvatar && (
-                    <View
-                      style={[
-                        avModal.checkBadge,
-                        {
-                          backgroundColor: V.visited,
-                          borderColor: V.forestDeep,
-                        },
-                      ]}
-                    >
-                      <Ionicons
-                        name="checkmark"
-                        size={14}
-                        color={V.silverBright}
-                      />
-                    </View>
-                  )}
-                </View>
-                <Text style={[avModal.optionLabel, { color: V.silver }]}>
-                  {t("profile.initialsAvatar")}
-                </Text>
-              </TouchableOpacity>
+              {/* "Inicijali" je namjerno uklonjen odavde — ista opcija već
+                  postoji u izborniku izvora slike ("Profilna slika" →
+                  "Inicijali"), pa se ista radnja nudila dvaput na dva
+                  mjesta. Ovaj izbornik sad nudi samo prave avatare. */}
             </View>
 
             <TouchableOpacity
@@ -1921,19 +1874,11 @@ function ActivityArchive({ userId }: { userId: number | null }) {
       );
       if (res.ok) setData(await res.json());
     } catch {
-      const mock: DailyActivity[] = Array.from({ length: 7 }, (_, i) => {
-        const d = new Date();
-        d.setDate(d.getDate() - (6 - i));
-        return {
-          date: d.toISOString().split("T")[0],
-          sessionMinutes: Math.floor(Math.random() * 45) + 5,
-          likes: Math.floor(Math.random() * 15),
-          comments: Math.floor(Math.random() * 8),
-          posts: Math.floor(Math.random() * 3),
-          followersCount: Math.floor(Math.random() * 100) + 50,
-        };
-      });
-      setData(mock);
+      // Prije se ovdje generirao NASUMIČAN skup podataka ("15 lajkova, 8
+      // komentara, 73 pratitelja"...) kad dohvat ne uspije. Na ekranu koji
+      // korisniku prikazuje njegovu stvarnu aktivnost to je gore od
+      // prazne liste: izmišljeni brojevi izgledaju kao pravi podaci.
+      setData([]);
     } finally {
       setLoading(false);
     }
@@ -1946,7 +1891,10 @@ function ActivityArchive({ userId }: { userId: number | null }) {
   const totalComments = data.reduce((s, d) => s + d.comments, 0);
   const totalPosts = data.reduce((s, d) => s + d.posts, 0);
   const totalMinutes = data.reduce((s, d) => s + d.sessionMinutes, 0);
-  const currentFollowers = data[data.length - 1]?.followersCount || 0;
+  // Backend vraća razdoblja od najnovijeg prema najstarijem, pa je
+  // "trenutno stanje" PRVI redak — prije se čitao zadnji (dakle najstariji)
+  // i zato je broj pratitelja gotovo uvijek ispadao 0.
+  const currentFollowers = data[0]?.followersCount || 0;
 
   const renderBarChart = (
     values: number[],
@@ -1982,7 +1930,12 @@ function ActivityArchive({ userId }: { userId: number | null }) {
   };
 
   return (
-    <ScrollView contentContainerStyle={{ paddingBottom: 20 }}>
+    // Prije je ovo bio ScrollView — zbog toga ga je pozivatelj morao
+    // omotati u okvir fiksne visine (600px), a sadržaj (odabir razdoblja +
+    // pet kartica) je puno niži od toga, pa je ispod ostajala velika
+    // prazna rupa do sljedeće sekcije. Ovdje ugniježđeno skrolanje ionako
+    // nije potrebno jer je cijeli ekran postavki već u ScrollViewu.
+    <View style={{ paddingBottom: 8 }}>
       <View style={ac.periodSelector}>
         {(["daily", "weekly", "monthly"] as const).map((p) => (
           <TouchableOpacity
@@ -2065,7 +2018,7 @@ function ActivityArchive({ userId }: { userId: number | null }) {
           ))}
         </View>
       ))}
-    </ScrollView>
+    </View>
   );
 }
 
@@ -3810,9 +3763,7 @@ function SettingsModal({
               />
             </TouchableOpacity>
             {showActivityArchive && (
-              <View style={{ height: 600 }}>
-                <ActivityArchive userId={profile?.id ?? null} />
-              </View>
+              <ActivityArchive userId={profile?.id ?? null} />
             )}
           </View>
 

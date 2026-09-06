@@ -366,6 +366,8 @@
     "deleteConfirm": "Are you sure?",
     "deleteFailed": "Delete failed",
     "comments": "Comments ({{count}})",
+    "commentsTitle": "Comments",
+    "commentsWithCount": "Comments - {{count}}",
     "noComments": "No comments yet. Be the first! ",
     "addComment": "Add a comment...",
     "sendMessage": "Send message",

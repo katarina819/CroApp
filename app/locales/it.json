@@ -362,6 +362,8 @@
     "deleteConfirm": "Sei sicuro?",
     "deleteFailed": "Eliminazione fallita",
     "comments": "Commenti ({{count}})",
+    "commentsTitle": "Commenti",
+    "commentsWithCount": "Commenti - {{count}}",
     "noComments": "Nessun commento ancora. Sii il primo! 💬",
     "addComment": "Aggiungi un commento...",
     "sendMessage": "Invia messaggio",
