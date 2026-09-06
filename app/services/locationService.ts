@@ -187,6 +187,55 @@ export function inferCategoryFromOsmTag(
   return extraEntry ? extraEntry[0] : null;
 }
 
+// Nazivi poznatih planinskih masiva/lanaca u Hrvatskoj koje Nominatim često
+// vraća kao boundary=protected_area (park prirode) ili place=region/locality
+// umjesto ijednog natural=* taga iz EXTRA_OSM_MATCHES iznad — npr. "Velebit"
+// je zaštićeno područje (Park prirode Velebit), ne pojedinačni vrh, pa
+// class/type pogađanje samo po OSM tagu tu redovito promaši. Ovo je zadnja
+// linija obrane: ako ništa iz OSM taga ne odgovara, provjeri sadrži li sam
+// naziv lokacije neku od ovih riječi.
+const CATEGORY_NAME_KEYWORDS: Record<string, string[]> = {
+  mountain: [
+    "velebit",
+    "biokovo",
+    "dinara",
+    "medvednica",
+    "psunj",
+    "papuk",
+    "učka",
+    "ucka",
+    "risnjak",
+    "ivančica",
+    "ivanščica",
+    "ivanscica",
+    "žumberak",
+    "zumberak",
+    "kalnik",
+    "plješevica",
+    "pljesevica",
+    "svilaja",
+    "mosor",
+    "snježnik",
+    "snjeznik",
+    "bjelolasica",
+    "planina",
+    "planinski",
+    "gorje",
+    "mountain",
+  ],
+};
+
+export function inferCategoryFromLocationName(
+  displayName?: string | null,
+): string | null {
+  if (!displayName) return null;
+  const lower = displayName.toLowerCase();
+  const entry = Object.entries(CATEGORY_NAME_KEYWORDS).find(([, words]) =>
+    words.some((w) => lower.includes(w)),
+  );
+  return entry ? entry[0] : null;
+}
+
 // Grupe kojima objekt ovog tipa obično NIJE prikladan — ostalo se
 // pretpostavlja kao prikladno svima. Noćni klub i planine isključuju
 // maloljetnike (planinarenje/vrhovi zahtijevaju nadzor/iskustvo koje se ne

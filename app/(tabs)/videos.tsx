@@ -36,6 +36,7 @@ import { useTheme } from "../../components/AdaptiveThemeProvider";
 import { API_BASE_URL } from "../config/api";
 import {
   inferAgeGroupsForCategory,
+  inferCategoryFromLocationName,
   inferCategoryFromOsmTag,
   placeCategories,
 } from "../services/locationService";
@@ -1125,11 +1126,14 @@ export function UploadModal({
 
     // Automatski predloži kategoriju i "primjereno za" na temelju adrese —
     // korisnik i dalje može ručno izmijeniti odabir, ovo samo popunjava
-    // razumnu početnu vrijednost umjesto praznih obaveznih polja.
-    const inferredCategory = inferCategoryFromOsmTag(
-      suggestion.osmClass,
-      suggestion.osmType,
-    );
+    // razumnu početnu vrijednost umjesto praznih obaveznih polja. Ako OSM
+    // class/type ne odgovara ničemu poznatom (npr. "Velebit" je zaštićeno
+    // područje, ne pojedinačni vrh, pa Nominatim zna vratiti
+    // boundary=protected_area umjesto natural=peak), pokušaj prepoznati
+    // kategoriju iz samog naziva mjesta prije nego odustaneš.
+    const inferredCategory =
+      inferCategoryFromOsmTag(suggestion.osmClass, suggestion.osmType) ||
+      inferCategoryFromLocationName(suggestion.displayName);
     if (inferredCategory) {
       setSelectedCategories((prev) =>
         prev.length > 0 ? prev : [inferredCategory],
@@ -1410,6 +1414,19 @@ export function UploadModal({
                   {showSuggestions && (
                     <View
                       style={{
+                        // ✅ FIX: bio je "position: relative" (zapravo bez
+                        // position, dakle static) — dropdown je bio DIO
+                        // toka layouta i fizički je gurao polja Kategorije/
+                        // Primjereno za/Opis prema dolje dok je otvoren, pa
+                        // su naglo skakala natrag gore čim bi se zatvorio
+                        // (odabirom prijedloga ili gubitkom fokusa). Ta
+                        // dva nagla pomaka izgledala su kao da ekran
+                        // "treperi"/vibrira. Sada je apsolutno pozicioniran
+                        // preko sadržaja ispod, koji se uopće ne pomiče.
+                        position: "absolute",
+                        top: "100%",
+                        left: 0,
+                        right: 0,
                         backgroundColor: VT.bgCard,
                         borderWidth: 1,
                         borderColor: VT.borderBright,
@@ -1417,6 +1434,8 @@ export function UploadModal({
                         marginTop: 4,
                         maxHeight: 220,
                         overflow: "hidden",
+                        zIndex: 30,
+                        elevation: 8,
                       }}
                     >
                       <ScrollView
