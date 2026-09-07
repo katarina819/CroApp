@@ -247,7 +247,15 @@ export default function RegisterScreen() {
   return (
     <KeyboardAvoidingView
       style={s.root}
-      behavior={Platform.OS === "ios" ? "padding" : "height"}
+      // FIX: na Androidu je ovdje stajao behavior="height". Aplikacija radi u
+      // edge-to-edge načinu i sustav sam smanjuje prozor kad se otvori tipkovnica,
+      // pa je KeyboardAvoidingView smanjivao visinu JOŠ JEDNOM. Dvije se prilagodbe
+      // natežu oko visine ekrana kroz cijelu animaciju tipkovnice, što se vidi kao
+      // neprekidno treperenje/vibriranje cijelog ekrana. Na Androidu zato nema
+      // behaviora — sustav to odradi sam. (Unutar <Modal>-a KeyboardAvoidingView
+      // ionako ne radi jer je modal zaseban prozor bez adjustResize; ondje se
+      // koristi useInputBottomOffset iz hooks/use-keyboard-offset.)
+      behavior={Platform.OS === "ios" ? "padding" : undefined}
     >
       <StatusBar barStyle="light-content" backgroundColor="#0D2406" />
 
@@ -580,7 +588,11 @@ function Field(props: {
       </Text>
       <View style={{ justifyContent: "center" }}>
         <TextInput
-          style={[s.input, focused && s.inputFocused, showValid && s.inputValid]}
+          style={[
+            s.input,
+            focused && s.inputFocused,
+            showValid && s.inputValid,
+          ]}
           placeholder={props.placeholder}
           placeholderTextColor="#9AA9A7"
           value={props.value}
@@ -594,9 +606,7 @@ function Field(props: {
         />
         {showValid && <Text style={s.validCheckmark}>✓</Text>}
       </View>
-      {props.helperText && (
-        <Text style={s.helperText}>{props.helperText}</Text>
-      )}
+      {props.helperText && <Text style={s.helperText}>{props.helperText}</Text>}
     </View>
   );
 }

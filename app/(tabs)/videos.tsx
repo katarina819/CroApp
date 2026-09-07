@@ -37,6 +37,10 @@ import { StoryBadge } from "../../app/StoryBadge";
 import { useTheme } from "../../components/AdaptiveThemeProvider";
 import { API_BASE_URL } from "../config/api";
 import {
+  useInputBottomOffset,
+  useKeyboardHeight,
+} from "@/hooks/use-keyboard-offset";
+import {
   inferAgeGroupsForCategory,
   inferCategoryFromLocationName,
   inferCategoryFromOsmTag,
@@ -110,57 +114,6 @@ interface VideoItem {
   mediaType?: string;
 }
 
-// ─── Helper: visina tipkovnice ────────────────────────────────────────────────
-// Unutar <Modal>-a na Androidu tipkovnica NE pomiče sadržaj: modal je zaseban
-// prozor koji ne nasljeđuje "adjustResize" postavku aplikacije, pa niti
-// KeyboardAvoidingView (koji se na Androidu oslanja upravo na to) niti sam
-// sustav ne naprave mjesta za tipkovnicu — polje za unos ostane skriveno ispod
-// nje. Zato ovdje mjerimo stvarnu visinu tipkovnice i sami odmaknemo redak s
-// unosom. Kad je tipkovnica skrivena, na isto mjesto ide sigurnosni razmak
-// (insets.bottom) da traka za navigaciju gestama ne prekriva polje i gumb.
-function useKeyboardHeight() {
-  const [height, setHeight] = useState(0);
-
-  useEffect(() => {
-    const showEvent =
-      Platform.OS === "ios" ? "keyboardWillShow" : "keyboardDidShow";
-    const hideEvent =
-      Platform.OS === "ios" ? "keyboardWillHide" : "keyboardDidHide";
-
-    const showSub = Keyboard.addListener(showEvent, (e) =>
-      setHeight(e.endCoordinates?.height ?? 0),
-    );
-    const hideSub = Keyboard.addListener(hideEvent, () => setHeight(0));
-
-    return () => {
-      showSub.remove();
-      hideSub.remove();
-    };
-  }, []);
-
-  return height;
-}
-
-// Razmak koji redak s unosom mora ostaviti pri dnu.
-//
-// Aplikacija radi u "edge-to-edge" načinu (app.json), dakle crta ispod
-// sistemskih traka. U tom načinu visina koju tipkovnica prijavi ne pokriva
-// i pojas trake za navigaciju gestama, pa je odmak samo za visinu
-// tipkovnice bio TAMAN premali — polje za unos ostajalo je vidljivo tek
-// rubom, točno za visinu te trake. Zato se sigurnosni razmak (insets.bottom)
-// dodaje i kad je tipkovnica otvorena, plus mali vizualni odmak da polje ne
-// bude zalijepljeno uz tipkovnicu. Ako na nekom uređaju prijavljena visina
-// ipak već uključuje traku, rezultat je samo nekoliko piksela zraka iznad
-// tipkovnice — što je bezopasno, za razliku od skrivenog polja.
-function useInputBottomOffset() {
-  const keyboardHeight = useKeyboardHeight();
-  const insets = useSafeAreaInsets();
-
-  return keyboardHeight > 0
-    ? keyboardHeight + insets.bottom + 8
-    : insets.bottom;
-}
-
 // ─── Helper: avatar URL ────────────────────────────────────────────────────────
 function buildAvatarUrl(avatar: string | null | undefined): string | null {
   if (!avatar) return null;
@@ -199,7 +152,11 @@ function useUserProfile(userId: number | null): FetchedProfile {
         if (!res.ok) return;
         const data = await res.json();
         const raw =
-          data.Avatar || data.avatar || data.avatarUrl || data.profileImage || null;
+          data.Avatar ||
+          data.avatar ||
+          data.avatarUrl ||
+          data.profileImage ||
+          null;
 
         let url: string | null = null;
         if (raw) {
@@ -1293,8 +1250,10 @@ export function UploadModal({
     locationDebounceRef.current = setTimeout(async () => {
       setSearchingLocation(true);
       try {
+        const token = await AsyncStorage.getItem("token");
         const res = await fetch(
           `${API_BASE_URL}/api/locationsearch/autocomplete?query=${encodeURIComponent(query.trim())}`,
+          token ? { headers: { Authorization: `Bearer ${token}` } } : undefined,
         );
         if (res.ok) {
           const data = await res.json();

@@ -232,7 +232,15 @@ function ComposeMessageModal({
     >
       <KeyboardAvoidingView
         style={{ flex: 1, backgroundColor: V.bg }}
-        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        // FIX: na Androidu je ovdje stajao behavior="height". Aplikacija radi u
+        // edge-to-edge načinu i sustav sam smanjuje prozor kad se otvori tipkovnica,
+        // pa je KeyboardAvoidingView smanjivao visinu JOŠ JEDNOM. Dvije se prilagodbe
+        // natežu oko visine ekrana kroz cijelu animaciju tipkovnice, što se vidi kao
+        // neprekidno treperenje/vibriranje cijelog ekrana. Na Androidu zato nema
+        // behaviora — sustav to odradi sam. (Unutar <Modal>-a KeyboardAvoidingView
+        // ionako ne radi jer je modal zaseban prozor bez adjustResize; ondje se
+        // koristi useInputBottomOffset iz hooks/use-keyboard-offset.)
+        behavior={Platform.OS === "ios" ? "padding" : undefined}
       >
         {/* ── Header — identičan dashboard modalima ── */}
         <View
@@ -552,10 +560,13 @@ export default function SearchScreen() {
       if (isPending) {
         // Otkaži poslani zahtjev za praćenje
         setPendingMap((p) => ({ ...p, [userId]: false }));
-        const res = await fetch(`${API_BASE_URL}/api/follow/request/${userId}`, {
-          method: "DELETE",
-          headers: { Authorization: `Bearer ${token}` },
-        });
+        const res = await fetch(
+          `${API_BASE_URL}/api/follow/request/${userId}`,
+          {
+            method: "DELETE",
+            headers: { Authorization: `Bearer ${token}` },
+          },
+        );
         if (!res.ok) throw new Error(`Status ${res.status}`);
       } else if (isFollowing) {
         setFollowingMap((p) => ({ ...p, [userId]: false }));

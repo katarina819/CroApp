@@ -87,9 +87,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
     [profile, loading, refreshProfile, updateAvatar, resetProfile],
   );
 
-  return (
-    <UserContext.Provider value={value}>{children}</UserContext.Provider>
-  );
+  return <UserContext.Provider value={value}>{children}</UserContext.Provider>;
 }
 
 export function useUser() {

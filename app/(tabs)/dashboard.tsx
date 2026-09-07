@@ -41,6 +41,7 @@ import { useTheme } from "../../components/AdaptiveThemeProvider";
 import { PlanMyDayModal } from "../../components/PlanMyDayModal";
 import { ag, dm, pb, pr, s } from "../../styles/varaTheme";
 import { API_BASE_URL } from "../config/api";
+import { useInputBottomOffset } from "@/hooks/use-keyboard-offset";
 import {
   clearPlacesCache,
   geocodeCity,
@@ -1546,7 +1547,15 @@ function PlaceDetailModal({
     >
       <KeyboardAvoidingView
         style={{ flex: 1 }}
-        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        // FIX: na Androidu je ovdje stajao behavior="height". Aplikacija radi u
+        // edge-to-edge načinu i sustav sam smanjuje prozor kad se otvori tipkovnica,
+        // pa je KeyboardAvoidingView smanjivao visinu JOŠ JEDNOM. Dvije se prilagodbe
+        // natežu oko visine ekrana kroz cijelu animaciju tipkovnice, što se vidi kao
+        // neprekidno treperenje/vibriranje cijelog ekrana. Na Androidu zato nema
+        // behaviora — sustav to odradi sam. (Unutar <Modal>-a KeyboardAvoidingView
+        // ionako ne radi jer je modal zaseban prozor bez adjustResize; ondje se
+        // koristi useInputBottomOffset iz hooks/use-keyboard-offset.)
+        behavior={Platform.OS === "ios" ? "padding" : undefined}
       >
         <View style={dm.overlay}>
           <View style={dm.sheet}>
@@ -2434,6 +2443,8 @@ export function ActivityGroupsModal({
     null,
   );
   const [chatMsg, setChatMsg] = useState("");
+  // Odmak retka za unos poruke u grupnom chatu iznad tipkovnice (vidi hook).
+  const groupChatInputOffset = useInputBottomOffset();
   const flatRef = useRef<FlatList>(null);
   const [showDMCompose, setShowDMCompose] = useState(false);
   const [dmTarget, setDmTarget] = useState<{
@@ -2687,10 +2698,12 @@ export function ActivityGroupsModal({
       return;
     }
     try {
+      const token = await AsyncStorage.getItem("token");
       const res = await fetch(
         `${API_BASE_URL}/api/locationsearch/autocomplete?query=${encodeURIComponent(
           query.trim(),
         )}`,
+        token ? { headers: { Authorization: `Bearer ${token}` } } : undefined,
       );
       if (!res.ok) {
         console.log("Autocomplete HTTP error", res.status);
@@ -3154,7 +3167,15 @@ export function ActivityGroupsModal({
       {selectedGroup ? (
         <KeyboardAvoidingView
           style={{ flex: 1, backgroundColor: DC.bg }}
-          behavior={Platform.OS === "ios" ? "padding" : "height"}
+          // FIX: na Androidu je ovdje stajao behavior="height". Aplikacija radi u
+          // edge-to-edge načinu i sustav sam smanjuje prozor kad se otvori tipkovnica,
+          // pa je KeyboardAvoidingView smanjivao visinu JOŠ JEDNOM. Dvije se prilagodbe
+          // natežu oko visine ekrana kroz cijelu animaciju tipkovnice, što se vidi kao
+          // neprekidno treperenje/vibriranje cijelog ekrana. Na Androidu zato nema
+          // behaviora — sustav to odradi sam. (Unutar <Modal>-a KeyboardAvoidingView
+          // ionako ne radi jer je modal zaseban prozor bez adjustResize; ondje se
+          // koristi useInputBottomOffset iz hooks/use-keyboard-offset.)
+          behavior={Platform.OS === "ios" ? "padding" : undefined}
           keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 0}
         >
           {/* Header */}
@@ -3437,7 +3458,9 @@ export function ActivityGroupsModal({
             }}
           />
 
-          {/* Input */}
+          {/* Input. Na Androidu je ovo unutar <Modal>-a, gdje
+              KeyboardAvoidingView ne radi (modal je zaseban prozor bez
+              adjustResize) — odmak se računa iz izmjerene visine tipkovnice. */}
           {(selectedGroup.members || []).includes(myName) ? (
             <View
               style={[
@@ -3447,6 +3470,8 @@ export function ActivityGroupsModal({
                   borderTopColor: DC.borderDim,
                   borderTopWidth: 1,
                   paddingBottom: Platform.OS === "ios" ? 34 : 16,
+                  marginBottom:
+                    Platform.OS === "android" ? groupChatInputOffset : 0,
                 },
               ]}
             >
@@ -3643,7 +3668,15 @@ export function ActivityGroupsModal({
         // ─── Forma za kreiranje ───────────────────────────────────────────────
         <KeyboardAvoidingView
           style={{ flex: 1, backgroundColor: DC.bg }}
-          behavior={Platform.OS === "ios" ? "padding" : "height"}
+          // FIX: na Androidu je ovdje stajao behavior="height". Aplikacija radi u
+          // edge-to-edge načinu i sustav sam smanjuje prozor kad se otvori tipkovnica,
+          // pa je KeyboardAvoidingView smanjivao visinu JOŠ JEDNOM. Dvije se prilagodbe
+          // natežu oko visine ekrana kroz cijelu animaciju tipkovnice, što se vidi kao
+          // neprekidno treperenje/vibriranje cijelog ekrana. Na Androidu zato nema
+          // behaviora — sustav to odradi sam. (Unutar <Modal>-a KeyboardAvoidingView
+          // ionako ne radi jer je modal zaseban prozor bez adjustResize; ondje se
+          // koristi useInputBottomOffset iz hooks/use-keyboard-offset.)
+          behavior={Platform.OS === "ios" ? "padding" : undefined}
         >
           {/* Header */}
           <View
@@ -9780,7 +9813,11 @@ export default function DashboardScreen() {
     try {
       const lastKnown = await Location.getLastKnownPositionAsync();
       if (lastKnown) {
-        applyLocation(lastKnown.coords.latitude, lastKnown.coords.longitude, true);
+        applyLocation(
+          lastKnown.coords.latitude,
+          lastKnown.coords.longitude,
+          true,
+        );
         shownFromCache = true;
         hasCenteredCamera = true;
       }
@@ -9799,7 +9836,11 @@ export default function DashboardScreen() {
 
       Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.High })
         .then((precLoc) => {
-          applyLocation(precLoc.coords.latitude, precLoc.coords.longitude, false);
+          applyLocation(
+            precLoc.coords.latitude,
+            precLoc.coords.longitude,
+            false,
+          );
         })
         .catch(() => {});
     } catch {

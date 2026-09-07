@@ -33,6 +33,7 @@ import { API_BASE_URL } from "../../app/config/api";
 import { StoryBadge } from "../../app/StoryBadge";
 import { useTheme } from "../../components/AdaptiveThemeProvider";
 import { Conversation, getConversations } from "../../utils/messagesApi";
+import { useInputBottomOffset } from "@/hooks/use-keyboard-offset";
 
 const { width: SCREEN_W, height: SCREEN_H } = Dimensions.get("window");
 
@@ -213,6 +214,8 @@ function StoryViewer({
   const [showViewers, setShowViewers] = useState(false);
   const [showLikes, setShowLikes] = useState(false);
   const [showComments, setShowComments] = useState(false);
+  // Odmak retka za unos komentara iznad tipkovnice (vidi hook).
+  const commentsInputOffset = useInputBottomOffset();
   const [commentText, setCommentText] = useState("");
   const [liked, setLiked] = useState(story.likedByMe || false);
   const [likeCount, setLikeCount] = useState(story.likeCount || 0);
@@ -847,7 +850,15 @@ function StoryViewer({
         */}
         <KeyboardAvoidingView
           style={sv.commentsKAV}
-          behavior={Platform.OS === "ios" ? "padding" : "height"}
+          // FIX: na Androidu je ovdje stajao behavior="height". Aplikacija radi u
+          // edge-to-edge načinu i sustav sam smanjuje prozor kad se otvori tipkovnica,
+          // pa je KeyboardAvoidingView smanjivao visinu JOŠ JEDNOM. Dvije se prilagodbe
+          // natežu oko visine ekrana kroz cijelu animaciju tipkovnice, što se vidi kao
+          // neprekidno treperenje/vibriranje cijelog ekrana. Na Androidu zato nema
+          // behaviora — sustav to odradi sam. (Unutar <Modal>-a KeyboardAvoidingView
+          // ionako ne radi jer je modal zaseban prozor bez adjustResize; ondje se
+          // koristi useInputBottomOffset iz hooks/use-keyboard-offset.)
+          behavior={Platform.OS === "ios" ? "padding" : undefined}
           keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 0}
         >
           <TouchableOpacity
@@ -949,13 +960,18 @@ function StoryViewer({
               )}
             />
 
-            {/* Input – uvijek vidljiv iznad tipkovnice */}
+            {/* Input – uvijek vidljiv iznad tipkovnice.
+                Na Androidu ovo je unutar <Modal>-a, gdje KeyboardAvoidingView
+                ne radi (modal je zaseban prozor bez adjustResize), pa se odmak
+                računa iz izmjerene visine tipkovnice. */}
             <View
               style={[
                 sv.commentInputContainer,
                 {
                   backgroundColor: colors.background,
                   borderTopColor: colors.border,
+                  marginBottom:
+                    Platform.OS === "android" ? commentsInputOffset : 0,
                 },
               ]}
             >

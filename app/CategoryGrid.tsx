@@ -1,11 +1,6 @@
 // app/CategoryGrid.tsx
 import React from "react";
-import {
-  FlatList,
-  StyleSheet,
-  Text,
-  TouchableOpacity
-} from "react-native";
+import { FlatList, StyleSheet, Text, TouchableOpacity } from "react-native";
 
 interface CategoryGridProps {
   selectedTypes: string[];

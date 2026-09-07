@@ -1,5 +1,5 @@
 // app/add.tsx
-import { View, Text, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet } from "react-native";
 
 export default function AddScreen() {
   return (
@@ -13,18 +13,18 @@ export default function AddScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: '#f5f7fa',
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "#f5f7fa",
   },
   title: {
     fontSize: 24,
-    fontWeight: 'bold',
-    color: '#333',
+    fontWeight: "bold",
+    color: "#333",
   },
   subtitle: {
     fontSize: 16,
-    color: '#666',
+    color: "#666",
     marginTop: 8,
   },
 });

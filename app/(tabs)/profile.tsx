@@ -1808,7 +1808,11 @@ function FollowRequestsModal({
         ) : loadFailed ? (
           <View style={fl.empty}>
             <View style={fl.emptyIconWrap}>
-              <Ionicons name="cloud-offline-outline" size={44} color={V.borderGreen} />
+              <Ionicons
+                name="cloud-offline-outline"
+                size={44}
+                color={V.borderGreen}
+              />
             </View>
             <Text style={fl.emptyText}>{t("follow.requestsLoadFailed")}</Text>
           </View>
@@ -1825,7 +1829,12 @@ function FollowRequestsModal({
             {/* Zahtjev nastaje SAMO kad je profil primatelja privatan —
                 javni profil se zaprati odmah. Bez ovog objašnjenja prazan
                 popis izgleda kao kvar. */}
-            <Text style={[fl.emptyText, { fontSize: 12, marginTop: 8, opacity: 0.75 }]}>
+            <Text
+              style={[
+                fl.emptyText,
+                { fontSize: 12, marginTop: 8, opacity: 0.75 },
+              ]}
+            >
               {t("follow.requestsOnlyPrivateHint")}
             </Text>
           </View>
@@ -1883,7 +1892,10 @@ function FollowRequestsModal({
                         <TouchableOpacity
                           style={[
                             fl.goldenBtn,
-                            { backgroundColor: V.visited, borderColor: V.visited },
+                            {
+                              backgroundColor: V.visited,
+                              borderColor: V.visited,
+                            },
                           ]}
                           onPress={() =>
                             respond(
@@ -1907,7 +1919,11 @@ function FollowRequestsModal({
                             )
                           }
                         >
-                          <Ionicons name="close" size={22} color={V.silverDim} />
+                          <Ionicons
+                            name="close"
+                            size={22}
+                            color={V.silverDim}
+                          />
                         </TouchableOpacity>
                       </>
                     )}
@@ -4329,7 +4345,9 @@ export default function ProfileScreen() {
                     paddingHorizontal: 3,
                   }}
                 >
-                  <Text style={{ color: "#fff", fontSize: 11, fontWeight: "700" }}>
+                  <Text
+                    style={{ color: "#fff", fontSize: 11, fontWeight: "700" }}
+                  >
                     {pendingRequestsCount > 99 ? "99+" : pendingRequestsCount}
                   </Text>
                 </View>
