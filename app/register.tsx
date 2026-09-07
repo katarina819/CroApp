@@ -218,6 +218,17 @@ export default function RegisterScreen() {
           errorData?.code === "taken"
         ) {
           Alert.alert(t("common.error"), t("validation.emailTaken"));
+        } else if (
+          errorData?.field === "email" &&
+          errorData?.code === "invalid"
+        ) {
+          // Poslužitelj sada provjerava i format adrese, ne samo je li prazna.
+          Alert.alert(t("common.error"), t("validation.invalidEmail"));
+        } else if (
+          errorData?.field === "username" &&
+          errorData?.code === "invalid"
+        ) {
+          Alert.alert(t("common.error"), t("validation.usernameChars"));
         } else if (response.status === 409) {
           Alert.alert(t("common.error"), t("validation.duplicateGeneric"));
         } else {

@@ -15,7 +15,6 @@ import {
   ActivityIndicator,
   Alert,
   Animated,
-  Dimensions,
   FlatList,
   Image,
   KeyboardAvoidingView,
@@ -34,8 +33,6 @@ import { StoryBadge } from "../../app/StoryBadge";
 import { useTheme } from "../../components/AdaptiveThemeProvider";
 import { Conversation, getConversations } from "../../utils/messagesApi";
 import { useInputBottomOffset } from "@/hooks/use-keyboard-offset";
-
-const { width: SCREEN_W, height: SCREEN_H } = Dimensions.get("window");
 
 const PRESET_AVATARS_MSG: Record<string, any> = {
   "avatar:male": require("../../assets/images/avatar-male.png"),
@@ -1016,7 +1013,10 @@ function StoryViewer({
 const sv = StyleSheet.create({
   container: { ...StyleSheet.absoluteFillObject, zIndex: 100 },
   bg: { ...StyleSheet.absoluteFillObject, backgroundColor: "#000" },
-  media: { width: SCREEN_W, height: SCREEN_H },
+  // Puni zaslon bez fiksnih mjera: SCREEN_W/SCREEN_H su se očitavali jednom pri
+  // učitavanju modula i nikad se nisu osvježili, pa je u podijeljenom zaslonu i
+  // na preklopnim uređajima priča bila veća od prozora.
+  media: { ...StyleSheet.absoluteFillObject },
   progressBar: {
     position: "absolute",
     top: Platform.OS === "ios" ? 54 : 32,

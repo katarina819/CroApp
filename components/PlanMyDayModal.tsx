@@ -16,7 +16,7 @@ import {
   ActivityIndicator,
   Alert,
   Animated,
-  Dimensions,
+  useWindowDimensions,
   Image,
   ImageBackground,
   KeyboardAvoidingView,
@@ -114,7 +114,6 @@ export interface PlanMyDayModalProps {
 // ---------------------------------------------------------------------------
 // Tema
 // ---------------------------------------------------------------------------
-const { width: SW } = Dimensions.get("window");
 
 function getDC(isDark: boolean) {
   return {
@@ -878,7 +877,11 @@ const InterestiGrid = React.memo(function InterestiGrid({
   t: (key: string, opts?: any) => string;
 }) {
   const keys = Object.keys(EMOJIS);
-  const cardW = (SW - 32 - 4) / 2 - 2;
+  // useWindowDimensions umjesto Dimensions.get() na razini modula: ono se
+  // očita jednom pri učitavanju i nikad se ne osvježi, pa je u podijeljenom
+  // zaslonu ili na preklopnom uređaju širina kartica ostajala kriva.
+  const { width: windowWidth } = useWindowDimensions();
+  const cardW = (windowWidth - 32 - 4) / 2 - 2;
 
   return (
     <View style={{ gap: 4 }}>
