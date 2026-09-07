@@ -48,6 +48,7 @@ import {
   clearPlacesCache,
   geocodeCity,
   getPlacesInRadius,
+  nameMatchesDenylist,
   Place,
   placeCategories,
   searchPlaces,
@@ -8779,9 +8780,26 @@ async function fetchGoogleNearby(
                   item.geometry.location.lat,
                   item.geometry.location.lng,
                 ),
-                openNow: item.opening_hours?.open_now ?? null, // ← DODAJTE OVO
+                openNow: item.opening_hours?.open_now ?? null,
               }),
             );
+
+            // Google u rezultatima vraća i lokale koji su trajno zatvoreni
+            // (business_status: CLOSED_PERMANENTLY) ili privremeno ne rade.
+            // Dosad se to polje nije gledalo, pa su takva mjesta završavala
+            // na karti kao svako drugo — korisnik dođe pred zatvorena vrata.
+            const closedIds = new Set<string>(
+              data.results
+                .filter(
+                  (item: any) =>
+                    item.business_status &&
+                    item.business_status !== "OPERATIONAL",
+                )
+                .map((item: any) => `google_${item.place_id}`),
+            );
+            if (closedIds.size > 0) {
+              results = results.filter((p: Place) => !closedIds.has(p.id));
+            }
 
             // FILTER ZA THEATER
             if (type === "theater") {
@@ -8800,7 +8818,7 @@ async function fetchGoogleNearby(
               ];
               results = results.filter((p: Place) => {
                 const n = p.name.toLowerCase();
-                return !forbidden.some((bad) => n.includes(bad));
+                return !nameMatchesDenylist(n, forbidden);
               });
             }
 
@@ -8854,7 +8872,7 @@ async function fetchGoogleNearby(
               ];
               results = results.filter((p: Place) => {
                 const n = p.name.toLowerCase();
-                return !SPA_GOOGLE_BLOCK.some((bad) => n.includes(bad));
+                return !nameMatchesDenylist(n, SPA_GOOGLE_BLOCK);
               });
             }
 
@@ -8947,7 +8965,7 @@ async function fetchGoogleNearby(
               results = results.filter((p: Place) => {
                 const n = p.name.toLowerCase();
                 // Blokira po denylist
-                if (CLUB_BLOCK.some((bad) => n.includes(bad))) return false;
+                if (nameMatchesDenylist(n, CLUB_BLOCK)) return false;
                 return true;
               });
             }
@@ -9003,7 +9021,7 @@ async function fetchGoogleNearby(
               ];
               results = results.filter((p: Place) => {
                 const n = p.name.toLowerCase();
-                if (OPG_BLOCK.some((bad) => n.includes(bad))) return false;
+                if (nameMatchesDenylist(n, OPG_BLOCK)) return false;
                 return OPG_KEYWORDS.some((kw) => n.includes(kw));
               });
             }
@@ -9102,7 +9120,7 @@ async function fetchGoogleNearby(
               ];
               results = results.filter((p: Place) => {
                 const n = p.name.toLowerCase();
-                return !LANDMARK_GOOGLE_BLOCK.some((bad) => n.includes(bad));
+                return !nameMatchesDenylist(n, LANDMARK_GOOGLE_BLOCK);
               });
             }
 
@@ -9167,7 +9185,7 @@ async function fetchGoogleNearby(
               ];
               results = results.filter((p: Place) => {
                 const n = p.name.toLowerCase();
-                if (CINEMA_BLOCK.some((bad) => n.includes(bad))) return false;
+                if (nameMatchesDenylist(n, CINEMA_BLOCK)) return false;
                 return CINEMA_WHITELIST.some((kw) => n.includes(kw));
               });
             }
@@ -10036,7 +10054,7 @@ export default function DashboardScreen() {
           n.includes("dječje") ||
           n.includes("narodno");
         if (!isRealTheater) return false;
-        return !THEATER_HARD_BLOCK.some((bad) => n.includes(bad));
+        return !nameMatchesDenylist(n, THEATER_HARD_BLOCK);
       });
 
       // ── POST-FILTER ZA CLUB ─────────────────────────────────────────
@@ -10085,7 +10103,7 @@ export default function DashboardScreen() {
       const finalFiltered = theaterFiltered.filter((p) => {
         if (p.type !== "club") return true;
         const n = p.name.toLowerCase().trim();
-        return !CLUB_HARD_BLOCK.some((bad) => n.includes(bad));
+        return !nameMatchesDenylist(n, CLUB_HARD_BLOCK);
       });
 
       const LANDMARK_BLOCK = [
@@ -10141,7 +10159,7 @@ export default function DashboardScreen() {
       const fullyFiltered = finalFiltered.filter((p) => {
         if (p.type !== "landmark") return true;
         const n = p.name.toLowerCase();
-        return !LANDMARK_BLOCK.some((bad) => n.includes(bad));
+        return !nameMatchesDenylist(n, LANDMARK_BLOCK);
       });
 
       const MUSEUM_BLOCK = [
@@ -10166,7 +10184,7 @@ export default function DashboardScreen() {
       const museumFiltered = fullyFiltered.filter((p) => {
         if (p.type !== "museum") return true;
         const n = p.name.toLowerCase();
-        return !MUSEUM_BLOCK.some((bad) => n.includes(bad));
+        return !nameMatchesDenylist(n, MUSEUM_BLOCK);
       });
 
       const PARK_HARD_BLOCK = [
@@ -10205,7 +10223,7 @@ export default function DashboardScreen() {
       const parkFiltered = museumFiltered.filter((p) => {
         if (p.type !== "park") return true;
         const n = p.name.toLowerCase();
-        return !PARK_HARD_BLOCK.some((bad) => n.includes(bad));
+        return !nameMatchesDenylist(n, PARK_HARD_BLOCK);
       });
 
       const LANDMARK_EMPLOYMENT_BLOCK = [
@@ -10220,7 +10238,7 @@ export default function DashboardScreen() {
       const landmarkExtra = parkFiltered.filter((p) => {
         if (p.type !== "landmark") return true;
         const n = p.name.toLowerCase();
-        return !LANDMARK_EMPLOYMENT_BLOCK.some((bad) => n.includes(bad));
+        return !nameMatchesDenylist(n, LANDMARK_EMPLOYMENT_BLOCK);
       });
 
       // ── POST-FILTER ZA SPA — mora biti ZADNJI, nakon museumFiltered ──
@@ -10282,7 +10300,7 @@ export default function DashboardScreen() {
       const spaFiltered = museumFiltered.filter((p) => {
         if (p.type !== "spa") return true;
         const n = p.name.toLowerCase();
-        return !SPA_HARD_BLOCK.some((bad) => n.includes(bad));
+        return !nameMatchesDenylist(n, SPA_HARD_BLOCK);
       });
 
       // ← DODAJ OVDJE

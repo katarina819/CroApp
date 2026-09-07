@@ -1134,7 +1134,7 @@ function denyRegexFor(term: string): RegExp {
 }
 
 /** Sadrži li ime neki od zabranjenih izraza (na granici riječi)? */
-function nameMatchesDenylist(name: string, terms: string[]): boolean {
+export function nameMatchesDenylist(name: string, terms: string[]): boolean {
   const lower = name.toLowerCase();
   for (const term of terms) {
     if (!term) continue;
