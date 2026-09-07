@@ -38,6 +38,7 @@ import {
 import { API_BASE_URL } from "../config/api";
 import i18n from "../config/i18n";
 import { useActivePolling } from "@/hooks/use-active-polling";
+import { CloseButton } from "@/components/CloseButton";
 
 // ─── VARA Paleta ───────────────────────────────────────────────────────────────
 function getV(isDark: boolean) {
@@ -415,9 +416,7 @@ function FullscreenMediaViewer({
               padding: 16,
             }}
           >
-            <TouchableOpacity onPress={onClose} hitSlop={12}>
-              <Ionicons name="close" size={30} color="#fff" />
-            </TouchableOpacity>
+            <CloseButton onPress={onClose} tone="onBlack" />
           </View>
           <View
             style={{ flex: 1, justifyContent: "center", alignItems: "center" }}
@@ -1082,9 +1081,10 @@ export default function ChatScreen() {
       >
         <SafeAreaView style={{ flex: 1, backgroundColor: "#000" }}>
           <View style={styles.previewHeader}>
-            <TouchableOpacity onPress={() => setShowMediaPreview(false)}>
-              <Ionicons name="close" size={28} color="#fff" />
-            </TouchableOpacity>
+            <CloseButton
+              onPress={() => setShowMediaPreview(false)}
+              tone="onBlack"
+            />
             <Text style={styles.previewTitle}>Pregled</Text>
             <TouchableOpacity
               style={styles.previewSendBtn}

@@ -28,6 +28,7 @@ import { useTheme } from "../../components/AdaptiveThemeProvider";
 import UserAvatar from "../../components/UserAvatar";
 import { API_BASE_URL } from "../config/api";
 import { useUser } from "./../contexts/UserContext";
+import { CloseButton } from "@/components/CloseButton";
 
 const { width: SCREEN_W } = Dimensions.get("window");
 
@@ -1578,15 +1579,12 @@ function FollowListModal({
         edges={["top"]}
       >
         <View style={fl.header}>
-          <TouchableOpacity onPress={onClose}>
-            <Ionicons name="close" size={28} color={V.silver} />
-          </TouchableOpacity>
           <Text style={fl.title}>
             {type === "followers"
               ? t("profile.followersList")
               : t("profile.followingList")}
           </Text>
-          <View style={{ width: 28 }} />
+          <CloseButton onPress={onClose} />
         </View>
 
         {loading ? (
@@ -1797,11 +1795,8 @@ function FollowRequestsModal({
         edges={["top"]}
       >
         <View style={fl.header}>
-          <TouchableOpacity onPress={onClose}>
-            <Ionicons name="close" size={28} color={V.silver} />
-          </TouchableOpacity>
           <Text style={fl.title}>{t("profile.followRequests")}</Text>
-          <View style={{ width: 28 }} />
+          <CloseButton onPress={onClose} />
         </View>
 
         {loading ? (
@@ -3573,9 +3568,7 @@ function SettingsModal({
     <Modal visible={visible} animationType="slide" onRequestClose={onClose}>
       <SafeAreaView style={{ flex: 1, backgroundColor: V.forestDeep }}>
         <View style={sm.header}>
-          <TouchableOpacity onPress={onClose}>
-            <Ionicons name="close" size={28} color={V.silver} />
-          </TouchableOpacity>
+          <CloseButton onPress={onClose} />
           <Text style={sm.title}>{t("profile.settings")}</Text>
           <TouchableOpacity onPress={saveSettings} disabled={saving}>
             {saving ? (
@@ -4085,16 +4078,15 @@ function SettingsModal({
                     ? t("profile.appProblemTitle")
                     : t("profile.mapProblemTitle")}
                 </Text>
-                <TouchableOpacity
+                <CloseButton
+                  tone="muted"
                   onPress={() => {
                     setProblemText("");
                     type === "app"
                       ? setShowAppProblemModal(false)
                       : setShowMapProblemModal(false);
                   }}
-                >
-                  <Ionicons name="close" size={22} color={V.silverDim} />
-                </TouchableOpacity>
+                />
               </View>
 
               <Text

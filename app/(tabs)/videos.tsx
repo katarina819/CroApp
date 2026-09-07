@@ -37,6 +37,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { StoryBadge } from "../../app/StoryBadge";
 import { useTheme } from "../../components/AdaptiveThemeProvider";
 import { API_BASE_URL } from "../config/api";
+import { CloseButton } from "@/components/CloseButton";
 import {
   useInputBottomOffset,
   useKeyboardHeight,
@@ -207,11 +208,20 @@ function FreshAvatar({
   avatar?: string | null;
   size: number;
 }) {
-  // Ako pozivatelj već ima sve podatke o autoru, nema razloga za mrežni
-  // poziv — feed videa ih sad vraća zajedno s videom, pa je time nestalo
-  // po jedan zahtjev za SVAKI video na ekranu.
-  const hasInlineData = !!(firstName || username);
-  const profile = useUserProfile(hasInlineData ? null : userId);
+  // Profil se dohvaća samo kad avatar NIJE stigao zajedno s podacima.
+  //
+  // Prije se preskakalo čim bi stiglo ime ili korisničko ime, pa je autor
+  // videa u feedu prikazivan inicijalima ("KZ") iako ima sliku: feed vraća
+  // korisničko ime, dohvat se zbog toga preskočio, a slike u odgovoru nije
+  // bilo — dok je ista osoba u pretrazi imala urednu sliku. Isto se događalo
+  // u popisu korisnika kod slanja poruke, koji avatar uopće ne prosljeđuje.
+  //
+  // Uvjet je sada vezan uz ono što se doista prikazuje: ako avatar imamo,
+  // mrežnog poziva nema (i dalje nema po jednog zahtjeva za svaki video);
+  // ako ga nemamo, dohvaćamo ga umjesto da odmah odustanemo na inicijale.
+  const hasInlineAvatar =
+    avatar !== undefined && avatar !== null && avatar !== "";
+  const profile = useUserProfile(hasInlineAvatar ? null : userId);
   const [failed, setFailed] = useState(false);
   // Preset avatari ("avatar:male"/"avatar:female") nisu URL-ovi — prosljeđuju
   // se takvi kakvi jesu jer se ispod mapiraju na ugrađene slike.
@@ -1464,13 +1474,10 @@ export function UploadModal({
         <SafeAreaView style={{ flex: 1, backgroundColor: VT.bg }}>
           {/* Header */}
           <View style={modal.header}>
-            <TouchableOpacity onPress={resetModal}>
-              <Ionicons name="close" size={28} color={VT.textSecondary} />
-            </TouchableOpacity>
             <Text style={modal.headerTitle}>
               {step === "pick" ? "Dodaj sadržaj" : "Pregled i objava"}
             </Text>
-            <View style={{ width: 28 }} />
+            <CloseButton onPress={resetModal} tone="muted" />
           </View>
 
           <ScrollView
