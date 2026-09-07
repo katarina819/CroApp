@@ -948,5 +948,16 @@
     "messageFailed": "Messaggio non inviato",
     "writeMessage": "Scrivi un messaggio per {{name}}...",
     "send": "Invia"
+  },
+  "notifications": {
+    "title": "Notifiche",
+    "markAllRead": "Segna tutte come lette",
+    "emptyTitle": "Nessuna nuova notifica",
+    "emptyHint": "Quando una persona che segui pubblica qualcosa in una categoria scelta nelle impostazioni, comparirà qui.",
+    "saveFailed": "Le impostazioni delle notifiche non sono state salvate. Controlla la connessione e riprova — finché non sono salvate, non arriverà alcuna notifica.",
+    "justNow": "proprio ora",
+    "minutesAgo": "{{count}} min fa",
+    "hoursAgo": "{{count}} h fa",
+    "daysAgo": "{{count}} g fa"
   }
 }

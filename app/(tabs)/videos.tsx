@@ -1415,6 +1415,11 @@ export function UploadModal({
       }
 
       formData.append("Description", finalDescription);
+      // Uz prevedene nazive u opisu šaljemo i STABILNE oznake. Bez njih
+      // poslužitelj ne može usporediti kategorije objave s kategorijama koje
+      // netko prati — "Parkovi" i "Parks" su za njega dva različita niza.
+      formData.append("Categories", selectedCategories.join(","));
+      formData.append("AgeGroups", selectedAgeGroups.join(","));
       formData.append("UserId", userId);
       formData.append("MediaType", mediaType);
 

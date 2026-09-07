@@ -948,5 +948,16 @@
     "messageFailed": "Message not sent",
     "writeMessage": "Write a message for {{name}}...",
     "send": "Send"
+  },
+  "notifications": {
+    "title": "Notifications",
+    "markAllRead": "Mark all as read",
+    "emptyTitle": "No new notifications",
+    "emptyHint": "When someone you follow posts something in a category you picked in settings, it will show up here.",
+    "saveFailed": "Notification settings were not saved. Check your connection and try again — until they are saved, no notifications will arrive.",
+    "justNow": "just now",
+    "minutesAgo": "{{count}} min ago",
+    "hoursAgo": "{{count}} h ago",
+    "daysAgo": "{{count}} d ago"
   }
 }

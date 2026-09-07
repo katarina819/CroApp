@@ -946,5 +946,16 @@
     "messageFailed": "Poruka nije poslana",
     "writeMessage": "Napiši poruku za {{name}}...",
     "send": "Pošalji"
+  },
+  "notifications": {
+    "title": "Obavijesti",
+    "markAllRead": "Označi sve kao pročitano",
+    "emptyTitle": "Nema novih obavijesti",
+    "emptyHint": "Kad netko koga pratite objavi nešto iz kategorije koju ste odabrali u postavkama, obavijest će se pojaviti ovdje.",
+    "saveFailed": "Postavke obavijesti nisu spremljene. Provjerite vezu i pokušajte ponovno — dok se ne spreme, obavijesti neće stizati.",
+    "justNow": "upravo sad",
+    "minutesAgo": "prije {{count}} min",
+    "hoursAgo": "prije {{count}} h",
+    "daysAgo": "prije {{count}} d"
   }
 }

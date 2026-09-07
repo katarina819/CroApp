@@ -44,6 +44,12 @@ import { API_BASE_URL } from "../config/api";
 import { useInputBottomOffset } from "@/hooks/use-keyboard-offset";
 import { useActivePolling } from "@/hooks/use-active-polling";
 import { isOpenAt, isOpenDuringWindow } from "@/utils/openingHours";
+import { NotificationsModal } from "@/components/NotificationsModal";
+import {
+  getNotificationPreferences,
+  getUnreadCount,
+  saveNotificationPreferences,
+} from "@/utils/notificationsApi";
 import {
   clearPlacesCache,
   geocodeCity,
@@ -9370,7 +9376,10 @@ export default function DashboardScreen() {
   const [locationPermission, setLocationPermission] = useState(false);
   const [mapRegion, setMapRegion] = useState<Region | null>(null);
   // Dodaj uz ostale state-ove:
+  // Broj nepročitanih obavijesti. Ranije se postavljao na 0 i NIKAD se nije
+  // mijenjao, pa je značka na zvonu bila trajno prazna bez obzira na sve.
   const [realNotificationCount, setRealNotificationCount] = useState(0);
+  const [showNotifications, setShowNotifications] = useState(false);
   const [searchLocation, setSearchLocation] = useState<{
     latitude: number;
     longitude: number;
@@ -9617,12 +9626,26 @@ export default function DashboardScreen() {
       .catch(() => {});
 
     loadJSON<string[]>(STORAGE_HIDDEN, []).then(setHiddenPlaceIds);
+    // Lokalna kopija se iscrta odmah, a zatim je zamjenjuje ono što stvarno
+    // stoji na poslužitelju — jer o tome ovisi hoće li obavijesti uopće stizati.
     loadJSON<NotifPrefs>(STORAGE_NOTIFS, {
       appEnabled: false,
       emailEnabled: false,
       email: "",
       categories: [],
     }).then(setNotifPrefs);
+
+    getNotificationPreferences().then((remote) => {
+      if (!remote) return;
+      const merged: NotifPrefs = {
+        appEnabled: remote.appEnabled,
+        emailEnabled: remote.emailEnabled,
+        email: remote.email,
+        categories: remote.categories,
+      };
+      setNotifPrefs(merged);
+      saveJSON(STORAGE_NOTIFS, merged);
+    });
   }, []);
 
   useEffect(() => {
@@ -9645,8 +9668,14 @@ export default function DashboardScreen() {
         hasRequestedLocationOnce.current = true;
         requestLocationPermission();
       }
+      getUnreadCount().then(setRealNotificationCount);
     }, []),
   );
+
+  // Osvježavanje brojača staje kad aplikacija ode u pozadinu (useActivePolling).
+  useActivePolling(() => {
+    getUnreadCount().then(setRealNotificationCount);
+  }, 90000);
 
   // PRONAĐI useEffect koji resetira displayLimit:
   useEffect(() => {
@@ -10464,15 +10493,36 @@ export default function DashboardScreen() {
     await saveJSON(STORAGE_HIDDEN, updated);
   };
 
+  /**
+   * Spremi postavke obavijesti — na uređaj (trenutni prikaz) i na poslužitelj
+   * (bez toga obavijesti nema komu slati). Ako spremanje na poslužitelj ne
+   * uspije, korisniku to kažemo: tiho odustajanje bi ostavilo dojam da je sve
+   * uključeno, a ništa ne bi stizalo.
+   */
+  const persistNotifPrefs = useCallback(
+    async (next: NotifPrefs) => {
+      setNotifPrefs(next);
+      saveJSON(STORAGE_NOTIFS, next);
+      const ok = await saveNotificationPreferences({
+        appEnabled: next.appEnabled,
+        emailEnabled: next.emailEnabled,
+        email: next.email ?? "",
+        categories: next.categories,
+      });
+      if (!ok) {
+        Alert.alert(t("common.error"), t("notifications.saveFailed"));
+      }
+    },
+    [t],
+  );
+
   const handleToggleNotif = (catId: string) => {
-    const newPrefs = {
+    persistNotifPrefs({
       ...notifPrefs,
       categories: notifPrefs.categories.includes(catId)
         ? notifPrefs.categories.filter((c) => c !== catId)
         : [...notifPrefs.categories, catId],
-    };
-    setNotifPrefs(newPrefs);
-    saveJSON(STORAGE_NOTIFS, newPrefs);
+    });
   };
 
   const isVisited = (placeId: string) =>
@@ -10918,12 +10968,21 @@ export default function DashboardScreen() {
             },
             {
               icon: notificationsIcon,
+              label: t("notifications.title"),
+              onPress: () => {
+                setShowOstalo(false);
+                setShowNotifications(true);
+              },
+              // Značka pripada popisu obavijesti, ne ekranu s postavkama.
+              badge: realNotificationCount,
+            },
+            {
+              icon: notificationsIcon,
               label: t("map.notifSettings"),
               onPress: () => {
                 setShowOstalo(false);
                 setShowNotifSettings(true);
               },
-              badge: realNotificationCount,
             },
           ].map((item, i) => (
             <TouchableOpacity
@@ -11940,13 +11999,17 @@ export default function DashboardScreen() {
         visits={visits}
         PlaceDetailModalComponent={PlaceDetailModal}
       />
+      <NotificationsModal
+        visible={showNotifications}
+        onClose={() => setShowNotifications(false)}
+        onUnreadChange={setRealNotificationCount}
+      />
       <NotificationSettingsModal
         visible={showNotifSettings}
         prefs={notifPrefs}
         onClose={() => setShowNotifSettings(false)}
         onSave={(p) => {
-          setNotifPrefs(p);
-          saveJSON(STORAGE_NOTIFS, p);
+          persistNotifPrefs(p);
         }}
         getAllCategories={getAllCategories}
       />

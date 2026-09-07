@@ -948,5 +948,16 @@
     "messageFailed": "Message non envoyé",
     "writeMessage": "Écrivez un message pour {{name}}...",
     "send": "Envoyer"
+  },
+  "notifications": {
+    "title": "Notifications",
+    "markAllRead": "Tout marquer comme lu",
+    "emptyTitle": "Aucune nouvelle notification",
+    "emptyHint": "Quand une personne que vous suivez publie dans une catégorie choisie dans les réglages, cela apparaîtra ici.",
+    "saveFailed": "Les réglages de notification n'ont pas été enregistrés. Vérifiez votre connexion et réessayez — tant qu'ils ne sont pas enregistrés, aucune notification n'arrivera.",
+    "justNow": "à l'instant",
+    "minutesAgo": "il y a {{count}} min",
+    "hoursAgo": "il y a {{count}} h",
+    "daysAgo": "il y a {{count}} j"
   }
 }

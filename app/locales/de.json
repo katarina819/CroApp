@@ -948,5 +948,16 @@
     "userNotFound": "Benutzer nicht gefunden",
     "userNotFoundDesc": "Benutzer \"{{name}}\" konnte im System nicht gefunden werden.",
     "notFound": "Nicht gefunden"
+  },
+  "notifications": {
+    "title": "Benachrichtigungen",
+    "markAllRead": "Alle als gelesen markieren",
+    "emptyTitle": "Keine neuen Benachrichtigungen",
+    "emptyHint": "Wenn jemand, dem du folgst, etwas aus einer von dir gewählten Kategorie postet, erscheint es hier.",
+    "saveFailed": "Die Benachrichtigungseinstellungen wurden nicht gespeichert. Prüfe die Verbindung und versuche es erneut — bis dahin kommen keine Benachrichtigungen an.",
+    "justNow": "gerade eben",
+    "minutesAgo": "vor {{count}} Min.",
+    "hoursAgo": "vor {{count}} Std.",
+    "daysAgo": "vor {{count}} T."
   }
 }
