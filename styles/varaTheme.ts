@@ -190,6 +190,22 @@ export const dm = StyleSheet.create({
     marginBottom: 6,
   },
   hoursText: { fontSize: 13, color: V.silverDim, lineHeight: 20 },
+  // Oznaka "otvoreno / zatvoreno" uz radno vrijeme. Prikazuje se samo kad se
+  // stanje doista može utvrditi iz zapisanog radnog vremena — kad se ne može,
+  // oznake nema, umjesto da se nagađa.
+  openBadge: {
+    alignSelf: "flex-start",
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 999,
+    marginBottom: 8,
+    borderWidth: 1,
+  },
+  openBadgeDot: { width: 7, height: 7, borderRadius: 4 },
+  openBadgeText: { fontSize: 12, fontWeight: "700", letterSpacing: 0.2 },
   notifRow: {
     flexDirection: "row",
     alignItems: "center",

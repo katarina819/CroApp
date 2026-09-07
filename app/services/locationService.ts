@@ -1,5 +1,7 @@
 // app/services/locationService.ts  —  strogi OSM filteri po kategoriji
 
+import { isOpenAt } from "@/utils/openingHours";
+
 export interface Place {
   id: string;
   name: string;
@@ -1084,11 +1086,66 @@ const haversineKm = (
 };
 
 // ─── Provjeri je li rezultat u bijelo/crnoj listi ─────────────────────────────
+
+/**
+ * Je li objekt trajno zatvoren, srušen, u izgradnji ili naprosto nedostupan
+ * javnosti?
+ *
+ * OpenStreetMap takve objekte često zadrži u bazi s dodatnom oznakom umjesto
+ * da ih obriše, pa su se na karti pojavljivali kao sasvim obična mjesta —
+ * korisnik dođe pred lokal koji više ne postoji. Prefiksirane oznake
+ * (disused:amenity=...) upit ionako ne vraća, ali objekti koji uz redovnu
+ * oznaku nose i "disused=yes", "abandoned=yes" ili slično — vraća.
+ */
+function isPermanentlyClosedOrPrivate(tags: Record<string, string>): boolean {
+  const truthy = (v: string | undefined) =>
+    v !== undefined && v !== "no" && v !== "false";
+
+  if (
+    truthy(tags.disused) ||
+    truthy(tags.abandoned) ||
+    truthy(tags.demolished) ||
+    truthy(tags.razed) ||
+    truthy(tags.construction) ||
+    truthy(tags.proposed) ||
+    truthy(tags.planned)
+  ) {
+    return true;
+  }
+
+  // Oblik "was:amenity=restaurant" / "removed:shop=..." na istom objektu.
+  for (const key of Object.keys(tags)) {
+    if (
+      /^(disused|abandoned|was|removed|demolished|razed|construction|proposed):/.test(
+        key,
+      )
+    ) {
+      return true;
+    }
+  }
+
+  // Neki mapari trajno zatvaranje bilježe kroz radno vrijeme.
+  const hours = (tags.opening_hours || "").trim().toLowerCase();
+  if (hours === "closed" || hours === "off" || hours === "no") return true;
+
+  // Nije za javnost — privatni pristup, samo za članove/zaposlenike.
+  const access = (tags.access || "").toLowerCase();
+  if (access === "private" || access === "no" || access === "permit")
+    return true;
+
+  const lifecycle = (tags["lifecycle"] || "").toLowerCase();
+  if (lifecycle === "disused" || lifecycle === "abandoned") return true;
+
+  return false;
+}
+
 function passesFilter(
   tags: Record<string, string>,
   name: string,
   rule: CategoryRule,
 ): boolean {
+  if (isPermanentlyClosedOrPrivate(tags)) return false;
+
   const nameLower = name.toLowerCase();
 
   // Globalna crna lista
@@ -1348,6 +1405,9 @@ out body center;`;
         if (dist > radiusM / 1000) continue;
 
         if (type === "opg") {
+          // OPG grana ne prolazi kroz passesFilter, pa provjeru trajno
+          // zatvorenih/privatnih objekata treba i ovdje.
+          if (isPermanentlyClosedOrPrivate(tags)) continue;
           if (!isValidOPG(tags, name)) continue;
           const nameLower = name.toLowerCase();
           const globalDenied = GLOBAL_NAME_DENYLIST.some((d) =>
@@ -1416,6 +1476,10 @@ out body center;`;
           phone: tags.phone || tags["contact:phone"] || undefined,
           website: tags.website || tags["contact:website"] || undefined,
           openingHours: tags.opening_hours || undefined,
+          // Izračunato iz zapisanog radnog vremena (null kad se ne može
+          // utvrditi). Dosad se popunjavalo samo iz Googleovog odgovora, pa su
+          // mjesta koja dolaze iz OpenStreetMapa uvijek bila "nepoznato".
+          openNow: isOpenAt(tags.opening_hours, new Date()),
           rating: tags.stars ? parseFloat(tags.stars) : undefined,
         });
       }

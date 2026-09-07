@@ -43,6 +43,7 @@ import { ag, dm, pb, pr, s } from "../../styles/varaTheme";
 import { API_BASE_URL } from "../config/api";
 import { useInputBottomOffset } from "@/hooks/use-keyboard-offset";
 import { useActivePolling } from "@/hooks/use-active-polling";
+import { isOpenAt, isOpenDuringWindow } from "@/utils/openingHours";
 import {
   clearPlacesCache,
   geocodeCity,
@@ -1657,13 +1658,48 @@ function PlaceDetailModal({
                   {loading ? (
                     <ActivityIndicator size="small" color={color} />
                   ) : details?.openingHours ? (
-                    <Text style={dm.hoursText}>
-                      {details.openingHours === "__OPEN__"
-                        ? t("map.openNow")
-                        : details.openingHours === "__CLOSED__"
-                          ? t("map.closedNow")
-                          : details.openingHours}
-                    </Text>
+                    <>
+                      {(() => {
+                        // Stanje se računa iz zapisanog radnog vremena; ako se
+                        // ne može utvrditi, oznake naprosto nema.
+                        const raw = details.openingHours;
+                        const state =
+                          raw === "__OPEN__"
+                            ? true
+                            : raw === "__CLOSED__"
+                              ? false
+                              : isOpenAt(raw, new Date());
+                        if (state === null) return null;
+                        const tint = state ? "#3FBF6F" : "#D9534F";
+                        return (
+                          <View
+                            style={[
+                              dm.openBadge,
+                              {
+                                borderColor: tint,
+                                backgroundColor: state
+                                  ? "rgba(63,191,111,0.12)"
+                                  : "rgba(217,83,79,0.12)",
+                              },
+                            ]}
+                          >
+                            <View
+                              style={[
+                                dm.openBadgeDot,
+                                { backgroundColor: tint },
+                              ]}
+                            />
+                            <Text style={[dm.openBadgeText, { color: tint }]}>
+                              {state ? t("map.openNow") : t("map.closedNow")}
+                            </Text>
+                          </View>
+                        );
+                      })()}
+                      {details.openingHours !== "__OPEN__" &&
+                      details.openingHours !== "__CLOSED__" ? (
+                        <Text style={dm.hoursText}>{details.openingHours}</Text>
+                      ) : null}
+                    </>
                   ) : null}
                 </View>
 
@@ -9285,144 +9321,11 @@ function QuickCategoryBar({
   );
 }
 
-// ─── OSM opening hours parser ─────────────────────────────────────────────────
-const DAY_MAP: Record<string, number> = {
-  mo: 0,
-  tu: 1,
-  we: 2,
-  th: 3,
-  fr: 4,
-  sa: 5,
-  su: 6,
-};
-
-function parseTimeStr(s: string): number {
-  const [h, m] = s.split(":").map(Number);
-  return h * 60 + (m || 0);
-}
-
-function dayInSpec(spec: string, curDay: number): boolean {
-  if (!spec.trim()) return true;
-  for (const part of spec.split(",").map((p) => p.trim())) {
-    const rangeM = part.match(/^(\w+)\s*-\s*(\w+)$/);
-    if (rangeM) {
-      const s = DAY_MAP[rangeM[1]];
-      const e = DAY_MAP[rangeM[2]];
-      if (s !== undefined && e !== undefined && curDay >= s && curDay <= e)
-        return true;
-    } else {
-      if (DAY_MAP[part] === curDay) return true;
-    }
-  }
-  return false;
-}
-
-function parseOpeningHours(oh: string, now: Date): boolean | null {
-  try {
-    const s = oh.toLowerCase().trim();
-    if (s === "24/7") return true;
-
-    const jsDay = now.getDay();
-    const curDay = jsDay === 0 ? 6 : jsDay - 1; // 0=Mo...6=Su u OSM
-    const curMin = now.getHours() * 60 + now.getMinutes();
-
-    // Google Places format (sadrži am/pm/closed)
-    const isGoogleFormat = /\b(am|pm|closed|zatvoreno)\b/i.test(s);
-    if (isGoogleFormat) {
-      const DAY_NAMES: Record<string, number> = {
-        monday: 0,
-        tuesday: 1,
-        wednesday: 2,
-        thursday: 3,
-        friday: 4,
-        saturday: 5,
-        sunday: 6,
-        ponedjeljak: 0,
-        utorak: 1,
-        srijeda: 2,
-        četvrtak: 3,
-        petak: 4,
-        subota: 5,
-        nedjelja: 6,
-      };
-      const lines = s
-        .split(/[\n,]+/)
-        .map((l) => l.trim())
-        .filter(Boolean);
-      for (const line of lines) {
-        const dayMatch = line.match(/^(\w+):\s*(.*)/);
-        if (!dayMatch) continue;
-        const dayNum = DAY_NAMES[dayMatch[1].toLowerCase()];
-        if (dayNum === undefined || dayNum !== curDay) continue;
-        const timeStr = dayMatch[2].trim();
-        if (timeStr === "closed" || timeStr === "zatvoreno") return false;
-        const timeMatch = timeStr.match(
-          /(\d{1,2}:\d{2})\s*(am|pm)\s*[–\-]\s*(\d{1,2}:\d{2})\s*(am|pm)/i,
-        );
-        if (timeMatch) {
-          const toMin = (t: string, ampm: string): number => {
-            const [h, m] = t.split(":").map(Number);
-            let hours = h;
-            if (ampm.toLowerCase() === "pm" && h !== 12) hours += 12;
-            if (ampm.toLowerCase() === "am" && h === 12) hours = 0;
-            return hours * 60 + m;
-          };
-          const openMin = toMin(timeMatch[1], timeMatch[2]);
-          let closeMin = toMin(timeMatch[3], timeMatch[4]);
-          if (closeMin <= openMin) closeMin += 24 * 60;
-          return curMin >= openMin && curMin < closeMin;
-        }
-        return null;
-      }
-      return false; // dan nije pronađen u Google formatu → zatvoreno
-    }
-
-    // OSM format
-    const rules = s
-      .split(";")
-      .map((r) => r.trim())
-      .filter(Boolean);
-    let dayWasMentioned = false;
-    let hasParseable = false;
-
-    for (const rule of rules) {
-      const m = rule.match(
-        /^([a-z,\-\s]*?)\s*(?:(\d{1,2}:\d{2})\s*-\s*(\d{1,2}:\d{2})|(off))$/,
-      );
-      if (!m) continue;
-      hasParseable = true;
-
-      const daySpec = m[1].trim();
-      const isOff = !!m[4];
-      const openMin = m[2] ? parseTimeStr(m[2]) : null;
-      const closeMin = m[3] ? parseTimeStr(m[3]) : null;
-
-      if (daySpec && !dayInSpec(daySpec, curDay)) continue;
-
-      dayWasMentioned = true;
-
-      if (isOff) return false;
-
-      if (openMin !== null && closeMin !== null) {
-        let close = closeMin;
-        if (close <= openMin) close += 24 * 60;
-        const cur =
-          curMin < openMin && close > 24 * 60 ? curMin + 24 * 60 : curMin;
-        if (cur >= openMin && cur < close) return true;
-        return false; // ← DODAJTE OVO: dan je matchiran ali sati ne odgovaraju
-      }
-    }
-
-    // ← KLJUČNI FIX: parseable pravila postoje ali dan NIJE MATCHIRAN
-    // To znači da su navedeni samo određeni dani (npr. Mo-Sa) i
-    // današnji dan nije među njima → zatvoreno
-    if (hasParseable && !dayWasMentioned) return false;
-
-    return null;
-  } catch {
-    return null;
-  }
-}
+// Tumačenje radnog vremena preseljeno je u utils/openingHours (isOpenAt) i
+// pokriveno testovima: ovdašnja verzija nije prepoznavala podijeljeno radno
+// vrijeme ("08:00-12:00,17:00-20:00"), raspone dana koji prelaze kraj tjedna
+// ("Su-Th") ni višak ključnih riječi, pa je otvorene lokale znala prikazati
+// kao zatvorene i obratno.
 
 export default function DashboardScreen() {
   const { t } = useTranslation();
@@ -9636,41 +9539,37 @@ export default function DashboardScreen() {
     });
   }
 
-  // Filtriranje prema trenutnom vremenu (kada je aktivna doba-dana opcija)
-  // PRONAĐI i ZAMIJENI cijeli timeFilteredPlaces useMemo:
+  // Filtriranje po dobu dana.
+  //
+  // Ključna promjena: pita se "radi li ovo mjesto U ODABRANOM RAZDOBLJU",
+  // a ne "radi li baš sada". Prije se provjeravalo trenutno vrijeme, pa je
+  // odabir "navečer" u 14 h izbacivao svaki klub i kazalište — zbog čega je
+  // postojala i iznimka koja im je preskakala provjeru, a ta je onda
+  // propuštala i one koji uistinu ne rade. Sada iznimka nije potrebna.
+  //
+  // Redoslijed izvora, od najpouzdanijeg: zapisano radno vrijeme →
+  // Googleov "otvoreno sada" (samo ako razdoblje obuhvaća sadašnji trenutak)
+  // → gruba procjena po kategoriji. Kad se ništa ne može utvrditi, mjesto
+  // OSTAJE vidljivo: bolje pokazati mjesto o kojem nemamo podatak nego
+  // sakriti nešto što radi.
   const timeFilteredPlaces = useMemo(() => {
+    if (!activeTimeOfDay) return allPlaces;
+
     const now = new Date();
     const nowH = now.getHours() + now.getMinutes() / 60;
     const dayOfWeek = now.getDay();
+    const tod = TOD_HOURS[activeTimeOfDay];
+    if (!tod) return allPlaces;
 
-    // Samo club i theater se ne blokiraju po openNow (otvaraju se tek navečer)
-    const LATE_OPEN_TYPES = new Set(["club", "theater"]);
+    const windowIncludesNow = nowH >= tod.from && nowH < tod.to;
 
     return allPlaces.filter((p) => {
-      if (!activeTimeOfDay) return true;
+      const stated = isOpenDuringWindow(p.openingHours, now, tod.from, tod.to);
+      if (stated !== null) return stated;
 
-      // 1. Google openNow — pouzdan signal, koristi ga za sve kategorije
-      //    IZNIMKA: club i theater jer Google kaže "closed" i poslijepodne
-      //    iako zapravo rade navečer
-      if (p.openNow === false && !LATE_OPEN_TYPES.has(p.type)) return false;
+      if (windowIncludesNow && p.openNow != null) return p.openNow;
 
-      // 2. OSM/Google opening_hours string — najprecizniji izvor
-      if (p.openingHours) {
-        const isOpen = parseOpeningHours(p.openingHours, now);
-        if (isOpen === false) return false;
-        if (isOpen === true) return true;
-      }
-
-      // 3. Google kaže otvoreno → prihvati
-      if (p.openNow === true) return true;
-
-      // 4. Nema podataka o radnom vremenu → provjeri kategorijski fallback
-      const tod = TOD_HOURS[activeTimeOfDay];
-      if (tod) {
-        return isCategoryOpenInWindow(p.type, tod.from, tod.to, dayOfWeek);
-      }
-
-      return isCategoryOpenNow(p.type, nowH, dayOfWeek);
+      return isCategoryOpenInWindow(p.type, tod.from, tod.to, dayOfWeek);
     });
   }, [allPlaces, activeTimeOfDay]);
 
