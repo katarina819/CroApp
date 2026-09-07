@@ -34,6 +34,7 @@ export default function HomeScreen() {
           await AsyncStorage.removeItem("token");
           await AsyncStorage.removeItem("firstName");
           await AsyncStorage.removeItem("lastName");
+          await AsyncStorage.removeItem("username");
           router.replace("/login");
         },
       },

@@ -138,6 +138,11 @@ export default function LoginScreen() {
         await AsyncStorage.setItem("userId", data.userId.toString());
         await AsyncStorage.setItem("firstName", data.firstName);
         await AsyncStorage.setItem("lastName", data.lastName);
+        // Pravo korisničko ime iz baze. Bez njega je zaslon profila, kad mu
+        // dohvat profila ne uspije, sam izmišljao ime iz imena korisnika
+        // ("Karmela" -> "@karmela"), pa je isti korisnik na jednom mjestu bio
+        // @karmela, a na svima ostalima @karmela0123.
+        await AsyncStorage.setItem("username", data.username ?? "");
         Alert.alert(
           t("auth.welcome"),
           t("auth.welcomeMessage", { name: data.firstName }),

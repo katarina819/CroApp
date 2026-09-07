@@ -7,6 +7,7 @@ import { VideoView, useVideoPlayer } from "expo-video";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
+  AppState,
   ActivityIndicator,
   Alert,
   Dimensions,
@@ -2280,41 +2281,69 @@ function ScreenTimeCountdown() {
   const [remaining, setRemaining] = useState<number | null>(null);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
+  // Odbrojavanje dopuštenog vremena pred ekranom.
+  //
+  // Prije je otkucaj svake sekunde radio DVA čitanja iz AsyncStoragea — dakle
+  // dva pristupa disku u sekundi, non-stop dok je profil otvoren, čak i kad
+  // ograničenje uopće nije uključeno. Sada se postavke pročitaju jednom, a
+  // otkucaj samo računa razliku u memoriji; ponovno se čitaju kad se korisnik
+  // vrati u aplikaciju (ograničenje se u međuvremenu moglo promijeniti, a i
+  // vrijeme je teklo dok je aplikacija bila u pozadini).
   useEffect(() => {
-    const check = async () => {
-      const limitStr = await AsyncStorage.getItem("screenTimeLimit");
-      const startStr = await AsyncStorage.getItem("screenTimeStart");
-      if (!limitStr || !startStr || parseInt(limitStr) === 0) {
-        setRemaining(null);
-        return;
+    let cancelled = false;
+
+    const stopTicking = () => {
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+        intervalRef.current = null;
       }
-      const limit = parseInt(limitStr) * 60 * 1000;
-      const start = parseInt(startStr);
-      const rem = limit - (Date.now() - start);
-      if (rem <= 0) {
-        setRemaining(0);
-        await handleScreenTimeExpired();
-      } else setRemaining(Math.floor(rem / 1000));
     };
-    check();
-    intervalRef.current = setInterval(async () => {
-      const limitStr = await AsyncStorage.getItem("screenTimeLimit");
-      const startStr = await AsyncStorage.getItem("screenTimeStart");
+
+    const applySettings = async () => {
+      const [limitStr, startStr] = await Promise.all([
+        AsyncStorage.getItem("screenTimeLimit"),
+        AsyncStorage.getItem("screenTimeStart"),
+      ]);
+      if (cancelled) return;
+
+      stopTicking();
+
       if (!limitStr || !startStr || parseInt(limitStr) === 0) {
         setRemaining(null);
         return;
       }
-      const limit = parseInt(limitStr) * 60 * 1000;
-      const start = parseInt(startStr);
-      const rem = limit - (Date.now() - start);
-      if (rem <= 0) {
-        setRemaining(0);
-        await handleScreenTimeExpired();
-        if (intervalRef.current) clearInterval(intervalRef.current);
-      } else setRemaining(Math.floor(rem / 1000));
-    }, 1000);
+
+      const limitMs = parseInt(limitStr) * 60 * 1000;
+      const startMs = parseInt(startStr);
+
+      const tick = async () => {
+        const rem = limitMs - (Date.now() - startMs);
+        if (rem <= 0) {
+          stopTicking();
+          setRemaining(0);
+          await handleScreenTimeExpired();
+        } else {
+          setRemaining(Math.floor(rem / 1000));
+        }
+      };
+
+      await tick();
+      if (!cancelled && intervalRef.current === null) {
+        intervalRef.current = setInterval(tick, 1000);
+      }
+    };
+
+    applySettings();
+
+    const subscription = AppState.addEventListener("change", (state) => {
+      if (state === "active") applySettings();
+      else stopTicking();
+    });
+
     return () => {
-      if (intervalRef.current) clearInterval(intervalRef.current);
+      cancelled = true;
+      stopTicking();
+      subscription.remove();
     };
   }, []);
 
@@ -4232,10 +4261,17 @@ export default function ProfileScreen() {
           return;
         }
       } catch {}
-      const [first, last, userId] = await Promise.all([
+      // Rezervni prikaz kad dohvat profila ne uspije (mreža, 429, hladan
+      // start poslužitelja). Korisničko ime se ovdje NE izmišlja: prije se
+      // uzimalo ime korisnika u malim slovima, pa je korisnik "Karmela"
+      // ovdje bio @karmela, a svugdje drugdje @karmela0123 (pravo ime iz
+      // baze). Sada se koristi ime spremljeno pri prijavi, a ako ga nema,
+      // ostaje prazno — bolje ništa nego kriv podatak.
+      const [first, last, userId, cachedUsername] = await Promise.all([
         AsyncStorage.getItem("firstName"),
         AsyncStorage.getItem("lastName"),
         AsyncStorage.getItem("userId"),
+        AsyncStorage.getItem("username"),
       ]);
       const cachedIsPublic = await AsyncStorage.getItem("profileIsPublic");
       const cachedShowUsername = await AsyncStorage.getItem(
@@ -4245,7 +4281,7 @@ export default function ProfileScreen() {
         id: parseInt(userId ?? "0"),
         firstName: first ?? "",
         lastName: last ?? "",
-        username: first?.toLowerCase() ?? "",
+        username: cachedUsername ?? "",
         followersCount: 0,
         followingCount: 0,
         isPublic: cachedIsPublic !== null ? cachedIsPublic === "true" : true,
@@ -4302,8 +4338,12 @@ export default function ProfileScreen() {
     );
   }
 
+  // Prazno korisničko ime ne smije se prikazati kao goli "@" (ni kao
+  // "@undefined") — u tom slučaju retka jednostavno nema.
   const displayUsername =
-    profile?.showUsername !== false ? `@${profile?.username}` : null;
+    profile?.showUsername !== false && profile?.username
+      ? `@${profile.username}`
+      : null;
 
   return (
     <SafeAreaView

@@ -12,6 +12,7 @@ import { VideoView, useVideoPlayer } from "expo-video";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
+  AppState,
   ActivityIndicator,
   Alert,
   Animated,
@@ -27,6 +28,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import type { AppStateStatus } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { API_BASE_URL } from "../../app/config/api";
 import { StoryBadge } from "../../app/StoryBadge";
@@ -130,9 +132,24 @@ function useStoryCountdown(createdAt: string) {
       }
     };
 
-    update();
-    const interval = setInterval(update, 1000);
-    return () => clearInterval(interval);
+    // Sekunde se prikazuju samo u zadnjem satu; iznad toga natpis glasi
+    // "Xh Ym" i mijenja se jednom u minuti. Prije se osvježavalo svake
+    // sekunde kroz cijela 24 sata — a svaki mountani odbrojavač znači jedan
+    // ponovni render po sekundi, pa je popis s dvadesetak priča izazivao
+    // dvadesetak rendera u sekundi bez ijedne vidljive promjene.
+    let timer: ReturnType<typeof setTimeout> | null = null;
+
+    const tick = () => {
+      update();
+      const diff = expiresAt - Date.now();
+      if (diff <= 0) return;
+      timer = setTimeout(tick, diff < 3600000 ? 1000 : 30000);
+    };
+
+    tick();
+    return () => {
+      if (timer) clearTimeout(timer);
+    };
   }, [createdAt]);
 
   return { remaining, expired };
@@ -1815,9 +1832,34 @@ export default function MessagesScreen() {
       // "failed to send" greške na sasvim drugim akcijama (follow, slanje
       // poruke). Pojedinačni otvoreni chat i dalje osvježava svake 4s -
       // ovdje je riječ samo o sažetku popisa razgovora.
-      pollRef.current = setInterval(() => loadConversations(true), 20000);
+      // Osvježavanje staje kad aplikacija ode u pozadinu (vidi
+      // useActivePolling) — prije je popis radio zahtjeve i s ugašenim ekranom.
+      const stopWhenBackgrounded = (state: AppStateStatus) => {
+        if (state === "active") {
+          if (!pollRef.current) {
+            loadConversations(true);
+            pollRef.current = setInterval(() => loadConversations(true), 20000);
+          }
+        } else if (pollRef.current) {
+          clearInterval(pollRef.current);
+          pollRef.current = null;
+        }
+      };
+
+      if (AppState.currentState === "active") {
+        pollRef.current = setInterval(() => loadConversations(true), 20000);
+      }
+      const appStateSub = AppState.addEventListener(
+        "change",
+        stopWhenBackgrounded,
+      );
+
       return () => {
-        if (pollRef.current) clearInterval(pollRef.current);
+        if (pollRef.current) {
+          clearInterval(pollRef.current);
+          pollRef.current = null;
+        }
+        appStateSub.remove();
       };
     }, []),
   );

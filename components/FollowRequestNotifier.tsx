@@ -17,6 +17,7 @@ import { useCallback, useEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { Alert, AppState } from "react-native";
 import { API_BASE_URL } from "../app/config/api";
+import { useActivePolling } from "@/hooks/use-active-polling";
 
 const POLL_INTERVAL_MS = 60_000;
 // Zahtjevi na koje je korisnik rekao "Kasnije" pamte se da ga se ne pita
@@ -137,19 +138,12 @@ export default function FollowRequestNotifier() {
 
   useEffect(() => {
     checkRequests();
-    const interval = setInterval(checkRequests, POLL_INTERVAL_MS);
-
-    // Provjeri i kad se korisnik vrati u aplikaciju — tada je zahtjev
-    // najvjerojatnije stigao dok je bila u pozadini.
-    const subscription = AppState.addEventListener("change", (state) => {
-      if (state === "active") checkRequests();
-    });
-
-    return () => {
-      clearInterval(interval);
-      subscription.remove();
-    };
   }, [checkRequests]);
+
+  // Provjera staje dok je aplikacija u pozadini i nastavlja se (uz jednu
+  // odmah izvršenu provjeru) kad se korisnik vrati. Prije je interval radio
+  // i u pozadini, pa je aplikacija budila mrežu svakih 60 sekundi cijelu noć.
+  useActivePolling(checkRequests, POLL_INTERVAL_MS);
 
   return null;
 }

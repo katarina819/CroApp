@@ -37,6 +37,7 @@ import {
 } from "../../utils/messagesApi";
 import { API_BASE_URL } from "../config/api";
 import i18n from "../config/i18n";
+import { useActivePolling } from "@/hooks/use-active-polling";
 
 // ─── VARA Paleta ───────────────────────────────────────────────────────────────
 function getV(isDark: boolean) {
@@ -725,11 +726,11 @@ export default function ChatScreen() {
   useEffect(() => {
     if (myId === null) return;
     loadMessages();
-    pollRef.current = setInterval(() => loadMessages(true), 4000);
-    return () => {
-      if (pollRef.current) clearInterval(pollRef.current);
-    };
   }, [myId, loadMessages]);
+
+  // Osvježavanje razgovora staje kad aplikacija ode u pozadinu — inače je
+  // otvoren chat slao zahtjev svake 4 sekunde i s ugašenim ekranom.
+  useActivePolling(() => loadMessages(true), 4000, myId !== null);
 
   useEffect(() => {
     if (messages.length > 0) {

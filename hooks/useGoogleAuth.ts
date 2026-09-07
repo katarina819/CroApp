@@ -65,11 +65,13 @@ export function useGoogleAuth() {
         body: JSON.stringify({ idToken }),
       });
 
-      const data: GoogleAuthResponse & { message?: string } =
-        await res.json();
+      const data: GoogleAuthResponse & { message?: string } = await res.json();
 
       if (!res.ok) {
-        Alert.alert(t("common.error"), data?.message || t("auth.googleErrorGeneric"));
+        Alert.alert(
+          t("common.error"),
+          data?.message || t("auth.googleErrorGeneric"),
+        );
         return;
       }
 
@@ -77,6 +79,7 @@ export function useGoogleAuth() {
       await AsyncStorage.setItem("userId", data.userId.toString());
       await AsyncStorage.setItem("firstName", data.firstName ?? "");
       await AsyncStorage.setItem("lastName", data.lastName ?? "");
+      await AsyncStorage.setItem("username", data.username ?? "");
       await AsyncStorage.setItem(
         "needsBirthDate",
         data.needsBirthDate ? "true" : "false",
@@ -107,7 +110,10 @@ export function useGoogleAuth() {
           case statusCodes.IN_PROGRESS:
             break;
           case statusCodes.PLAY_SERVICES_NOT_AVAILABLE:
-            Alert.alert(t("common.error"), t("auth.googlePlayServicesUnavailable"));
+            Alert.alert(
+              t("common.error"),
+              t("auth.googlePlayServicesUnavailable"),
+            );
             break;
           default:
             console.error("Google Sign-In error:", error);

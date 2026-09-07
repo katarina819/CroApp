@@ -42,6 +42,7 @@ import { PlanMyDayModal } from "../../components/PlanMyDayModal";
 import { ag, dm, pb, pr, s } from "../../styles/varaTheme";
 import { API_BASE_URL } from "../config/api";
 import { useInputBottomOffset } from "@/hooks/use-keyboard-offset";
+import { useActivePolling } from "@/hooks/use-active-polling";
 import {
   clearPlacesCache,
   geocodeCity,
@@ -3031,17 +3032,23 @@ export function ActivityGroupsModal({
   };
 
   // ============================================================
-  // 8. Polling za poruke (osvježavanje svakih 5 sekundi)
+  // 8. Osvježavanje poruka grupe
+  //
+  // Ponavlja se samo dok je aplikacija u prvom planu: prije je otvorena
+  // grupa slala zahtjev svakih 5 sekundi i kad je telefon bio zaključan.
 
   useEffect(() => {
     if (!selectedGroup) return;
     fetchMemberAvatars(selectedGroup.members);
-    const interval = setInterval(
-      () => loadGroupMessages(selectedGroup.id),
-      5000,
-    );
-    return () => clearInterval(interval);
   }, [selectedGroup?.id]);
+
+  useActivePolling(
+    () => {
+      if (selectedGroup) loadGroupMessages(selectedGroup.id);
+    },
+    5000,
+    !!selectedGroup,
+  );
 
   const handleModalBack = () => {
     if (selectedGroup) {

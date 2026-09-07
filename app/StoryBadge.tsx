@@ -6,6 +6,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useEffect, useRef, useState } from "react";
 import { Animated, StyleSheet, View } from "react-native";
 import { API_BASE_URL } from "./config/api";
+import { useActivePolling } from "@/hooks/use-active-polling";
 
 interface StoryBadgeProps {
   userId: number;
@@ -24,9 +25,11 @@ export function StoryBadge({ userId, size = 56, children }: StoryBadgeProps) {
     // može biti desetke odjednom) pollao je NEOVISNO svakih 30s; produženo
     // na 90s da se smanji potrošnja baterije/mreže bez da priče postanu
     // primjetno "zastarjele".
-    const interval = setInterval(checkHasStory, 90000);
-    return () => clearInterval(interval);
   }, [userId]);
+
+  // Ponavljanje samo u prvom planu: u popisu pratitelja može biti desetak
+  // ovakvih značaka, a svaka je i u pozadini slala vlastiti zahtjev.
+  useActivePolling(() => checkHasStory(), 90000, !!userId && userId !== 0);
 
   // Pulsacija samo kad postoji story
   useEffect(() => {

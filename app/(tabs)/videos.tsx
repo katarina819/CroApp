@@ -15,6 +15,7 @@ import React, {
 } from "react";
 import { useTranslation } from "react-i18next";
 import {
+  AppState,
   ActivityIndicator,
   Alert,
   Dimensions,
@@ -423,6 +424,30 @@ function VideoItemComponent({
       isPlayingRef.current = false;
     }
   }, [isActive, player, isImage]);
+
+  // Kad korisnik izađe iz aplikacije ili zaključa ekran, reprodukcija se
+  // nastavljala: video je i dalje dekodirao, preuzimao podatke i svirao zvuk.
+  // Ovdje se pauzira pri odlasku u pozadinu i nastavlja pri povratku, ali samo
+  // ako je stavka i dalje aktivna i ako je svirala prije odlaska — ručno
+  // pauziran video ostaje pauziran.
+  const pausedByBackgroundRef = useRef(false);
+  useEffect(() => {
+    const subscription = AppState.addEventListener("change", (state) => {
+      if (state === "active") {
+        if (pausedByBackgroundRef.current && isActive && !isImage) {
+          pausedByBackgroundRef.current = false;
+          player.play();
+          isPlayingRef.current = true;
+        }
+        pausedByBackgroundRef.current = false;
+      } else if (isPlayingRef.current) {
+        pausedByBackgroundRef.current = true;
+        player.pause();
+        isPlayingRef.current = false;
+      }
+    });
+    return () => subscription.remove();
+  }, [player, isActive, isImage]);
 
   const togglePlayback = useCallback(() => {
     const now = Date.now();
