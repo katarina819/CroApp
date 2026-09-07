@@ -1097,6 +1097,52 @@ const haversineKm = (
  * (disused:amenity=...) upit ionako ne vraća, ali objekti koji uz redovnu
  * oznaku nose i "disused=yes", "abandoned=yes" ili slično — vraća.
  */
+// ─── Podudaranje s crnim listama imena ────────────────────────────────────────
+//
+// Crne liste su se primjenjivale kao obična provjera podniza
+// (name.includes(term)). To je tiho brisalo golem broj ispravnih mjesta, jer
+// se među izrazima nalaze i vrlo kratki: izraz "it" pojavljuje se u crnoj
+// listi 16 od 18 kategorija, pa je SVAKO mjesto kojemu se u imenu bilo gdje
+// pojavi niz "it" nestajalo s karte — uključujući sve što se zove po Splitu
+// ("Muzej grada Splita", "Plaža Bačvice, Split"), ali i "City Museum" i
+// "Maritime Museum". Slično su "car" (Carpe Diem), "bet" (Betina) i "dom"
+// izbacivali sasvim obična mjesta.
+//
+// Sada se izrazi traže na granici riječi:
+//   • kratki izrazi (do 3 znaka) moraju biti CIJELA riječ — "it" hvata samo
+//     samostalno "IT", ne i "Splita";
+//   • dulji izrazi hvataju i nastavak riječi, jer je to i bila namjera —
+//     "apartman" i dalje hvata "Apartmani", "nekretnin" hvata "Nekretnine".
+const WORD_CHARS = "a-z0-9čćđšžäëïöüáéíóúàèìòùâêîôûñ";
+
+const denyRegexCache = new Map<string, RegExp>();
+
+function denyRegexFor(term: string): RegExp {
+  const cached = denyRegexCache.get(term);
+  if (cached) return cached;
+
+  const escaped = term.toLowerCase().replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const wholeWord = term.trim().length <= 3;
+  const re = new RegExp(
+    wholeWord
+      ? `(^|[^${WORD_CHARS}])${escaped}($|[^${WORD_CHARS}])`
+      : `(^|[^${WORD_CHARS}])${escaped}`,
+    "i",
+  );
+  denyRegexCache.set(term, re);
+  return re;
+}
+
+/** Sadrži li ime neki od zabranjenih izraza (na granici riječi)? */
+function nameMatchesDenylist(name: string, terms: string[]): boolean {
+  const lower = name.toLowerCase();
+  for (const term of terms) {
+    if (!term) continue;
+    if (denyRegexFor(term).test(lower)) return true;
+  }
+  return false;
+}
+
 function isPermanentlyClosedOrPrivate(tags: Record<string, string>): boolean {
   const truthy = (v: string | undefined) =>
     v !== undefined && v !== "no" && v !== "false";
@@ -1148,15 +1194,8 @@ function passesFilter(
 
   const nameLower = name.toLowerCase();
 
-  // Globalna crna lista
-  for (const denied of GLOBAL_NAME_DENYLIST) {
-    if (nameLower.includes(denied.toLowerCase())) return false;
-  }
-
-  // Kategorizacijska crna lista
-  for (const denied of rule.nameDenylist) {
-    if (nameLower.includes(denied.toLowerCase())) return false;
-  }
+  if (nameMatchesDenylist(name, GLOBAL_NAME_DENYLIST)) return false;
+  if (nameMatchesDenylist(name, rule.nameDenylist)) return false;
 
   const ACCOMMODATION_TAGS = [
     "hotel",
@@ -1409,15 +1448,8 @@ out body center;`;
           // zatvorenih/privatnih objekata treba i ovdje.
           if (isPermanentlyClosedOrPrivate(tags)) continue;
           if (!isValidOPG(tags, name)) continue;
-          const nameLower = name.toLowerCase();
-          const globalDenied = GLOBAL_NAME_DENYLIST.some((d) =>
-            nameLower.includes(d.toLowerCase()),
-          );
-          if (globalDenied) continue;
-          const catDenied = rule.nameDenylist.some((d) =>
-            nameLower.includes(d.toLowerCase()),
-          );
-          if (catDenied) continue;
+          if (nameMatchesDenylist(name, GLOBAL_NAME_DENYLIST)) continue;
+          if (nameMatchesDenylist(name, rule.nameDenylist)) continue;
         } else {
           if (!passesFilter(tags, name, rule)) continue;
         }
@@ -1457,7 +1489,9 @@ out body center;`;
             "glamping",
             "nekretnin",
           ];
-          if (accommodationIndicators.some((ind) => nameLower.includes(ind))) {
+          // Ista logika granice riječi: "inn" i "bed" su prekratki da bi se
+          // tražili kao podniz ("Betina", "Vinnica" nisu smještaj).
+          if (nameMatchesDenylist(name, accommodationIndicators)) {
             continue;
           }
         }
@@ -1698,19 +1732,9 @@ async function fetchFromNominatim(
 
       const nameLower = name.toLowerCase();
 
-      // Globalna crna lista
-      const globalDenied = GLOBAL_NAME_DENYLIST.some((d) =>
-        nameLower.includes(d.toLowerCase()),
-      );
-      if (globalDenied) continue;
-
-      // ✅ FIX: i u Nominatim fallbacku primjeni kategorizacijsku crnu listu
-      if (rule) {
-        const categoryDenied = rule.nameDenylist.some((d) =>
-          nameLower.includes(d.toLowerCase()),
-        );
-        if (categoryDenied) continue;
-      }
+      // Iste crne liste kao u glavnom putu, i jednako na granici riječi.
+      if (nameMatchesDenylist(name, GLOBAL_NAME_DENYLIST)) continue;
+      if (rule && nameMatchesDenylist(name, rule.nameDenylist)) continue;
 
       if (type === "park") {
         const isRealPark =
