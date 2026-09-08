@@ -140,47 +140,107 @@ interface FetchedProfile {
 // tu i onako dohvaća radi avatara. Sad se ime dohvaća ISTIM pozivom.
 // userId === null znači "pozivatelj već ima podatke" — tada se ne šalje
 // nikakav zahtjev.
+// Predmemorija po korisniku, zajednička za sve prikaze avatara u ovom
+// ekranu. Bez nje je svaki red koji nema avatar u svojim podacima slao
+// vlastiti zahtjev — u komentarima i u dijeljenju to je znalo biti
+// desetak istovremenih poziva za istog korisnika, a rate limiter na
+// poslužitelju (429) ih je tiho odbijao pa je avatar ostajao na
+// inicijalima. inFlight spaja istovremene zahtjeve u jedan.
+const profileCache = new Map<number, FetchedProfile>();
+const profileInFlight = new Map<number, Promise<FetchedProfile | null>>();
+
+async function fetchUserProfile(
+  userId: number,
+): Promise<FetchedProfile | null> {
+  const cached = profileCache.get(userId);
+  if (cached) return cached;
+
+  const pending = profileInFlight.get(userId);
+  if (pending) return pending;
+
+  const request = (async (): Promise<FetchedProfile | null> => {
+    try {
+      const token = await AsyncStorage.getItem("token");
+      if (!token) return null;
+
+      const res = await fetch(`${API_BASE_URL}/api/auth/users/${userId}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!res.ok) return null;
+
+      const data = await res.json();
+      const raw =
+        data.Avatar ||
+        data.avatar ||
+        data.avatarUrl ||
+        data.profileImage ||
+        null;
+
+      let url: string | null = null;
+      if (raw) {
+        // Namjerno bez "?uid=Date.now()": takav dodatak je tjerao ponovno
+        // preuzimanje slike na svaki prikaz, pa je u listi koja reciklira
+        // retke avatar stalno treptao. Kad se avatar doista promijeni,
+        // promijeni se i njegov URL (nova datoteka u pohrani).
+        url = raw.startsWith("avatar:")
+          ? raw
+          : raw.startsWith("http")
+            ? raw
+            : `${API_BASE_URL}${raw.startsWith("/") ? "" : "/"}${raw}`;
+      }
+
+      const profile: FetchedProfile = {
+        url,
+        firstName: data.firstName || data.FirstName,
+        lastName: data.lastName || data.LastName,
+        username: data.username || data.Username,
+      };
+      profileCache.set(userId, profile);
+      return profile;
+    } catch {
+      // Neuspjeh se ne pamti — sljedeći prikaz smije pokušati ponovno.
+      return null;
+    } finally {
+      profileInFlight.delete(userId);
+    }
+  })();
+
+  profileInFlight.set(userId, request);
+  return request;
+}
+
+// ✅ FIX: prije se ovdje dohvaćao SAMO avatar, a inicijali (fallback kad
+// avatar ne postoji) ovisili su isključivo o firstName/lastName/username
+// propovima koje POZIVATELJ mora ručno proslijediti — na dva od tri mjesta
+// gdje se FreshAvatar koristi (glavni feed videa, primatelj u porukama) to
+// se nije radilo, pa je fallback uvijek padao na golo "?" umjesto pravih
+// inicijala, iako je ime korisnika ionako već dostupno na profilu koji se
+// tu i onako dohvaća radi avatara. Sad se ime dohvaća ISTIM pozivom.
+// userId === null znači "pozivatelj već ima podatke" — tada se ne šalje
+// nikakav zahtjev.
 function useUserProfile(userId: number | null): FetchedProfile {
-  const [profile, setProfile] = useState<FetchedProfile>({ url: null });
+  const [profile, setProfile] = useState<FetchedProfile>(() =>
+    userId === null
+      ? { url: null }
+      : (profileCache.get(userId) ?? { url: null }),
+  );
 
   useEffect(() => {
     if (userId === null) return;
-    (async () => {
-      try {
-        const token = await AsyncStorage.getItem("token");
-        const res = await fetch(`${API_BASE_URL}/api/auth/users/${userId}`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        if (!res.ok) return;
-        const data = await res.json();
-        const raw =
-          data.Avatar ||
-          data.avatar ||
-          data.avatarUrl ||
-          data.profileImage ||
-          null;
 
-        let url: string | null = null;
-        if (raw) {
-          if (raw.startsWith("avatar:")) {
-            url = raw;
-          } else {
-            const normalized = raw.startsWith("http")
-              ? raw
-              : `${API_BASE_URL}${raw.startsWith("/") ? "" : "/"}${raw}`;
-            const sep = normalized.includes("?") ? "&" : "?";
-            url = `${normalized}${sep}uid=${Date.now()}`;
-          }
-        }
+    const cached = profileCache.get(userId);
+    if (cached) {
+      setProfile(cached);
+      return;
+    }
 
-        setProfile({
-          url,
-          firstName: data.firstName || data.FirstName,
-          lastName: data.lastName || data.LastName,
-          username: data.username || data.Username,
-        });
-      } catch {}
-    })();
+    let alive = true;
+    fetchUserProfile(userId).then((fetched) => {
+      if (alive && fetched) setProfile(fetched);
+    });
+    return () => {
+      alive = false;
+    };
   }, [userId]);
 
   return profile;

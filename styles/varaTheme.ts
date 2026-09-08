@@ -1216,20 +1216,42 @@ export const s = StyleSheet.create({
     elevation: 5,
   },
   topBtnText: { fontSize: 14, fontWeight: "600", color: V.silver },
-  todBtn: {
+  // Jutro / poslijepodne / večer su jedan izbor, pa i izgledaju kao jedna
+  // kontrola: zajednički okvir i sjena umjesto tri odvojena gumba. Gornja
+  // traka time izgleda kao tri stavke (☰, Kategorije, doba dana), a ne pet.
+  todGroup: {
+    flexDirection: "row",
+    alignItems: "center",
     backgroundColor: V.forestDeep,
-    width: 40,
-    height: 40,
-    borderRadius: 8,
+    borderRadius: 10,
     borderWidth: 1.5,
     borderColor: V.borderGreen,
+    padding: 3,
+    gap: 2,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.4,
+    shadowRadius: 4,
+    elevation: 5,
+  },
+  // Ikona + natpis: sama kovanica ne govori znači li jutro, popodne ili
+  // večer, pa ispod nje stoji riječ.
+  todBtn: {
+    minWidth: 46,
+    paddingHorizontal: 5,
+    paddingVertical: 3,
+    borderRadius: 7,
     justifyContent: "center",
     alignItems: "center",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.3,
-    shadowRadius: 3,
-    elevation: 4,
+  },
+  todLabel: {
+    marginTop: 1,
+    fontSize: 9,
+    fontWeight: "600",
+    color: V.silverDim,
+  },
+  todLabelA: {
+    color: V.silverBright,
   },
   todBtnA: {
     backgroundColor: V.forestLight,

@@ -58,6 +58,12 @@ export function NotificationsModal({
   onClose: () => void;
   /** Javlja ekranu koliko je nepročitanih ostalo, da značka bude točna. */
   onUnreadChange?: (count: number) => void;
+  /**
+   * Otvara postavke obavijesti. Postavke su prije bile zasebna stavka
+   * izbornika na karti, pa su popis i njegove postavke izgledali kao dvije
+   * nepovezane stvari; sad su jedna, a postavke su korak dublje.
+   */
+  onOpenSettings?: () => void;
 }) {
   const { t } = useTranslation();
   const { isDark } = useTheme();
@@ -126,7 +132,19 @@ export function NotificationsModal({
           <Text style={{ fontSize: 20, fontWeight: "800", color: C.text }}>
             {t("notifications.title")}
           </Text>
-          <CloseButton onPress={onClose} tone={isDark ? "light" : "muted"} />
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 14 }}>
+            {onOpenSettings && (
+              <TouchableOpacity
+                onPress={onOpenSettings}
+                hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+                accessibilityRole="button"
+                accessibilityLabel={t("map.notifSettings")}
+              >
+                <Ionicons name="settings-outline" size={22} color={C.text} />
+              </TouchableOpacity>
+            )}
+            <CloseButton onPress={onClose} tone={isDark ? "light" : "muted"} />
+          </View>
         </View>
 
         {unread > 0 && (

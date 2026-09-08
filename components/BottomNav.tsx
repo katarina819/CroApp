@@ -5,6 +5,7 @@ import {
   Image,
   Platform,
   StyleSheet,
+  Text,
   TouchableOpacity,
   View,
 } from "react-native";
@@ -133,6 +134,15 @@ export default function BottomNav() {
                   <IconComponent active={active} />
                 </View>
               </View>
+              {/* Natpis ispod ikone: pet sličnih metalnih pločica bez teksta
+                  ne govori koja vodi kamo. Naziv se već računao za svaki tab
+                  (nav.map, nav.videos…), samo se nikad nije prikazivao. */}
+              <Text
+                style={[s.label, active && s.labelActive]}
+                numberOfLines={1}
+              >
+                {tab.label}
+              </Text>
             </TouchableOpacity>
           );
         })}
@@ -192,8 +202,8 @@ const s = StyleSheet.create({
   },
 
   iconWrap: {
-    width: 48, // SMANJENO sa 60 na 48
-    height: 48, // SMANJENO sa 60 na 48
+    width: 42,
+    height: 42,
     justifyContent: "center",
     alignItems: "center",
   },
@@ -203,8 +213,20 @@ const s = StyleSheet.create({
   },
 
   icon: {
-    width: 44, // SMANJENO sa 52 na 44
-    height: 44, // SMANJENO sa 52 na 44
+    width: 38,
+    height: 38,
+  },
+
+  label: {
+    marginTop: 3,
+    fontSize: 10,
+    fontWeight: "600",
+    color: "#8FA886",
+    textAlign: "center",
+  },
+
+  labelActive: {
+    color: "#D8E8CC",
   },
 
   iconActive: {
