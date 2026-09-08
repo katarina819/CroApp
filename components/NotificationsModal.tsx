@@ -53,6 +53,7 @@ export function NotificationsModal({
   visible,
   onClose,
   onUnreadChange,
+  onOpenSettings,
 }: {
   visible: boolean;
   onClose: () => void;
