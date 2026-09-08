@@ -311,7 +311,7 @@ interface ActivityGroup {
   messages: { name: string; text: string; time: string }[];
   createdAt: string;
 }
-interface NotifPrefs {
+export interface NotifPrefs {
   appEnabled: boolean;
   emailEnabled: boolean;
   email: string;
@@ -1947,7 +1947,10 @@ function PlaceDetailModal({
 // });
 
 // ─── Notification Settings Modal ──────────────────────────────────────────────
-function NotificationSettingsModal({
+// Postavke obavijesti žive u ekranu obavijesti (app/notifications.tsx), ne u
+// karti — u izborniku je zato ostala samo jedna stavka "Obavijesti", a
+// postavke su jedan korak dublje, unutar nje.
+export function NotificationSettingsModal({
   visible,
   prefs,
   onClose,
@@ -1957,12 +1960,6 @@ function NotificationSettingsModal({
   prefs: NotifPrefs;
   onClose: () => void;
   onSave: (p: NotifPrefs) => void | Promise<void>;
-  getAllCategories: () => {
-    id: string;
-    name: string;
-    icon: string;
-    color: string;
-  }[];
 }) {
   const { t } = useTranslation();
   const { isDark } = useTheme();
@@ -2203,28 +2200,6 @@ function NotificationSettingsModal({
                 {t("notif.emailHint")}
               </Text>
             )}
-
-            {/* Prečac na sam popis obavijesti — postavke i popis su dosad
-                bili odvojeni, pa se do obavijesti nije imalo kako doći. */}
-            <TouchableOpacity
-              style={{
-                marginTop: 12,
-                backgroundColor: DC.cardHover,
-                borderRadius: 12,
-                borderWidth: 1,
-                borderColor: DC.border,
-                paddingVertical: 12,
-                alignItems: "center",
-              }}
-              onPress={() => {
-                onClose();
-                router.push("/notifications");
-              }}
-            >
-              <Text style={{ color: DC.text, fontSize: 14, fontWeight: "700" }}>
-                {t("notif.title")}
-              </Text>
-            </TouchableOpacity>
           </View>
 
           {/* Kategorije — grid s ikonama */}
@@ -9524,7 +9499,6 @@ export default function DashboardScreen() {
   const [showBadges, setShowBadges] = useState(false);
   const [showPlanMyDay, setShowPlanMyDay] = useState(false);
   const [showGroups, setShowGroups] = useState(false);
-  const [showNotifSettings, setShowNotifSettings] = useState(false);
   const [showOstalo, setShowOstalo] = useState(false);
   const [showMapCtrlPanel, setShowMapCtrlPanel] = useState(true);
   const [focusedType, setFocusedType] = useState<string | null>(null);
@@ -9780,6 +9754,16 @@ export default function DashboardScreen() {
       // punila; sada se osvježi svaki put kad se korisnik vrati na kartu
       // (npr. nakon što je obavijesti pročitao).
       getUnreadCount().then(setRealNotificationCount);
+
+      // Postavke se sada mijenjaju u ekranu obavijesti, pa se pri povratku
+      // na kartu moraju ponovno pročitati — o njima ovisi zvonce na
+      // detaljima mjesta.
+      getNotificationPrefs()
+        .then((serverPrefs) => {
+          setNotifPrefs(serverPrefs);
+          saveJSON(STORAGE_NOTIFS, serverPrefs);
+        })
+        .catch(() => {});
     }, []),
   );
 
@@ -10852,7 +10836,7 @@ export default function DashboardScreen() {
             onPress={() => setShowFilterPanel(true)}
           >
             <Text style={s.topBtnText}>
-              {t("map.filters")}
+              {t("map.categories")}
               {selectedTypes.length > 0 ? ` (${selectedTypes.length})` : ""}
             </Text>
           </TouchableOpacity>
@@ -11027,8 +11011,9 @@ export default function DashboardScreen() {
               },
             },
             {
-              // Sam popis obavijesti — dosad se do njega nije imalo kako
-              // doći, iako je brojka nepročitanih visjela na ovoj ikoni.
+              // Jedna stavka za obavijesti: otvara popis, a postavke su
+              // gumb u njegovom zaglavlju. Prije su popis i postavke bili
+              // dvije zasebne stavke izbornika za istu stvar.
               icon: notificationsIcon,
               label: t("notif.title"),
               onPress: () => {
@@ -11036,14 +11021,6 @@ export default function DashboardScreen() {
                 router.push("/notifications");
               },
               badge: realNotificationCount,
-            },
-            {
-              icon: notificationsIcon,
-              label: t("map.notifSettings"),
-              onPress: () => {
-                setShowOstalo(false);
-                setShowNotifSettings(true);
-              },
             },
           ].map((item, i) => (
             <TouchableOpacity
@@ -12059,16 +12036,6 @@ export default function DashboardScreen() {
         onMarkVisited={handleMarkVisited}
         visits={visits}
         PlaceDetailModalComponent={PlaceDetailModal}
-      />
-      <NotificationSettingsModal
-        visible={showNotifSettings}
-        prefs={notifPrefs}
-        onClose={() => setShowNotifSettings(false)}
-        onSave={async (p) => {
-          const ok = await persistNotifPrefs(p);
-          if (!ok) Alert.alert(t("common.error"), t("notif.saveFailed"));
-        }}
-        getAllCategories={getAllCategories}
       />
       <ActivityGroupsModal
         visible={showGroups}

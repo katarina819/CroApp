@@ -29,6 +29,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useTheme } from "../components/AdaptiveThemeProvider";
 import CloseButton from "../components/CloseButton";
+import { NotificationSettingsModal } from "./(tabs)/dashboard";
 import {
   AppNotification,
   EMPTY_PREFS,
@@ -40,6 +41,7 @@ import {
   getNotifications,
   markAllNotificationsRead,
   markNotificationRead,
+  saveNotificationPrefs,
 } from "../utils/notificationsApi";
 import { placeCategories } from "./services/locationService";
 
@@ -395,6 +397,7 @@ export default function NotificationsScreen() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [showCreate, setShowCreate] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
 
   const load = useCallback(
     async (silent = false) => {
@@ -572,6 +575,17 @@ export default function NotificationsScreen() {
             {t("notif.create")}
           </Text>
         </TouchableOpacity>
+
+        {/* Postavke su ovdje, a ne kao zasebna stavka izbornika na karti —
+            popis i njegove postavke su jedna stvar. */}
+        <TouchableOpacity
+          onPress={() => setShowSettings(true)}
+          style={s.settingsBtn}
+          accessibilityRole="button"
+          accessibilityLabel={t("notif.settings")}
+        >
+          <Ionicons name="settings-outline" size={22} color={C.text} />
+        </TouchableOpacity>
       </View>
 
       {items.length > 0 && (
@@ -641,6 +655,30 @@ export default function NotificationsScreen() {
         emailEnabled={prefs.emailEnabled}
         C={C}
       />
+
+      <NotificationSettingsModal
+        visible={showSettings}
+        prefs={prefs}
+        onClose={() => setShowSettings(false)}
+        onSave={async (next) => {
+          const saved: NotificationPrefs = {
+            appEnabled: next.appEnabled,
+            emailEnabled: next.emailEnabled,
+            email: next.email ?? "",
+            categories: next.categories ?? [],
+            ageGroups: next.ageGroups ?? [],
+          };
+          // Prikaži novi izbor odmah; ako spremanje padne, javi i vrati se
+          // na ono što poslužitelj stvarno ima.
+          setPrefs(saved);
+          try {
+            await saveNotificationPrefs(saved);
+          } catch {
+            Alert.alert(t("common.error"), t("notif.saveFailed"));
+            load(true);
+          }
+        }}
+      />
     </SafeAreaView>
   );
 }
@@ -666,6 +704,7 @@ const s = StyleSheet.create({
     maxWidth: 160,
   },
   newBtnText: { color: "#fff", fontSize: 13, fontWeight: "700" },
+  settingsBtn: { padding: 4 },
 
   toolbar: {
     flexDirection: "row",
