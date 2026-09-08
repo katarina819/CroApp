@@ -1,105 +1,29 @@
 // components/UserAvatar.tsx
 // Reusable avatar: slika → muški avatar → ženski avatar → inicijali
-import AsyncStorage from "@react-native-async-storage/async-storage";
+//
+// Sva logika odabira (ugrađeni avatar, URL, inicijali) i dohvat s
+// predmemorijom su u utils/avatarUtils — ovdje je samo prikaz. Bez toga se
+// isti korisnik znao razlikovati od ekrana do ekrana.
 import { useEffect, useRef, useState } from "react";
 import { Image, StyleSheet, Text, View } from "react-native";
-import Svg, { Defs, LinearGradient, Path, Stop } from "react-native-svg";
-import { API_BASE_URL } from "../app/config/api";
-const AVATAR_MALE = require("../assets/images/avatar-male.png");
-const AVATAR_FEMALE = require("../assets/images/avatar-female.png");
+import {
+  AvatarInfo,
+  fetchAvatarInfo,
+  getCachedAvatarInfo,
+  getInitials,
+  primeAvatarCache,
+  resolveAvatarSource,
+} from "../utils/avatarUtils";
 
 interface UserAvatarProps {
   userId?: number;
   avatar?: string | null;
   firstName?: string;
   lastName?: string;
+  username?: string;
   size?: number;
   backgroundColor?: string;
   style?: object;
-}
-
-/** Konvertira avatar prop u potpuni URL ili null */
-function resolveAvatarUrl(avatar: string | null | undefined): string | null {
-  if (!avatar || avatar.startsWith("avatar:")) return null;
-  if (avatar.startsWith("http")) return avatar;
-  return `${API_BASE_URL}${avatar.startsWith("/") ? "" : "/"}${avatar}`;
-}
-
-/** Inicijali iz imena i prezimena */
-function getInitials(firstName: string, lastName: string): string {
-  return `${firstName?.[0] ?? ""}${lastName?.[0] ?? ""}`.toUpperCase() || "?";
-}
-
-/** Mali muški SVG avatar (skraćena verzija - samo glava/ramena) */
-function MaleIcon({ size }: { size: number }) {
-  const s = size;
-  return (
-    <Svg width={s} height={s} viewBox="0 0 100 100">
-      <Defs>
-        <LinearGradient id="bgM2" x1="0" y1="0" x2="0" y2="1">
-          <Stop offset="0%" stopColor="#2D6418" />
-          <Stop offset="100%" stopColor="#142F09" />
-        </LinearGradient>
-      </Defs>
-      <Path d="M0 0 L100 0 L100 100 L0 100 Z" fill="url(#bgM2)" />
-      <Path d="M22 100 L22 72 Q50 62 78 72 L78 100 Z" fill="#8A9898" />
-      <Path d="M43 58 L43 68 Q50 72 57 68 L57 58 Z" fill="#D4A574" />
-      <Path
-        d="M33 38 Q33 20 50 20 Q67 20 67 38 Q67 56 50 58 Q33 56 33 38 Z"
-        fill="#D4A574"
-      />
-      <Path
-        d="M33 36 Q32 18 50 18 Q68 18 67 36 Q65 22 50 20 Q35 22 33 36 Z"
-        fill="#3A2A1A"
-      />
-      <Path d="M38 37 Q41 35 44 37 Q41 40 38 37 Z" fill="#2A1A0A" />
-      <Path d="M56 37 Q59 35 62 37 Q59 40 56 37 Z" fill="#2A1A0A" />
-      <Path
-        d="M44 51 Q50 55 56 51"
-        fill="none"
-        stroke="#8B5E3C"
-        strokeWidth="1.5"
-        strokeLinecap="round"
-      />
-    </Svg>
-  );
-}
-
-/** Mali ženski SVG avatar */
-function FemaleIcon({ size }: { size: number }) {
-  const s = size;
-  return (
-    <Svg width={s} height={s} viewBox="0 0 100 100">
-      <Defs>
-        <LinearGradient id="bgF2" x1="0" y1="0" x2="0" y2="1">
-          <Stop offset="0%" stopColor="#2D6418" />
-          <Stop offset="100%" stopColor="#142F09" />
-        </LinearGradient>
-      </Defs>
-      <Path d="M0 0 L100 0 L100 100 L0 100 Z" fill="url(#bgF2)" />
-      <Path d="M22 100 L22 70 Q50 58 78 70 L78 100 Z" fill="#A8B8A8" />
-      <Path d="M43 57 L43 68 Q50 71 57 68 L57 57 Z" fill="#E8B896" />
-      <Path
-        d="M33 38 Q33 20 50 20 Q67 20 67 38 Q67 56 50 58 Q33 56 33 38 Z"
-        fill="#E8B896"
-      />
-      <Path
-        d="M33 36 Q32 16 50 15 Q68 16 67 36 Q65 20 50 18 Q35 20 33 36 Z"
-        fill="#4A2A0A"
-      />
-      <Path d="M33 36 Q28 45 30 56 Q32 52 33 48 Z" fill="#4A2A0A" />
-      <Path d="M67 36 Q72 45 70 56 Q68 52 67 48 Z" fill="#4A2A0A" />
-      <Path d="M37 37 Q41 34 45 37 Q41 41 37 37 Z" fill="#2A1A0A" />
-      <Path d="M55 37 Q59 34 63 37 Q59 41 55 37 Z" fill="#2A1A0A" />
-      <Path
-        d="M43 51 Q50 56 57 51"
-        fill="none"
-        stroke="#C04060"
-        strokeWidth="2"
-        strokeLinecap="round"
-      />
-    </Svg>
-  );
 }
 
 export default function UserAvatar({
@@ -107,20 +31,20 @@ export default function UserAvatar({
   avatar: propAvatar,
   firstName = "",
   lastName = "",
+  username = "",
   size = 40,
   backgroundColor = "#2D6418",
   style,
 }: UserAvatarProps) {
-  const [resolvedUrl, setResolvedUrl] = useState<string | null>(() =>
-    resolveAvatarUrl(propAvatar),
+  // Avatar predan kroz prop uvijek ima prednost — pozivatelj ga je već
+  // dobio uz svoje podatke, pa nema razloga za mrežni poziv.
+  const hasInlineAvatar =
+    propAvatar !== undefined && propAvatar !== null && propAvatar !== "";
+
+  const [fetched, setFetched] = useState<AvatarInfo | null>(() =>
+    hasInlineAvatar || !userId ? null : (getCachedAvatarInfo(userId) ?? null),
   );
-  const [fetchedFirstName, setFetchedFirstName] = useState("");
-  const [fetchedLastName, setFetchedLastName] = useState("");
-  // ── DODANO ──
-  const [fetchedAvatar, setFetchedAvatar] = useState<string | null | undefined>(
-    propAvatar,
-  );
-  // ────────────
+  const [failed, setFailed] = useState(false);
   const mountedRef = useRef(true);
 
   useEffect(() => {
@@ -131,74 +55,68 @@ export default function UserAvatar({
   }, []);
 
   useEffect(() => {
-    // Ako je prop avatar eksplicitno postavljen, koristi njega
-    if (propAvatar !== undefined && propAvatar !== null && propAvatar !== "") {
-      setFetchedAvatar(propAvatar);
-      setResolvedUrl(resolveAvatarUrl(propAvatar));
-      return;
-    }
-    if (userId) {
-      (async () => {
-        try {
-          const token = await AsyncStorage.getItem("token");
-          if (!token) return;
-          const res = await fetch(`${API_BASE_URL}/api/auth/users/${userId}`, {
-            headers: { Authorization: `Bearer ${token}` },
-          });
-          if (res.ok && mountedRef.current) {
-            const data = await res.json();
-            if (mountedRef.current) {
-              // ── DODANO: spremi cijeli avatar string ──
-              setFetchedAvatar(data.avatar ?? null);
-              setResolvedUrl(resolveAvatarUrl(data.avatar));
-              if (data.firstName) setFetchedFirstName(data.firstName);
-              if (data.lastName) setFetchedLastName(data.lastName);
-            }
-          }
-        } catch {}
-      })();
-    } else {
-      setResolvedUrl(null);
-      setFetchedAvatar(null);
-    }
+    setFailed(false);
   }, [userId, propAvatar]);
 
+  useEffect(() => {
+    if (hasInlineAvatar) {
+      primeAvatarCache(userId, {
+        avatar: propAvatar,
+        firstName,
+        lastName,
+        username,
+      });
+      return;
+    }
+
+    if (!userId) {
+      setFetched(null);
+      return;
+    }
+
+    const cached = getCachedAvatarInfo(userId);
+    if (cached) {
+      setFetched(cached);
+      return;
+    }
+
+    fetchAvatarInfo(userId).then((info) => {
+      if (info && mountedRef.current) setFetched(info);
+    });
+  }, [userId, propAvatar, firstName, lastName, username, hasInlineAvatar]);
+
+  const effectiveAvatar = hasInlineAvatar
+    ? propAvatar
+    : (fetched?.avatar ?? null);
+  const resolved = resolveAvatarSource(effectiveAvatar);
   const radius = size / 2;
-  // ── PROMIJENJENO: koristi fetchedAvatar umjesto propAvatar ──
-  const isMale = fetchedAvatar === "avatar:male";
-  const isFemale = fetchedAvatar === "avatar:female";
-  // ───────────────────────────────────────────────────────────
 
-  if (resolvedUrl && !isMale && !isFemale) {
+  if (resolved.kind === "preset") {
     return (
       <Image
-        source={{ uri: resolvedUrl }}
-        style={[{ width: size, height: size, borderRadius: radius }, style]}
-      />
-    );
-  }
-  if (isMale) {
-    return (
-      <Image
-        source={AVATAR_MALE}
-        style={[{ width: size, height: size, borderRadius: radius }, style]}
-        resizeMode="cover"
-      />
-    );
-  }
-  if (isFemale) {
-    return (
-      <Image
-        source={AVATAR_FEMALE}
+        source={resolved.source}
         style={[{ width: size, height: size, borderRadius: radius }, style]}
         resizeMode="cover"
       />
     );
   }
 
-  const displayFirstName = fetchedFirstName || firstName;
-  const displayLastName = fetchedLastName || lastName;
-  const initials = getInitials(displayFirstName, displayLastName);
+  if (resolved.kind === "url" && !failed) {
+    return (
+      <Image
+        source={{ uri: resolved.uri }}
+        style={[{ width: size, height: size, borderRadius: radius }, style]}
+        resizeMode="cover"
+        onError={() => setFailed(true)}
+      />
+    );
+  }
+
+  const initials = getInitials(
+    firstName || fetched?.firstName,
+    lastName || fetched?.lastName,
+    username || fetched?.username,
+  );
   const fontSize = size * 0.38;
 
   return (
@@ -213,6 +131,7 @@ export default function UserAvatar({
     </View>
   );
 }
+
 const styles = StyleSheet.create({
   placeholder: {
     justifyContent: "center",

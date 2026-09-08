@@ -43,7 +43,8 @@
     "permissionRequired": "Dozvola potrebna",
     "galleryPermission": "Dozvolite pristup galeriji u postavkama",
     "cameraPermission": "Dozvolite pristup kameri u postavkama",
-    "mediaPermission": "Dozvolite pristup medijima u postavkama"
+    "mediaPermission": "Dozvolite pristup medijima u postavkama",
+    "clear": "Očisti"
   },
   "auth": {
     "login": "Prijava",
@@ -307,10 +308,43 @@
     "distance": "{{dist}} km od vas"
   },
   "notif": {
-    "unavailableTitle": "Obavijesti nisu dostupne",
-    "unavailableAppEmail": "Trenutno nije moguće dobivati obavijesti putem aplikacije ili e-maila. Ukoliko se aplikacija bude dalje razvijala, ova opcija će biti omogućena 📧",
-    "unavailableApp": "Trenutno nije moguće dobivati obavijesti putem aplikacije. Ukoliko se aplikacija bude dalje razvijala, ova opcija će biti omogućena 🔔",
-    "unavailableEmail": "Trenutno nije moguće dobivati obavijesti putem e-maila. Ukoliko se aplikacija bude dalje razvijala, ova opcija će biti omogućena 📧"
+    "title": "Obavijesti",
+    "settings": "Postavke obavijesti",
+    "empty": "Još nema obavijesti",
+    "emptyHint": "Uključi obavijesti i odaberi kategorije koje te zanimaju — novosti će se pojaviti ovdje.",
+    "loadFailed": "Obavijesti nije bilo moguće učitati",
+    "unreadCount": "{{count}} nepročitano",
+    "markAllRead": "Označi sve kao pročitano",
+    "deleteAll": "Obriši sve",
+    "deleteAllConfirm": "Obrisati sve obavijesti? Ovo se ne može poništiti.",
+    "deleteOne": "Obriši obavijest",
+    "create": "Nova obavijest",
+    "createTitle": "Kreiraj obavijest",
+    "createHint": "Napravi si podsjetnik — pojavit će se ovdje, a po želji i na e-mailu.",
+    "fieldTitle": "Naslov",
+    "fieldTitlePlaceholder": "npr. Kava s Anom",
+    "fieldBody": "Bilješka",
+    "fieldBodyPlaceholder": "Dodaj detalj (nije obavezno)",
+    "fieldCategory": "Kategorija",
+    "fieldPlace": "Mjesto",
+    "fieldPlacePlaceholder": "npr. Kavana Korzo",
+    "fieldWhen": "Podsjeti me",
+    "whenNotSet": "Bez određenog vremena",
+    "sendEmailCopy": "Pošalji mi i e-mailom",
+    "created": "Obavijest je kreirana",
+    "createFailed": "Obavijest nije bilo moguće kreirati",
+    "needTitle": "Upiši naslov obavijesti",
+    "saveFailed": "Postavke nije bilo moguće spremiti",
+    "emailHint": "Ostavi prazno da se koristi e-mail s tvojeg računa",
+    "categoryGeneral": "Općenito",
+    "sourceReminder": "Podsjetnik",
+    "emailSent": "Poslano e-mailom",
+    "appOffHint": "Obavijesti u aplikaciji su isključene — uključi ih u postavkama da bi ih primao/la.",
+    "openSettings": "Otvori postavke",
+    "justNow": "Upravo sad",
+    "minutesAgo": "prije {{count}} min",
+    "hoursAgo": "prije {{count}} h",
+    "daysAgo": "prije {{count}} d"
   },
   "videos": {
     "title": "Videi",
@@ -557,7 +591,6 @@
     "mapProblemDesc": "Opiši lokaciju ili podatak koji nedostaje / koji je netočan na karti.",
     "appProblemPlaceholder": "Npr. aplikacija se zamrzla na ekranu s kartom...",
     "mapProblemPlaceholder": "Npr. nedostaje restoran u centru Splita...",
-
     "profileHeader": "Profil",
     "box": "Spremnik",
     "publicProfileLabel": "Javni profil",
@@ -671,7 +704,6 @@
     "deleteAccountWarning": "Ovo će trajno obrisati vaš račun i sve podatke. Jeste li sigurni?",
     "language": "Jezik",
     "languageDesc": "Odaberi jezik sučelja",
-
     "theme": "Tema",
     "themeDesc": "Automatska prilagodba teme dobu dana",
     "uploading": "Prenosim...",
@@ -780,7 +812,6 @@
     "markPlace": "Označi",
     "visitedMark": "Obišao",
     "visitedDone": "✓ Obišao",
-
     "share": "Dijeli",
     "findingPlaces": "Pronalazim stvarna mjesta za {{destination}}...",
     "breakfast": "Doručak",
@@ -903,5 +934,21 @@
     "messageFailed": "Poruka nije poslana",
     "writeMessage": "Napiši poruku za {{name}}...",
     "send": "Pošalji"
+  },
+  "start": {
+    "welcomeTitle": "Dobro došli u VARA",
+    "welcomeSubtitle": "Pronađi mjesta u blizini, složi si dan i podijeli što si otkrio/la.",
+    "stepExplore": "Istraži kartu",
+    "stepExploreDesc": "Odaberi kategoriju i vidi što je oko tebe.",
+    "stepPlan": "Isplaniraj dan",
+    "stepPlanDesc": "VARA ti od odabranih mjesta složi rutu.",
+    "stepShare": "Podijeli trenutke",
+    "stepShareDesc": "Objavi video s mjesta koje ti se svidjelo.",
+    "cta": "Kreni",
+    "skip": "Preskoči",
+    "emptyTitle": "Odaberi kategoriju za početak",
+    "emptyBody": "Reci što te veseli i karta će se popuniti mjestima oko tebe.",
+    "emptyCta": "Odaberi kategorije",
+    "emptyPlanCta": "Isplaniraj mi dan"
   }
 }

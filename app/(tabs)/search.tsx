@@ -22,12 +22,13 @@ import {
 } from "react-native";
 import { StoryBadge } from "../../app/StoryBadge";
 import { useTheme } from "../../components/AdaptiveThemeProvider";
+import CloseButton from "../../components/CloseButton";
+import {
+  getInitials,
+  primeAvatarCache,
+  resolveAvatarSource,
+} from "../../utils/avatarUtils";
 import { API_BASE_URL, API_ENDPOINTS } from "../config/api";
-
-const PRESET_AVATARS: Record<string, any> = {
-  "avatar:male": require("../../assets/images/avatar-male.png"),
-  "avatar:female": require("../../assets/images/avatar-female.png"),
-};
 
 // ─── VARA Paleta — identična dashboardu ───────────────────────────────────────
 const V = {
@@ -78,56 +79,47 @@ function getV(dark: boolean) {
   } as const;
 }
 
-// ─── Helper ───────────────────────────────────────────────────────────────────
-function buildAvatarUrl(avatar: string | null | undefined): string | null {
-  if (!avatar) return null;
-  if (avatar.startsWith("http://") || avatar.startsWith("https://"))
-    return avatar;
-  const path = avatar.startsWith("/") ? avatar : `/${avatar}`;
-  return `${API_BASE_URL}${path}`;
-}
-
 // ─── Avatar ───────────────────────────────────────────────────────────────────
+// Logika je zajednička s ostalim ekranima (utils/avatarUtils) da se prikaz
+// iste osobe ne bi razlikovao od ekrana do ekrana.
 function VaraAvatar({
   avatar,
   firstName,
   lastName,
+  username,
   size,
   V,
 }: {
   avatar?: string | null;
   firstName: string;
   lastName: string;
+  username?: string;
   size: number;
   V: ReturnType<typeof getV>;
 }) {
   const [failed, setFailed] = useState(false);
-  const initials =
-    `${firstName?.[0] ?? ""}${lastName?.[0] ?? ""}`.toUpperCase();
+  const initials = getInitials(firstName, lastName, username);
+  const resolved = resolveAvatarSource(avatar);
   const r = size / 2;
 
-  // Preset avatar (avatar:male / avatar:female)
-  if (avatar && PRESET_AVATARS[avatar]) {
+  useEffect(() => {
+    setFailed(false);
+  }, [avatar]);
+
+  if (resolved.kind === "preset") {
     return (
       <Image
-        source={PRESET_AVATARS[avatar]}
+        source={resolved.source}
         style={{ width: size, height: size, borderRadius: r }}
         resizeMode="cover"
       />
     );
   }
 
-  // URL avatar
-  if (avatar && !avatar.startsWith("avatar:") && !failed) {
-    const url =
-      avatar.startsWith("http://") || avatar.startsWith("https://")
-        ? avatar
-        : `${API_BASE_URL}${avatar.startsWith("/") ? "" : "/"}${avatar}`;
-    const urlWithCache = `${url}${url.includes("?") ? "&" : "?"}_t=${Date.now()}`;
-
+  if (resolved.kind === "url" && !failed) {
     return (
       <Image
-        source={{ uri: urlWithCache }}
+        source={{ uri: resolved.uri }}
         style={{ width: size, height: size, borderRadius: r }}
         resizeMode="cover"
         onError={() => setFailed(true)}
@@ -156,7 +148,7 @@ function VaraAvatar({
           fontWeight: "700",
         }}
       >
-        {initials || "?"}
+        {initials}
       </Text>
     </View>
   );
@@ -290,17 +282,10 @@ function ComposeMessageModal({
             }}
           >
             <VaraAvatar
-              avatar={
-                recipient.avatar
-                  ? recipient.avatar.startsWith("avatar:")
-                    ? recipient.avatar
-                    : recipient.avatar.startsWith("http")
-                      ? `${recipient.avatar}${recipient.avatar.includes("?") ? "&" : "?"}_t=${recipient.id}`
-                      : `${API_BASE_URL}${recipient.avatar.startsWith("/") ? "" : "/"}${recipient.avatar}?_t=${recipient.id}`
-                  : null
-              }
+              avatar={recipient.avatar}
               firstName={firstName}
               lastName={lastName}
+              username={recipient.username}
               size={28}
               V={V}
             />
@@ -457,6 +442,17 @@ export default function SearchScreen() {
               .toLowerCase()
               .trim() !== "admin cromap",
         );
+        // Popis korisnika je jedino mjesto koje avatare svih dobiva u jednom
+        // odgovoru — zapamti ih pa ih ostali ekrani ne moraju dohvaćati.
+        others.forEach((u) =>
+          primeAvatarCache(u.id, {
+            avatar: u.avatar ?? null,
+            firstName: u.firstName || u.firstname,
+            lastName: u.lastName || u.lastname,
+            username: u.username,
+          }),
+        );
+
         setUsers(others);
         setFiltered(others);
       }
@@ -560,6 +556,7 @@ export default function SearchScreen() {
             avatar={item.avatar}
             firstName={firstName}
             lastName={lastName}
+            username={item.username}
             size={54}
             V={V}
           />
@@ -642,7 +639,13 @@ export default function SearchScreen() {
             autoCorrect={false}
           />
           {query.length > 0 && (
-            <TouchableOpacity onPress={() => setQuery("")}>
+            <TouchableOpacity
+              onPress={() => setQuery("")}
+              accessibilityRole="button"
+              accessibilityLabel={t("common.clear")}
+            >
+              {/* Ovo NIJE gumb za zatvaranje nego za brisanje upisanog
+                  teksta — zato ostaje ikona, a ne riječ "Zatvori". */}
               <Ionicons name="close-circle" size={18} color={V.textMuted} />
             </TouchableOpacity>
           )}

@@ -25,6 +25,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { StoryBadge } from "../../app/StoryBadge";
 import { useTheme } from "../../components/AdaptiveThemeProvider";
+import CloseButton from "../../components/CloseButton";
 import UserAvatar from "../../components/UserAvatar";
 import { API_BASE_URL } from "../config/api";
 import { useUser } from "./../contexts/UserContext";
@@ -1616,15 +1617,18 @@ function FollowListModal({
         edges={["top"]}
       >
         <View style={fl.header}>
-          <TouchableOpacity onPress={onClose}>
-            <Ionicons name="close" size={28} color={V.silver} />
-          </TouchableOpacity>
-          <Text style={fl.title}>
+          <CloseButton onPress={onClose} color={V.silver} />
+          {/* Naslov ostaje centriran: praznina desno je jednako široka kao
+              gumb "Zatvori", pa duljina prijevoda ne pomiče naslov. */}
+          <Text
+            style={[fl.title, { flex: 1, textAlign: "center" }]}
+            numberOfLines={1}
+          >
             {type === "followers"
               ? t("profile.followersList")
               : t("profile.followingList")}
           </Text>
-          <View style={{ width: 28 }} />
+          <View style={{ width: 78 }} />
         </View>
 
         {loading ? (
@@ -3318,15 +3322,24 @@ function SettingsModal({
     <Modal visible={visible} animationType="slide" onRequestClose={onClose}>
       <SafeAreaView style={{ flex: 1, backgroundColor: V.forestDeep }}>
         <View style={sm.header}>
-          <TouchableOpacity onPress={onClose}>
-            <Ionicons name="close" size={28} color={V.silver} />
-          </TouchableOpacity>
-          <Text style={sm.title}>{t("profile.settings")}</Text>
-          <TouchableOpacity onPress={saveSettings} disabled={saving}>
+          <CloseButton onPress={onClose} color={V.silver} />
+          <Text
+            style={[sm.title, { flex: 1, textAlign: "center" }]}
+            numberOfLines={1}
+          >
+            {t("profile.settings")}
+          </Text>
+          <TouchableOpacity
+            onPress={saveSettings}
+            disabled={saving}
+            style={{ minWidth: 78, alignItems: "flex-end" }}
+          >
             {saving ? (
               <ActivityIndicator size="small" color={V.visited} />
             ) : (
-              <Text style={sm.saveBtn}>{t("common.save")}</Text>
+              <Text style={sm.saveBtn} numberOfLines={1}>
+                {t("common.save")}
+              </Text>
             )}
           </TouchableOpacity>
         </View>
@@ -3832,16 +3845,17 @@ function SettingsModal({
                     ? t("profile.appProblemTitle")
                     : t("profile.mapProblemTitle")}
                 </Text>
-                <TouchableOpacity
+                <CloseButton
+                  size="sm"
+                  align="right"
+                  color={V.silverDim}
                   onPress={() => {
                     setProblemText("");
                     type === "app"
                       ? setShowAppProblemModal(false)
                       : setShowMapProblemModal(false);
                   }}
-                >
-                  <Ionicons name="close" size={22} color={V.silverDim} />
-                </TouchableOpacity>
+                />
               </View>
 
               <Text

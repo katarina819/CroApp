@@ -28,6 +28,7 @@ import {
 } from "react-native-gesture-handler";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useTheme } from "../../components/AdaptiveThemeProvider";
+import CloseButton from "../../components/CloseButton";
 import {
   Message,
   getConversationMessages,
@@ -386,9 +387,7 @@ function FullscreenMediaViewer({
               padding: 16,
             }}
           >
-            <TouchableOpacity onPress={onClose} hitSlop={12}>
-              <Ionicons name="close" size={30} color="#fff" />
-            </TouchableOpacity>
+            <CloseButton onPress={onClose} color="#fff" align="right" />
           </View>
           <View
             style={{ flex: 1, justifyContent: "center", alignItems: "center" }}
@@ -935,7 +934,7 @@ export default function ChatScreen() {
         >
           <Ionicons name="warning-outline" size={14} color="#ff3b30" />
           <Text style={styles.errorText}>{error}</Text>
-          <Ionicons name="close" size={14} color="#ff3b30" />
+          <Text style={styles.errorClose}>{t("common.close")}</Text>
         </TouchableOpacity>
       )}
 
@@ -1036,9 +1035,10 @@ export default function ChatScreen() {
       >
         <SafeAreaView style={{ flex: 1, backgroundColor: "#000" }}>
           <View style={styles.previewHeader}>
-            <TouchableOpacity onPress={() => setShowMediaPreview(false)}>
-              <Ionicons name="close" size={28} color="#fff" />
-            </TouchableOpacity>
+            <CloseButton
+              onPress={() => setShowMediaPreview(false)}
+              color="#fff"
+            />
             <Text style={styles.previewTitle}>Pregled</Text>
             <TouchableOpacity
               style={styles.previewSendBtn}
@@ -1328,6 +1328,9 @@ const getStyles = (V: ReturnType<typeof getV>, isDark: boolean) =>
       borderBottomColor: isDark ? "#5A2A2A" : "#f0b0b0",
     },
     errorText: { fontSize: 13, color: "#ff3b30", flex: 1 },
+    // Natpis "Zatvori" umjesto ikone X — jednako čitljivo i bez pogađanja
+    // što simbol znači.
+    errorClose: { fontSize: 13, fontWeight: "600", color: "#ff3b30" },
 
     messagesList: {
       padding: 12,

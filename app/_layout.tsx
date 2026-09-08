@@ -136,6 +136,7 @@ export default function RootLayout() {
           <Stack.Screen name="register" />
           <Stack.Screen name="forgot-password" />
           <Stack.Screen name="(tabs)" />
+          <Stack.Screen name="notifications" />
           <Stack.Screen name="profile/[userId]" />
           <Stack.Screen name="chat/[userId]" />
           <Stack.Screen name="admin/login" />

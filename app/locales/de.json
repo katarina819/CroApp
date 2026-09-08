@@ -43,7 +43,8 @@
     "permissionRequired": "Berechtigung erforderlich",
     "galleryPermission": "Erlauben Sie den Zugriff auf die Galerie in den Einstellungen",
     "cameraPermission": "Erlauben Sie den Zugriff auf die Kamera in den Einstellungen",
-    "mediaPermission": "Erlauben Sie den Zugriff auf Medien in den Einstellungen"
+    "mediaPermission": "Erlauben Sie den Zugriff auf Medien in den Einstellungen",
+    "clear": "Löschen"
   },
   "auth": {
     "login": "Anmeldung",
@@ -191,10 +192,43 @@
     "profile": "Profil"
   },
   "notif": {
-    "unavailableTitle": "Benachrichtigungen nicht verfügbar",
-    "unavailableAppEmail": "App- und E-Mail-Benachrichtigungen sind derzeit nicht verfügbar. Wenn die App weiterentwickelt wird, wird diese Option aktiviert 📧",
-    "unavailableApp": "App-Benachrichtigungen sind derzeit nicht verfügbar. Wenn die App weiterentwickelt wird, wird diese Option aktiviert 🔔",
-    "unavailableEmail": "E-Mail-Benachrichtigungen sind derzeit nicht verfügbar. Wenn die App weiterentwickelt wird, wird diese Option aktiviert 📧"
+    "title": "Benachrichtigungen",
+    "settings": "Benachrichtigungseinstellungen",
+    "empty": "Noch keine Benachrichtigungen",
+    "emptyHint": "Schalte Benachrichtigungen ein und wähle die Kategorien, die dich interessieren — Neues erscheint hier.",
+    "loadFailed": "Benachrichtigungen konnten nicht geladen werden",
+    "unreadCount": "{{count}} ungelesen",
+    "markAllRead": "Alle als gelesen markieren",
+    "deleteAll": "Alle löschen",
+    "deleteAllConfirm": "Alle Benachrichtigungen löschen? Das lässt sich nicht rückgängig machen.",
+    "deleteOne": "Benachrichtigung löschen",
+    "create": "Neue Benachrichtigung",
+    "createTitle": "Benachrichtigung erstellen",
+    "createHint": "Leg dir eine Erinnerung an — sie erscheint hier und auf Wunsch per E-Mail.",
+    "fieldTitle": "Titel",
+    "fieldTitlePlaceholder": "z. B. Kaffee mit Ana",
+    "fieldBody": "Notiz",
+    "fieldBodyPlaceholder": "Detail hinzufügen (optional)",
+    "fieldCategory": "Kategorie",
+    "fieldPlace": "Ort",
+    "fieldPlacePlaceholder": "z. B. Café Korzo",
+    "fieldWhen": "Erinnere mich",
+    "whenNotSet": "Ohne feste Zeit",
+    "sendEmailCopy": "Auch per E-Mail senden",
+    "created": "Benachrichtigung erstellt",
+    "createFailed": "Die Benachrichtigung konnte nicht erstellt werden",
+    "needTitle": "Gib einen Titel für die Benachrichtigung ein",
+    "saveFailed": "Die Einstellungen konnten nicht gespeichert werden",
+    "emailHint": "Leer lassen, um die E-Mail-Adresse deines Kontos zu verwenden",
+    "categoryGeneral": "Allgemein",
+    "sourceReminder": "Erinnerung",
+    "emailSent": "Per E-Mail gesendet",
+    "appOffHint": "App-Benachrichtigungen sind aus — schalte sie in den Einstellungen ein, um sie zu erhalten.",
+    "openSettings": "Einstellungen öffnen",
+    "justNow": "Gerade eben",
+    "minutesAgo": "vor {{count}} Min.",
+    "hoursAgo": "vor {{count}} Std.",
+    "daysAgo": "vor {{count}} T."
   },
   "placesWord": "Orte",
   "map": {
@@ -902,5 +936,21 @@
     "userNotFound": "Benutzer nicht gefunden",
     "userNotFoundDesc": "Benutzer \"{{name}}\" konnte im System nicht gefunden werden.",
     "notFound": "Nicht gefunden"
+  },
+  "start": {
+    "welcomeTitle": "Willkommen bei VARA",
+    "welcomeSubtitle": "Finde Orte in der Nähe, plane deinen Tag und teile, was du entdeckst.",
+    "stepExplore": "Karte erkunden",
+    "stepExploreDesc": "Wähle eine Kategorie und sieh, was um dich herum ist.",
+    "stepPlan": "Tag planen",
+    "stepPlanDesc": "VARA macht aus deinen Orten eine Route.",
+    "stepShare": "Momente teilen",
+    "stepShareDesc": "Poste ein Video von einem Ort, der dir gefallen hat.",
+    "cta": "Los geht's",
+    "skip": "Überspringen",
+    "emptyTitle": "Wähle zum Start eine Kategorie",
+    "emptyBody": "Sag, worauf du Lust hast, und die Karte füllt sich mit Orten um dich herum.",
+    "emptyCta": "Kategorien wählen",
+    "emptyPlanCta": "Meinen Tag planen"
   }
 }

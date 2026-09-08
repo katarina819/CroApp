@@ -43,7 +43,8 @@
     "permissionRequired": "Autorizzazione necessaria",
     "galleryPermission": "Consenti l'accesso alla galleria nelle impostazioni",
     "cameraPermission": "Consenti l'accesso alla fotocamera nelle impostazioni",
-    "mediaPermission": "Consenti l'accesso ai media nelle impostazioni"
+    "mediaPermission": "Consenti l'accesso ai media nelle impostazioni",
+    "clear": "Cancella"
   },
   "auth": {
     "login": "Accesso",
@@ -203,10 +204,43 @@
     "profile": "Profilo"
   },
   "notif": {
-    "unavailableTitle": "Notifiche non disponibili",
-    "unavailableAppEmail": "Le notifiche tramite app ed e-mail non sono attualmente disponibili. Se l'app continuerà a svilupparsi, questa opzione verrà abilitata 📧",
-    "unavailableApp": "Le notifiche tramite app non sono attualmente disponibili. Se l'app continuerà a svilupparsi, questa opzione verrà abilitata 🔔",
-    "unavailableEmail": "Le notifiche tramite e-mail non sono attualmente disponibili. Se l'app continuerà a svilupparsi, questa opzione verrà abilitata 📧"
+    "title": "Notifiche",
+    "settings": "Impostazioni delle notifiche",
+    "empty": "Ancora nessuna notifica",
+    "emptyHint": "Attiva le notifiche e scegli le categorie che ti interessano — le novità compariranno qui.",
+    "loadFailed": "Impossibile caricare le notifiche",
+    "unreadCount": "{{count}} da leggere",
+    "markAllRead": "Segna tutte come lette",
+    "deleteAll": "Elimina tutte",
+    "deleteAllConfirm": "Eliminare tutte le notifiche? L'operazione è irreversibile.",
+    "deleteOne": "Elimina notifica",
+    "create": "Nuova notifica",
+    "createTitle": "Crea una notifica",
+    "createHint": "Creati un promemoria — comparirà qui e, se vuoi, anche via e-mail.",
+    "fieldTitle": "Titolo",
+    "fieldTitlePlaceholder": "es. Caffè con Ana",
+    "fieldBody": "Nota",
+    "fieldBodyPlaceholder": "Aggiungi un dettaglio (facoltativo)",
+    "fieldCategory": "Categoria",
+    "fieldPlace": "Luogo",
+    "fieldPlacePlaceholder": "es. caffè Korzo",
+    "fieldWhen": "Ricordamelo",
+    "whenNotSet": "Senza orario preciso",
+    "sendEmailCopy": "Inviamela anche via e-mail",
+    "created": "Notifica creata",
+    "createFailed": "Impossibile creare la notifica",
+    "needTitle": "Inserisci un titolo per la notifica",
+    "saveFailed": "Impossibile salvare le impostazioni",
+    "emailHint": "Lascia vuoto per usare l'e-mail del tuo account",
+    "categoryGeneral": "Generale",
+    "sourceReminder": "Promemoria",
+    "emailSent": "Inviata via e-mail",
+    "appOffHint": "Le notifiche in-app sono disattivate — attivale nelle impostazioni per riceverle.",
+    "openSettings": "Apri le impostazioni",
+    "justNow": "Proprio ora",
+    "minutesAgo": "{{count}} min fa",
+    "hoursAgo": "{{count}} h fa",
+    "daysAgo": "{{count}} g fa"
   },
   "placesWord": "luoghi",
   "map": {
@@ -531,7 +565,6 @@
     "commentsChart": "💬 Commenti",
     "postsChart": "📤 Post"
   },
-
   "profile": {
     "title": "Profilo",
     "zoneDawn": "Alba",
@@ -903,5 +936,21 @@
     "messageFailed": "Messaggio non inviato",
     "writeMessage": "Scrivi un messaggio per {{name}}...",
     "send": "Invia"
+  },
+  "start": {
+    "welcomeTitle": "Benvenuto in VARA",
+    "welcomeSubtitle": "Trova posti vicino a te, componi la giornata e condividi ciò che scopri.",
+    "stepExplore": "Esplora la mappa",
+    "stepExploreDesc": "Scegli una categoria e guarda cosa c'è intorno a te.",
+    "stepPlan": "Pianifica la giornata",
+    "stepPlanDesc": "VARA trasforma i posti che scegli in un itinerario.",
+    "stepShare": "Condividi i momenti",
+    "stepShareDesc": "Pubblica un video da un posto che ti è piaciuto.",
+    "cta": "Iniziamo",
+    "skip": "Salta",
+    "emptyTitle": "Scegli una categoria per iniziare",
+    "emptyBody": "Dì cosa ti va e la mappa si riempie di posti intorno a te.",
+    "emptyCta": "Scegli le categorie",
+    "emptyPlanCta": "Pianifica la mia giornata"
   }
 }

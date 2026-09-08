@@ -5,13 +5,7 @@ import * as FileSystem from "expo-file-system/legacy";
 import * as ImagePicker from "expo-image-picker";
 import * as MediaLibrary from "expo-media-library";
 import { VideoView, useVideoPlayer } from "expo-video";
-import React, {
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
   ActivityIndicator,
@@ -32,6 +26,15 @@ import {
 } from "react-native";
 import { StoryBadge } from "../../app/StoryBadge";
 import { useTheme } from "../../components/AdaptiveThemeProvider";
+import CloseButton from "../../components/CloseButton";
+import {
+  AvatarInfo,
+  fetchAvatarInfo,
+  getCachedAvatarInfo,
+  getInitials,
+  primeAvatarCache,
+  resolveAvatarSource,
+} from "../../utils/avatarUtils";
 import { API_BASE_URL } from "../config/api";
 import { placeCategories } from "../services/locationService";
 
@@ -89,6 +92,8 @@ interface VideoItem {
   createdAt: string;
   userName?: string;
   userAvatar?: string | null;
+  firstName?: string | null;
+  lastName?: string | null;
   likeCount?: number;
   commentCount?: number;
   isLiked?: boolean;
@@ -98,98 +103,20 @@ interface VideoItem {
   mediaType?: string;
 }
 
-// ─── Helper: avatar URL ────────────────────────────────────────────────────────
-function buildAvatarUrl(avatar: string | null | undefined): string | null {
-  if (!avatar) return null;
-  if (avatar.startsWith("http://") || avatar.startsWith("https://"))
-    return avatar;
-  return `${API_BASE_URL}${avatar.startsWith("/") ? avatar : `/${avatar}`}`;
-}
+// ─── Avatar ───────────────────────────────────────────────────────────────────
+// Avatar autora sada dolazi zajedno s videom/komentarom, pa se u pravilu
+// crta bez ijednog dodatnog poziva. Zaseban dohvat (utils/avatarUtils) je
+// samo zaštitna mreža za starije odgovore koji avatar još ne sadrže — i on
+// ide kroz zajedničku predmemoriju, pa se za istog korisnika radi najviše
+// jednom umjesto jednom po prikazanom retku.
 
-function useUserAvatar(userId: number): string | null {
-  const [url, setUrl] = useState<string | null>(null);
-
-  useEffect(() => {
-    (async () => {
-      try {
-        const token = await AsyncStorage.getItem("token");
-        const res = await fetch(`${API_BASE_URL}/api/auth/users/${userId}`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        if (!res.ok) return;
-        const profile = await res.json();
-        const raw =
-          profile.Avatar ||
-          profile.avatar ||
-          profile.avatarUrl ||
-          profile.profileImage ||
-          null;
-        if (!raw) return;
-        if (raw.startsWith("avatar:")) {
-          setUrl(raw);
-          return;
-        }
-        const normalized = raw.startsWith("http")
-          ? raw
-          : `${API_BASE_URL}${raw.startsWith("/") ? "" : "/"}${raw}`;
-        const sep = normalized.includes("?") ? "&" : "?";
-        setUrl(`${normalized}${sep}uid=${Date.now()}`);
-      } catch {}
-    })();
-  }, [userId]);
-
-  return url;
-}
-
-const PRESET_AVATARS_VID: Record<string, any> = {
-  "avatar:male": require("../../assets/images/avatar-male.png"),
-  "avatar:female": require("../../assets/images/avatar-female.png"),
-};
-
-function FreshAvatar({
-  userId,
-  firstName,
-  lastName,
-  username,
+function AvatarPlaceholder({
+  initials,
   size,
 }: {
-  userId: number;
-  firstName?: string;
-  lastName?: string;
-  username?: string;
+  initials: string;
   size: number;
 }) {
-  const url = useUserAvatar(userId);
-  const [failed, setFailed] = useState(false);
-  const initials =
-    firstName && lastName
-      ? `${firstName[0]}${lastName[0]}`.toUpperCase()
-      : firstName
-        ? firstName[0].toUpperCase()
-        : username
-          ? username.slice(0, 2).toUpperCase()
-          : "?";
-
-  if (url && url.startsWith("avatar:") && PRESET_AVATARS_VID[url]) {
-    return (
-      <Image
-        source={PRESET_AVATARS_VID[url]}
-        style={{ width: size, height: size, borderRadius: size / 2 }}
-        resizeMode="cover"
-      />
-    );
-  }
-
-  if (url && !failed) {
-    return (
-      <Image
-        source={{ uri: url }}
-        style={{ width: size, height: size, borderRadius: size / 2 }}
-        onError={() => setFailed(true)}
-      />
-    );
-  }
-
   return (
     <View
       style={{
@@ -210,69 +137,95 @@ function FreshAvatar({
           fontWeight: "700",
         }}
       >
-        {initials || "?"}
+        {initials}
       </Text>
     </View>
   );
 }
 
-const StableAvatar = React.memo(
-  ({ userId, size }: { userId: number; size: number }) => (
-    <FreshAvatar userId={userId} size={size} />
-  ),
-  (prev, next) => prev.userId === next.userId && prev.size === next.size,
-);
-
-// ─── VARA Avatar s fallback inicijalima ───────────────────────────────────────
 function VaraAvatar({
+  userId,
   avatar,
   firstName,
   lastName,
+  username,
   size,
 }: {
+  userId?: number;
   avatar?: string | null;
-  firstName?: string;
-  lastName?: string;
+  firstName?: string | null;
+  lastName?: string | null;
+  username?: string | null;
   size: number;
 }) {
+  // Ako je avatar stigao uz podatke (uobičajen slučaj), koristi se odmah i
+  // nema učitavanja. Inače se gleda predmemorija, pa tek onda mreža.
+  const hasInlineAvatar = avatar !== undefined && avatar !== null;
+  const [fetched, setFetched] = useState<AvatarInfo | null>(() =>
+    hasInlineAvatar || !userId ? null : (getCachedAvatarInfo(userId) ?? null),
+  );
   const [failed, setFailed] = useState(false);
-  const url = buildAvatarUrl(avatar);
-  const initials =
-    `${firstName?.[0] ?? ""}${lastName?.[0] ?? ""}`.toUpperCase();
-  const r = size / 2;
-  if (url && !failed) {
+
+  useEffect(() => {
+    setFailed(false);
+  }, [userId, avatar]);
+
+  useEffect(() => {
+    if (hasInlineAvatar) {
+      primeAvatarCache(userId, {
+        avatar,
+        firstName: firstName ?? undefined,
+        lastName: lastName ?? undefined,
+        username: username ?? undefined,
+      });
+      return;
+    }
+    if (!userId) return;
+    if (getCachedAvatarInfo(userId)) {
+      setFetched(getCachedAvatarInfo(userId) ?? null);
+      return;
+    }
+
+    let alive = true;
+    fetchAvatarInfo(userId).then((info) => {
+      if (alive && info) setFetched(info);
+    });
+    return () => {
+      alive = false;
+    };
+  }, [userId, avatar, firstName, lastName, username, hasInlineAvatar]);
+
+  const effectiveAvatar = hasInlineAvatar ? avatar : (fetched?.avatar ?? null);
+  const initials = getInitials(
+    firstName || fetched?.firstName,
+    lastName || fetched?.lastName,
+    username || fetched?.username,
+  );
+  const resolved = resolveAvatarSource(effectiveAvatar);
+  const radius = size / 2;
+
+  if (resolved.kind === "preset") {
     return (
       <Image
-        source={{ uri: url }}
-        style={{ width: size, height: size, borderRadius: r }}
+        source={resolved.source}
+        style={{ width: size, height: size, borderRadius: radius }}
+        resizeMode="cover"
+      />
+    );
+  }
+
+  if (resolved.kind === "url" && !failed) {
+    return (
+      <Image
+        source={{ uri: resolved.uri }}
+        style={{ width: size, height: size, borderRadius: radius }}
+        resizeMode="cover"
         onError={() => setFailed(true)}
       />
     );
   }
-  return (
-    <View
-      style={{
-        width: size,
-        height: size,
-        borderRadius: r,
-        backgroundColor: V.forestLight,
-        borderWidth: 1.5,
-        borderColor: V.borderGreen,
-        justifyContent: "center",
-        alignItems: "center",
-      }}
-    >
-      <Text
-        style={{
-          color: V.silverBright,
-          fontSize: size * 0.36,
-          fontWeight: "700",
-        }}
-      >
-        {initials || "?"}
-      </Text>
-    </View>
-  );
+
+  return <AvatarPlaceholder initials={initials} size={size} />;
 }
 
 // ==================== SINGLE VIDEO COMPONENT ====================
@@ -414,7 +367,14 @@ function VideoItemComponent({
       <View style={vs.bottomInfo}>
         <View style={vs.userInfo}>
           <StoryBadge userId={item.userId} size={40}>
-            <FreshAvatar userId={item.userId} size={40} />
+            <VaraAvatar
+              userId={item.userId}
+              avatar={item.userAvatar}
+              firstName={item.firstName}
+              lastName={item.lastName}
+              username={item.userName}
+              size={40}
+            />
           </StoryBadge>
           <Text style={vs.userName}>
             {item.userName || `User_${item.userId}`}
@@ -530,12 +490,10 @@ function CommentsModal({
         <SafeAreaView style={{ flex: 1, backgroundColor: VT.bg }}>
           {/* ── Header — identičan dashboard NotificationSettingsModal / ActivityGroupsModal ── */}
           <View style={modal.header}>
-            <Text style={modal.headerTitle}>
+            <Text style={[modal.headerTitle, { flex: 1 }]} numberOfLines={1}>
               {t("videos.comments", { count: video?.commentCount || 0 })}
             </Text>
-            <TouchableOpacity onPress={onClose}>
-              <Text style={modal.closeTxt}>{t("common.close")}</Text>
-            </TouchableOpacity>
+            <CloseButton onPress={onClose} color={VT.textMuted} align="right" />
           </View>
 
           {/* Lista komentara */}
@@ -576,7 +534,14 @@ function CommentsModal({
             >
               {comments.map((item) => (
                 <View key={`comment_${item.id}`} style={modal.commentRow}>
-                  <StableAvatar userId={item.userId} size={38} />
+                  <VaraAvatar
+                    userId={item.userId}
+                    avatar={item.userAvatar}
+                    firstName={item.firstName}
+                    lastName={item.lastName}
+                    username={item.userName}
+                    size={38}
+                  />
                   <View style={{ flex: 1 }}>
                     <Text style={modal.commentUser}>
                       {item.userName || `User_${item.userId}`}
@@ -695,15 +660,22 @@ function MessengerModal({
         <SafeAreaView style={{ flex: 1, backgroundColor: VT.bg }}>
           {/* ── Header — identičan dashboard stilu ── */}
           <View style={modal.header}>
-            <Text style={modal.headerTitle}>{t("messages.sendMessage")}</Text>
-            <TouchableOpacity onPress={onClose}>
-              <Text style={modal.closeTxt}>{t("common.close")}</Text>
-            </TouchableOpacity>
+            <Text style={[modal.headerTitle, { flex: 1 }]} numberOfLines={1}>
+              {t("messages.sendMessage")}
+            </Text>
+            <CloseButton onPress={onClose} color={VT.textMuted} align="right" />
           </View>
 
           {/* ── Primatelj ── */}
           <View style={modal.recipientRow}>
-            <FreshAvatar userId={video.userId} size={48} />
+            <VaraAvatar
+              userId={video.userId}
+              avatar={video.userAvatar}
+              firstName={video.firstName}
+              lastName={video.lastName}
+              username={video.userName}
+              size={48}
+            />
             <View style={{ flex: 1, marginLeft: 12 }}>
               <Text style={modal.recipientName}>
                 {video.userName || `User_${video.userId}`}
@@ -868,10 +840,10 @@ function ShareModal({
       <SafeAreaView style={{ flex: 1, backgroundColor: VT.bg }}>
         {/* ── Header — identičan dashboard stilu ── */}
         <View style={modal.header}>
-          <Text style={modal.headerTitle}>{t("videos.shareVideo")}</Text>
-          <TouchableOpacity onPress={onClose}>
-            <Text style={modal.closeTxt}>{t("common.close")}</Text>
-          </TouchableOpacity>
+          <Text style={[modal.headerTitle, { flex: 1 }]} numberOfLines={1}>
+            {t("videos.shareVideo")}
+          </Text>
+          <CloseButton onPress={onClose} color={VT.textMuted} align="right" />
         </View>
 
         {/* ── Search bar — identičan dashboard filter panelu ── */}
@@ -893,7 +865,12 @@ function ShareModal({
               onChangeText={setSearch}
             />
             {search.length > 0 && (
-              <TouchableOpacity onPress={() => setSearch("")}>
+              <TouchableOpacity
+                onPress={() => setSearch("")}
+                accessibilityRole="button"
+                accessibilityLabel={t("common.clear")}
+              >
+                {/* Briše upisani tekst, ne zatvara ekran — zato ikona. */}
                 <Ionicons name="close-circle" size={18} color={VT.textMuted} />
               </TouchableOpacity>
             )}
@@ -924,10 +901,11 @@ function ShareModal({
                 disabled={sending === u.id}
                 activeOpacity={0.75}
               >
-                <FreshAvatar
+                <VaraAvatar
                   userId={u.id}
-                  firstName={u.firstName}
-                  lastName={u.lastName}
+                  avatar={u.avatar}
+                  firstName={u.firstName ?? u.firstname}
+                  lastName={u.lastName ?? u.lastname}
                   username={u.username}
                   size={48}
                 />
@@ -1238,13 +1216,17 @@ export function UploadModal({
         <SafeAreaView style={{ flex: 1, backgroundColor: VT.bg }}>
           {/* Header */}
           <View style={modal.header}>
-            <TouchableOpacity onPress={resetModal}>
-              <Ionicons name="close" size={28} color={VT.textSecondary} />
-            </TouchableOpacity>
-            <Text style={modal.headerTitle}>
+            <CloseButton onPress={resetModal} color={VT.textSecondary} />
+            {/* Naslov je u sredini: gumb lijevo i jednako široka praznina
+                desno drže ga na mjestu neovisno o duljini riječi
+                "Zatvori" / "Schließen" / "Chiudi". */}
+            <Text
+              style={[modal.headerTitle, { flex: 1, textAlign: "center" }]}
+              numberOfLines={1}
+            >
               {step === "pick" ? "Dodaj sadržaj" : "Pregled i objava"}
             </Text>
-            <View style={{ width: 28 }} />
+            <View style={{ width: 78 }} />
           </View>
 
           <ScrollView

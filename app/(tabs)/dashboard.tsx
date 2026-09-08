@@ -6,7 +6,7 @@
 //   4. Strogi filteri dolaze iz locationService.ts (v5)
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as Location from "expo-location";
-import { useFocusEffect } from "expo-router";
+import { router, useFocusEffect } from "expo-router";
 import React, {
   useCallback,
   useEffect,
@@ -39,7 +39,13 @@ import {
 import MapView, { Circle, Marker, Region } from "react-native-maps";
 import { useTheme } from "../../components/AdaptiveThemeProvider";
 import { PlanMyDayModal } from "../../components/PlanMyDayModal";
+import QuickStartOverlay from "../../components/QuickStartOverlay";
 import { ag, dm, pb, pr, s } from "../../styles/varaTheme";
+import {
+  getNotificationPrefs,
+  getUnreadCount,
+  saveNotificationPrefs,
+} from "../../utils/notificationsApi";
 import { API_BASE_URL } from "../config/api";
 import {
   clearPlacesCache,
@@ -686,6 +692,57 @@ const UI_STYLES = StyleSheet.create({
     borderWidth: 1.5,
     borderColor: "#fff",
   },
+
+  // ── PRAZNA KARTA (prvi korak) ─────────────────────────────────────────────
+  // Kartica koja stoji na sredini prazne karte i nudi prvi korak. Bez nje
+  // je prvi ekran nakon prijave samo prazna karta s alatnom trakom — ništa
+  // ne govori odakle se kreće.
+  startCard: {
+    position: "absolute",
+    left: 24,
+    right: 24,
+    top: "38%",
+    backgroundColor: "rgba(20,40,20,0.94)",
+    borderRadius: 20,
+    borderWidth: 1.5,
+    borderColor: "rgba(90,138,72,0.55)",
+    padding: 22,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.35,
+    shadowRadius: 12,
+    elevation: 10,
+  },
+  startCardTitle: {
+    color: "#e8e8e8",
+    fontSize: 18,
+    fontWeight: "800",
+    textAlign: "center",
+  },
+  startCardBody: {
+    color: "#b8ccae",
+    fontSize: 14,
+    lineHeight: 20,
+    textAlign: "center",
+    marginTop: 8,
+  },
+  startCardPrimary: {
+    backgroundColor: "#5a8a48",
+    borderRadius: 14,
+    paddingVertical: 14,
+    alignItems: "center",
+    marginTop: 18,
+  },
+  startCardPrimaryText: { color: "#fff", fontSize: 15, fontWeight: "700" },
+  startCardSecondary: {
+    borderRadius: 14,
+    paddingVertical: 12,
+    alignItems: "center",
+    marginTop: 8,
+    borderWidth: 1,
+    borderColor: "rgba(90,138,72,0.55)",
+  },
+  startCardSecondaryText: { color: "#d0e8c0", fontSize: 14, fontWeight: "600" },
 
   // ── INFO BAR (loading / broj rezultata) ───────────────────────────────────
   infoBar: {
@@ -1584,11 +1641,14 @@ function PlaceDetailModal({
                     ))}
                   </View>
                 )}
-                <TouchableOpacity style={dm.closeBtn} onPress={onClose}>
-                  <Text
-                    style={{ color: "#fff", fontSize: 15, fontWeight: "700" }}
-                  >
-                    ✕
+                <TouchableOpacity
+                  style={dm.closeBtn}
+                  onPress={onClose}
+                  accessibilityRole="button"
+                  accessibilityLabel={t("common.close")}
+                >
+                  <Text style={dm.closeBtnTxt} numberOfLines={1}>
+                    {t("common.close")}
                   </Text>
                 </TouchableOpacity>
                 {/* <TouchableOpacity
@@ -1668,16 +1728,7 @@ function PlaceDetailModal({
                   </Text>
                   <Switch
                     value={isNotified}
-                    onValueChange={(v) => {
-                      if (v) {
-                        Alert.alert(
-                          t("notif.unavailableTitle"),
-                          t("notif.unavailableApp"),
-                        );
-                        return;
-                      }
-                      onToggleNotif(place.type);
-                    }}
+                    onValueChange={() => onToggleNotif(place.type)}
                     trackColor={{ true: "#667eea", false: "#ccc" }}
                     thumbColor="#fff"
                   />
@@ -1905,7 +1956,7 @@ function NotificationSettingsModal({
   visible: boolean;
   prefs: NotifPrefs;
   onClose: () => void;
-  onSave: (p: NotifPrefs) => void;
+  onSave: (p: NotifPrefs) => void | Promise<void>;
   getAllCategories: () => {
     id: string;
     name: string;
@@ -1925,6 +1976,7 @@ function NotificationSettingsModal({
     }));
   }, [t]);
   const [p, setP] = useState<NotifPrefs>(prefs);
+  const [saving, setSaving] = useState(false);
   useEffect(() => {
     setP(prefs);
   }, [visible, prefs]);
@@ -2094,16 +2146,7 @@ function NotificationSettingsModal({
               </Text>
               <Switch
                 value={p.appEnabled}
-                onValueChange={(v) => {
-                  if (v) {
-                    Alert.alert(
-                      t("notif.unavailableTitle"),
-                      t("notif.unavailableAppEmail"),
-                    );
-                    return;
-                  }
-                  setP((x) => ({ ...x, appEnabled: v }));
-                }}
+                onValueChange={(v) => setP((x) => ({ ...x, appEnabled: v }))}
                 trackColor={{ true: "#5a8a48", false: "#3a5a30" }}
                 thumbColor={p.appEnabled ? "#34c759" : "#888"}
               />
@@ -2127,16 +2170,7 @@ function NotificationSettingsModal({
               </Text>
               <Switch
                 value={p.emailEnabled}
-                onValueChange={(v) => {
-                  if (v) {
-                    Alert.alert(
-                      t("notif.unavailableTitle"),
-                      t("notif.unavailableEmail"),
-                    );
-                    return;
-                  }
-                  setP((x) => ({ ...x, emailEnabled: v }));
-                }}
+                onValueChange={(v) => setP((x) => ({ ...x, emailEnabled: v }))}
                 trackColor={{ true: "#5a8a48", false: "#3a5a30" }}
                 thumbColor={p.emailEnabled ? "#34c759" : "#888"}
               />
@@ -2163,6 +2197,34 @@ function NotificationSettingsModal({
                 autoCapitalize="none"
               />
             )}
+
+            {p.emailEnabled && (
+              <Text style={{ marginTop: 6, fontSize: 12, color: DC.textDim }}>
+                {t("notif.emailHint")}
+              </Text>
+            )}
+
+            {/* Prečac na sam popis obavijesti — postavke i popis su dosad
+                bili odvojeni, pa se do obavijesti nije imalo kako doći. */}
+            <TouchableOpacity
+              style={{
+                marginTop: 12,
+                backgroundColor: DC.cardHover,
+                borderRadius: 12,
+                borderWidth: 1,
+                borderColor: DC.border,
+                paddingVertical: 12,
+                alignItems: "center",
+              }}
+              onPress={() => {
+                onClose();
+                router.push("/notifications");
+              }}
+            >
+              <Text style={{ color: DC.text, fontSize: 14, fontWeight: "700" }}>
+                {t("notif.title")}
+              </Text>
+            </TouchableOpacity>
           </View>
 
           {/* Kategorije — grid s ikonama */}
@@ -2376,18 +2438,30 @@ function NotificationSettingsModal({
               paddingVertical: 16,
               alignItems: "center",
             }}
-            onPress={() => {
-              onSave(p);
-              onClose();
-              Alert.alert(
-                t("profile.savedSuccess"),
-                t("profile.updateSettingsSuccess"),
-              );
+            disabled={saving}
+            onPress={async () => {
+              // Prije se poruka o uspjehu prikazivala odmah, prije nego se
+              // išta spremilo — sad se čeka ishod pa se javlja stvarni.
+              setSaving(true);
+              try {
+                await onSave(p);
+                onClose();
+                Alert.alert(
+                  t("profile.savedSuccess"),
+                  t("profile.updateSettingsSuccess"),
+                );
+              } finally {
+                setSaving(false);
+              }
             }}
           >
-            <Text style={{ color: DC.text, fontSize: 16, fontWeight: "700" }}>
-              {t("common.save")}
-            </Text>
+            {saving ? (
+              <ActivityIndicator color={DC.text} />
+            ) : (
+              <Text style={{ color: DC.text, fontSize: 16, fontWeight: "700" }}>
+                {t("common.save")}
+              </Text>
+            )}
           </TouchableOpacity>
         </ScrollView>
       </View>
@@ -9660,12 +9734,25 @@ export default function DashboardScreen() {
       .catch(() => {});
 
     loadJSON<string[]>(STORAGE_HIDDEN, []).then(setHiddenPlaceIds);
+
+    // Lokalna kopija se pokaže odmah (ekran radi i bez mreže), a zatim se
+    // prepiše onim što je na poslužitelju — samo on zna postavke spremljene
+    // s drugog uređaja i samo on može slati e-mail.
     loadJSON<NotifPrefs>(STORAGE_NOTIFS, {
       appEnabled: false,
       emailEnabled: false,
       email: "",
       categories: [],
-    }).then(setNotifPrefs);
+    })
+      .then(setNotifPrefs)
+      .finally(() => {
+        getNotificationPrefs()
+          .then((serverPrefs) => {
+            setNotifPrefs(serverPrefs);
+            saveJSON(STORAGE_NOTIFS, serverPrefs);
+          })
+          .catch(() => {});
+      });
   }, []);
 
   useEffect(() => {
@@ -9688,6 +9775,11 @@ export default function DashboardScreen() {
         hasRequestedLocationOnce.current = true;
         requestLocationPermission();
       }
+
+      // Brojka na ikoni obavijesti bila je trajno 0 jer se nikad nije
+      // punila; sada se osvježi svaki put kad se korisnik vrati na kartu
+      // (npr. nakon što je obavijesti pročitao).
+      getUnreadCount().then(setRealNotificationCount);
     }, []),
   );
 
@@ -10464,6 +10556,25 @@ export default function DashboardScreen() {
     await saveJSON(STORAGE_HIDDEN, updated);
   };
 
+  // Sprema izbor lokalno (za trenutni prikaz) i na poslužitelj (da vrijedi
+  // i na drugom uređaju i da poslužitelj zna kome slati e-mail).
+  const persistNotifPrefs = useCallback(async (next: NotifPrefs) => {
+    setNotifPrefs(next);
+    saveJSON(STORAGE_NOTIFS, next);
+    try {
+      await saveNotificationPrefs({
+        appEnabled: next.appEnabled,
+        emailEnabled: next.emailEnabled,
+        email: next.email ?? "",
+        categories: next.categories ?? [],
+        ageGroups: next.ageGroups ?? [],
+      });
+      return true;
+    } catch {
+      return false;
+    }
+  }, []);
+
   const handleToggleNotif = (catId: string) => {
     const newPrefs = {
       ...notifPrefs,
@@ -10471,8 +10582,7 @@ export default function DashboardScreen() {
         ? notifPrefs.categories.filter((c) => c !== catId)
         : [...notifPrefs.categories, catId],
     };
-    setNotifPrefs(newPrefs);
-    saveJSON(STORAGE_NOTIFS, newPrefs);
+    persistNotifPrefs(newPrefs);
   };
 
   const isVisited = (placeId: string) =>
@@ -10747,50 +10857,60 @@ export default function DashboardScreen() {
             </Text>
           </TouchableOpacity>
 
-          {/* Jutro */}
-          <TouchableOpacity
-            style={[s.todBtn, activeTimeOfDay === "jutro" && s.todBtnA]}
-            onPress={() => {
-              showTodHint("jutro", t("map.todHintMorning"));
-              applyTimeOfDay("jutro");
-            }}
-          >
-            <Image
-              source={morningIcon}
-              style={{ width: 24, height: 24 }}
-              resizeMode="contain"
-            />
-          </TouchableOpacity>
+          {/* Doba dana — jedan izbor, pa i jedna kontrola s tri stanja
+              umjesto tri odvojena gumba u traci. */}
+          <View style={s.todGroup}>
+            <TouchableOpacity
+              style={[s.todBtn, activeTimeOfDay === "jutro" && s.todBtnA]}
+              accessibilityRole="button"
+              accessibilityLabel={t("map.todHintMorning")}
+              onPress={() => {
+                showTodHint("jutro", t("map.todHintMorning"));
+                applyTimeOfDay("jutro");
+              }}
+            >
+              <Image
+                source={morningIcon}
+                style={{ width: 24, height: 24 }}
+                resizeMode="contain"
+              />
+            </TouchableOpacity>
 
-          {/* Poslijepodne */}
-          <TouchableOpacity
-            style={[s.todBtn, activeTimeOfDay === "poslijepodne" && s.todBtnA]}
-            onPress={() => {
-              showTodHint("poslijepodne", t("map.todHintAfternoon"));
-              applyTimeOfDay("poslijepodne");
-            }}
-          >
-            <Image
-              source={afternoonIcon}
-              style={{ width: 24, height: 24 }}
-              resizeMode="contain"
-            />
-          </TouchableOpacity>
+            <TouchableOpacity
+              style={[
+                s.todBtn,
+                activeTimeOfDay === "poslijepodne" && s.todBtnA,
+              ]}
+              accessibilityRole="button"
+              accessibilityLabel={t("map.todHintAfternoon")}
+              onPress={() => {
+                showTodHint("poslijepodne", t("map.todHintAfternoon"));
+                applyTimeOfDay("poslijepodne");
+              }}
+            >
+              <Image
+                source={afternoonIcon}
+                style={{ width: 24, height: 24 }}
+                resizeMode="contain"
+              />
+            </TouchableOpacity>
 
-          {/* Večer */}
-          <TouchableOpacity
-            style={[s.todBtn, activeTimeOfDay === "vecer" && s.todBtnA]}
-            onPress={() => {
-              showTodHint("vecer", t("map.todHintEvening"));
-              applyTimeOfDay("vecer");
-            }}
-          >
-            <Image
-              source={eveningIcon}
-              style={{ width: 24, height: 24 }}
-              resizeMode="contain"
-            />
-          </TouchableOpacity>
+            <TouchableOpacity
+              style={[s.todBtn, activeTimeOfDay === "vecer" && s.todBtnA]}
+              accessibilityRole="button"
+              accessibilityLabel={t("map.todHintEvening")}
+              onPress={() => {
+                showTodHint("vecer", t("map.todHintEvening"));
+                applyTimeOfDay("vecer");
+              }}
+            >
+              <Image
+                source={eveningIcon}
+                style={{ width: 24, height: 24 }}
+                resizeMode="contain"
+              />
+            </TouchableOpacity>
+          </View>
         </View>
         {/* <TouchableOpacity
           style={[
@@ -10907,13 +11027,23 @@ export default function DashboardScreen() {
               },
             },
             {
+              // Sam popis obavijesti — dosad se do njega nije imalo kako
+              // doći, iako je brojka nepročitanih visjela na ovoj ikoni.
+              icon: notificationsIcon,
+              label: t("notif.title"),
+              onPress: () => {
+                setShowOstalo(false);
+                router.push("/notifications");
+              },
+              badge: realNotificationCount,
+            },
+            {
               icon: notificationsIcon,
               label: t("map.notifSettings"),
               onPress: () => {
                 setShowOstalo(false);
                 setShowNotifSettings(true);
               },
-              badge: realNotificationCount,
             },
           ].map((item, i) => (
             <TouchableOpacity
@@ -11934,9 +12064,9 @@ export default function DashboardScreen() {
         visible={showNotifSettings}
         prefs={notifPrefs}
         onClose={() => setShowNotifSettings(false)}
-        onSave={(p) => {
-          setNotifPrefs(p);
-          saveJSON(STORAGE_NOTIFS, p);
+        onSave={async (p) => {
+          const ok = await persistNotifPrefs(p);
+          if (!ok) Alert.alert(t("common.error"), t("notif.saveFailed"));
         }}
         getAllCategories={getAllCategories}
       />
@@ -11945,6 +12075,45 @@ export default function DashboardScreen() {
         onClose={() => setShowGroups(false)}
         userLocation={userLocation}
       />
+      {/* Prazna karta = nema ni jednog rezultata ni odabrane kategorije.
+          Umjesto da korisnik sam pogodi da mora otvoriti "Filtri", kartica
+          nudi dva očita prva koraka. */}
+      {!isLoadingPlaces &&
+        !showOnlyVisited &&
+        selectedTypes.length === 0 &&
+        allPlaces.length === 0 && (
+          <View style={UI_STYLES.startCard}>
+            <Text style={UI_STYLES.startCardTitle}>
+              {t("start.emptyTitle")}
+            </Text>
+            <Text style={UI_STYLES.startCardBody}>{t("start.emptyBody")}</Text>
+
+            <TouchableOpacity
+              style={UI_STYLES.startCardPrimary}
+              onPress={() => setShowFilterPanel(true)}
+            >
+              <Text style={UI_STYLES.startCardPrimaryText}>
+                {t("start.emptyCta")}
+              </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={UI_STYLES.startCardSecondary}
+              onPress={() => setShowPlanMyDay(true)}
+            >
+              <Text style={UI_STYLES.startCardSecondaryText}>
+                {t("start.emptyPlanCta")}
+              </Text>
+            </TouchableOpacity>
+          </View>
+        )}
+
+      {/* Uvod pri prvom pokretanju — prikazuje se samo jednom. */}
+      <QuickStartOverlay
+        isDark={isDark}
+        onStart={() => setShowFilterPanel(true)}
+      />
+
       {/* Info bar — broj rezultata + koliko je trenutno otvoreno */}
       {(isLoadingPlaces ||
         places.length > 0 ||

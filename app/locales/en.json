@@ -43,7 +43,8 @@
     "permissionRequired": "Permission required",
     "galleryPermission": "Allow gallery access in settings",
     "cameraPermission": "Allow camera access in settings",
-    "mediaPermission": "Allow media access in settings"
+    "mediaPermission": "Allow media access in settings",
+    "clear": "Clear"
   },
   "auth": {
     "login": "Login",
@@ -208,10 +209,43 @@
     "notFound": "Not found"
   },
   "notif": {
-    "unavailableTitle": "Notifications unavailable",
-    "unavailableAppEmail": "App and email notifications are not currently available. If the app continues to develop, this option will be enabled 📧",
-    "unavailableApp": "App notifications are not currently available. If the app continues to develop, this option will be enabled 🔔",
-    "unavailableEmail": "Email notifications are not currently available. If the app continues to develop, this option will be enabled 📧"
+    "title": "Notifications",
+    "settings": "Notification settings",
+    "empty": "No notifications yet",
+    "emptyHint": "Turn notifications on and pick the categories you care about — news will show up here.",
+    "loadFailed": "Notifications could not be loaded",
+    "unreadCount": "{{count}} unread",
+    "markAllRead": "Mark all as read",
+    "deleteAll": "Delete all",
+    "deleteAllConfirm": "Delete all notifications? This cannot be undone.",
+    "deleteOne": "Delete notification",
+    "create": "New notification",
+    "createTitle": "Create a notification",
+    "createHint": "Set yourself a reminder — it shows up here, and by email if you want.",
+    "fieldTitle": "Title",
+    "fieldTitlePlaceholder": "e.g. Coffee with Ana",
+    "fieldBody": "Note",
+    "fieldBodyPlaceholder": "Add a detail (optional)",
+    "fieldCategory": "Category",
+    "fieldPlace": "Place",
+    "fieldPlacePlaceholder": "e.g. Korzo cafe",
+    "fieldWhen": "Remind me",
+    "whenNotSet": "No specific time",
+    "sendEmailCopy": "Also send it to my email",
+    "created": "Notification created",
+    "createFailed": "The notification could not be created",
+    "needTitle": "Enter a title for the notification",
+    "saveFailed": "The settings could not be saved",
+    "emailHint": "Leave empty to use the email address on your account",
+    "categoryGeneral": "General",
+    "sourceReminder": "Reminder",
+    "emailSent": "Sent by email",
+    "appOffHint": "In-app notifications are off — turn them on in settings to receive them.",
+    "openSettings": "Open settings",
+    "justNow": "Just now",
+    "minutesAgo": "{{count}} min ago",
+    "hoursAgo": "{{count}} h ago",
+    "daysAgo": "{{count}} d ago"
   },
   "map": {
     "title": "Map",
@@ -540,7 +574,6 @@
     "goldenConfirmMsg": "Are you sure you want to add {{name}} to your Golden Friends?",
     "goldenConfirmBtn": "Add ⭐",
     "addedOn": "Added:",
-
     "themeLight": "Light",
     "themeAuto": "Automatic",
     "themeAutoSub": "by time of day",
@@ -768,7 +801,6 @@
     "markPlace": "Mark",
     "visitedMark": "Visited",
     "visitedDone": "✓ Visited",
-
     "share": "Share",
     "findingPlaces": "Finding real places for {{destination}}...",
     "mapLegend": "Marker legend",
@@ -904,5 +936,21 @@
     "messageFailed": "Message not sent",
     "writeMessage": "Write a message for {{name}}...",
     "send": "Send"
+  },
+  "start": {
+    "welcomeTitle": "Welcome to VARA",
+    "welcomeSubtitle": "Find places nearby, put a day together and share what you discover.",
+    "stepExplore": "Explore the map",
+    "stepExploreDesc": "Pick a category and see what is around you.",
+    "stepPlan": "Plan your day",
+    "stepPlanDesc": "VARA turns the places you pick into a route.",
+    "stepShare": "Share moments",
+    "stepShareDesc": "Post a video from a place you liked.",
+    "cta": "Get started",
+    "skip": "Skip",
+    "emptyTitle": "Pick a category to begin",
+    "emptyBody": "Tell it what you feel like and the map fills up with places around you.",
+    "emptyCta": "Choose categories",
+    "emptyPlanCta": "Plan my day"
   }
 }

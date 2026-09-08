@@ -43,7 +43,8 @@
     "permissionRequired": "Autorisation requise",
     "galleryPermission": "Autorisez l'accès à la galerie dans les paramètres",
     "cameraPermission": "Autorisez l'accès à l'appareil photo dans les paramètres",
-    "mediaPermission": "Autorisez l'accès aux médias dans les paramètres"
+    "mediaPermission": "Autorisez l'accès aux médias dans les paramètres",
+    "clear": "Effacer"
   },
   "auth": {
     "login": "Connexion",
@@ -203,10 +204,43 @@
     "profile": "Profil"
   },
   "notif": {
-    "unavailableTitle": "Notifications indisponibles",
-    "unavailableAppEmail": "Les notifications par application et par e-mail ne sont pas disponibles actuellement. Si l'application continue à se développer, cette option sera activée 📧",
-    "unavailableApp": "Les notifications par application ne sont pas disponibles actuellement. Si l'application continue à se développer, cette option sera activée 🔔",
-    "unavailableEmail": "Les notifications par e-mail ne sont pas disponibles actuellement. Si l'application continue à se développer, cette option sera activée 📧"
+    "title": "Notifications",
+    "settings": "Paramètres des notifications",
+    "empty": "Aucune notification pour le moment",
+    "emptyHint": "Active les notifications et choisis les catégories qui t'intéressent — les nouveautés apparaîtront ici.",
+    "loadFailed": "Impossible de charger les notifications",
+    "unreadCount": "{{count}} non lue(s)",
+    "markAllRead": "Tout marquer comme lu",
+    "deleteAll": "Tout supprimer",
+    "deleteAllConfirm": "Supprimer toutes les notifications ? Action irréversible.",
+    "deleteOne": "Supprimer la notification",
+    "create": "Nouvelle notification",
+    "createTitle": "Créer une notification",
+    "createHint": "Crée-toi un rappel — il apparaîtra ici, et par e-mail si tu le souhaites.",
+    "fieldTitle": "Titre",
+    "fieldTitlePlaceholder": "p. ex. Café avec Ana",
+    "fieldBody": "Note",
+    "fieldBodyPlaceholder": "Ajoute un détail (facultatif)",
+    "fieldCategory": "Catégorie",
+    "fieldPlace": "Lieu",
+    "fieldPlacePlaceholder": "p. ex. café Korzo",
+    "fieldWhen": "Me rappeler",
+    "whenNotSet": "Sans heure précise",
+    "sendEmailCopy": "M'envoyer aussi un e-mail",
+    "created": "Notification créée",
+    "createFailed": "Impossible de créer la notification",
+    "needTitle": "Saisis un titre pour la notification",
+    "saveFailed": "Impossible d'enregistrer les paramètres",
+    "emailHint": "Laisse vide pour utiliser l'adresse e-mail de ton compte",
+    "categoryGeneral": "Général",
+    "sourceReminder": "Rappel",
+    "emailSent": "Envoyée par e-mail",
+    "appOffHint": "Les notifications dans l'application sont désactivées — active-les dans les paramètres pour les recevoir.",
+    "openSettings": "Ouvrir les paramètres",
+    "justNow": "À l'instant",
+    "minutesAgo": "il y a {{count}} min",
+    "hoursAgo": "il y a {{count}} h",
+    "daysAgo": "il y a {{count}} j"
   },
   "placesWord": "lieux",
   "map": {
@@ -428,7 +462,6 @@
     "loadFailed": "Impossible de charger les utilisateurs",
     "messageFailedCheckConnection": "Impossible d'envoyer le message. Vérifiez votre connexion."
   },
-
   "archive": {
     "markHint": "Marquer les lieux comme visités sur la carte",
     "noFilterResults": "Aucun lieu pour le filtre sélectionné"
@@ -903,5 +936,21 @@
     "messageFailed": "Message non envoyé",
     "writeMessage": "Écrivez un message pour {{name}}...",
     "send": "Envoyer"
+  },
+  "start": {
+    "welcomeTitle": "Bienvenue dans VARA",
+    "welcomeSubtitle": "Trouve des lieux à proximité, compose ta journée et partage tes découvertes.",
+    "stepExplore": "Explorer la carte",
+    "stepExploreDesc": "Choisis une catégorie et vois ce qu'il y a autour de toi.",
+    "stepPlan": "Planifier ta journée",
+    "stepPlanDesc": "VARA transforme les lieux choisis en itinéraire.",
+    "stepShare": "Partager tes moments",
+    "stepShareDesc": "Publie une vidéo d'un lieu qui t'a plu.",
+    "cta": "C'est parti",
+    "skip": "Passer",
+    "emptyTitle": "Choisis une catégorie pour commencer",
+    "emptyBody": "Dis ce qui te tente et la carte se remplit de lieux autour de toi.",
+    "emptyCta": "Choisir des catégories",
+    "emptyPlanCta": "Planifier ma journée"
   }
 }

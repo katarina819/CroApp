@@ -130,18 +130,26 @@ export const dm = StyleSheet.create({
     backgroundColor: "rgba(196,202,188,0.3)",
   },
   dotA: { backgroundColor: V.silver },
+  // Gumb nosi riječ "Zatvori", ne znak X — zato pilula s vodoravnim
+  // razmakom umjesto kruga fiksne širine (natpis je različite duljine po
+  // jezicima: Zatvori / Close / Schließen / Fermer / Chiudi).
   closeBtn: {
     position: "absolute",
     top: 12,
     right: 12,
     backgroundColor: V.overlay,
-    width: 34,
-    height: 34,
+    minHeight: 34,
+    paddingHorizontal: 14,
+    justifyContent: "center",
+    alignItems: "center",
     borderRadius: 17,
     borderWidth: 1,
     borderColor: V.borderGreen,
-    justifyContent: "center",
-    alignItems: "center",
+  },
+  closeBtnTxt: {
+    color: "#fff",
+    fontSize: 13,
+    fontWeight: "700",
   },
   hideBtn: {
     position: "absolute",
@@ -1200,24 +1208,33 @@ export const s = StyleSheet.create({
     elevation: 5,
   },
   topBtnText: { fontSize: 14, fontWeight: "600", color: V.silver },
-  todBtn: {
+  // Jutro / poslijepodne / večer su jedan izbor, pa i izgledaju kao jedna
+  // kontrola: zajednički okvir i sjena umjesto tri odvojena gumba. Gornja
+  // traka time izgleda kao tri stavke (☰, Filtri, doba dana), a ne pet.
+  todGroup: {
+    flexDirection: "row",
+    alignItems: "center",
     backgroundColor: V.forestDeep,
-    width: 40,
-    height: 40,
-    borderRadius: 8,
+    borderRadius: 10,
     borderWidth: 1.5,
     borderColor: V.borderGreen,
+    padding: 3,
+    gap: 2,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.4,
+    shadowRadius: 4,
+    elevation: 5,
+  },
+  todBtn: {
+    width: 36,
+    height: 34,
+    borderRadius: 7,
     justifyContent: "center",
     alignItems: "center",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.3,
-    shadowRadius: 3,
-    elevation: 4,
   },
   todBtnA: {
     backgroundColor: V.forestLight,
-    borderColor: V.silver,
   },
   todTxt: { fontSize: 18 },
 
