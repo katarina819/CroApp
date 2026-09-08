@@ -344,7 +344,10 @@
     "planDay": "Pianifica viaggio",
     "groups": "Attività",
     "notifSettings": "Impostazioni notifiche",
-    "distance": "{{dist}} km da te"
+    "distance": "{{dist}} km da te",
+    "morningShort": "Mattina",
+    "afternoonShort": "Pomeriggio",
+    "eveningShort": "Sera"
   },
   "videos": {
     "title": "Video",

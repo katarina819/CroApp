@@ -1226,15 +1226,27 @@ export const s = StyleSheet.create({
     shadowRadius: 4,
     elevation: 5,
   },
+  // Ikona + natpis: sama kovanica ne govori znači li jutro, popodne ili
+  // večer, pa ispod nje stoji riječ.
   todBtn: {
-    width: 36,
-    height: 34,
+    minWidth: 46,
+    paddingHorizontal: 5,
+    paddingVertical: 3,
     borderRadius: 7,
     justifyContent: "center",
     alignItems: "center",
   },
   todBtnA: {
     backgroundColor: V.forestLight,
+  },
+  todLabel: {
+    marginTop: 1,
+    fontSize: 9,
+    fontWeight: "600",
+    color: V.silverDim,
+  },
+  todLabelA: {
+    color: V.silverBright,
   },
   todTxt: { fontSize: 18 },
 

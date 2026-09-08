@@ -305,7 +305,10 @@
     "planDay": "Planiraj putovanje",
     "groups": "Aktivnosti",
     "notifSettings": "Postavke obavijesti",
-    "distance": "{{dist}} km od vas"
+    "distance": "{{dist}} km od vas",
+    "morningShort": "Jutro",
+    "afternoonShort": "Popodne",
+    "eveningShort": "Večer"
   },
   "notif": {
     "title": "Obavijesti",

@@ -349,7 +349,10 @@
     "planDay": "Plan my trip",
     "groups": "Activities",
     "notifSettings": "Notification settings",
-    "distance": "{{dist}} km from you"
+    "distance": "{{dist}} km from you",
+    "morningShort": "Morning",
+    "afternoonShort": "Afternoon",
+    "eveningShort": "Evening"
   },
   "videos": {
     "title": "Videos",

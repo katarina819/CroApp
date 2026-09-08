@@ -39,6 +39,7 @@ import {
 import MapView, { Circle, Marker, Region } from "react-native-maps";
 import { useTheme } from "../../components/AdaptiveThemeProvider";
 import { PlanMyDayModal } from "../../components/PlanMyDayModal";
+import CloseButton from "../../components/CloseButton";
 import QuickStartOverlay from "../../components/QuickStartOverlay";
 import { ag, dm, pb, pr, s } from "../../styles/varaTheme";
 import {
@@ -270,6 +271,14 @@ const STORAGE_BADGES = "cromap_badges_v4";
 const STORAGE_GROUPS = "cromap_groups_v4";
 const STORAGE_NOTIFS = "cromap_notif_prefs_v4";
 const STORAGE_VISITS = "cromap_visits_v1";
+const STORAGE_TYPES = "cromap_selected_types_v1";
+
+// Karta se prije otvarala prazna: dok korisnik sam ne otvori "Kategorije" i
+// nešto označi, na njoj nema ničega, pa prvi dojam ne pokaže što aplikacija
+// radi. Zato su pri prvom pokretanju uključene tri kategorije kojih ima
+// posvuda i koje odgovaraju gotovo svakome. Korisnikov izbor se od tada
+// pamti — ovo vrijedi samo dok ništa nije spremljeno.
+const DEFAULT_TYPES = ["cafe", "restaurant", "park"];
 
 // Početni limit rezultata na karti
 const INITIAL_RESULTS_LIMIT = 20;
@@ -9468,6 +9477,11 @@ export default function DashboardScreen() {
   const [citySearching, setCitySearching] = useState(false);
   const [circleBeforeDetail, setCircleBeforeDetail] = useState(false);
   const [selectedTypes, setSelectedTypes] = useState<string[]>([]);
+  // Postaje true kad je izbor kategorija pročitan iz pohrane. Do tada se
+  // ništa ne sprema, inače bi početni [] pregazio spremljeni izbor.
+  // Ref se čita sinkrono (utrka s korisnikom), state služi za prikaz.
+  const typesLoadedRef = useRef(false);
+  const [typesLoaded, setTypesLoaded] = useState(false);
   const [radius, setRadius] = useState(5);
   // Svi pronađeni rezultati (neograničeni)
   const [allPlaces, setAllPlaces] = useState<Place[]>([]);
@@ -9617,6 +9631,14 @@ export default function DashboardScreen() {
     categories: [],
   });
 
+  // Izbor kategorija se pamti između pokretanja. Mijenja se sa sedam mjesta
+  // (ploča filtera, dobne skupine, doba dana, "očisti sve"), pa se sprema
+  // ovdje umjesto u svakom od njih.
+  useEffect(() => {
+    if (!typesLoadedRef.current) return;
+    saveJSON(STORAGE_TYPES, selectedTypes);
+  }, [selectedTypes]);
+
   const activeSearchLoc = searchLocation || userLocation;
 
   // DODAJ novu helper funkciju (iznad timeFilteredPlaces):
@@ -9708,6 +9730,24 @@ export default function DashboardScreen() {
       .catch(() => {});
 
     loadJSON<string[]>(STORAGE_HIDDEN, []).then(setHiddenPlaceIds);
+
+    // null (a ne []) znači "korisnik još nije ništa birao" — tek tada se
+    // koriste zadane kategorije. Prazan spremljeni popis je valjan izbor
+    // (korisnik ih je sve maknuo) i ne prepisuje se.
+    loadJSON<string[] | null>(STORAGE_TYPES, null).then((stored) => {
+      // Ako je korisnik stigao nešto odabrati prije nego je čitanje
+      // završilo, njegov izbor ima prednost.
+      if (typesLoadedRef.current) return;
+      typesLoadedRef.current = true;
+      setTypesLoaded(true);
+
+      if (stored === null) {
+        setSelectedTypes(DEFAULT_TYPES);
+        saveJSON(STORAGE_TYPES, DEFAULT_TYPES);
+      } else {
+        setSelectedTypes(stored);
+      }
+    });
 
     // Lokalna kopija se pokaže odmah (ekran radi i bez mreže), a zatim se
     // prepiše onim što je na poslužitelju — samo on zna postavke spremljene
@@ -10629,34 +10669,6 @@ export default function DashboardScreen() {
   // Ima li još rezultata koji nisu prikazani
   const hasMore = totalFiltered > placesForMap.length;
 
-  const handleZoomIn = () => {
-    if (mapRef.current) {
-      const region = mapRegion || initialRegion;
-      mapRef.current.animateToRegion(
-        {
-          ...region,
-          latitudeDelta: Math.max(region.latitudeDelta / 2, 0.01),
-          longitudeDelta: Math.max(region.longitudeDelta / 2, 0.01),
-        },
-        500,
-      );
-    }
-  };
-
-  const handleZoomOut = () => {
-    if (mapRef.current) {
-      const region = mapRegion || initialRegion;
-      mapRef.current.animateToRegion(
-        {
-          ...region,
-          latitudeDelta: Math.min(region.latitudeDelta * 2, 180),
-          longitudeDelta: Math.min(region.longitudeDelta * 2, 180),
-        },
-        500,
-      );
-    }
-  };
-
   return (
     <View style={[s.container, { flex: 1, backgroundColor: "#1a2e1a" }]}>
       <MapView
@@ -10812,8 +10824,15 @@ export default function DashboardScreen() {
             </Text>
           </View>
         )}
-        <View style={{ flexDirection: "row", gap: 6, alignItems: "center" }}>
-          {/* ☰ Ostalo — LIJEVO, uz Filtri */}
+        <View
+          style={{
+            flexDirection: "row",
+            flexWrap: "wrap",
+            gap: 6,
+            alignItems: "center",
+          }}
+        >
+          {/* ☰ Ostalo — LIJEVO, uz Kategorije */}
           <TouchableOpacity
             style={[
               s.topBtn,
@@ -10841,59 +10860,58 @@ export default function DashboardScreen() {
             </Text>
           </TouchableOpacity>
 
-          {/* Doba dana — jedan izbor, pa i jedna kontrola s tri stanja
-              umjesto tri odvojena gumba u traci. */}
+          {/* Doba dana — jedan izbor, pa i jedna kontrola s tri stanja.
+              Tri kovanice se međusobno ne razaznaju, pa svaka nosi natpis
+              (Jutro / Popodne / Večer). */}
           <View style={s.todGroup}>
-            <TouchableOpacity
-              style={[s.todBtn, activeTimeOfDay === "jutro" && s.todBtnA]}
-              accessibilityRole="button"
-              accessibilityLabel={t("map.todHintMorning")}
-              onPress={() => {
-                showTodHint("jutro", t("map.todHintMorning"));
-                applyTimeOfDay("jutro");
-              }}
-            >
-              <Image
-                source={morningIcon}
-                style={{ width: 24, height: 24 }}
-                resizeMode="contain"
-              />
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={[
-                s.todBtn,
-                activeTimeOfDay === "poslijepodne" && s.todBtnA,
-              ]}
-              accessibilityRole="button"
-              accessibilityLabel={t("map.todHintAfternoon")}
-              onPress={() => {
-                showTodHint("poslijepodne", t("map.todHintAfternoon"));
-                applyTimeOfDay("poslijepodne");
-              }}
-            >
-              <Image
-                source={afternoonIcon}
-                style={{ width: 24, height: 24 }}
-                resizeMode="contain"
-              />
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={[s.todBtn, activeTimeOfDay === "vecer" && s.todBtnA]}
-              accessibilityRole="button"
-              accessibilityLabel={t("map.todHintEvening")}
-              onPress={() => {
-                showTodHint("vecer", t("map.todHintEvening"));
-                applyTimeOfDay("vecer");
-              }}
-            >
-              <Image
-                source={eveningIcon}
-                style={{ width: 24, height: 24 }}
-                resizeMode="contain"
-              />
-            </TouchableOpacity>
+            {(
+              [
+                {
+                  id: "jutro",
+                  icon: morningIcon,
+                  label: t("map.morningShort"),
+                  hint: t("map.todHintMorning"),
+                },
+                {
+                  id: "poslijepodne",
+                  icon: afternoonIcon,
+                  label: t("map.afternoonShort"),
+                  hint: t("map.todHintAfternoon"),
+                },
+                {
+                  id: "vecer",
+                  icon: eveningIcon,
+                  label: t("map.eveningShort"),
+                  hint: t("map.todHintEvening"),
+                },
+              ] as const
+            ).map((tod) => {
+              const active = activeTimeOfDay === tod.id;
+              return (
+                <TouchableOpacity
+                  key={tod.id}
+                  style={[s.todBtn, active && s.todBtnA]}
+                  accessibilityRole="button"
+                  accessibilityLabel={tod.hint}
+                  onPress={() => {
+                    showTodHint(tod.id, tod.hint);
+                    applyTimeOfDay(tod.id);
+                  }}
+                >
+                  <Image
+                    source={tod.icon}
+                    style={{ width: 22, height: 22 }}
+                    resizeMode="contain"
+                  />
+                  <Text
+                    style={[s.todLabel, active && s.todLabelA]}
+                    numberOfLines={1}
+                  >
+                    {tod.label}
+                  </Text>
+                </TouchableOpacity>
+              );
+            })}
           </View>
         </View>
         {/* <TouchableOpacity
@@ -11132,84 +11150,10 @@ export default function DashboardScreen() {
             { top: Platform.OS === "ios" ? 258 : 234 },
           ]}
         >
-          {/* Zoom In */}
-          <TouchableOpacity style={UI_STYLES.mapCtrlBtn} onPress={handleZoomIn}>
-            <View
-              style={{
-                width: 26,
-                height: 26,
-                borderRadius: 6,
-                borderWidth: 2,
-                borderColor: "#555",
-                justifyContent: "center",
-                alignItems: "center",
-              }}
-            >
-              <Text
-                style={{
-                  fontSize: 18,
-                  color: "#333",
-                  lineHeight: 20,
-                  fontWeight: "300",
-                }}
-              >
-                +
-              </Text>
-            </View>
-          </TouchableOpacity>
-          <Text
-            style={{
-              fontSize: 8,
-              color: "#888",
-              fontWeight: "600",
-              textAlign: "center",
-              marginBottom: 2,
-            }}
-          >
-            {t("map.zoomIn")}
-          </Text>
-
-          {/* Zoom Out */}
-          <TouchableOpacity
-            style={UI_STYLES.mapCtrlBtn}
-            onPress={handleZoomOut}
-          >
-            <View
-              style={{
-                width: 26,
-                height: 26,
-                borderRadius: 6,
-                borderWidth: 2,
-                borderColor: "#555",
-                justifyContent: "center",
-                alignItems: "center",
-              }}
-            >
-              <Text
-                style={{
-                  fontSize: 18,
-                  color: "#333",
-                  lineHeight: 20,
-                  fontWeight: "300",
-                }}
-              >
-                −
-              </Text>
-            </View>
-          </TouchableOpacity>
-          <Text
-            style={{
-              fontSize: 8,
-              color: "#888",
-              fontWeight: "600",
-              textAlign: "center",
-              marginBottom: 2,
-            }}
-          >
-            {t("map.zoomOut")}
-          </Text>
-
-          <View style={UI_STYLES.mapCtrlDivider} />
+          {/* Gumbi "Povećaj" i "Smanji" su maknuti — karta se zumira
+              prstima, pa su samo zauzimali dvije od pet stavki panela.
+              Ostaju tri stvari koje prst ne može: skoči na moju lokaciju,
+              radijus i prikaz posjećenog. */}
 
           {/* Moja lokacija */}
           <TouchableOpacity
@@ -11409,15 +11353,13 @@ export default function DashboardScreen() {
             }}
           >
             <Text style={{ fontSize: 20, fontWeight: "800", color: DC.text }}>
-              {t("map.filters")}
+              {t("map.categories")}
             </Text>
-            <TouchableOpacity onPress={() => setShowFilterPanel(false)}>
-              <Text
-                style={{ fontSize: 14, color: DC.textDim, fontWeight: "600" }}
-              >
-                {t("common.close")}
-              </Text>
-            </TouchableOpacity>
+            <CloseButton
+              onPress={() => setShowFilterPanel(false)}
+              color={DC.textDim}
+              align="right"
+            />
           </View>
 
           <ScrollView contentContainerStyle={{ paddingBottom: 40 }}>
@@ -12045,7 +11987,8 @@ export default function DashboardScreen() {
       {/* Prazna karta = nema ni jednog rezultata ni odabrane kategorije.
           Umjesto da korisnik sam pogodi da mora otvoriti "Filtri", kartica
           nudi dva očita prva koraka. */}
-      {!isLoadingPlaces &&
+      {typesLoaded &&
+        !isLoadingPlaces &&
         !showOnlyVisited &&
         selectedTypes.length === 0 &&
         allPlaces.length === 0 && (

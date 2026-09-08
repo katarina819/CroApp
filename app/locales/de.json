@@ -333,7 +333,10 @@
     "planDay": "Reise planen",
     "groups": "Aktivitäten",
     "notifSettings": "Benachrichtigungseinstellungen",
-    "distance": "{{dist}} km von Ihnen entfernt"
+    "distance": "{{dist}} km von Ihnen entfernt",
+    "morningShort": "Morgen",
+    "afternoonShort": "Nachmittag",
+    "eveningShort": "Abend"
   },
   "password": {
     "minLength": "Min. 6 Zeichen",
