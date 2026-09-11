@@ -37,6 +37,10 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { looksLikeEvent } from "../../utils/eventHints";
+import {
+  getNotificationPreferences,
+  saveNotificationPreferences,
+} from "../../utils/notificationsApi";
 import { createVideoThumbnail } from "../../utils/videoThumbnail";
 import { StoryBadge } from "../../app/StoryBadge";
 import { useTheme } from "../../components/AdaptiveThemeProvider";
@@ -118,11 +122,74 @@ interface VideoItem {
   isOwner?: boolean;
   isInWishlist?: boolean;
   mediaType?: string;
+  /** Stabilne oznake kategorija objave ("cafe,club"). */
+  categories?: string | null;
   isEvent?: boolean;
   eventStartAt?: string | null;
   thumbnailPath?: string | null;
   latitude?: number | null;
   longitude?: number | null;
+}
+
+/**
+ * Nakon spremanja objave ponudi praćenje njezine kategorije — jednim
+ * dodirom, ali IZRIJEKOM.
+ *
+ * Namjerno se ne uključuje samo od sebe: tiha promjena postavki obavijesti
+ * zato što je netko nešto spremio je iznenađenje, a korisnik kasnije ne bi
+ * povezao nove obavijesti s tim dodirom.
+ */
+async function offerCategoryFollow(
+  video: { categories?: string | null },
+  t: (k: string, o?: any) => string,
+) {
+  const categories = (video.categories || "")
+    .split(",")
+    .map((c) => c.trim())
+    .filter(Boolean);
+
+  const savedTitle = t("videos.savedToBoxTitle");
+
+  if (categories.length === 0) {
+    Alert.alert(savedTitle, t("videos.savedToBoxDesc"));
+    return;
+  }
+
+  const prefs = await getNotificationPreferences();
+  if (!prefs) {
+    Alert.alert(savedTitle, t("videos.savedToBoxDesc"));
+    return;
+  }
+
+  const missing = categories.find((c) => !prefs.categories.includes(c));
+  if (!missing) {
+    // Već prati sve kategorije ove objave — nema što ponuditi.
+    Alert.alert(savedTitle, t("videos.savedToBoxDesc"));
+    return;
+  }
+
+  const label = t(`categories.${missing}`, { defaultValue: missing });
+  Alert.alert(savedTitle, t("notif.followCategoryAsk", { category: label }), [
+    { text: t("common.no"), style: "cancel" },
+    {
+      text: t("notif.followCategoryYes"),
+      onPress: async () => {
+        const ok = await saveNotificationPreferences({
+          ...prefs,
+          // Praćenje kategorije nema smisla ako su obavijesti isključene —
+          // uključi ih zajedno s njom, jer je korisnik upravo to zatražio.
+          appEnabled: true,
+          categories: [...prefs.categories, missing],
+        });
+        Alert.alert(
+          ok ? t("common.success") : t("common.error"),
+          ok
+            ? t("notif.followCategoryDone", { category: label })
+            : t("notif.saveFailed"),
+        );
+      },
+    },
+  ]);
 }
 
 /**
@@ -661,7 +728,11 @@ function VideoItemComponent({
             size={28}
             color={item.isSaved ? V.visited : "white"}
           />
-          <Text style={vs.actionText}>{t("profile.box")}</Text>
+          {/* Prije je pisalo samo "Kutija", što ne kaže što gumb radi.
+              Sad poziva na radnju, a kad je spremljeno to i potvrdi. */}
+          <Text style={vs.actionText} numberOfLines={2}>
+            {item.isSaved ? t("videos.savedLabel") : t("videos.saveHint")}
+          </Text>
         </TouchableOpacity>
 
         <TouchableOpacity
@@ -2395,7 +2466,7 @@ export default function VideosScreen() {
           },
           body: JSON.stringify({ videoId }),
         });
-        Alert.alert(t("videos.savedToBoxTitle"), t("videos.savedToBoxDesc"));
+        await offerCategoryFollow(video, t);
       } else {
         const userId = await AsyncStorage.getItem("userId");
         await fetch(
@@ -2623,7 +2694,13 @@ const vs = StyleSheet.create({
     gap: 16,
   },
   actionButton: { alignItems: "center", gap: 2 },
-  actionText: { color: "white", fontSize: 11, fontWeight: "500" },
+  actionText: {
+    color: "white",
+    fontSize: 11,
+    fontWeight: "500",
+    textAlign: "center",
+    maxWidth: 68,
+  },
   bottomInfo: { position: "absolute", bottom: 80, left: 16, right: 90 },
   userInfo: { flexDirection: "row", alignItems: "center", marginBottom: 6 },
   userName: { color: "white", fontSize: 15, fontWeight: "600", marginLeft: 8 },

@@ -208,7 +208,11 @@
     "unavailableTitle": "Benachrichtigungen nicht verfügbar",
     "unavailableAppEmail": "App- und E-Mail-Benachrichtigungen sind derzeit nicht verfügbar. Wenn die App weiterentwickelt wird, wird diese Option aktiviert 📧",
     "unavailableApp": "App-Benachrichtigungen sind derzeit nicht verfügbar. Wenn die App weiterentwickelt wird, wird diese Option aktiviert 🔔",
-    "unavailableEmail": "E-Mail-Benachrichtigungen sind derzeit nicht verfügbar. Wenn die App weiterentwickelt wird, wird diese Option aktiviert 📧"
+    "unavailableEmail": "E-Mail-Benachrichtigungen sind derzeit nicht verfügbar. Wenn die App weiterentwickelt wird, wird diese Option aktiviert 📧",
+    "followCategoryAsk": "Gespeichert. Möchtest du künftig Benachrichtigungen zu {{category}} erhalten?",
+    "followCategoryYes": "Ja, benachrichtige mich",
+    "followCategoryDone": "Du erhältst ab jetzt Benachrichtigungen zu: {{category}}.",
+    "saveFailed": "Die Einstellungen konnten nicht gespeichert werden"
   },
   "placesWord": "Orte",
   "map": {
@@ -386,7 +390,9 @@
     "downloadingDesc": "Video wird heruntergeladen...",
     "deleteConfirmQuestion": "Sind Sie sicher?",
     "unsupportedMediaType": "Nicht unterstützter Medientyp",
-    "uploadFailedCheckConnection": "Upload fehlgeschlagen. Überprüfen Sie Ihre Verbindung."
+    "uploadFailedCheckConnection": "Upload fehlgeschlagen. Überprüfen Sie Ihre Verbindung.",
+    "saveHint": "In Ablage speichern",
+    "savedLabel": "Gespeichert"
   },
   "messages": {
     "title": "Nachrichten",

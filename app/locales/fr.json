@@ -220,7 +220,11 @@
     "unavailableTitle": "Notifications indisponibles",
     "unavailableAppEmail": "Les notifications par application et par e-mail ne sont pas disponibles actuellement. Si l'application continue à se développer, cette option sera activée 📧",
     "unavailableApp": "Les notifications par application ne sont pas disponibles actuellement. Si l'application continue à se développer, cette option sera activée 🔔",
-    "unavailableEmail": "Les notifications par e-mail ne sont pas disponibles actuellement. Si l'application continue à se développer, cette option sera activée 📧"
+    "unavailableEmail": "Les notifications par e-mail ne sont pas disponibles actuellement. Si l'application continue à se développer, cette option sera activée 📧",
+    "followCategoryAsk": "Enregistré. Veux-tu recevoir des notifications sur {{category}} à l'avenir ?",
+    "followCategoryYes": "Oui, préviens-moi",
+    "followCategoryDone": "Tu recevras désormais des notifications sur : {{category}}.",
+    "saveFailed": "Impossible d'enregistrer les paramètres"
   },
   "placesWord": "lieux",
   "map": {
@@ -386,7 +390,9 @@
     "downloadingDesc": "Téléchargement de la vidéo...",
     "deleteConfirmQuestion": "Êtes-vous sûr ?",
     "unsupportedMediaType": "Type de média non pris en charge",
-    "uploadFailedCheckConnection": "Téléversement échoué. Vérifiez votre connexion."
+    "uploadFailedCheckConnection": "Téléversement échoué. Vérifiez votre connexion.",
+    "saveHint": "Enregistrer",
+    "savedLabel": "Enregistré"
   },
   "messages": {
     "title": "Messages",

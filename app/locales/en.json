@@ -225,7 +225,11 @@
     "unavailableTitle": "Notifications unavailable",
     "unavailableAppEmail": "App and email notifications are not currently available. If the app continues to develop, this option will be enabled 📧",
     "unavailableApp": "App notifications are not currently available. If the app continues to develop, this option will be enabled 🔔",
-    "unavailableEmail": "Email notifications are not currently available. If the app continues to develop, this option will be enabled 📧"
+    "unavailableEmail": "Email notifications are not currently available. If the app continues to develop, this option will be enabled 📧",
+    "followCategoryAsk": "Saved. Would you like notifications about {{category}} from now on?",
+    "followCategoryYes": "Yes, notify me",
+    "followCategoryDone": "You will now get notifications about: {{category}}.",
+    "saveFailed": "The settings could not be saved"
   },
   "map": {
     "title": "Map",
@@ -390,7 +394,9 @@
     "downloadingDesc": "Downloading video...",
     "deleteConfirmQuestion": "Are you sure?",
     "unsupportedMediaType": "Unsupported media type",
-    "uploadFailedCheckConnection": "Upload failed. Check your connection."
+    "uploadFailedCheckConnection": "Upload failed. Check your connection.",
+    "saveHint": "Save to storage",
+    "savedLabel": "Saved"
   },
   "chat": {
     "activeUser": "Active user",

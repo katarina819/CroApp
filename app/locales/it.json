@@ -220,7 +220,11 @@
     "unavailableTitle": "Notifiche non disponibili",
     "unavailableAppEmail": "Le notifiche tramite app ed e-mail non sono attualmente disponibili. Se l'app continuerà a svilupparsi, questa opzione verrà abilitata 📧",
     "unavailableApp": "Le notifiche tramite app non sono attualmente disponibili. Se l'app continuerà a svilupparsi, questa opzione verrà abilitata 🔔",
-    "unavailableEmail": "Le notifiche tramite e-mail non sono attualmente disponibili. Se l'app continuerà a svilupparsi, questa opzione verrà abilitata 📧"
+    "unavailableEmail": "Le notifiche tramite e-mail non sono attualmente disponibili. Se l'app continuerà a svilupparsi, questa opzione verrà abilitata 📧",
+    "followCategoryAsk": "Salvato. Vuoi ricevere notifiche su {{category}} d'ora in poi?",
+    "followCategoryYes": "Sì, avvisami",
+    "followCategoryDone": "Da ora riceverai notifiche su: {{category}}.",
+    "saveFailed": "Impossibile salvare le impostazioni"
   },
   "placesWord": "luoghi",
   "map": {
@@ -386,7 +390,9 @@
     "downloadingDesc": "Download del video in corso...",
     "deleteConfirmQuestion": "Sei sicuro?",
     "unsupportedMediaType": "Tipo di supporto non supportato",
-    "uploadFailedCheckConnection": "Caricamento fallito. Verifica la connessione."
+    "uploadFailedCheckConnection": "Caricamento fallito. Verifica la connessione.",
+    "saveHint": "Salva in archivio",
+    "savedLabel": "Salvato"
   },
   "messages": {
     "title": "Messaggi",

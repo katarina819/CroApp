@@ -327,7 +327,11 @@
     "unavailableTitle": "Obavijesti nisu dostupne",
     "unavailableAppEmail": "Trenutno nije moguće dobivati obavijesti putem aplikacije ili e-maila. Ukoliko se aplikacija bude dalje razvijala, ova opcija će biti omogućena 📧",
     "unavailableApp": "Trenutno nije moguće dobivati obavijesti putem aplikacije. Ukoliko se aplikacija bude dalje razvijala, ova opcija će biti omogućena 🔔",
-    "unavailableEmail": "Trenutno nije moguće dobivati obavijesti putem e-maila. Ukoliko se aplikacija bude dalje razvijala, ova opcija će biti omogućena 📧"
+    "unavailableEmail": "Trenutno nije moguće dobivati obavijesti putem e-maila. Ukoliko se aplikacija bude dalje razvijala, ova opcija će biti omogućena 📧",
+    "followCategoryAsk": "Spremljeno. Želiš li ubuduće primati obavijesti za kategoriju {{category}}?",
+    "followCategoryYes": "Da, obavještavaj me",
+    "followCategoryDone": "Od sada primaš obavijesti za: {{category}}.",
+    "saveFailed": "Postavke nije bilo moguće spremiti"
   },
   "videos": {
     "title": "Videi",
@@ -385,7 +389,9 @@
     "downloadingDesc": "Preuzimanje videa...",
     "deleteConfirmQuestion": "Jeste li sigurni?",
     "unsupportedMediaType": "Nepodržani tip medija",
-    "uploadFailedCheckConnection": "Upload nije uspio. Provjerite vezu."
+    "uploadFailedCheckConnection": "Upload nije uspio. Provjerite vezu.",
+    "saveHint": "Spremi u pohranu",
+    "savedLabel": "Spremljeno"
   },
   "messages": {
     "title": "Poruke",
