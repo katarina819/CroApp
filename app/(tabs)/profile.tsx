@@ -2465,13 +2465,21 @@ const mediaUrl = (item: { filePath?: string | null }): string =>
  * nema (stariji zapisi), pada na nastavak datoteke — bolje nego otvoriti
  * sliku u video playeru, gdje se ne dogodi ništa.
  */
+const IMAGE_EXTENSIONS = /\.(jpg|jpeg|png|gif|webp|heic|bmp)$/;
+
+const looksLikeImagePath = (path?: string | null) =>
+  IMAGE_EXTENSIONS.test((path || "").split("?")[0].toLowerCase());
+
 const isImageItem = (item: {
   mediaType?: string;
   filePath?: string | null;
 }) => {
+  // Nastavak datoteke ima prednost pred media_type: objave dodane iz
+  // profila prije popravka zapisane su kao "video" iako su .jpg, pa bi im
+  // se vjerovanjem na riječ i dalje pokušavao pustiti player.
+  if (looksLikeImagePath(item.filePath)) return true;
   if (item.mediaType) return item.mediaType.toLowerCase() === "image";
-  const path = (item.filePath || "").split("?")[0].toLowerCase();
-  return /\.(jpg|jpeg|png|gif|webp|heic|bmp)$/.test(path);
+  return false;
 };
 
 /**
@@ -2566,16 +2574,11 @@ function MeTab({ userId }: { userId: number | null }) {
               url: v.filePath,
               // media_type s poslužitelja je pouzdaniji od pogađanja po
               // nastavku datoteke; nastavak ostaje za starije zapise.
-              type:
-                v.mediaType?.toLowerCase() === "image"
+              type: looksLikeImagePath(v.filePath)
+                ? "image"
+                : v.mediaType?.toLowerCase() === "image"
                   ? "image"
-                  : v.mediaType?.toLowerCase() === "video"
-                    ? "video"
-                    : v.filePath
-                          ?.toLowerCase()
-                          .match(/\.(jpg|jpeg|png|gif|webp)$/)
-                      ? "image"
-                      : "video",
+                  : "video",
               // Bez ovoga sličica videa nikad ne stigne do mreže profila.
               thumbnailPath: v.thumbnailPath,
               createdAt: v.createdAt,
@@ -2689,6 +2692,14 @@ function MeTab({ userId }: { userId: number | null }) {
         formData.append("Location", "Moja lokacija");
         formData.append("Description", "Nema opisa");
         formData.append("UserId", uid || "");
+        // Bez ovoga je poslužitelj uzimao zadano "video" pa je SVAKA slika
+        // dodana odavde zapisana kao video: u profilu je dobivala ikonu
+        // kamere i otvarala se u playeru, koji sa .jpg datotekom ne može
+        // ništa — slika se naprosto nije vidjela.
+        formData.append(
+          "MediaType",
+          asset.type === "video" ? "video" : "image",
+        );
         const res = await fetch(`${API_BASE_URL}/api/video/upload`, {
           method: "POST",
           headers: { Authorization: `Bearer ${token}` },

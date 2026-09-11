@@ -520,6 +520,16 @@ const EMOJIS: Record<string, string> = {
   nationalPark: "🏞️",
   cave: "🕳️",
   spa: "💧",
+  // "Ostalo" još nema svoju kovanicu kao ostale kategorije. Dok je ne
+  // dobije, prikazuje se ovaj znak umjesto zadanog 📍, koji na karti već
+  // znači "mjesto" pa bi ovdje zbunjivao.
+  //
+  // Kad slika bude gotova: stavi assets/images/ostalo.png (isti viking
+  // stil, kovanica na drvu, ~512×512 PNG) i ovdje gore dodaj
+  //   const otherIcon = require("../../assets/images/ostalo.png");
+  // te u CATEGORY_ICONS red  other: otherIcon,
+  // — mreža kategorija sama preferira sliku pred znakom.
+  other: "🧭",
 };
 
 const BOTTOM_NAV_HEIGHT = Platform.OS === "ios" ? 82 : 66;
