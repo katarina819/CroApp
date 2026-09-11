@@ -212,7 +212,9 @@
     "followCategoryAsk": "Gespeichert. Möchtest du künftig Benachrichtigungen zu {{category}} erhalten?",
     "followCategoryYes": "Ja, benachrichtige mich",
     "followCategoryDone": "Du erhältst ab jetzt Benachrichtigungen zu: {{category}}.",
-    "saveFailed": "Die Einstellungen konnten nicht gespeichert werden"
+    "saveFailed": "Die Einstellungen konnten nicht gespeichert werden",
+    "globalActivities": "Weltweite Aktivitäten",
+    "globalActivitiesHint": "Auch Beiträge außerhalb deiner Gegenden anzeigen."
   },
   "placesWord": "Orte",
   "map": {
@@ -392,7 +394,9 @@
     "unsupportedMediaType": "Nicht unterstützter Medientyp",
     "uploadFailedCheckConnection": "Upload fehlgeschlagen. Überprüfen Sie Ihre Verbindung.",
     "saveHint": "In Ablage speichern",
-    "savedLabel": "Gespeichert"
+    "savedLabel": "Gespeichert",
+    "scopeLocal": "In meiner Nähe",
+    "scopeGlobal": "Überall"
   },
   "messages": {
     "title": "Nachrichten",

@@ -330,6 +330,8 @@ interface NotifPrefs {
   email: string;
   categories: string[];
   ageGroups?: string[];
+  /** Prima li sadržaj i izvan svojih krajeva ("Svugdje" u videima). */
+  globalEnabled?: boolean;
 }
 
 interface VenueItem {
@@ -2229,6 +2231,39 @@ function NotificationSettingsModal({
                 autoCapitalize="none"
               />
             )}
+
+            {/* Svjetske aktivnosti. Zadano uključeno da aplikacija na
+                početku ne izgleda prazno; tko ih ne želi, isključi ovdje. */}
+            <View
+              style={{
+                flexDirection: "row",
+                justifyContent: "space-between",
+                alignItems: "center",
+                backgroundColor: DC.card,
+                borderRadius: 12,
+                padding: 14,
+                borderWidth: 1,
+                borderColor: DC.borderDim,
+                marginTop: 10,
+              }}
+            >
+              <View style={{ flex: 1, marginRight: 12 }}>
+                <Text
+                  style={{ fontSize: 15, fontWeight: "700", color: DC.text }}
+                >
+                  {t("notif.globalActivities")}
+                </Text>
+                <Text style={{ fontSize: 12, color: DC.textDim, marginTop: 2 }}>
+                  {t("notif.globalActivitiesHint")}
+                </Text>
+              </View>
+              <Switch
+                value={p.globalEnabled !== false}
+                onValueChange={(v) => setP((x) => ({ ...x, globalEnabled: v }))}
+                trackColor={{ true: "#5a8a48", false: "#3a5a30" }}
+                thumbColor={p.globalEnabled !== false ? "#34c759" : "#888"}
+              />
+            </View>
           </View>
 
           {/* Kategorije — grid s ikonama */}
@@ -9683,6 +9718,7 @@ export default function DashboardScreen() {
         emailEnabled: remote.emailEnabled,
         email: remote.email,
         categories: remote.categories,
+        globalEnabled: remote.globalEnabled,
       };
       setNotifPrefs(merged);
       saveJSON(STORAGE_NOTIFS, merged);
@@ -10549,6 +10585,7 @@ export default function DashboardScreen() {
         emailEnabled: next.emailEnabled,
         email: next.email ?? "",
         categories: next.categories,
+        globalEnabled: next.globalEnabled !== false,
       });
       if (!ok) {
         Alert.alert(t("common.error"), t("notifications.saveFailed"));

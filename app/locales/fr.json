@@ -224,7 +224,9 @@
     "followCategoryAsk": "Enregistré. Veux-tu recevoir des notifications sur {{category}} à l'avenir ?",
     "followCategoryYes": "Oui, préviens-moi",
     "followCategoryDone": "Tu recevras désormais des notifications sur : {{category}}.",
-    "saveFailed": "Impossible d'enregistrer les paramètres"
+    "saveFailed": "Impossible d'enregistrer les paramètres",
+    "globalActivities": "Activités mondiales",
+    "globalActivitiesHint": "Afficher aussi les publications hors des zones que tu fréquentes."
   },
   "placesWord": "lieux",
   "map": {
@@ -392,7 +394,9 @@
     "unsupportedMediaType": "Type de média non pris en charge",
     "uploadFailedCheckConnection": "Téléversement échoué. Vérifiez votre connexion.",
     "saveHint": "Enregistrer",
-    "savedLabel": "Enregistré"
+    "savedLabel": "Enregistré",
+    "scopeLocal": "Près de moi",
+    "scopeGlobal": "Partout"
   },
   "messages": {
     "title": "Messages",

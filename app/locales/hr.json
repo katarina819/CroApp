@@ -331,7 +331,9 @@
     "followCategoryAsk": "Spremljeno. Želiš li ubuduće primati obavijesti za kategoriju {{category}}?",
     "followCategoryYes": "Da, obavještavaj me",
     "followCategoryDone": "Od sada primaš obavijesti za: {{category}}.",
-    "saveFailed": "Postavke nije bilo moguće spremiti"
+    "saveFailed": "Postavke nije bilo moguće spremiti",
+    "globalActivities": "Svjetske aktivnosti",
+    "globalActivitiesHint": "Prikaži i objave izvan krajeva u kojima se krećeš."
   },
   "videos": {
     "title": "Videi",
@@ -391,7 +393,9 @@
     "unsupportedMediaType": "Nepodržani tip medija",
     "uploadFailedCheckConnection": "Upload nije uspio. Provjerite vezu.",
     "saveHint": "Spremi u pohranu",
-    "savedLabel": "Spremljeno"
+    "savedLabel": "Spremljeno",
+    "scopeLocal": "Blizu mene",
+    "scopeGlobal": "Svugdje"
   },
   "messages": {
     "title": "Poruke",

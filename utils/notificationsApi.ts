@@ -31,6 +31,12 @@ export interface NotificationPreferences {
   email: string;
   /** Stabilne oznake kategorija ("club", "museum"…), ne prevedeni nazivi. */
   categories: string[];
+  /**
+   * Prima li korisnik i sadržaj izvan svojih krajeva. Uključeno je zadano
+   * da aplikacija na početku ne izgleda prazno; tko ne želi svjetske
+   * aktivnosti, isključi ovdje.
+   */
+  globalEnabled: boolean;
 }
 
 const BASE = `${API_BASE_URL}/api/notification`;
@@ -121,6 +127,8 @@ export async function getNotificationPreferences(): Promise<NotificationPreferen
       categories: Array.isArray(d.categories ?? d.Categories)
         ? (d.categories ?? d.Categories)
         : [],
+      // Stariji poslužitelj ovo polje ne vraća — tada je uključeno.
+      globalEnabled: (d.globalEnabled ?? d.GlobalEnabled) !== false,
     };
   } catch {
     return null;
@@ -146,6 +154,7 @@ export async function saveNotificationPreferences(
         emailEnabled: prefs.emailEnabled,
         email: prefs.email || null,
         categories: prefs.categories,
+        globalEnabled: prefs.globalEnabled,
       }),
     });
     return res.ok;

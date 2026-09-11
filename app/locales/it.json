@@ -224,7 +224,9 @@
     "followCategoryAsk": "Salvato. Vuoi ricevere notifiche su {{category}} d'ora in poi?",
     "followCategoryYes": "Sì, avvisami",
     "followCategoryDone": "Da ora riceverai notifiche su: {{category}}.",
-    "saveFailed": "Impossibile salvare le impostazioni"
+    "saveFailed": "Impossibile salvare le impostazioni",
+    "globalActivities": "Attività nel mondo",
+    "globalActivitiesHint": "Mostra anche i post fuori dalle zone che frequenti."
   },
   "placesWord": "luoghi",
   "map": {
@@ -392,7 +394,9 @@
     "unsupportedMediaType": "Tipo di supporto non supportato",
     "uploadFailedCheckConnection": "Caricamento fallito. Verifica la connessione.",
     "saveHint": "Salva in archivio",
-    "savedLabel": "Salvato"
+    "savedLabel": "Salvato",
+    "scopeLocal": "Vicino a me",
+    "scopeGlobal": "Ovunque"
   },
   "messages": {
     "title": "Messaggi",

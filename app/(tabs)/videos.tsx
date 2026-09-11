@@ -4,6 +4,7 @@ import DateTimePicker from "@react-native-community/datetimepicker";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as FileSystem from "expo-file-system/legacy";
 import * as ImagePicker from "expo-image-picker";
+import * as Location from "expo-location";
 import * as MediaLibrary from "expo-media-library";
 import { useEventListener } from "expo";
 import { VideoView, useVideoPlayer } from "expo-video";
@@ -58,6 +59,9 @@ import {
 } from "../services/locationService";
 
 const { width } = Dimensions.get("window");
+
+/** Zapamćeni izbor prikaza feeda ("blizu mene" / "svugdje"). */
+const STORAGE_FEED_SCOPE = "vara_feed_scope_v1";
 const AGE_GROUP_IDS = [
   "minors",
   "youth",
@@ -2363,6 +2367,10 @@ export default function VideosScreen() {
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
+  // "local" = objave iz krajeva u kojima se korisnik zaista zadržava,
+  // "global" = sve. Izbor se pamti da se ne mora birati pri svakom ulasku.
+  const [scope, setScope] = useState<"local" | "global">("local");
+  const [scopeReady, setScopeReady] = useState(false);
   const flatListRef = useRef<FlatList>(null);
 
   const PAGE_SIZE = 15;
@@ -2378,7 +2386,7 @@ export default function VideosScreen() {
     else setLoadingMore(true);
     try {
       const res = await fetch(
-        `${API_BASE_URL}/api/video?page=${pageToLoad}&pageSize=${PAGE_SIZE}`,
+        `${API_BASE_URL}/api/video?page=${pageToLoad}&pageSize=${PAGE_SIZE}&scope=${scope}`,
         { headers: { Authorization: `Bearer ${token}` } },
       );
       if (res.ok) {
@@ -2399,8 +2407,53 @@ export default function VideosScreen() {
     if (!loadingMore && hasMore) loadVideos(page + 1);
   };
 
+  // Zapamćeni izbor prikaza; tek kad je poznat, učitaj feed — inače bi se
+  // učitao dvaput (jednom s pogrešnim opsegom).
   useEffect(() => {
+    (async () => {
+      try {
+        const stored = await AsyncStorage.getItem(STORAGE_FEED_SCOPE);
+        if (stored === "local" || stored === "global") setScope(stored);
+      } catch {}
+      setScopeReady(true);
+    })();
+  }, []);
+
+  useEffect(() => {
+    if (!scopeReady) return;
+    setPage(1);
+    setHasMore(true);
     loadVideos(1);
+  }, [scope, scopeReady]);
+
+  // Javi poslužitelju u kojem je kraju korisnik, da "blizu mene" uopće ima
+  // što prikazati. Samo dok je aplikacija otvorena i samo ako je dozvola
+  // već dana — ništa se ne traži niti prati u pozadini.
+  useEffect(() => {
+    (async () => {
+      try {
+        const { status } = await Location.getForegroundPermissionsAsync();
+        if (status !== "granted") return;
+
+        const position = await Location.getLastKnownPositionAsync();
+        if (!position) return;
+
+        const token = await AsyncStorage.getItem("token");
+        if (!token) return;
+
+        await fetch(`${API_BASE_URL}/api/video/area-ping`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            latitude: position.coords.latitude,
+            longitude: position.coords.longitude,
+          }),
+        });
+      } catch {}
+    })();
   }, []);
 
   const handleLikeToggle = async (videoId: number) => {
@@ -2589,6 +2642,31 @@ export default function VideosScreen() {
       style={vs.container}
       onLayout={(e) => setContainerHeight(e.nativeEvent.layout.height)}
     >
+      {/* Blizu mene / Svugdje. Stoji na vrhu jer mijenja cijeli feed, a ne
+          pojedinu objavu. */}
+      <View style={vs.scopeBar}>
+        {(["local", "global"] as const).map((value) => {
+          const active = scope === value;
+          return (
+            <TouchableOpacity
+              key={value}
+              style={[vs.scopeBtn, active && vs.scopeBtnActive]}
+              onPress={() => {
+                if (active) return;
+                setScope(value);
+                AsyncStorage.setItem(STORAGE_FEED_SCOPE, value).catch(() => {});
+              }}
+            >
+              <Text style={[vs.scopeText, active && vs.scopeTextActive]}>
+                {value === "local"
+                  ? t("videos.scopeLocal")
+                  : t("videos.scopeGlobal")}
+              </Text>
+            </TouchableOpacity>
+          );
+        })}
+      </View>
+
       <TouchableOpacity
         style={vs.addButton}
         onPress={() => setShowUploadModal(true)}
@@ -2733,6 +2811,26 @@ const vs = StyleSheet.create({
   },
   eventText: { color: "#1a2e1a", fontSize: 12, fontWeight: "700" },
   videoDescription: { color: "rgba(255,255,255,0.75)", fontSize: 12 },
+  scopeBar: {
+    position: "absolute",
+    top: Platform.OS === "ios" ? 54 : 36,
+    alignSelf: "center",
+    flexDirection: "row",
+    backgroundColor: "rgba(20,40,20,0.85)",
+    borderRadius: 999,
+    borderWidth: 1,
+    borderColor: "rgba(90,138,72,0.6)",
+    padding: 3,
+    zIndex: 20,
+  },
+  scopeBtn: {
+    paddingHorizontal: 16,
+    paddingVertical: 7,
+    borderRadius: 999,
+  },
+  scopeBtnActive: { backgroundColor: "#5a8a48" },
+  scopeText: { color: "#c0d8b0", fontSize: 13, fontWeight: "600" },
+  scopeTextActive: { color: "#fff" },
   addButton: {
     position: "absolute",
     top: Platform.OS === "ios" ? 56 : 40,

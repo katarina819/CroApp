@@ -229,7 +229,9 @@
     "followCategoryAsk": "Saved. Would you like notifications about {{category}} from now on?",
     "followCategoryYes": "Yes, notify me",
     "followCategoryDone": "You will now get notifications about: {{category}}.",
-    "saveFailed": "The settings could not be saved"
+    "saveFailed": "The settings could not be saved",
+    "globalActivities": "Worldwide activities",
+    "globalActivitiesHint": "Also show posts from outside the areas you spend time in."
   },
   "map": {
     "title": "Map",
@@ -396,7 +398,9 @@
     "unsupportedMediaType": "Unsupported media type",
     "uploadFailedCheckConnection": "Upload failed. Check your connection.",
     "saveHint": "Save to storage",
-    "savedLabel": "Saved"
+    "savedLabel": "Saved",
+    "scopeLocal": "Near me",
+    "scopeGlobal": "Everywhere"
   },
   "chat": {
     "activeUser": "Active user",
