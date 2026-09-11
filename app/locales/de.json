@@ -963,5 +963,14 @@
     "minutesAgo": "vor {{count}} Min.",
     "hoursAgo": "vor {{count}} Std.",
     "daysAgo": "vor {{count}} T."
+  },
+  "post": {
+    "isEvent": "Das ist eine Veranstaltung",
+    "isEventHint": "Eine Ankündigung mit Datum — sie erscheint unter Demnächst und kann erinnert werden.",
+    "eventWhenPlaceholder": "Wann beginnt sie?",
+    "eventStarts": "Beginnt {{when}}",
+    "eventToday": "heute",
+    "eventTomorrow": "morgen",
+    "eventInDays": "in {{count}} T."
   }
 }

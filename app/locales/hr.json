@@ -961,5 +961,14 @@
     "minutesAgo": "prije {{count}} min",
     "hoursAgo": "prije {{count}} h",
     "daysAgo": "prije {{count}} d"
+  },
+  "post": {
+    "isEvent": "Ovo je događaj",
+    "isEventHint": "Najava s datumom — ljudi je vide među nadolazećim i mogu dobiti podsjetnik.",
+    "eventWhenPlaceholder": "Kad počinje?",
+    "eventStarts": "Počinje {{when}}",
+    "eventToday": "danas",
+    "eventTomorrow": "sutra",
+    "eventInDays": "za {{count}} d"
   }
 }

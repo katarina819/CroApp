@@ -1,5 +1,6 @@
 // app/videos.tsx — VARA tema, usklađena s dashboard.tsx
 import { Ionicons } from "@expo/vector-icons";
+import DateTimePicker from "@react-native-community/datetimepicker";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as FileSystem from "expo-file-system/legacy";
 import * as ImagePicker from "expo-image-picker";
@@ -28,12 +29,14 @@ import {
   SafeAreaView,
   ScrollView,
   StyleSheet,
+  Switch,
   Text,
   TextInput,
   TouchableOpacity,
   View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { looksLikeEvent } from "../../utils/eventHints";
 import { createVideoThumbnail } from "../../utils/videoThumbnail";
 import { StoryBadge } from "../../app/StoryBadge";
 import { useTheme } from "../../components/AdaptiveThemeProvider";
@@ -115,6 +118,37 @@ interface VideoItem {
   isOwner?: boolean;
   isInWishlist?: boolean;
   mediaType?: string;
+  isEvent?: boolean;
+  eventStartAt?: string | null;
+  thumbnailPath?: string | null;
+  latitude?: number | null;
+  longitude?: number | null;
+}
+
+/**
+ * "danas 21:00", "sutra 19:30", "za 3 d", ili datum kad je dalje od tjedan
+ * dana. Kratko jer stoji na kartici preko videa, gdje nema mjesta.
+ */
+function formatEventStart(iso: string, t: (k: string, o?: any) => string) {
+  const start = new Date(iso);
+  if (Number.isNaN(start.getTime())) return "";
+
+  const time = start.toLocaleTimeString([], {
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+
+  const startOfDay = (d: Date) =>
+    new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
+  const days = Math.round(
+    (startOfDay(start) - startOfDay(new Date())) / 86400000,
+  );
+
+  if (days === 0) return `${t("post.eventToday")} ${time}`;
+  if (days === 1) return `${t("post.eventTomorrow")} ${time}`;
+  if (days > 1 && days < 7)
+    return `${t("post.eventInDays", { count: days })} ${time}`;
+  return `${start.toLocaleDateString()} ${time}`;
 }
 
 // ─── Helper: avatar URL ────────────────────────────────────────────────────────
@@ -668,6 +702,16 @@ function VideoItemComponent({
               color="rgba(255,255,255,0.8)"
             />
             <Text style={vs.locationText}>{item.location}</Text>
+          </View>
+        )}
+        {item.isEvent && item.eventStartAt && (
+          <View style={vs.eventRow}>
+            <Ionicons name="calendar" size={13} color="#1a2e1a" />
+            <Text style={vs.eventText}>
+              {t("post.eventStarts", {
+                when: formatEventStart(item.eventStartAt, t),
+              })}
+            </Text>
           </View>
         )}
         {item.additionalDescription && (
@@ -1253,6 +1297,18 @@ export function UploadModal({
   const [title, setTitle] = useState("");
   const [location, setLocation] = useState("");
   const [locationValid, setLocationValid] = useState(false);
+  // Koordinate odabrane lokacije. Bez njih objava ne može ući u prikaz
+  // "blizu mene" — tekstualna lokacija se ne da usporediti s krajem u kojem
+  // korisnik živi.
+  const [locationCoords, setLocationCoords] = useState<{
+    lat: number;
+    lon: number;
+  } | null>(null);
+  const [isEvent, setIsEvent] = useState(false);
+  const [eventStartAt, setEventStartAt] = useState<Date | null>(null);
+  const [eventPickerMode, setEventPickerMode] = useState<
+    "date" | "time" | null
+  >(null);
   const [locationSuggestions, setLocationSuggestions] = useState<
     {
       displayName: string;
@@ -1366,6 +1422,8 @@ export function UploadModal({
 
   const selectLocation = (suggestion: {
     displayName: string;
+    lat?: string;
+    lon?: string;
     osmClass?: string;
     osmType?: string;
   }) => {
@@ -1373,6 +1431,12 @@ export function UploadModal({
     setLocationValid(true);
     setShowSuggestions(false);
     setLocationSuggestions([]);
+
+    const lat = Number(suggestion.lat);
+    const lon = Number(suggestion.lon);
+    setLocationCoords(
+      Number.isFinite(lat) && Number.isFinite(lon) ? { lat, lon } : null,
+    );
 
     // Automatski predloži kategoriju i "primjereno za" na temelju adrese —
     // korisnik i dalje može ručno izmijeniti odabir, ovo samo popunjava
@@ -1499,6 +1563,15 @@ export function UploadModal({
       formData.append("UserId", userId);
       formData.append("MediaType", mediaType);
 
+      if (locationCoords) {
+        formData.append("Latitude", String(locationCoords.lat));
+        formData.append("Longitude", String(locationCoords.lon));
+      }
+      if (isEvent && eventStartAt) {
+        formData.append("IsEvent", "true");
+        formData.append("EventStartAt", eventStartAt.toISOString());
+      }
+
       const res = await fetch(`${API_BASE_URL}/api/video/upload`, {
         method: "POST",
         headers: { Authorization: `Bearer ${token}` },
@@ -1526,14 +1599,30 @@ export function UploadModal({
     }
   };
 
+  // Prekidač se unaprijed uključi ako naslov ili opis zvuče kao najava —
+  // ali samo jednom po objavi, da isključivanje ne bi bilo poništeno pri
+  // sljedećem tipkanju.
+  const eventHintAppliedRef = useRef(false);
+  useEffect(() => {
+    if (eventHintAppliedRef.current) return;
+    if (!looksLikeEvent(title, description)) return;
+    eventHintAppliedRef.current = true;
+    setIsEvent(true);
+  }, [title, description]);
+
   const resetModal = () => {
     setMediaUri(null);
     setTitle("");
     setLocation("");
     setLocationValid(false);
+    setLocationCoords(null);
     setLocationSuggestions([]);
     setShowSuggestions(false);
     setDescription("");
+    setIsEvent(false);
+    setEventStartAt(null);
+    setEventPickerMode(null);
+    eventHintAppliedRef.current = false;
     setStep("pick");
     onClose();
   };
@@ -1843,6 +1932,95 @@ export function UploadModal({
                     color={VT.textMuted}
                   />
                 </TouchableOpacity>
+
+                {/* Događaj — autor sam kaže je li ovo najava i kad počinje.
+                    Zato je datum pouzdan i nad njim se može raditi
+                    ("počinje za 2 dana"), što se iz teksta ne bi moglo. */}
+                <View style={upload.eventRow}>
+                  <View style={{ flex: 1, marginRight: 12 }}>
+                    <Text style={upload.eventLabel}>{t("post.isEvent")}</Text>
+                    <Text style={upload.eventHint}>
+                      {t("post.isEventHint")}
+                    </Text>
+                  </View>
+                  <Switch
+                    value={isEvent}
+                    onValueChange={(v) => {
+                      setIsEvent(v);
+                      if (!v) setEventStartAt(null);
+                    }}
+                    trackColor={{ true: "#5a8a48", false: "#3a5a30" }}
+                    thumbColor={isEvent ? "#34c759" : "#888"}
+                  />
+                </View>
+
+                {isEvent && (
+                  <TouchableOpacity
+                    style={[
+                      upload.fieldInput,
+                      { flexDirection: "row", alignItems: "center" },
+                    ]}
+                    onPress={() => {
+                      Keyboard.dismiss();
+                      setEventPickerMode("date");
+                    }}
+                  >
+                    <Text
+                      style={{
+                        flex: 1,
+                        color: eventStartAt ? VT.textPrimary : VT.placeholder,
+                      }}
+                      numberOfLines={1}
+                    >
+                      {eventStartAt
+                        ? `${eventStartAt.toLocaleDateString()} ${eventStartAt.toLocaleTimeString(
+                            [],
+                            { hour: "2-digit", minute: "2-digit" },
+                          )}`
+                        : t("post.eventWhenPlaceholder")}
+                    </Text>
+                    <Ionicons
+                      name="calendar-outline"
+                      size={18}
+                      color={VT.textMuted}
+                    />
+                  </TouchableOpacity>
+                )}
+
+                {eventPickerMode && (
+                  <DateTimePicker
+                    value={eventStartAt ?? new Date()}
+                    mode={eventPickerMode}
+                    display={Platform.OS === "ios" ? "spinner" : "default"}
+                    minimumDate={
+                      eventPickerMode === "date" ? new Date() : undefined
+                    }
+                    onChange={(event, picked) => {
+                      // Android pita za datum i vrijeme u dva koraka.
+                      if (event.type === "dismissed" || !picked) {
+                        setEventPickerMode(null);
+                        return;
+                      }
+                      if (eventPickerMode === "date") {
+                        const base = eventStartAt ?? new Date();
+                        const next = new Date(picked);
+                        next.setHours(base.getHours(), base.getMinutes(), 0, 0);
+                        setEventStartAt(next);
+                        setEventPickerMode("time");
+                      } else {
+                        const next = new Date(eventStartAt ?? picked);
+                        next.setHours(
+                          picked.getHours(),
+                          picked.getMinutes(),
+                          0,
+                          0,
+                        );
+                        setEventStartAt(next);
+                        setEventPickerMode(null);
+                      }
+                    }}
+                  />
+                )}
 
                 <Text style={upload.fieldLabel}>Opis (opcionalno)</Text>
                 <TextInput
@@ -2462,6 +2640,21 @@ const vs = StyleSheet.create({
     marginBottom: 2,
   },
   locationText: { color: "rgba(255,255,255,0.8)", fontSize: 12 },
+  // Termin događaja stoji preko videa, pa ide na svijetlu podlogu s tamnim
+  // tekstom — bijelo na bijelom kadru se ne bi vidjelo.
+  eventRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    alignSelf: "flex-start",
+    gap: 5,
+    backgroundColor: "#d0e8c0",
+    borderRadius: 8,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    marginTop: 4,
+    marginBottom: 3,
+  },
+  eventText: { color: "#1a2e1a", fontSize: 12, fontWeight: "700" },
   videoDescription: { color: "rgba(255,255,255,0.75)", fontSize: 12 },
   addButton: {
     position: "absolute",
@@ -3016,6 +3209,25 @@ function makeUploadStyles(VT: ReturnType<typeof getVT>) {
       borderRadius: 20,
       borderWidth: 1,
       borderColor: VT.border,
+    },
+    eventRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      backgroundColor: VT.bgCard,
+      borderRadius: 12,
+      borderWidth: 1,
+      borderColor: VT.borderBright,
+      paddingHorizontal: 14,
+      paddingVertical: 12,
+      marginTop: 16,
+    },
+    eventLabel: { fontSize: 15, fontWeight: "700", color: VT.textPrimary },
+    eventHint: {
+      fontSize: 12,
+      lineHeight: 16,
+      color: VT.textMuted,
+      marginTop: 2,
     },
     fieldLabel: {
       fontSize: 14,
