@@ -34,6 +34,7 @@ import {
   View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { createVideoThumbnail } from "../../utils/videoThumbnail";
 import { StoryBadge } from "../../app/StoryBadge";
 import { useTheme } from "../../components/AdaptiveThemeProvider";
 import { API_BASE_URL } from "../config/api";
@@ -1458,6 +1459,21 @@ export function UploadModal({
         type: mimeType,
         name: fileName,
       } as any);
+
+      // Sličica videa. Profil je dosad za svaki video crtao samo ikonu
+      // kamere jer sličica nije nigdje postojala — sad je radi telefon iz
+      // prvog kadra i šalje uz video. Ako ne uspije (neki kodeci znaju
+      // zakazati), objava se svejedno nastavlja bez sličice.
+      if (mediaType !== "image") {
+        const thumbnailUri = await createVideoThumbnail(mediaUri);
+        if (thumbnailUri) {
+          formData.append("Thumbnail", {
+            uri: thumbnailUri,
+            type: "image/jpeg",
+            name: "thumbnail.jpg",
+          } as any);
+        }
+      }
       formData.append("Title", title.trim());
       formData.append("Location", location.trim());
       const categoriesLabel = selectedCategories

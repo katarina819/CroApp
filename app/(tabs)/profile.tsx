@@ -96,6 +96,8 @@ interface BoxItem {
   filePath: string;
   /** "image" ili "video" — spremljena slika se ne smije otvarati u playeru. */
   mediaType?: string;
+  /** Sličica videa; prazno za slike i za videe objavljene prije sličica. */
+  thumbnailPath?: string;
   savedAt: string;
   userName: string;
 }
@@ -2472,9 +2474,26 @@ const isImageItem = (item: {
   return /\.(jpg|jpeg|png|gif|webp|heic|bmp)$/.test(path);
 };
 
+/**
+ * Sličica za spremljenu stavku: kod slike sama datoteka, kod videa ona koju
+ * je telefon napravio pri objavi. null znači "nema je" — tada se crta ikona.
+ */
+const savedThumbnailUrl = (item: BoxItem): string | null => {
+  if (isImageItem(item)) return mediaUrl(item);
+  const thumb = item.thumbnailPath;
+  if (!thumb) return null;
+  return thumb.startsWith("http") ? thumb : `${API_BASE_URL}${thumb}`;
+};
+
 const getThumbnail = (item: any): string | null => {
   if (item.type === "image") return item.url || item.filePath || null;
-  return null;
+
+  // Video: sličica prvog kadra, koju telefon napravi pri objavi. Prazno za
+  // videe objavljene prije nego je to postojalo — oni i dalje pokazuju
+  // ikonu kamere.
+  const thumb = item.thumbnailPath || item.ThumbnailPath;
+  if (!thumb) return null;
+  return thumb.startsWith("http") ? thumb : `${API_BASE_URL}${thumb}`;
 };
 
 // ─── Empty Tab ────────────────────────────────────────────────────────────────
@@ -2545,11 +2564,20 @@ function MeTab({ userId }: { userId: number | null }) {
             vids.map((v: any) => ({
               id: v.id,
               url: v.filePath,
-              type: v.filePath
-                ?.toLowerCase()
-                .match(/\.(jpg|jpeg|png|gif|webp)$/)
-                ? "image"
-                : "video",
+              // media_type s poslužitelja je pouzdaniji od pogađanja po
+              // nastavku datoteke; nastavak ostaje za starije zapise.
+              type:
+                v.mediaType?.toLowerCase() === "image"
+                  ? "image"
+                  : v.mediaType?.toLowerCase() === "video"
+                    ? "video"
+                    : v.filePath
+                          ?.toLowerCase()
+                          .match(/\.(jpg|jpeg|png|gif|webp)$/)
+                      ? "image"
+                      : "video",
+              // Bez ovoga sličica videa nikad ne stigne do mreže profila.
+              thumbnailPath: v.thumbnailPath,
               createdAt: v.createdAt,
               title: v.title,
             })),
@@ -2884,10 +2912,14 @@ function BoxTab() {
             activeOpacity={0.7}
           >
             <View style={tab.thumbContainer}>
-              {isImageItem(item) ? (
-                // Za sliku je sama datoteka i sličica — dosad se i ovdje
-                // crtala ikona kamere, pa se nije vidjelo što je spremljeno.
-                <Image source={{ uri: mediaUrl(item) }} style={tab.thumb} />
+              {savedThumbnailUrl(item) ? (
+                // Slika je sama sebi sličica; video ima onu koju je telefon
+                // napravio pri objavi. Dosad se za oboje crtala ikona
+                // kamere, pa se nije vidjelo što je spremljeno.
+                <Image
+                  source={{ uri: savedThumbnailUrl(item) as string }}
+                  style={tab.thumb}
+                />
               ) : (
                 <View
                   style={[
