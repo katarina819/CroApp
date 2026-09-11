@@ -198,7 +198,8 @@
     "mountain": "Mountains",
     "nationalPark": "National Parks",
     "cave": "Caves",
-    "spa": "Spas"
+    "spa": "Spas",
+    "other": "Other"
   },
   "ageGroups": {
     "minors": "Minors",

@@ -43,10 +43,10 @@ import {
   useKeyboardHeight,
 } from "@/hooks/use-keyboard-offset";
 import {
+  POST_CATEGORY_IDS,
   inferAgeGroupsForCategory,
   inferCategoryFromLocationName,
   inferCategoryFromOsmTag,
-  placeCategories,
 } from "../services/locationService";
 
 const { width } = Dimensions.get("window");
@@ -1943,7 +1943,7 @@ export function UploadModal({
                   Odaberi kategorije
                 </Text>
                 <ScrollView>
-                  {Object.keys(placeCategories).map((id) => {
+                  {POST_CATEGORY_IDS.map((id) => {
                     const active = selectedCategories.includes(id);
                     return (
                       <TouchableOpacity

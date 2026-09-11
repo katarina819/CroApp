@@ -51,6 +51,7 @@ import {
   saveNotificationPreferences,
 } from "@/utils/notificationsApi";
 import {
+  POST_CATEGORY_IDS,
   clearPlacesCache,
   geocodeCity,
   getPlacesInRadius,
@@ -1978,11 +1979,15 @@ function NotificationSettingsModal({
   const { isDark } = useTheme();
   const DC = getDashColors(isDark);
   const getAllCategories = useCallback(() => {
-    return Object.entries(placeCategories).map(([id, c]) => ({
+    // Uključuje i "Ostalo" — objava koja ne pripada nijednoj kategoriji ipak
+    // mora imati nekoga tko je prati, inače nikad ne stigne ni do koga.
+    return POST_CATEGORY_IDS.map((id) => ({
       id,
       name: t(`categories.${id}`, { defaultValue: id }),
       icon: EMOJIS[id] || "📍",
-      color: c.color,
+      // "Ostalo" nema unos u placeCategories (nije vrsta mjesta), pa uzima
+      // neutralnu boju.
+      color: placeCategories[id]?.color ?? "#7A8A75",
     }));
   }, [t]);
   const [p, setP] = useState<NotifPrefs>(prefs);

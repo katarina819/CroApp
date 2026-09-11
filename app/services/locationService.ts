@@ -36,6 +36,13 @@ export interface Place {
   openNow?: boolean | null;
 }
 
+// Kategorija "Ostalo" za objave koje ne pripadaju ni u jednu postojeću
+// kategoriju. NIJE dio placeCategories jer se te kategorije koriste i za
+// pretragu mjesta na karti, a "ostalo" ne odgovara nijednoj vrsti mjesta —
+// karta bi za nju vraćala prazno. Vrijedi samo za objave i za pretplatu na
+// obavijesti.
+export const OTHER_CATEGORY = "other";
+
 export const placeCategories: Record<
   string,
   { icon: string; color: string; marker: string; osmTag: string }
@@ -149,6 +156,15 @@ export const placeCategories: Record<
     osmTag: "amenity=spa",
   },
 };
+
+/**
+ * Kategorije koje korisnik može odabrati na objavi i pratiti u obavijestima:
+ * sve kategorije mjesta plus "Ostalo".
+ */
+export const POST_CATEGORY_IDS: string[] = [
+  ...Object.keys(placeCategories),
+  OTHER_CATEGORY,
+];
 
 // ─── Auto-popunjavanje kategorije i "primjereno za" na temelju adrese ─────────
 // Nominatim uz svaki rezultat pretrage vraća i OSM "class"/"type" (npr.

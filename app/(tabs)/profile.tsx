@@ -94,6 +94,8 @@ interface BoxItem {
   videoId: number;
   title: string;
   filePath: string;
+  /** "image" ili "video" — spremljena slika se ne smije otvarati u playeru. */
+  mediaType?: string;
   savedAt: string;
   userName: string;
 }
@@ -2135,6 +2137,74 @@ function ActivityArchive({ userId }: { userId: number | null }) {
 
 // ─── Video Preview Modal ──────────────────────────────────────────────────────
 // PROMJENA: dodan onDelete callback za gumb "Obriši" u headeru
+/**
+ * Pregled spremljene SLIKE. Isti raspored zaglavlja kao VideoPreviewModal
+ * (Zatvori — naslov — Obriši), samo bez playera: slika se prikazuje, a ne
+ * reproducira. Prije je i slika išla kroz video player, gdje se na dodir
+ * naprosto nije događalo ništa.
+ */
+function ImagePreviewModal({
+  visible,
+  imageUrl,
+  title,
+  onClose,
+  onDelete,
+}: {
+  visible: boolean;
+  imageUrl: string;
+  title: string;
+  onClose: () => void;
+  onDelete?: () => void;
+}) {
+  const { t } = useTranslation();
+
+  return (
+    <Modal
+      visible={visible}
+      animationType="slide"
+      transparent={false}
+      onRequestClose={onClose}
+    >
+      <SafeAreaView style={{ flex: 1, backgroundColor: "#000" }}>
+        <View style={vpModal.header}>
+          <TouchableOpacity onPress={onClose} style={vpModal.headerBtn}>
+            <Text style={{ color: "#c0c0c0", fontSize: 15, fontWeight: "600" }}>
+              {t("common.close")}
+            </Text>
+          </TouchableOpacity>
+          <Text style={vpModal.title} numberOfLines={1}>
+            {title}
+          </Text>
+          {onDelete ? (
+            <TouchableOpacity
+              onPress={() => {
+                onClose();
+                onDelete();
+              }}
+              style={vpModal.headerBtn}
+            >
+              <Text
+                style={{ color: "#C05050", fontSize: 15, fontWeight: "600" }}
+              >
+                {t("common.delete")}
+              </Text>
+            </TouchableOpacity>
+          ) : (
+            <View style={vpModal.headerBtn} />
+          )}
+        </View>
+        <View style={vpModal.videoContainer}>
+          <Image
+            source={{ uri: imageUrl }}
+            style={vpModal.video}
+            resizeMode="contain"
+          />
+        </View>
+      </SafeAreaView>
+    </Modal>
+  );
+}
+
 function VideoPreviewModal({
   visible,
   videoUrl,
@@ -2381,6 +2451,26 @@ function ScreenTimeCountdown() {
     </View>
   );
 }
+
+/** Puni URL spremljene datoteke. */
+const mediaUrl = (item: { filePath?: string | null }): string =>
+  item.filePath?.startsWith("http")
+    ? item.filePath
+    : `${API_BASE_URL}${item.filePath || ""}`;
+
+/**
+ * Je li spremljena stavka slika. Gleda media_type s poslužitelja, a ako ga
+ * nema (stariji zapisi), pada na nastavak datoteke — bolje nego otvoriti
+ * sliku u video playeru, gdje se ne dogodi ništa.
+ */
+const isImageItem = (item: {
+  mediaType?: string;
+  filePath?: string | null;
+}) => {
+  if (item.mediaType) return item.mediaType.toLowerCase() === "image";
+  const path = (item.filePath || "").split("?")[0].toLowerCase();
+  return /\.(jpg|jpeg|png|gif|webp|heic|bmp)$/.test(path);
+};
 
 const getThumbnail = (item: any): string | null => {
   if (item.type === "image") return item.url || item.filePath || null;
@@ -2794,21 +2884,33 @@ function BoxTab() {
             activeOpacity={0.7}
           >
             <View style={tab.thumbContainer}>
-              <View
-                style={[
-                  tab.thumb,
-                  {
-                    backgroundColor: V.forestMid,
-                    justifyContent: "center",
-                    alignItems: "center",
-                  },
-                ]}
-              >
-                <Ionicons name="videocam" size={30} color={V.visited} />
-              </View>
-              <View style={tab.playIcon}>
-                <Ionicons name="play-circle" size={28} color={V.silverBright} />
-              </View>
+              {isImageItem(item) ? (
+                // Za sliku je sama datoteka i sličica — dosad se i ovdje
+                // crtala ikona kamere, pa se nije vidjelo što je spremljeno.
+                <Image source={{ uri: mediaUrl(item) }} style={tab.thumb} />
+              ) : (
+                <View
+                  style={[
+                    tab.thumb,
+                    {
+                      backgroundColor: V.forestMid,
+                      justifyContent: "center",
+                      alignItems: "center",
+                    },
+                  ]}
+                >
+                  <Ionicons name="videocam" size={30} color={V.visited} />
+                </View>
+              )}
+              {!isImageItem(item) && (
+                <View style={tab.playIcon}>
+                  <Ionicons
+                    name="play-circle"
+                    size={28}
+                    color={V.silverBright}
+                  />
+                </View>
+              )}
             </View>
             <View style={{ flex: 1 }}>
               <Text style={tab.itemTitle} numberOfLines={2}>
@@ -2824,22 +2926,31 @@ function BoxTab() {
           </TouchableOpacity>
         )}
       />
-      {/* PROMJENA: VideoPreviewModal dobiva onDelete callback */}
-      <VideoPreviewModal
-        visible={selectedVideo !== null}
-        videoUrl={
-          selectedVideo?.filePath?.startsWith("http")
-            ? selectedVideo.filePath
-            : `${API_BASE_URL}${selectedVideo?.filePath || ""}`
-        }
-        title={selectedVideo?.title || ""}
-        onClose={() => setSelectedVideo(null)}
-        onDelete={
-          selectedVideo
-            ? () => handleRemove(selectedVideo.videoId, selectedVideo.title)
-            : undefined
-        }
-      />
+      {/* Slika i video se otvaraju različito. Prije je sve išlo u
+          VideoPreviewModal, pa se spremljena slika naprosto nije otvarala. */}
+      {selectedVideo && isImageItem(selectedVideo) ? (
+        <ImagePreviewModal
+          visible
+          imageUrl={mediaUrl(selectedVideo)}
+          title={selectedVideo.title}
+          onClose={() => setSelectedVideo(null)}
+          onDelete={() =>
+            handleRemove(selectedVideo.videoId, selectedVideo.title)
+          }
+        />
+      ) : (
+        <VideoPreviewModal
+          visible={selectedVideo !== null}
+          videoUrl={selectedVideo ? mediaUrl(selectedVideo) : ""}
+          title={selectedVideo?.title || ""}
+          onClose={() => setSelectedVideo(null)}
+          onDelete={
+            selectedVideo
+              ? () => handleRemove(selectedVideo.videoId, selectedVideo.title)
+              : undefined
+          }
+        />
+      )}
     </>
   );
 }

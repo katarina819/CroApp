@@ -186,7 +186,8 @@
     "mountain": "Planine",
     "nationalPark": "Nacionalni parkovi",
     "cave": "Špilje",
-    "spa": "Toplice"
+    "spa": "Toplice",
+    "other": "Ostalo"
   },
   "ageGroups": {
     "minors": "Maloljetnici",

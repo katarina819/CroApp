@@ -186,7 +186,8 @@
     "mountain": "Berge",
     "nationalPark": "Nationalparks",
     "cave": "Höhlen",
-    "spa": "Thermen"
+    "spa": "Thermen",
+    "other": "Sonstiges"
   },
   "ageGroups": {
     "minors": "Minderjährige",
