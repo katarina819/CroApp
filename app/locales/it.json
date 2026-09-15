@@ -109,7 +109,7 @@
     "googlePlayServicesUnavailable": "I servizi Google Play non sono disponibili su questo dispositivo.",
     "googleErrorConfig": "L'accesso con Google non è al momento disponibile per un problema di configurazione. Accedi con nome utente e password o riprova più tardi.",
     "sessionExpiredTitle": "La sessione è scaduta",
-    "sessionExpiredBody": "Accedi di nuovo per vedere i tuoi dati. Non si è perso nulla — c'è ancora tutto."
+    "sessionExpiredBody": "Accedi di nuovo per vedere i tuoi dati."
   },
   "forgotPassword": {
     "step1Title": "Password dimenticata?",
@@ -226,9 +226,11 @@
     "followCategoryAsk": "Salvato. Vuoi ricevere notifiche su {{category}} d'ora in poi?",
     "followCategoryYes": "Sì, avvisami",
     "followCategoryDone": "Da ora riceverai notifiche su: {{category}}.",
-    "saveFailed": "Impossibile salvare le impostazioni",
+    "saveFailed": "Le impostazioni delle notifiche non sono state salvate — la richiesta non ha raggiunto il server. Controlla la connessione e riprova; finché non vengono salvate, non arriverà alcuna notifica.",
     "globalActivities": "Attività nel mondo",
-    "globalActivitiesHint": "Mostra anche i post fuori dalle zone che frequenti."
+    "globalActivitiesHint": "Mostra anche i post fuori dalle zone che frequenti.",
+    "saveFailedAuth": "Le impostazioni delle notifiche non sono state salvate perché la sessione è scaduta. Accedi di nuovo, poi scegli le categorie.",
+    "saveFailedServer": "Le impostazioni delle notifiche non sono state salvate — il server ha rifiutato la richiesta. Riprova tra qualche minuto; finché non vengono salvate, non arriverà alcuna notifica."
   },
   "placesWord": "luoghi",
   "map": {

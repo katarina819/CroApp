@@ -109,7 +109,7 @@
     "googlePlayServicesUnavailable": "Google Play Services are not available on this device.",
     "googleErrorConfig": "Google sign-in isn't available right now due to a configuration issue. Please sign in with your username and password, or try again later.",
     "sessionExpiredTitle": "Your session has expired",
-    "sessionExpiredBody": "Sign in again to see your data. Nothing has been lost — it is all still there."
+    "sessionExpiredBody": "Sign in again to see your data."
   },
   "forgotPassword": {
     "step1Title": "Forgot your password?",
@@ -231,9 +231,11 @@
     "followCategoryAsk": "Saved. Would you like notifications about {{category}} from now on?",
     "followCategoryYes": "Yes, notify me",
     "followCategoryDone": "You will now get notifications about: {{category}}.",
-    "saveFailed": "The settings could not be saved",
+    "saveFailed": "Notification settings were not saved — the request never reached the server. Check your connection and try again; until they are saved, no notifications will arrive.",
     "globalActivities": "Worldwide activities",
-    "globalActivitiesHint": "Also show posts from outside the areas you spend time in."
+    "globalActivitiesHint": "Also show posts from outside the areas you spend time in.",
+    "saveFailedAuth": "Notification settings were not saved because your session has expired. Sign in again, then choose your categories.",
+    "saveFailedServer": "Notification settings were not saved — the server refused the request. Try again in a few minutes; until they are saved, no notifications will arrive."
   },
   "map": {
     "title": "Map",

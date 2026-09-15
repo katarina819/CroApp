@@ -109,7 +109,7 @@
     "googlePlayServicesUnavailable": "Les services Google Play ne sont pas disponibles sur cet appareil.",
     "googleErrorConfig": "La connexion Google est actuellement indisponible en raison d'un problème de configuration. Connectez-vous avec votre nom d'utilisateur et votre mot de passe ou réessayez plus tard.",
     "sessionExpiredTitle": "Ta session a expiré",
-    "sessionExpiredBody": "Reconnecte-toi pour retrouver tes données. Rien n'est perdu — tout est toujours là."
+    "sessionExpiredBody": "Reconnecte-toi pour retrouver tes données."
   },
   "forgotPassword": {
     "step1Title": "Mot de passe oublié ?",
@@ -226,9 +226,11 @@
     "followCategoryAsk": "Enregistré. Veux-tu recevoir des notifications sur {{category}} à l'avenir ?",
     "followCategoryYes": "Oui, préviens-moi",
     "followCategoryDone": "Tu recevras désormais des notifications sur : {{category}}.",
-    "saveFailed": "Impossible d'enregistrer les paramètres",
+    "saveFailed": "Les réglages de notifications n'ont pas été enregistrés — la demande n'a pas atteint le serveur. Vérifie ta connexion et réessaie ; tant qu'ils ne sont pas enregistrés, aucune notification n'arrivera.",
     "globalActivities": "Activités mondiales",
-    "globalActivitiesHint": "Afficher aussi les publications hors des zones que tu fréquentes."
+    "globalActivitiesHint": "Afficher aussi les publications hors des zones que tu fréquentes.",
+    "saveFailedAuth": "Les réglages de notifications n'ont pas été enregistrés car ta session a expiré. Reconnecte-toi, puis choisis tes catégories.",
+    "saveFailedServer": "Les réglages de notifications n'ont pas été enregistrés — le serveur a refusé la demande. Réessaie dans quelques minutes ; tant qu'ils ne sont pas enregistrés, aucune notification n'arrivera."
   },
   "placesWord": "lieux",
   "map": {

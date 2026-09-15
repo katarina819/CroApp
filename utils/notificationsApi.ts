@@ -136,15 +136,37 @@ export async function getNotificationPreferences(): Promise<NotificationPreferen
 }
 
 /**
- * Spremi postavke na poslužitelj. Vraća false kad nije uspjelo, da ekran može
- * reći korisniku da obavijesti neće stizati — tiho ignoriranje bi značilo da
- * korisnik misli da je sve uključeno, a ništa ne dolazi.
+ * Zašto spremanje nije uspjelo. Bez ovoga je ekran znao reći samo "provjerite
+ * vezu", pa je korisnik s isteklom prijavom beskorisno provjeravao internet —
+ * a trebao se samo ponovno prijaviti.
+ */
+export type SaveFailureReason =
+  /** Nema tokena ili ga poslužitelj odbija (401/403) — prijava je istekla. */
+  | "auth"
+  /** Poslužitelj je odgovorio greškom (4xx/5xx). */
+  | "server"
+  /** Zahtjev uopće nije stigao do poslužitelja. */
+  | "network";
+
+export interface SavePreferencesResult {
+  ok: boolean;
+  reason?: SaveFailureReason;
+  /** HTTP status kad ga ima — korisno u dojavi greške. */
+  status?: number;
+}
+
+/**
+ * Spremi postavke na poslužitelj.
+ *
+ * Vraća i razlog neuspjeha, da ekran može reći korisniku što zapravo učiniti —
+ * tiho ignoriranje bi značilo da korisnik misli da je sve uključeno, a ništa
+ * ne dolazi.
  */
 export async function saveNotificationPreferences(
   prefs: NotificationPreferences,
-): Promise<boolean> {
+): Promise<SavePreferencesResult> {
   const headers = await authHeaders();
-  if (!headers) return false;
+  if (!headers) return { ok: false, reason: "auth" };
   try {
     const res = await fetch(`${BASE}/preferences`, {
       method: "PUT",
@@ -157,8 +179,27 @@ export async function saveNotificationPreferences(
         globalEnabled: prefs.globalEnabled,
       }),
     });
-    return res.ok;
+
+    if (res.ok) return { ok: true };
+    if (res.status === 401 || res.status === 403)
+      return { ok: false, reason: "auth", status: res.status };
+    return { ok: false, reason: "server", status: res.status };
   } catch {
-    return false;
+    return { ok: false, reason: "network" };
+  }
+}
+
+/**
+ * Prijevodni ključ poruke koja korisniku kaže što učiniti. Isti tekst na svim
+ * mjestima gdje se postavke spremaju — inače bi svaki ekran izmislio svoj.
+ */
+export function saveFailureMessageKey(reason?: SaveFailureReason): string {
+  switch (reason) {
+    case "auth":
+      return "notif.saveFailedAuth";
+    case "server":
+      return "notif.saveFailedServer";
+    default:
+      return "notif.saveFailed";
   }
 }

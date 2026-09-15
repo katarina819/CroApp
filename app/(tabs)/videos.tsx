@@ -40,6 +40,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { looksLikeEvent } from "../../utils/eventHints";
 import {
   getNotificationPreferences,
+  saveFailureMessageKey,
   saveNotificationPreferences,
 } from "../../utils/notificationsApi";
 import { createVideoThumbnail } from "../../utils/videoThumbnail";
@@ -178,7 +179,7 @@ async function offerCategoryFollow(
     {
       text: t("notif.followCategoryYes"),
       onPress: async () => {
-        const ok = await saveNotificationPreferences({
+        const result = await saveNotificationPreferences({
           ...prefs,
           // Praćenje kategorije nema smisla ako su obavijesti isključene —
           // uključi ih zajedno s njom, jer je korisnik upravo to zatražio.
@@ -186,10 +187,10 @@ async function offerCategoryFollow(
           categories: [...prefs.categories, missing],
         });
         Alert.alert(
-          ok ? t("common.success") : t("common.error"),
-          ok
+          result.ok ? t("common.success") : t("common.error"),
+          result.ok
             ? t("notif.followCategoryDone", { category: label })
-            : t("notif.saveFailed"),
+            : t(saveFailureMessageKey(result.reason)),
         );
       },
     },

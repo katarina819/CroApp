@@ -48,6 +48,7 @@ import { NotificationsModal } from "@/components/NotificationsModal";
 import {
   getNotificationPreferences,
   getUnreadCount,
+  saveFailureMessageKey,
   saveNotificationPreferences,
 } from "@/utils/notificationsApi";
 import {
@@ -237,6 +238,91 @@ const CATEGORY_ICONS: Record<string, any> = {
   cave: caveIcon,
   spa: spaIcon,
 };
+
+/**
+ * Ikona kategorije.
+ *
+ * Svaka kategorija ima svoju kovanicu (viking PNG). "Ostalo" je nema — nije
+ * vrsta mjesta pa za nju nikad nije nacrtana. Dok je nije bilo, crtao se goli
+ * emoji: 56px znaka pokraj 96px kovanice izgledao je kao da je netko zaboravio
+ * sliku.
+ *
+ * Ovdje se emoji stavlja u kovanicu istog promjera — drveni krug sa zlatnim
+ * obodom, kakav imaju i ostale. Kad ostalo.png bude gotov, dovoljno ga je
+ * dodati u CATEGORY_ICONS i ovo se više neće koristiti.
+ */
+function CategoryCoin({
+  id,
+  fallbackGlyph,
+  size,
+  style,
+}: {
+  id: string;
+  fallbackGlyph: string;
+  size: number;
+  style?: any;
+}) {
+  const source = CATEGORY_ICONS[id];
+  if (source) {
+    return (
+      <Image
+        source={source}
+        style={[{ width: size, height: size }, style]}
+        resizeMode="contain"
+      />
+    );
+  }
+
+  const COIN_WOOD = "#2E2216";
+  const COIN_GOLD = "#C9A227";
+  const COIN_GOLD_DIM = "#8A6A2F";
+  // Kovanica ne ispunjava cijeli PNG do ruba, pa ni ova ne smije — inače bi
+  // pokraj ostalih djelovala krupnije.
+  const coin = Math.round(size * 0.86);
+
+  return (
+    <View
+      style={[
+        {
+          width: size,
+          height: size,
+          alignItems: "center",
+          justifyContent: "center",
+        },
+        style,
+      ]}
+    >
+      <View
+        style={{
+          width: coin,
+          height: coin,
+          borderRadius: coin / 2,
+          backgroundColor: COIN_WOOD,
+          borderWidth: Math.max(2, Math.round(coin * 0.045)),
+          borderColor: COIN_GOLD,
+          alignItems: "center",
+          justifyContent: "center",
+        }}
+      >
+        <View
+          style={{
+            width: coin * 0.78,
+            height: coin * 0.78,
+            borderRadius: (coin * 0.78) / 2,
+            borderWidth: 1,
+            borderColor: COIN_GOLD_DIM,
+            alignItems: "center",
+            justifyContent: "center",
+          }}
+        >
+          <Text style={{ fontSize: Math.round(coin * 0.42) }}>
+            {fallbackGlyph}
+          </Text>
+        </View>
+      </View>
+    </View>
+  );
+}
 
 // ─── helpers ─────────────────────────────────────────────────────────────────
 async function fetchWithTimeout(
@@ -522,7 +608,8 @@ const EMOJIS: Record<string, string> = {
   spa: "💧",
   // "Ostalo" još nema svoju kovanicu kao ostale kategorije. Dok je ne
   // dobije, prikazuje se ovaj znak umjesto zadanog 📍, koji na karti već
-  // znači "mjesto" pa bi ovdje zbunjivao.
+  // znači "mjesto" pa bi ovdje zbunjivao. CategoryCoin ga stavlja u drveni
+  // krug sa zlatnim obodom, da uz kovanice ne strši.
   //
   // Kad slika bude gotova: stavi assets/images/ostalo.png (isti viking
   // stil, kovanica na drvu, ~512×512 PNG) i ovdje gore dodaj
@@ -2334,17 +2421,12 @@ function NotificationSettingsModal({
                     }}
                     onPress={() => toggle(cat.id)}
                   >
-                    {CATEGORY_ICONS[cat.id] ? (
-                      <Image
-                        source={CATEGORY_ICONS[cat.id]}
-                        style={{ width: 96, height: 96, marginBottom: 4 }}
-                        resizeMode="contain"
-                      />
-                    ) : (
-                      <Text style={{ fontSize: 56, marginBottom: 4 }}>
-                        {cat.icon}
-                      </Text>
-                    )}
+                    <CategoryCoin
+                      id={cat.id}
+                      fallbackGlyph={cat.icon}
+                      size={96}
+                      style={{ marginBottom: 4 }}
+                    />
                     <Text
                       style={{
                         fontSize: 11,
@@ -3869,17 +3951,12 @@ export function ActivityGroupsModal({
                         }))
                       }
                     >
-                      {CATEGORY_ICONS[tmpl.value] ? (
-                        <Image
-                          source={CATEGORY_ICONS[tmpl.value]}
-                          style={{ width: 96, height: 96, marginBottom: 4 }}
-                          resizeMode="contain"
-                        />
-                      ) : (
-                        <Text style={{ fontSize: 56, marginBottom: 4 }}>
-                          {EMOJIS[tmpl.value] || "📍"}
-                        </Text>
-                      )}
+                      <CategoryCoin
+                        id={tmpl.value}
+                        fallbackGlyph={EMOJIS[tmpl.value] || "📍"}
+                        size={96}
+                        style={{ marginBottom: 4 }}
+                      />
                       <Text
                         style={{
                           fontSize: 11,
@@ -8525,15 +8602,11 @@ function BadgesModal({
                         : DC.borderDim,
                     }}
                   >
-                    {CATEGORY_ICONS[cat.id] ? (
-                      <Image
-                        source={CATEGORY_ICONS[cat.id]}
-                        style={{ width: 44, height: 44 }}
-                        resizeMode="contain"
-                      />
-                    ) : (
-                      <Text style={{ fontSize: 28 }}>{cat.icon}</Text>
-                    )}
+                    <CategoryCoin
+                      id={cat.id}
+                      fallbackGlyph={cat.icon}
+                      size={44}
+                    />
                   </View>
 
                   {/* Name + count */}
@@ -9414,12 +9487,17 @@ export default function DashboardScreen() {
   const { isDark } = useTheme();
   const themeMode: PaletteKey = isDark ? "dark" : "vara";
   const DC = getDashColors(isDark);
+  // POST_CATEGORY_IDS, a ne samo placeCategories: "Ostalo" nije vrsta mjesta
+  // na karti pa ga tamo nema, ali je kategorija kao i svaka druga — bez nje
+  // je na ploči nedostajala, a objave svrstane pod "Ostalo" nije se imalo
+  // čime filtrirati ni pratiti.
   const getAllCategories = useCallback(() => {
-    return Object.entries(placeCategories).map(([id, c]) => ({
+    return POST_CATEGORY_IDS.map((id) => ({
       id,
       name: t(`categories.${id}`, { defaultValue: id }),
       icon: EMOJIS[id] || "📍",
-      color: c.color,
+      color:
+        placeCategories[id as keyof typeof placeCategories]?.color || "#7A8A75",
     }));
   }, [t]);
   const mapRef = useRef<MapView>(null);
@@ -10590,15 +10668,17 @@ export default function DashboardScreen() {
     async (next: NotifPrefs) => {
       setNotifPrefs(next);
       saveJSON(STORAGE_NOTIFS, next);
-      const ok = await saveNotificationPreferences({
+      const result = await saveNotificationPreferences({
         appEnabled: next.appEnabled,
         emailEnabled: next.emailEnabled,
         email: next.email ?? "",
         categories: next.categories,
         globalEnabled: next.globalEnabled !== false,
       });
-      if (!ok) {
-        Alert.alert(t("common.error"), t("notifications.saveFailed"));
+      if (!result.ok) {
+        // Poruka ovisi o razlogu: "provjerite vezu" je beskorisno kad je
+        // zapravo istekla prijava, a upravo je to najčešći slučaj.
+        Alert.alert(t("common.error"), t(saveFailureMessageKey(result.reason)));
       }
     },
     [t],
@@ -11562,17 +11642,12 @@ export default function DashboardScreen() {
                       }}
                       onPress={() => toggleType(cat.id)}
                     >
-                      {CATEGORY_ICONS[cat.id] ? (
-                        <Image
-                          source={CATEGORY_ICONS[cat.id]}
-                          style={{ width: 96, height: 96, marginBottom: 4 }}
-                          resizeMode="contain"
-                        />
-                      ) : (
-                        <Text style={{ fontSize: 56, marginBottom: 4 }}>
-                          {cat.icon}
-                        </Text>
-                      )}
+                      <CategoryCoin
+                        id={cat.id}
+                        fallbackGlyph={cat.icon}
+                        size={96}
+                        style={{ marginBottom: 4 }}
+                      />
                       <Text
                         style={{
                           fontSize: 11,

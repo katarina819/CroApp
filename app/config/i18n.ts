@@ -58,7 +58,20 @@ i18n.use(initReactI18next).init({
   interpolation: { escapeValue: false },
 });
 
-// Postavi jezik pri pokretanju
-getStoredLanguage().then((lang) => i18n.changeLanguage(lang));
+// Postavi jezik pri pokretanju.
+//
+// i18n se inicijalizira sinkrono na "hr" jer resursi moraju postojati prije
+// prvog iscrtavanja, a spremljeni jezik stiže tek iz AsyncStoragea. Sve što
+// tekst SAMO prikazuje to ne osjeti — komponente se ponovno iscrtaju kad
+// changeLanguage prođe. Ali jednokratna poruka (Alert) uhvati jezik kakav je
+// bio u tom trenutku: prikaže li se odmah po pokretanju, ispadne hrvatska i
+// korisniku koji je odabrao njemački ili francuski.
+//
+// Zato se ovo čekanje izvozi — tko piše Alert odmah po pokretanju, prvo ga
+// pričeka.
+export const languageReady: Promise<void> = getStoredLanguage()
+  .then((lang) => i18n.changeLanguage(lang))
+  .then(() => undefined)
+  .catch(() => undefined);
 
 export default i18n;

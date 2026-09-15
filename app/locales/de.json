@@ -109,7 +109,7 @@
     "googlePlayServicesUnavailable": "Google Play-Dienste sind auf diesem Gerät nicht verfügbar.",
     "googleErrorConfig": "Die Google-Anmeldung ist derzeit aufgrund eines Konfigurationsproblems nicht verfügbar. Melden Sie sich mit Benutzername und Passwort an oder versuchen Sie es später erneut.",
     "sessionExpiredTitle": "Deine Sitzung ist abgelaufen",
-    "sessionExpiredBody": "Melde dich erneut an, um deine Daten zu sehen. Nichts ist verloren — alles ist noch da."
+    "sessionExpiredBody": "Melde dich erneut an, um deine Daten zu sehen."
   },
   "forgotPassword": {
     "step1Title": "Passwort vergessen?",
@@ -214,9 +214,11 @@
     "followCategoryAsk": "Gespeichert. Möchtest du künftig Benachrichtigungen zu {{category}} erhalten?",
     "followCategoryYes": "Ja, benachrichtige mich",
     "followCategoryDone": "Du erhältst ab jetzt Benachrichtigungen zu: {{category}}.",
-    "saveFailed": "Die Einstellungen konnten nicht gespeichert werden",
+    "saveFailed": "Benachrichtigungseinstellungen wurden nicht gespeichert — die Anfrage hat den Server nicht erreicht. Prüfe deine Verbindung und versuche es erneut; bis sie gespeichert sind, kommen keine Benachrichtigungen an.",
     "globalActivities": "Weltweite Aktivitäten",
-    "globalActivitiesHint": "Auch Beiträge außerhalb deiner Gegenden anzeigen."
+    "globalActivitiesHint": "Auch Beiträge außerhalb deiner Gegenden anzeigen.",
+    "saveFailedAuth": "Benachrichtigungseinstellungen wurden nicht gespeichert, weil deine Sitzung abgelaufen ist. Melde dich erneut an und wähle dann deine Kategorien.",
+    "saveFailedServer": "Benachrichtigungseinstellungen wurden nicht gespeichert — der Server hat die Anfrage abgelehnt. Versuche es in ein paar Minuten erneut; bis sie gespeichert sind, kommen keine Benachrichtigungen an."
   },
   "placesWord": "Orte",
   "map": {

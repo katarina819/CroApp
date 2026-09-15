@@ -74,6 +74,12 @@ function getVara(dark: boolean) {
   } as const;
 }
 
+// Navigacijska traka lebdi preko dna ekrana; bez ovog razmaka posljednji red
+// svakog popisa završi ispod nje i djeluje kao da se popis ne da pomaknuti do
+// kraja. Jedna vrijednost na svim popisima profila, da se razlikuju samo tamo
+// gdje to ima razloga.
+const LIST_BOTTOM_PADDING = 96;
+
 type Tab = "me" | "box" | "wishlist" | "golden";
 
 interface ProfileData {
@@ -1222,27 +1228,27 @@ function AvatarSection({ onUpdate }: { onUpdate: () => void }) {
 const av = StyleSheet.create({
   wrapper: {
     alignSelf: "center",
-    marginBottom: 12,
-    width: 104,
-    height: 104,
+    marginBottom: 8,
+    width: 84,
+    height: 84,
     justifyContent: "center",
     alignItems: "center",
   },
-  img: { width: 96, height: 96, borderRadius: 48 },
+  img: { width: 76, height: 76, borderRadius: 38 },
   placeholder: {
-    width: 96,
-    height: 96,
-    borderRadius: 48,
+    width: 76,
+    height: 76,
+    borderRadius: 38,
     borderWidth: 2,
     justifyContent: "center",
     alignItems: "center",
   },
-  initials: { fontSize: 36, fontWeight: "700" },
+  initials: { fontSize: 30, fontWeight: "700" },
   overlay: {
     position: "absolute",
-    width: 96,
-    height: 96,
-    borderRadius: 48,
+    width: 76,
+    height: 76,
+    borderRadius: 38,
     backgroundColor: "rgba(0,0,0,0.5)",
     justifyContent: "center",
     alignItems: "center",
@@ -1608,7 +1614,10 @@ function FollowListModal({
           <FlatList
             data={list}
             keyExtractor={(u) => u.id.toString()}
-            contentContainerStyle={{ paddingHorizontal: 16 }}
+            contentContainerStyle={{
+              paddingHorizontal: 16,
+              paddingBottom: LIST_BOTTOM_PADDING,
+            }}
             renderItem={({ item }) => {
               const isLoading = processingId === item.id;
               return (
@@ -1842,7 +1851,10 @@ function FollowRequestsModal({
           <FlatList
             data={list}
             keyExtractor={(u) => u.id.toString()}
-            contentContainerStyle={{ paddingHorizontal: 16 }}
+            contentContainerStyle={{
+              paddingHorizontal: 16,
+              paddingBottom: LIST_BOTTOM_PADDING,
+            }}
             renderItem={({ item }) => {
               const isProcessing = processingId === item.id;
               return (
@@ -2781,7 +2793,7 @@ function MeTab({ userId }: { userId: number | null }) {
               </TouchableOpacity>
             );
           }}
-          contentContainerStyle={{ paddingBottom: 32 }}
+          contentContainerStyle={{ paddingBottom: LIST_BOTTOM_PADDING }}
         />
       )}
 
@@ -2914,7 +2926,10 @@ function BoxTab() {
       <FlatList
         data={items}
         keyExtractor={(i) => i.id.toString()}
-        contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 80 }}
+        contentContainerStyle={{
+          paddingHorizontal: 16,
+          paddingBottom: LIST_BOTTOM_PADDING,
+        }}
         renderItem={({ item }) => (
           // PROMJENA: uklonjena ikona smeća s desne strane liste
           <TouchableOpacity
@@ -3123,7 +3138,10 @@ function WishlistTab() {
           <FlatList
             data={filtered}
             keyExtractor={(i) => i.videoId.toString()}
-            contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 80 }}
+            contentContainerStyle={{
+              paddingHorizontal: 16,
+              paddingBottom: LIST_BOTTOM_PADDING,
+            }}
             renderItem={({ item }) => (
               // PROMJENA: uklonjena ikona smeća s desne strane liste
               <TouchableOpacity
@@ -3310,7 +3328,10 @@ function GoldenFriendsTab() {
     <FlatList
       data={friends}
       keyExtractor={(f) => f.userId.toString()}
-      contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 80 }}
+      contentContainerStyle={{
+        paddingHorizontal: 16,
+        paddingBottom: LIST_BOTTOM_PADDING,
+      }}
       renderItem={({ item }) => (
         <View style={tab.listItem}>
           <TouchableOpacity
@@ -4730,12 +4751,13 @@ const styles = StyleSheet.create({
   },
   profileSection: {
     alignItems: "center",
-    paddingVertical: 20,
+    paddingTop: 12,
+    paddingBottom: 14,
     paddingHorizontal: 20,
     borderBottomWidth: 1,
   },
-  name: { fontSize: 22, fontWeight: "700", marginBottom: 2 },
-  usernameText: { fontSize: 15, marginBottom: 6 },
+  name: { fontSize: 20, fontWeight: "700", marginBottom: 2 },
+  usernameText: { fontSize: 14, marginBottom: 4 },
   privacyBadge: {
     flexDirection: "row",
     alignItems: "center",
@@ -4744,7 +4766,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     paddingVertical: 4,
     borderRadius: 20,
-    marginBottom: 16,
+    marginBottom: 10,
   },
   privacyText: { fontSize: 12, fontWeight: "500" },
   statsRow: { flexDirection: "row", alignItems: "center", gap: 32 },
