@@ -107,7 +107,9 @@
     "birthDateHelper": "Format : année-mois-jour (AAAA-MM-JJ), ex. 1998-05-21",
     "googleErrorGeneric": "La connexion Google a échoué. Veuillez réessayer.",
     "googlePlayServicesUnavailable": "Les services Google Play ne sont pas disponibles sur cet appareil.",
-    "googleErrorConfig": "La connexion Google est actuellement indisponible en raison d'un problème de configuration. Connectez-vous avec votre nom d'utilisateur et votre mot de passe ou réessayez plus tard."
+    "googleErrorConfig": "La connexion Google est actuellement indisponible en raison d'un problème de configuration. Connectez-vous avec votre nom d'utilisateur et votre mot de passe ou réessayez plus tard.",
+    "sessionExpiredTitle": "Ta session a expiré",
+    "sessionExpiredBody": "Reconnecte-toi pour retrouver tes données. Rien n'est perdu — tout est toujours là."
   },
   "forgotPassword": {
     "step1Title": "Mot de passe oublié ?",

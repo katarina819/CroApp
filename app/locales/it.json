@@ -107,7 +107,9 @@
     "birthDateHelper": "Formato: anno-mese-giorno (AAAA-MM-GG), es. 1998-05-21",
     "googleErrorGeneric": "Accesso con Google non riuscito. Riprova.",
     "googlePlayServicesUnavailable": "I servizi Google Play non sono disponibili su questo dispositivo.",
-    "googleErrorConfig": "L'accesso con Google non è al momento disponibile per un problema di configurazione. Accedi con nome utente e password o riprova più tardi."
+    "googleErrorConfig": "L'accesso con Google non è al momento disponibile per un problema di configurazione. Accedi con nome utente e password o riprova più tardi.",
+    "sessionExpiredTitle": "La sessione è scaduta",
+    "sessionExpiredBody": "Accedi di nuovo per vedere i tuoi dati. Non si è perso nulla — c'è ancora tutto."
   },
   "forgotPassword": {
     "step1Title": "Password dimenticata?",

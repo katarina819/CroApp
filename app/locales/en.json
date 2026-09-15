@@ -107,7 +107,9 @@
     "birthDateHelper": "Format: year-month-day (YYYY-MM-DD), e.g. 1998-05-21",
     "googleErrorGeneric": "Google sign-in failed. Please try again.",
     "googlePlayServicesUnavailable": "Google Play Services are not available on this device.",
-    "googleErrorConfig": "Google sign-in isn't available right now due to a configuration issue. Please sign in with your username and password, or try again later."
+    "googleErrorConfig": "Google sign-in isn't available right now due to a configuration issue. Please sign in with your username and password, or try again later.",
+    "sessionExpiredTitle": "Your session has expired",
+    "sessionExpiredBody": "Sign in again to see your data. Nothing has been lost — it is all still there."
   },
   "forgotPassword": {
     "step1Title": "Forgot your password?",

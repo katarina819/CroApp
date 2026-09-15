@@ -8,6 +8,7 @@ import { AdaptiveThemeProvider } from "../components/AdaptiveThemeProvider"; // 
 import FollowRequestNotifier from "../components/FollowRequestNotifier";
 import { API_BASE_URL } from "./config/api";
 import "./config/i18n"; // ← dodaj ovo kao prvi import
+import { clearSession, isTokenExpired } from "../utils/session";
 import { UserProvider } from "./contexts/UserContext";
 
 const trackSessionTime = async (minutes: number) => {
@@ -96,15 +97,27 @@ export default function RootLayout() {
     return () => clearTimeout(timer);
   }, []);
 
-  // ZAMIJENI cijeli if blok s ovim:
   const checkAuth = async () => {
     try {
       const token = await AsyncStorage.getItem("token");
-      console.log("🔑 Token exists:", !!token);
+
+      // Prije se gledalo samo POSTOJI li token. Token vrijedi 7 dana, pa je
+      // osmog dana korisnik ulazio u aplikaciju u kojoj svaki zahtjev vraća
+      // 401 — a kako ekrani grešku gutaju, to je izgledalo kao da su podaci
+      // nestali: nula pratitelja, nema poruka, nema videa, profilna slika
+      // pala na inicijale. Rok isteka piše u samom tokenu, pa se provjerava
+      // odmah i bez mreže.
+      const expired = isTokenExpired(token);
+      console.log(
+        "🔑 Token:",
+        token ? (expired ? "istekao" : "valjan") : "nema",
+      );
+
+      if (expired && token) await clearSession();
 
       setReady(true);
 
-      if (token) {
+      if (token && !expired) {
         console.log("➡️ Navigating to /(tabs)");
         router.replace("/(tabs)");
       } else {

@@ -107,7 +107,9 @@
     "birthDateHelper": "Format: Jahr-Monat-Tag (JJJJ-MM-TT), z. B. 1998-05-21",
     "googleErrorGeneric": "Die Google-Anmeldung ist fehlgeschlagen. Bitte versuchen Sie es erneut.",
     "googlePlayServicesUnavailable": "Google Play-Dienste sind auf diesem Gerät nicht verfügbar.",
-    "googleErrorConfig": "Die Google-Anmeldung ist derzeit aufgrund eines Konfigurationsproblems nicht verfügbar. Melden Sie sich mit Benutzername und Passwort an oder versuchen Sie es später erneut."
+    "googleErrorConfig": "Die Google-Anmeldung ist derzeit aufgrund eines Konfigurationsproblems nicht verfügbar. Melden Sie sich mit Benutzername und Passwort an oder versuchen Sie es später erneut.",
+    "sessionExpiredTitle": "Deine Sitzung ist abgelaufen",
+    "sessionExpiredBody": "Melde dich erneut an, um deine Daten zu sehen. Nichts ist verloren — alles ist noch da."
   },
   "forgotPassword": {
     "step1Title": "Passwort vergessen?",
