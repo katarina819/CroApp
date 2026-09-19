@@ -214,26 +214,28 @@ async function offerCategoryFollow(
  * "danas 21:00", "sutra 19:30", "za 3 d", ili datum kad je dalje od tjedan
  * dana. Kratko jer stoji na kartici preko videa, gdje nema mjesta.
  */
-function formatEventStart(iso: string, t: (k: string, o?: any) => string) {
+/**
+ * "20.09.2026. - 12:00".
+ *
+ * Prije je pisalo "danas", "sutra" ili "za 6 d" — kratko, ali za najavu
+ * događaja beskorisno: tko planira izlet treba znati datum, a ne koliko je
+ * dana ostalo od trenutka kad gleda. Uvijek isti oblik znači i da se dva
+ * događaja mogu usporediti na prvi pogled.
+ *
+ * Dvoznamenkasti dan i mjesec, četveroznamenkasta godina i 24-satno vrijeme
+ * su namjerno fiksni, a ne prepušteni postavkama uređaja — inače bi isti
+ * događaj na jednom telefonu pisao "9/20/26, 12:00 PM", a na drugom
+ * "20.09.2026.".
+ */
+function formatEventStart(iso: string) {
   const start = new Date(iso);
   if (Number.isNaN(start.getTime())) return "";
 
-  const time = start.toLocaleTimeString([], {
-    hour: "2-digit",
-    minute: "2-digit",
-  });
+  const pad = (n: number) => String(n).padStart(2, "0");
+  const date = `${pad(start.getDate())}.${pad(start.getMonth() + 1)}.${start.getFullYear()}.`;
+  const time = `${pad(start.getHours())}:${pad(start.getMinutes())}`;
 
-  const startOfDay = (d: Date) =>
-    new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
-  const days = Math.round(
-    (startOfDay(start) - startOfDay(new Date())) / 86400000,
-  );
-
-  if (days === 0) return `${t("post.eventToday")} ${time}`;
-  if (days === 1) return `${t("post.eventTomorrow")} ${time}`;
-  if (days > 1 && days < 7)
-    return `${t("post.eventInDays", { count: days })} ${time}`;
-  return `${start.toLocaleDateString()} ${time}`;
+  return `${date} - ${time}`;
 }
 
 // ─── Helper: avatar URL ────────────────────────────────────────────────────────
@@ -822,7 +824,7 @@ function VideoItemComponent({
             <Ionicons name="calendar" size={13} color="#1a2e1a" />
             <Text style={vs.eventText}>
               {t("post.eventStarts", {
-                when: formatEventStart(item.eventStartAt, t),
+                when: formatEventStart(item.eventStartAt),
               })}
             </Text>
           </View>

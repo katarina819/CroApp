@@ -984,7 +984,9 @@
     "justNow": "proprio ora",
     "minutesAgo": "{{count}} min fa",
     "hoursAgo": "{{count}} h fa",
-    "daysAgo": "{{count}} g fa"
+    "daysAgo": "{{count}} g fa",
+    "loadFailedTitle": "Impossibile caricare le notifiche",
+    "loadFailedHint": "Il server non ha risposto correttamente. Trascina verso il basso per riprovare."
   },
   "post": {
     "isEvent": "Questo è un evento",

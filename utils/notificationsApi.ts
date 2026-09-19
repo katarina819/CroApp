@@ -52,22 +52,30 @@ async function authHeaders(): Promise<Record<string, string> | null> {
   return { Authorization: `Bearer ${token}` };
 }
 
-/** Popis obavijesti. Vraća prazan niz kad korisnik nije prijavljen. */
+/**
+ * Popis obavijesti, ili null kad ga nije bilo moguće dohvatiti.
+ *
+ * Razlika je bitna: prije se na svaku grešku vraćao prazan niz, pa je ekran
+ * i kod srušenog upita na poslužitelju mirno pisao "Nema novih obavijesti".
+ * Tako je nemoguće razlikovati "još nitko ništa nije objavio" od "ovo je
+ * pokvareno" — a upravo je to razliku trebalo vidjeti dok se tražilo zašto
+ * obavijesti ne stižu.
+ */
 export async function getNotifications(
   limit = 30,
   offset = 0,
-): Promise<AppNotification[]> {
+): Promise<AppNotification[] | null> {
   const headers = await authHeaders();
-  if (!headers) return [];
+  if (!headers) return null;
   try {
     const res = await fetch(`${BASE}?limit=${limit}&offset=${offset}`, {
       headers,
     });
-    if (!res.ok) return [];
+    if (!res.ok) return null;
     const data = await res.json();
     return Array.isArray(data) ? data : [];
   } catch {
-    return [];
+    return null;
   }
 }
 

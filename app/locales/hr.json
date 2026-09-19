@@ -982,7 +982,9 @@
     "justNow": "upravo sad",
     "minutesAgo": "prije {{count}} min",
     "hoursAgo": "prije {{count}} h",
-    "daysAgo": "prije {{count}} d"
+    "daysAgo": "prije {{count}} d",
+    "loadFailedTitle": "Obavijesti se nisu učitale",
+    "loadFailedHint": "Poslužitelj nije odgovorio kako treba. Povuci prema dolje da pokušaš ponovno."
   },
   "post": {
     "isEvent": "Ovo je događaj",

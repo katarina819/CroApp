@@ -984,7 +984,9 @@
     "justNow": "gerade eben",
     "minutesAgo": "vor {{count}} Min.",
     "hoursAgo": "vor {{count}} Std.",
-    "daysAgo": "vor {{count}} T."
+    "daysAgo": "vor {{count}} T.",
+    "loadFailedTitle": "Benachrichtigungen konnten nicht geladen werden",
+    "loadFailedHint": "Der Server hat nicht richtig geantwortet. Zieh nach unten, um es erneut zu versuchen."
   },
   "post": {
     "isEvent": "Das ist eine Veranstaltung",

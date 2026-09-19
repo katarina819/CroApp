@@ -73,9 +73,17 @@ export function NotificationsModal({
   const [items, setItems] = useState<AppNotification[]>([]);
   const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
+  // Razlika između "nema obavijesti" i "nisam ih uspio dohvatiti". Bez toga
+  // srušen upit na poslužitelju izgleda isto kao prazan popis.
+  const [loadFailed, setLoadFailed] = useState(false);
 
   const load = useCallback(async () => {
     const data = await getNotifications(50, 0);
+    if (data === null) {
+      setLoadFailed(true);
+      return;
+    }
+    setLoadFailed(false);
     setItems(data);
     onUnreadChange?.(data.filter((n) => !n.isRead).length);
   }, [onUnreadChange]);
@@ -195,7 +203,9 @@ export function NotificationsModal({
                     textAlign: "center",
                   }}
                 >
-                  {t("notifications.emptyTitle")}
+                  {loadFailed
+                    ? t("notifications.loadFailedTitle")
+                    : t("notifications.emptyTitle")}
                 </Text>
                 <Text
                   style={{
@@ -206,7 +216,9 @@ export function NotificationsModal({
                     lineHeight: 19,
                   }}
                 >
-                  {t("notifications.emptyHint")}
+                  {loadFailed
+                    ? t("notifications.loadFailedHint")
+                    : t("notifications.emptyHint")}
                 </Text>
               </View>
             }
