@@ -654,7 +654,7 @@
     "noMedia": "Keine veröffentlichten Inhalte",
     "boxEmpty": "Box ist leer",
     "wishlistEmpty": "Wunschliste ist leer",
-    "noGoldenFriends": "Noch keine goldenen Freunde. Das sind Menschen, denen du folgst und die du mit einem Stern markierst — ihre Beiträge heben wir dann für dich hervor.",
+    "noGoldenFriends": "Noch keine goldenen Freunde. Das sind Menschen, denen du folgst und die du mit einem Stern markierst.",
     "removeFromBox": "Aus Box entfernen",
     "removeFromBoxConfirm": "Möchten Sie \"{{title}}\" wirklich aus der Box entfernen?",
     "removeFromWishlist": "Von der Wunschliste löschen",

@@ -697,7 +697,7 @@
     "noMedia": "Aucun contenu publié",
     "boxEmpty": "Box vide",
     "wishlistEmpty": "Liste de souhaits vide",
-    "noGoldenFriends": "Pas encore d'amis en or. Ce sont les personnes que tu suis et que tu marques d'une étoile — leurs publications sont ensuite mises en avant pour toi.",
+    "noGoldenFriends": "Pas encore d'amis en or. Ce sont les personnes que tu suis et que tu marques d'une étoile.",
     "removeFromBox": "Retirer de la Box",
     "removeFromBoxConfirm": "Retirer \"{{title}}\" de la Box ?",
     "removeFromWishlist": "Supprimer de la Wishlist",

@@ -203,3 +203,15 @@ export function saveFailureMessageKey(reason?: SaveFailureReason): string {
       return "notif.saveFailed";
   }
 }
+
+/**
+ * Kod odgovora u zagradi, kad ga ima.
+ *
+ * "Poslužitelj je odbio zahtjev" ne razlikuje endpoint kojeg nema (404, kod
+ * nije deployan) od srušenog upita (500, migracija nije pokrenuta) — a to su
+ * dva posve različita popravka. Broj u poruci to kaže odmah, bez kopanja po
+ * logovima.
+ */
+export function saveFailureDetail(result: SavePreferencesResult): string {
+  return result.status ? ` (${result.status})` : "";
+}

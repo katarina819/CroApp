@@ -683,7 +683,7 @@
     "noMedia": "Nessun contenuto pubblicato",
     "boxEmpty": "Box vuoto",
     "wishlistEmpty": "Lista dei desideri vuota",
-    "noGoldenFriends": "Ancora nessun amico d'oro. Sono le persone che segui e contrassegni con una stella — i loro post vengono poi messi in evidenza per te.",
+    "noGoldenFriends": "Ancora nessun amico d'oro. Sono le persone che segui e contrassegni con una stella.",
     "removeFromBox": "Rimuovi dalla Box",
     "removeFromBoxConfirm": "Rimuovere \"{{title}}\" dalla Box?",
     "removeFromWishlist": "Elimina dalla Lista dei desideri",

@@ -673,7 +673,7 @@
     "noMedia": "No published content",
     "boxEmpty": "Box is empty",
     "wishlistEmpty": "Wishlist is empty",
-    "noGoldenFriends": "No Golden Friends yet. They are people you follow and mark with a star — their posts are then highlighted for you.",
+    "noGoldenFriends": "No Golden Friends yet. They are people you follow and mark with a star.",
     "removeFromBox": "Remove from Box",
     "removeFromBoxConfirm": "Remove \"{{title}}\" from Box?",
     "removeFromWishlist": "Delete from Wishlist",

@@ -40,6 +40,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { looksLikeEvent } from "../../utils/eventHints";
 import {
   getNotificationPreferences,
+  saveFailureDetail,
   saveFailureMessageKey,
   saveNotificationPreferences,
 } from "../../utils/notificationsApi";
@@ -190,7 +191,8 @@ async function offerCategoryFollow(
           result.ok ? t("common.success") : t("common.error"),
           result.ok
             ? t("notif.followCategoryDone", { category: label })
-            : t(saveFailureMessageKey(result.reason)),
+            : t(saveFailureMessageKey(result.reason)) +
+                saveFailureDetail(result),
         );
       },
     },

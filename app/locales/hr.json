@@ -674,7 +674,7 @@
     "noMedia": "Nema objavljenog sadržaja",
     "boxEmpty": "Spremnik je prazan",
     "wishlistEmpty": "Lista želja je prazna",
-    "noGoldenFriends": "Još nemaš zlatnih prijatelja. To su ljudi koje pratiš i označiš zvjezdicom — njihove objave onda izdvajamo za tebe.",
+    "noGoldenFriends": "Još nemaš zlatnih prijatelja. To su ljudi koje pratiš i označiš zvjezdicom.",
     "removeFromBox": "Ukloni iz Spremnika",
     "removeFromBoxConfirm": "Jeste li sigurni da želite ukloniti \"{{title}}\"?",
     "removeFromWishlist": "Obriši s Liste želja",

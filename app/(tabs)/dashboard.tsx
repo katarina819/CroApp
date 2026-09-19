@@ -48,6 +48,7 @@ import { NotificationsModal } from "@/components/NotificationsModal";
 import {
   getNotificationPreferences,
   getUnreadCount,
+  saveFailureDetail,
   saveFailureMessageKey,
   saveNotificationPreferences,
 } from "@/utils/notificationsApi";
@@ -10678,7 +10679,10 @@ export default function DashboardScreen() {
       if (!result.ok) {
         // Poruka ovisi o razlogu: "provjerite vezu" je beskorisno kad je
         // zapravo istekla prijava, a upravo je to najčešći slučaj.
-        Alert.alert(t("common.error"), t(saveFailureMessageKey(result.reason)));
+        Alert.alert(
+          t("common.error"),
+          t(saveFailureMessageKey(result.reason)) + saveFailureDetail(result),
+        );
       }
     },
     [t],
