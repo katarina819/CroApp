@@ -2897,7 +2897,8 @@ const vs = StyleSheet.create({
   },
   rightSidebar: {
     position: "absolute",
-    bottom: 100,
+    // Spušten zajedno s tekstom, da traka i opis objave ostanu poravnati.
+    bottom: 56,
     right: 12,
     alignItems: "center",
     gap: 16,
@@ -2931,19 +2932,23 @@ const vs = StyleSheet.create({
   },
   bottomInfo: {
     position: "absolute",
-    bottom: 80,
+    // Navigacijska traka ima svoj prostor rezerviran izvan ovog ekrana, pa je
+    // 80 px ovdje bilo čisto praznog crnila između teksta i trake. Tekst sada
+    // stoji pri dnu objave, gdje mu je i mjesto.
+    bottom: 24,
     left: 16,
     right: 90,
     // Zastor iza teksta.
     //
     // Sjena pomaže na običnoj fotografiji, ali kad objava i sama ima krupan
     // bijeli natpis (plakat, najava događaja), bijelo ime i lokacija stope se
-    // s njim i ništa se ne da pročitati. Blagi tamni sloj iza teksta razdvaja
-    // to dvoje, a na tamnoj objavi se jedva primijeti.
-    backgroundColor: "rgba(0,0,0,0.38)",
+    // s njim i ništa se ne da pročitati. Prozirniji sloj još je propuštao
+    // slova plakata kroz sebe, pa je ovaj gušći: na tamnoj objavi se i dalje
+    // jedva primijeti, a na plakatu čisto odvoji tekst aplikacije od slike.
+    backgroundColor: "rgba(0,0,0,0.58)",
     borderRadius: 14,
-    paddingHorizontal: 10,
-    paddingVertical: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
   },
   userInfo: { flexDirection: "row", alignItems: "center", marginBottom: 6 },
   userName: {
