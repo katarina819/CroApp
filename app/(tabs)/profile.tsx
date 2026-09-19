@@ -1694,9 +1694,14 @@ function FollowListModal({
                         <ActivityIndicator size="small" color={V.danger} />
                       ) : (
                         <Ionicons
-                          name={item.isBlocked ? "ban" : "ellipsis-vertical"}
+                          name="ban"
                           size={20}
                           color={item.isBlocked ? "#ff4757" : V.silverDim}
+                          accessibilityLabel={
+                            item.isBlocked
+                              ? t("profile.unblock")
+                              : t("profile.block")
+                          }
                         />
                       )}
                     </TouchableOpacity>
@@ -2517,7 +2522,18 @@ const getThumbnail = (item: any): string | null => {
 };
 
 // ─── Empty Tab ────────────────────────────────────────────────────────────────
-function EmptyTab({ icon, text }: { icon: any; text: string }) {
+function EmptyTab({
+  icon,
+  text,
+  actionLabel,
+  onAction,
+}: {
+  icon: any;
+  text: string;
+  /** Neobavezan gumb ispod poruke — prazan popis tako kaže i KAKO ga puniti. */
+  actionLabel?: string;
+  onAction?: () => void;
+}) {
   const { isDark } = useTheme();
   const V = useMemo(() => getVara(isDark), [isDark]);
   const tab = useMemo(() => makeTabStyles(V), [V]);
@@ -2527,6 +2543,24 @@ function EmptyTab({ icon, text }: { icon: any; text: string }) {
         <Ionicons name={icon} size={44} color={V.borderGreen} />
       </View>
       <Text style={tab.emptyText}>{text}</Text>
+      {actionLabel && onAction && (
+        <TouchableOpacity
+          style={{
+            marginTop: 16,
+            paddingHorizontal: 18,
+            paddingVertical: 10,
+            borderRadius: 22,
+            borderWidth: 1,
+            borderColor: V.borderGreen,
+            backgroundColor: V.forestMid,
+          }}
+          onPress={onAction}
+        >
+          <Text style={{ color: V.visited, fontSize: 14, fontWeight: "600" }}>
+            {actionLabel}
+          </Text>
+        </TouchableOpacity>
+      )}
     </View>
   );
 }
@@ -3270,7 +3304,12 @@ function WishlistTab() {
 }
 
 // ─── Golden Friends Tab ───────────────────────────────────────────────────────
-function GoldenFriendsTab() {
+function GoldenFriendsTab({
+  onBrowseFollowing,
+}: {
+  /** Otvara popis praćenih — tamo se zlatni prijatelji i dodaju. */
+  onBrowseFollowing: () => void;
+}) {
   const { t } = useTranslation();
   const { isDark } = useTheme();
   const V = useMemo(() => getVara(isDark), [isDark]);
@@ -3322,7 +3361,17 @@ function GoldenFriendsTab() {
   if (loading)
     return <ActivityIndicator style={{ marginTop: 40 }} color={V.visited} />;
   if (friends.length === 0)
-    return <EmptyTab icon="star-outline" text={t("profile.noGoldenFriends")} />;
+    return (
+      // Stara poruka ("Dodaj ih kod pregleda korisnika") tražila je od
+      // korisnika da pogodi gdje je taj "pregled". Sad piše što zlatni
+      // prijatelj jest i vodi ravno na popis praćenih, gdje se označava.
+      <EmptyTab
+        icon="star-outline"
+        text={t("profile.noGoldenFriends")}
+        actionLabel={t("profile.goldenBrowseFollowing")}
+        onAction={onBrowseFollowing}
+      />
+    );
 
   return (
     <FlatList
@@ -4678,7 +4727,11 @@ export default function ProfileScreen() {
           {activeTab === "me" && <MeTab userId={profile?.id ?? null} />}
           {activeTab === "box" && <BoxTab />}
           {activeTab === "wishlist" && <WishlistTab />}
-          {activeTab === "golden" && <GoldenFriendsTab />}
+          {activeTab === "golden" && (
+            <GoldenFriendsTab
+              onBrowseFollowing={() => setShowFollowing(true)}
+            />
+          )}
         </View>
       </View>
 

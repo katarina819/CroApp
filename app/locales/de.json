@@ -654,7 +654,7 @@
     "noMedia": "Keine veröffentlichten Inhalte",
     "boxEmpty": "Box ist leer",
     "wishlistEmpty": "Wunschliste ist leer",
-    "noGoldenFriends": "Keine Golden Friends. Fügen Sie sie beim Anzeigen anderer Benutzer hinzu!",
+    "noGoldenFriends": "Noch keine goldenen Freunde. Das sind Menschen, denen du folgst und die du mit einem Stern markierst — ihre Beiträge heben wir dann für dich hervor.",
     "removeFromBox": "Aus Box entfernen",
     "removeFromBoxConfirm": "Möchten Sie \"{{title}}\" wirklich aus der Box entfernen?",
     "removeFromWishlist": "Von der Wunschliste löschen",
@@ -715,7 +715,10 @@
     "monthly": "Monatlich",
     "last7days": "Letzte 7 Tage",
     "last6weeks": "Letzte 6 Wochen",
-    "last6months": "Letzte 6 Monate"
+    "last6months": "Letzte 6 Monate",
+    "goldenBrowseFollowing": "Liste der gefolgten Personen öffnen",
+    "block": "Blockieren",
+    "unblock": "Blockierung aufheben"
   },
   "schedBreakfast": "Frühstück",
   "schedMorningTour": "Morgenbesichtigung — geringstes Touristenaufkommen",

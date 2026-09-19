@@ -674,7 +674,7 @@
     "noMedia": "Nema objavljenog sadržaja",
     "boxEmpty": "Spremnik je prazan",
     "wishlistEmpty": "Lista želja je prazna",
-    "noGoldenFriends": "Nema zlatnih prijatelja. Dodaj ih kod pregleda korisnika!",
+    "noGoldenFriends": "Još nemaš zlatnih prijatelja. To su ljudi koje pratiš i označiš zvjezdicom — njihove objave onda izdvajamo za tebe.",
     "removeFromBox": "Ukloni iz Spremnika",
     "removeFromBoxConfirm": "Jeste li sigurni da želite ukloniti \"{{title}}\"?",
     "removeFromWishlist": "Obriši s Liste želja",
@@ -734,7 +734,10 @@
     "monthly": "Mjesečno",
     "last7days": "Zadnjih 7 dana",
     "last6weeks": "Zadnjih 6 tjedana",
-    "last6months": "Zadnjih 6 mjeseci"
+    "last6months": "Zadnjih 6 mjeseci",
+    "goldenBrowseFollowing": "Otvori popis praćenih",
+    "block": "Blokiraj",
+    "unblock": "Odblokiraj"
   },
   "schedBreakfast": "Doručak",
   "schedMorningTour": "Jutarnje razgledavanje — turistički promet najmanji",

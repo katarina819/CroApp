@@ -673,7 +673,7 @@
     "noMedia": "No published content",
     "boxEmpty": "Box is empty",
     "wishlistEmpty": "Wishlist is empty",
-    "noGoldenFriends": "No Golden Friends. Add them when viewing other users!",
+    "noGoldenFriends": "No Golden Friends yet. They are people you follow and mark with a star — their posts are then highlighted for you.",
     "removeFromBox": "Remove from Box",
     "removeFromBoxConfirm": "Remove \"{{title}}\" from Box?",
     "removeFromWishlist": "Delete from Wishlist",
@@ -734,7 +734,10 @@
     "monthly": "Monthly",
     "last7days": "Last 7 days",
     "last6weeks": "Last 6 weeks",
-    "last6months": "Last 6 months"
+    "last6months": "Last 6 months",
+    "goldenBrowseFollowing": "Open the list of people you follow",
+    "block": "Block",
+    "unblock": "Unblock"
   },
   "plan": {
     "day1Label": "1 day",

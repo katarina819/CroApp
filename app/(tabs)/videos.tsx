@@ -688,6 +688,7 @@ function VideoItemComponent({
             name={item.isLiked ? "heart" : "heart-outline"}
             size={32}
             color={item.isLiked ? "#ff3b30" : "white"}
+            style={vs.overlayShadow}
           />
           <Text style={vs.actionText}>{item.likeCount || 0}</Text>
         </TouchableOpacity>
@@ -696,7 +697,12 @@ function VideoItemComponent({
           style={vs.actionButton}
           onPress={() => onOpenComments(item)}
         >
-          <Ionicons name="chatbubble-outline" size={28} color="white" />
+          <Ionicons
+            name="chatbubble-outline"
+            size={28}
+            color="white"
+            style={vs.overlayShadow}
+          />
           <Text style={vs.actionText}>{item.commentCount || 0}</Text>
         </TouchableOpacity>
 
@@ -704,7 +710,12 @@ function VideoItemComponent({
           style={vs.actionButton}
           onPress={() => onOpenMessenger(item)}
         >
-          <Ionicons name="paper-plane-outline" size={28} color="white" />
+          <Ionicons
+            name="paper-plane-outline"
+            size={28}
+            color="white"
+            style={vs.overlayShadow}
+          />
           <Text style={vs.actionText}>{t("videos.sendMessage")}</Text>
         </TouchableOpacity>
 
@@ -712,7 +723,12 @@ function VideoItemComponent({
           style={vs.actionButton}
           onPress={() => onOpenShare(item)}
         >
-          <Ionicons name="share-social-outline" size={28} color="white" />
+          <Ionicons
+            name="share-social-outline"
+            size={28}
+            color="white"
+            style={vs.overlayShadow}
+          />
           <Text style={vs.actionText}>{t("common.share")}</Text>
         </TouchableOpacity>
 
@@ -720,7 +736,12 @@ function VideoItemComponent({
           style={vs.actionButton}
           onPress={() => onDownload(item)}
         >
-          <Ionicons name="download-outline" size={28} color="white" />
+          <Ionicons
+            name="download-outline"
+            size={28}
+            color="white"
+            style={vs.overlayShadow}
+          />
           <Text style={vs.actionText}>{t("common.download")}</Text>
         </TouchableOpacity>
 
@@ -732,6 +753,7 @@ function VideoItemComponent({
             name={item.isSaved ? "bookmark" : "bookmark-outline"}
             size={28}
             color={item.isSaved ? V.visited : "white"}
+            style={vs.overlayShadow}
           />
           {/* Prije je pisalo samo "Kutija", što ne kaže što gumb radi.
               Sad poziva na radnju, a kad je spremljeno to i potvrdi. */}
@@ -748,6 +770,7 @@ function VideoItemComponent({
             name={item.isInWishlist ? "star" : "star-outline"}
             size={28}
             color={item.isInWishlist ? V.accentGold : "white"}
+            style={vs.overlayShadow}
           />
           <Text style={vs.actionText}>{t("profile.wishlist")}</Text>
         </TouchableOpacity>
@@ -775,7 +798,8 @@ function VideoItemComponent({
             <Ionicons
               name="location-outline"
               size={14}
-              color="rgba(255,255,255,0.8)"
+              color="rgba(255,255,255,0.92)"
+              style={vs.overlayShadow}
             />
             <Text style={vs.locationText}>{item.location}</Text>
           </View>
@@ -1859,33 +1883,33 @@ export function UploadModal({
                   {showSuggestions && (
                     <View
                       style={{
-                        // ✅ FIX: bio je "position: relative" (zapravo bez
-                        // position, dakle static) — dropdown je bio DIO
-                        // toka layouta i fizički je gurao polja Kategorije/
-                        // Primjereno za/Opis prema dolje dok je otvoren, pa
-                        // su naglo skakala natrag gore čim bi se zatvorio
-                        // (odabirom prijedloga ili gubitkom fokusa). Ta
-                        // dva nagla pomaka izgledala su kao da ekran
-                        // "treperi"/vibrira. Sada je apsolutno pozicioniran
-                        // preko sadržaja ispod, koji se uopće ne pomiče.
-                        position: "absolute",
-                        top: "100%",
-                        left: 0,
-                        right: 0,
+                        // Popis stoji u toku layouta, ne apsolutno.
+                        //
+                        // Bio je "position: absolute; top: 100%", da polja
+                        // ispod ne poskakuju dok se otvara i zatvara. Ali
+                        // time je ispadao izvan granica roditelja, a Android
+                        // dodir ne prosljeđuje djetetu nacrtanom izvan
+                        // roditeljskih granica: popis se vidio, no nije se
+                        // dao ni pomaknuti ni odabrati — od šest ponuđenih
+                        // mjesta vidjela su se dva i pol.
+                        //
+                        // Polja ispod se sada pomaknu dok je popis otvoren.
+                        // To je uobičajeno ponašanje šapatnika i podnošljivo;
+                        // popis koji se ne da prolistati nije.
                         backgroundColor: VT.bgCard,
                         borderWidth: 1,
                         borderColor: VT.borderBright,
                         borderRadius: 10,
                         marginTop: 4,
-                        maxHeight: 220,
+                        maxHeight: 260,
                         overflow: "hidden",
-                        zIndex: 30,
                         elevation: 8,
                       }}
                     >
                       <ScrollView
                         keyboardShouldPersistTaps="handled"
                         nestedScrollEnabled
+                        showsVerticalScrollIndicator
                       >
                         {locationSuggestions.map((s, idx) => (
                           <TouchableOpacity
@@ -2773,21 +2797,51 @@ const vs = StyleSheet.create({
     gap: 16,
   },
   actionButton: { alignItems: "center", gap: 2 },
+
+  // Bijelo po bijelom.
+  //
+  // Ikone i natpisi preko objave uvijek su bili čisto bijeli, što na tamnom
+  // videu izgleda dobro, a na svijetloj fotografiji (nebo, snijeg, bijelo
+  // pročelje) nestane — komentari i "Podijeli" naprosto se nisu vidjeli.
+  //
+  // Umjesto podloge ili obruba, koji bi na tamnim objavama nepotrebno
+  // stršili, ide meka tamna sjena. Na tamnoj podlozi se ne primjećuje, a na
+  // svijetloj odvoji slovo od pozadine. Ionicons se iscrtava kao tekst, pa
+  // ista sjena radi i za ikone.
+  overlayShadow: {
+    textShadowColor: "rgba(0,0,0,0.75)",
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 5,
+  },
   actionText: {
     color: "white",
     fontSize: 11,
-    fontWeight: "500",
+    fontWeight: "600",
     textAlign: "center",
     maxWidth: 68,
+    textShadowColor: "rgba(0,0,0,0.75)",
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 5,
   },
   bottomInfo: { position: "absolute", bottom: 80, left: 16, right: 90 },
   userInfo: { flexDirection: "row", alignItems: "center", marginBottom: 6 },
-  userName: { color: "white", fontSize: 15, fontWeight: "600", marginLeft: 8 },
+  userName: {
+    color: "white",
+    fontSize: 15,
+    fontWeight: "600",
+    marginLeft: 8,
+    textShadowColor: "rgba(0,0,0,0.75)",
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 5,
+  },
   videoTitle: {
     color: "white",
     fontSize: 15,
     fontWeight: "bold",
     marginBottom: 2,
+    textShadowColor: "rgba(0,0,0,0.75)",
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 5,
   },
   locationRow: {
     flexDirection: "row",
@@ -2795,7 +2849,13 @@ const vs = StyleSheet.create({
     gap: 4,
     marginBottom: 2,
   },
-  locationText: { color: "rgba(255,255,255,0.8)", fontSize: 12 },
+  locationText: {
+    color: "rgba(255,255,255,0.92)",
+    fontSize: 12,
+    textShadowColor: "rgba(0,0,0,0.75)",
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 5,
+  },
   // Termin događaja stoji preko videa, pa ide na svijetlu podlogu s tamnim
   // tekstom — bijelo na bijelom kadru se ne bi vidjelo.
   eventRow: {

@@ -731,9 +731,12 @@ export default function UserProfileScreen() {
         </Text>
         <TouchableOpacity onPress={handleBlock}>
           <Ionicons
-            name={isBlocked ? "ban" : "ellipsis-vertical"}
+            name="ban"
             size={22}
             color={isBlocked ? "#ff4757" : "#333"}
+            accessibilityLabel={
+              isBlocked ? t("profile.unblock") : t("profile.block")
+            }
           />
         </TouchableOpacity>
       </View>
