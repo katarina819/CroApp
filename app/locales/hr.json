@@ -399,7 +399,11 @@
     "saveHint": "Spremi u pohranu",
     "savedLabel": "Spremljeno",
     "scopeLocal": "Blizu mene",
-    "scopeGlobal": "Svugdje"
+    "scopeGlobal": "Svugdje",
+    "radiusTitle": "Dokle seže „blizu mene“?",
+    "radiusHint": "Vrijedi i za feed i za obavijesti — ovo je udaljenost od krajeva u kojima se krećeš.",
+    "radiusValue": "{{km}} km",
+    "radiusSaveFailed": "Domet je promijenjen za feed, ali nije spremljen za obavijesti."
   },
   "messages": {
     "title": "Poruke",
@@ -674,7 +678,7 @@
     "noMedia": "Nema objavljenog sadržaja",
     "boxEmpty": "Spremnik je prazan",
     "wishlistEmpty": "Lista želja je prazna",
-    "noGoldenFriends": "Još nemaš zlatnih prijatelja. To su ljudi koje pratiš i označiš zvjezdicom.",
+    "noGoldenFriends": "Još nemaš zlatnih prijatelja. To su ljudi koje pratiš i označiš zvjezdicom!",
     "removeFromBox": "Ukloni iz Spremnika",
     "removeFromBoxConfirm": "Jeste li sigurni da želite ukloniti \"{{title}}\"?",
     "removeFromWishlist": "Obriši s Liste želja",
@@ -737,7 +741,8 @@
     "last6months": "Zadnjih 6 mjeseci",
     "goldenBrowseFollowing": "Otvori popis praćenih",
     "block": "Blokiraj",
-    "unblock": "Odblokiraj"
+    "unblock": "Odblokiraj",
+    "goldenLinkWord": "zvjezdicom"
   },
   "schedBreakfast": "Doručak",
   "schedMorningTour": "Jutarnje razgledavanje — turistički promet najmanji",

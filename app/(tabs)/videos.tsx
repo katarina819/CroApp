@@ -64,6 +64,17 @@ const { width } = Dimensions.get("window");
 
 /** Zapamćeni izbor prikaza feeda ("blizu mene" / "svugdje"). */
 const STORAGE_FEED_SCOPE = "vara_feed_scope_v1";
+const STORAGE_FEED_RADIUS = "vara_feed_radius_v1";
+
+/**
+ * Ponuđeni rasponi za "blizu mene", u kilometrima.
+ *
+ * Dosad je "blizu" značilo fiksnih 50 km, što je za nekoga tko traži kavu u
+ * gradu predaleko, a za planinara preblizu. Gornja granica je 100 km — dalje
+ * od toga "blizu" prestaje išta značiti, a za to postoji "Svugdje".
+ */
+const RADIUS_OPTIONS = [5, 10, 25, 50, 100] as const;
+const DEFAULT_RADIUS_KM = 50;
 const AGE_GROUP_IDS = [
   "minors",
   "youth",
@@ -2398,6 +2409,8 @@ export default function VideosScreen() {
   // "global" = sve. Izbor se pamti da se ne mora birati pri svakom ulasku.
   const [scope, setScope] = useState<"local" | "global">("local");
   const [scopeReady, setScopeReady] = useState(false);
+  const [radiusKm, setRadiusKm] = useState<number>(DEFAULT_RADIUS_KM);
+  const [showRadiusPicker, setShowRadiusPicker] = useState(false);
   const flatListRef = useRef<FlatList>(null);
 
   const PAGE_SIZE = 15;
@@ -2413,7 +2426,7 @@ export default function VideosScreen() {
     else setLoadingMore(true);
     try {
       const res = await fetch(
-        `${API_BASE_URL}/api/video?page=${pageToLoad}&pageSize=${PAGE_SIZE}&scope=${scope}`,
+        `${API_BASE_URL}/api/video?page=${pageToLoad}&pageSize=${PAGE_SIZE}&scope=${scope}&radiusKm=${radiusKm}`,
         { headers: { Authorization: `Bearer ${token}` } },
       );
       if (res.ok) {
@@ -2430,6 +2443,37 @@ export default function VideosScreen() {
     }
   };
 
+  /**
+   * Spremi odabrani domet.
+   *
+   * Lokalno jer feed šalje radijus uz svaki upit, i na poslužitelj jer o istoj
+   * brojci ovisi kome obavijest ide. Ako spremanje na poslužitelj ne uspije,
+   * feed svejedno radi — samo obavijesti ostaju na staroj vrijednosti, pa se
+   * to i kaže umjesto da tiho prođe.
+   */
+  const applyRadius = async (km: number) => {
+    setRadiusKm(km);
+    setShowRadiusPicker(false);
+    AsyncStorage.setItem(STORAGE_FEED_RADIUS, String(km)).catch(() => {});
+
+    const prefs = await getNotificationPreferences();
+    if (!prefs) return;
+
+    const result = await saveNotificationPreferences({
+      ...prefs,
+      radiusKm: km,
+    });
+    if (!result.ok) {
+      Alert.alert(
+        t("common.error"),
+        t("videos.radiusSaveFailed") +
+          " " +
+          t(saveFailureMessageKey(result.reason)) +
+          saveFailureDetail(result),
+      );
+    }
+  };
+
   const loadMoreVideos = () => {
     if (!loadingMore && hasMore) loadVideos(page + 1);
   };
@@ -2439,8 +2483,15 @@ export default function VideosScreen() {
   useEffect(() => {
     (async () => {
       try {
-        const stored = await AsyncStorage.getItem(STORAGE_FEED_SCOPE);
+        const [stored, storedRadius] = await Promise.all([
+          AsyncStorage.getItem(STORAGE_FEED_SCOPE),
+          AsyncStorage.getItem(STORAGE_FEED_RADIUS),
+        ]);
         if (stored === "local" || stored === "global") setScope(stored);
+        const parsed = Number(storedRadius);
+        if (Number.isFinite(parsed) && parsed > 0) {
+          setRadiusKm(Math.min(parsed, 100));
+        }
       } catch {}
       setScopeReady(true);
     })();
@@ -2451,7 +2502,8 @@ export default function VideosScreen() {
     setPage(1);
     setHasMore(true);
     loadVideos(1);
-  }, [scope, scopeReady]);
+    // Radijus je u popisu ovisnosti jer mijenja koje objave feed uopće vraća.
+  }, [scope, scopeReady, radiusKm]);
 
   // Javi poslužitelju u kojem je kraju korisnik, da "blizu mene" uopće ima
   // što prikazati. Samo dok je aplikacija otvorena i samo ako je dozvola
@@ -2679,20 +2731,72 @@ export default function VideosScreen() {
               key={value}
               style={[vs.scopeBtn, active && vs.scopeBtnActive]}
               onPress={() => {
-                if (active) return;
+                // Ponovni pritisak na već odabrano "Blizu mene" otvara izbor
+                // dometa — tu ga korisnik i traži, a traka ostaje čista.
+                if (active) {
+                  if (value === "local") setShowRadiusPicker(true);
+                  return;
+                }
                 setScope(value);
                 AsyncStorage.setItem(STORAGE_FEED_SCOPE, value).catch(() => {});
               }}
             >
               <Text style={[vs.scopeText, active && vs.scopeTextActive]}>
                 {value === "local"
-                  ? t("videos.scopeLocal")
+                  ? `${t("videos.scopeLocal")} · ${radiusKm} km`
                   : t("videos.scopeGlobal")}
               </Text>
             </TouchableOpacity>
           );
         })}
       </View>
+
+      {/* Izbor dometa za "blizu mene". Ista brojka vrijedi i za obavijesti —
+          korisnik jednom kaže što mu je blizu, a ne posebno za svaki dio
+          aplikacije. */}
+      <Modal
+        visible={showRadiusPicker}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setShowRadiusPicker(false)}
+      >
+        <Pressable
+          style={vs.radiusBackdrop}
+          onPress={() => setShowRadiusPicker(false)}
+        >
+          <Pressable style={vs.radiusCard} onPress={() => {}}>
+            <Text style={vs.radiusTitle}>{t("videos.radiusTitle")}</Text>
+            <Text style={vs.radiusHint}>{t("videos.radiusHint")}</Text>
+
+            {RADIUS_OPTIONS.map((km) => {
+              const chosen = km === radiusKm;
+              return (
+                <TouchableOpacity
+                  key={km}
+                  style={[vs.radiusRow, chosen && vs.radiusRowActive]}
+                  onPress={() => applyRadius(km)}
+                >
+                  <Text
+                    style={[vs.radiusRowText, chosen && vs.radiusRowTextActive]}
+                  >
+                    {t("videos.radiusValue", { km })}
+                  </Text>
+                  {chosen && (
+                    <Ionicons name="checkmark" size={18} color="#fff" />
+                  )}
+                </TouchableOpacity>
+              );
+            })}
+
+            <TouchableOpacity
+              style={vs.radiusClose}
+              onPress={() => setShowRadiusPicker(false)}
+            >
+              <Text style={vs.radiusCloseText}>{t("common.close")}</Text>
+            </TouchableOpacity>
+          </Pressable>
+        </Pressable>
+      </Modal>
 
       <TouchableOpacity
         style={vs.addButton}
@@ -2825,7 +2929,22 @@ const vs = StyleSheet.create({
     textShadowOffset: { width: 0, height: 1 },
     textShadowRadius: 5,
   },
-  bottomInfo: { position: "absolute", bottom: 80, left: 16, right: 90 },
+  bottomInfo: {
+    position: "absolute",
+    bottom: 80,
+    left: 16,
+    right: 90,
+    // Zastor iza teksta.
+    //
+    // Sjena pomaže na običnoj fotografiji, ali kad objava i sama ima krupan
+    // bijeli natpis (plakat, najava događaja), bijelo ime i lokacija stope se
+    // s njim i ništa se ne da pročitati. Blagi tamni sloj iza teksta razdvaja
+    // to dvoje, a na tamnoj objavi se jedva primijeti.
+    backgroundColor: "rgba(0,0,0,0.38)",
+    borderRadius: 14,
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+  },
   userInfo: { flexDirection: "row", alignItems: "center", marginBottom: 6 },
   userName: {
     color: "white",
@@ -2894,6 +3013,54 @@ const vs = StyleSheet.create({
   scopeBtnActive: { backgroundColor: "#5a8a48" },
   scopeText: { color: "#c0d8b0", fontSize: 13, fontWeight: "600" },
   scopeTextActive: { color: "#fff" },
+  radiusBackdrop: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.6)",
+    justifyContent: "center",
+    alignItems: "center",
+    padding: 24,
+  },
+  radiusCard: {
+    width: "100%",
+    maxWidth: 360,
+    backgroundColor: "#16301a",
+    borderRadius: 18,
+    borderWidth: 1,
+    borderColor: "#2f5a33",
+    padding: 20,
+  },
+  radiusTitle: {
+    color: "#fff",
+    fontSize: 17,
+    fontWeight: "700",
+    marginBottom: 4,
+  },
+  radiusHint: {
+    color: "#b6cfae",
+    fontSize: 13,
+    lineHeight: 18,
+    marginBottom: 14,
+  },
+  radiusRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingVertical: 12,
+    paddingHorizontal: 14,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: "#2f5a33",
+    marginBottom: 8,
+  },
+  radiusRowActive: { backgroundColor: "#5a8a48", borderColor: "#5a8a48" },
+  radiusRowText: { color: "#d8e8d0", fontSize: 15, fontWeight: "600" },
+  radiusRowTextActive: { color: "#fff" },
+  radiusClose: {
+    marginTop: 6,
+    alignItems: "center",
+    paddingVertical: 12,
+  },
+  radiusCloseText: { color: "#b6cfae", fontSize: 15, fontWeight: "600" },
   addButton: {
     position: "absolute",
     top: Platform.OS === "ios" ? 56 : 40,

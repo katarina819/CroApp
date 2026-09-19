@@ -37,6 +37,11 @@ export interface NotificationPreferences {
    * aktivnosti, isključi ovdje.
    */
   globalEnabled: boolean;
+  /**
+   * Dokle za ovog korisnika seže "blizu mene", u kilometrima. Ista brojka
+   * vrijedi za feed i za obavijesti; poslužitelj je ograničava na 1–100.
+   */
+  radiusKm: number;
 }
 
 const BASE = `${API_BASE_URL}/api/notification`;
@@ -129,6 +134,7 @@ export async function getNotificationPreferences(): Promise<NotificationPreferen
         : [],
       // Stariji poslužitelj ovo polje ne vraća — tada je uključeno.
       globalEnabled: (d.globalEnabled ?? d.GlobalEnabled) !== false,
+      radiusKm: Number(d.radiusKm ?? d.RadiusKm) || 50,
     };
   } catch {
     return null;
@@ -177,6 +183,7 @@ export async function saveNotificationPreferences(
         email: prefs.email || null,
         categories: prefs.categories,
         globalEnabled: prefs.globalEnabled,
+        radiusKm: prefs.radiusKm,
       }),
     });
 

@@ -198,6 +198,10 @@ function makeFlStyles(V: ReturnType<typeof getVara>) {
       justifyContent: "center",
       gap: 12,
       paddingTop: 60,
+      paddingHorizontal: 24,
+      // Bez ovoga zadnji redak (i gumb ispod poruke) završi ispod
+      // navigacijske trake koja lebdi preko dna.
+      paddingBottom: LIST_BOTTOM_PADDING,
     },
     emptyIconWrap: {
       width: 88,
@@ -2527,12 +2531,19 @@ function EmptyTab({
   text,
   actionLabel,
   onAction,
+  linkWord,
 }: {
   icon: any;
   text: string;
   /** Neobavezan gumb ispod poruke — prazan popis tako kaže i KAKO ga puniti. */
   actionLabel?: string;
   onAction?: () => void;
+  /**
+   * Riječ unutar poruke koja postaje poveznica (npr. "zvjezdicom"). Kad je
+   * zadana, umjesto gumba ispod poruke klikom se otvara onAction — poveznica
+   * u rečenici bolje objašnjava kamo vodi nego gumb sa svojim natpisom.
+   */
+  linkWord?: string;
 }) {
   const { isDark } = useTheme();
   const V = useMemo(() => getVara(isDark), [isDark]);
@@ -2542,8 +2553,25 @@ function EmptyTab({
       <View style={tab.emptyIconWrap}>
         <Ionicons name={icon} size={44} color={V.borderGreen} />
       </View>
-      <Text style={tab.emptyText}>{text}</Text>
-      {actionLabel && onAction && (
+      {linkWord && onAction && text.includes(linkWord) ? (
+        <Text style={tab.emptyText}>
+          {text.slice(0, text.indexOf(linkWord))}
+          <Text
+            style={{
+              color: V.visited,
+              fontWeight: "700",
+              textDecorationLine: "underline",
+            }}
+            onPress={onAction}
+          >
+            {linkWord}
+          </Text>
+          {text.slice(text.indexOf(linkWord) + linkWord.length)}
+        </Text>
+      ) : (
+        <Text style={tab.emptyText}>{text}</Text>
+      )}
+      {!linkWord && actionLabel && onAction && (
         <TouchableOpacity
           style={{
             marginTop: 16,
@@ -3368,7 +3396,7 @@ function GoldenFriendsTab({
       <EmptyTab
         icon="star-outline"
         text={t("profile.noGoldenFriends")}
-        actionLabel={t("profile.goldenBrowseFollowing")}
+        linkWord={t("profile.goldenLinkWord")}
         onAction={onBrowseFollowing}
       />
     );

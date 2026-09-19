@@ -400,7 +400,11 @@
     "saveHint": "Salva in archivio",
     "savedLabel": "Salvato",
     "scopeLocal": "Vicino a me",
-    "scopeGlobal": "Ovunque"
+    "scopeGlobal": "Ovunque",
+    "radiusTitle": "Fin dove arriva “vicino a me”?",
+    "radiusHint": "Vale per il feed e per le notifiche — è la distanza dalle zone in cui ti muovi.",
+    "radiusValue": "{{km}} km",
+    "radiusSaveFailed": "Il raggio è cambiato per il feed, ma non è stato salvato per le notifiche."
   },
   "messages": {
     "title": "Messaggi",
@@ -683,7 +687,7 @@
     "noMedia": "Nessun contenuto pubblicato",
     "boxEmpty": "Box vuoto",
     "wishlistEmpty": "Lista dei desideri vuota",
-    "noGoldenFriends": "Ancora nessun amico d'oro. Sono le persone che segui e contrassegni con una stella.",
+    "noGoldenFriends": "Non hai ancora amici d'oro. Sono le persone che segui e contrassegni con una stella!",
     "removeFromBox": "Rimuovi dalla Box",
     "removeFromBoxConfirm": "Rimuovere \"{{title}}\" dalla Box?",
     "removeFromWishlist": "Elimina dalla Lista dei desideri",
@@ -747,7 +751,8 @@
     "last6months": "Ultimi 6 mesi",
     "goldenBrowseFollowing": "Apri l'elenco delle persone che segui",
     "block": "Blocca",
-    "unblock": "Sblocca"
+    "unblock": "Sblocca",
+    "goldenLinkWord": "stella"
   },
   "schedBreakfast": "Colazione",
   "schedMorningTour": "Visita mattutina — meno turisti",

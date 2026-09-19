@@ -404,7 +404,11 @@
     "saveHint": "Save to storage",
     "savedLabel": "Saved",
     "scopeLocal": "Near me",
-    "scopeGlobal": "Everywhere"
+    "scopeGlobal": "Everywhere",
+    "radiusTitle": "How far is “near me”?",
+    "radiusHint": "Applies to the feed and to notifications — this is the distance from the areas you move around in.",
+    "radiusValue": "{{km}} km",
+    "radiusSaveFailed": "The range changed for the feed, but was not saved for notifications."
   },
   "chat": {
     "activeUser": "Active user",
@@ -673,7 +677,7 @@
     "noMedia": "No published content",
     "boxEmpty": "Box is empty",
     "wishlistEmpty": "Wishlist is empty",
-    "noGoldenFriends": "No Golden Friends yet. They are people you follow and mark with a star.",
+    "noGoldenFriends": "You don't have any Golden Friends yet. These are people you follow and mark with a star!",
     "removeFromBox": "Remove from Box",
     "removeFromBoxConfirm": "Remove \"{{title}}\" from Box?",
     "removeFromWishlist": "Delete from Wishlist",
@@ -737,7 +741,8 @@
     "last6months": "Last 6 months",
     "goldenBrowseFollowing": "Open the list of people you follow",
     "block": "Block",
-    "unblock": "Unblock"
+    "unblock": "Unblock",
+    "goldenLinkWord": "star"
   },
   "plan": {
     "day1Label": "1 day",

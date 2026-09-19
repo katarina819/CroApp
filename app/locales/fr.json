@@ -400,7 +400,11 @@
     "saveHint": "Enregistrer",
     "savedLabel": "Enregistré",
     "scopeLocal": "Près de moi",
-    "scopeGlobal": "Partout"
+    "scopeGlobal": "Partout",
+    "radiusTitle": "Jusqu'où va « près de moi » ?",
+    "radiusHint": "Vaut pour le fil et pour les notifications — c'est la distance depuis les endroits que tu fréquentes.",
+    "radiusValue": "{{km}} km",
+    "radiusSaveFailed": "Le rayon a changé pour le fil, mais n'a pas été enregistré pour les notifications."
   },
   "messages": {
     "title": "Messages",
@@ -697,7 +701,7 @@
     "noMedia": "Aucun contenu publié",
     "boxEmpty": "Box vide",
     "wishlistEmpty": "Liste de souhaits vide",
-    "noGoldenFriends": "Pas encore d'amis en or. Ce sont les personnes que tu suis et que tu marques d'une étoile.",
+    "noGoldenFriends": "Tu n'as pas encore d'amis en or. Ce sont les personnes que tu suis et que tu marques d'une étoile !",
     "removeFromBox": "Retirer de la Box",
     "removeFromBoxConfirm": "Retirer \"{{title}}\" de la Box ?",
     "removeFromWishlist": "Supprimer de la Wishlist",
@@ -761,7 +765,8 @@
     "last6months": "6 derniers mois",
     "goldenBrowseFollowing": "Ouvrir la liste des personnes suivies",
     "block": "Bloquer",
-    "unblock": "Débloquer"
+    "unblock": "Débloquer",
+    "goldenLinkWord": "étoile"
   },
   "plan": {
     "day1Label": "1 jour",

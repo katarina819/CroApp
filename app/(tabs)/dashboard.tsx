@@ -419,6 +419,8 @@ interface NotifPrefs {
   ageGroups?: string[];
   /** Prima li sadržaj i izvan svojih krajeva ("Svugdje" u videima). */
   globalEnabled?: boolean;
+  /** Domet "blizu mene" u kilometrima; postavlja se u videima. */
+  radiusKm?: number;
 }
 
 interface VenueItem {
@@ -9808,6 +9810,7 @@ export default function DashboardScreen() {
         email: remote.email,
         categories: remote.categories,
         globalEnabled: remote.globalEnabled,
+        radiusKm: remote.radiusKm,
       };
       setNotifPrefs(merged);
       saveJSON(STORAGE_NOTIFS, merged);
@@ -10675,6 +10678,9 @@ export default function DashboardScreen() {
         email: next.email ?? "",
         categories: next.categories,
         globalEnabled: next.globalEnabled !== false,
+        // Domet se bira u videima; ovdje se samo prenosi dalje da ga
+        // spremanje kategorija ne pregazi natrag na zadanih 50 km.
+        radiusKm: next.radiusKm ?? 50,
       });
       if (!result.ok) {
         // Poruka ovisi o razlogu: "provjerite vezu" je beskorisno kad je

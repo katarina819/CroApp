@@ -400,7 +400,11 @@
     "saveHint": "In Ablage speichern",
     "savedLabel": "Gespeichert",
     "scopeLocal": "In meiner Nähe",
-    "scopeGlobal": "Überall"
+    "scopeGlobal": "Überall",
+    "radiusTitle": "Wie weit reicht „in meiner Nähe“?",
+    "radiusHint": "Gilt für den Feed und für Benachrichtigungen — gemessen ab den Gegenden, in denen du unterwegs bist.",
+    "radiusValue": "{{km}} km",
+    "radiusSaveFailed": "Der Umkreis wurde für den Feed geändert, aber nicht für Benachrichtigungen gespeichert."
   },
   "messages": {
     "title": "Nachrichten",
@@ -654,7 +658,7 @@
     "noMedia": "Keine veröffentlichten Inhalte",
     "boxEmpty": "Box ist leer",
     "wishlistEmpty": "Wunschliste ist leer",
-    "noGoldenFriends": "Noch keine goldenen Freunde. Das sind Menschen, denen du folgst und die du mit einem Stern markierst.",
+    "noGoldenFriends": "Du hast noch keine goldenen Freunde. Das sind Menschen, denen du folgst und die du mit einem Stern markierst!",
     "removeFromBox": "Aus Box entfernen",
     "removeFromBoxConfirm": "Möchten Sie \"{{title}}\" wirklich aus der Box entfernen?",
     "removeFromWishlist": "Von der Wunschliste löschen",
@@ -718,7 +722,8 @@
     "last6months": "Letzte 6 Monate",
     "goldenBrowseFollowing": "Liste der gefolgten Personen öffnen",
     "block": "Blockieren",
-    "unblock": "Blockierung aufheben"
+    "unblock": "Blockierung aufheben",
+    "goldenLinkWord": "Stern"
   },
   "schedBreakfast": "Frühstück",
   "schedMorningTour": "Morgenbesichtigung — geringstes Touristenaufkommen",
