@@ -6,6 +6,7 @@ import { router, useLocalSearchParams } from "expo-router";
 import { VideoView, useVideoPlayer } from "expo-video";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { MediaPager, PagerItem } from "@/components/MediaPager";
 import {
   ActivityIndicator,
   Alert,
@@ -69,6 +70,12 @@ interface PublicMedia {
   createdAt: string;
   mediaType: "image" | "video";
   likeCount?: number;
+  // Ovo se prije odbacivalo pri mapiranju, pa je pregled objave mogao
+  // pokazati samo sliku — bez mjesta, kategorija i datuma događaja.
+  location?: string | null;
+  additionalDescription?: string | null;
+  isEvent?: boolean;
+  eventStartAt?: string | null;
 }
 
 // Video Preview Modal komponenta
@@ -283,14 +290,14 @@ export default function UserProfileScreen() {
   const [isGolden, setIsGolden] = useState(false);
   const [isBlocked, setIsBlocked] = useState(false);
   const [followLoading, setFollowLoading] = useState(false);
+  const [pagerOpen, setPagerOpen] = useState(false);
+  const [pagerIndex, setPagerIndex] = useState(0);
   const [goldenLoading, setGoldenLoading] = useState(false);
   const [showCompose, setShowCompose] = useState(false);
   const [message, setMessage] = useState("");
   const [sending, setSending] = useState(false);
 
   // State za medij pregled
-  const [selectedVideo, setSelectedVideo] = useState<PublicMedia | null>(null);
-  const [selectedImage, setSelectedImage] = useState<PublicMedia | null>(null);
 
   useEffect(() => {
     if (!numericUserId) return;
@@ -379,6 +386,10 @@ export default function UserProfileScreen() {
           createdAt: v.createdAt,
           mediaType: v.mediaType === "image" ? "image" : "video",
           likeCount: v.likeCount || 0,
+          location: v.location,
+          additionalDescription: v.additionalDescription,
+          isEvent: v.isEvent,
+          eventStartAt: v.eventStartAt,
         }));
       }
 
@@ -688,17 +699,30 @@ export default function UserProfileScreen() {
     return `${API_BASE_URL}${filePath.startsWith("/") ? "" : "/"}${filePath}`;
   };
 
-  // Otvaranje medija
+  // Otvaranje medija.
+  //
+  // Prije su se otvarala dva odvojena modala (slika/video) i svaki je
+  // pokazivao samo tu jednu objavu — do sljedeće se dolazilo zatvaranjem i
+  // povratkom u mrežicu. Sada se otvara pregled na dotaknutoj objavi, a
+  // ostale se prelistavaju lijevo-desno.
   const openMedia = (item: PublicMedia) => {
-    const mediaUrl = getMediaUrl(item.filePath);
-    if (!mediaUrl) return;
-
-    if (item.mediaType === "video") {
-      setSelectedVideo(item);
-    } else {
-      setSelectedImage(item);
-    }
+    const at = media.findIndex((m) => m.id === item.id);
+    if (at < 0) return;
+    setPagerIndex(at);
+    setPagerOpen(true);
   };
+
+  const pagerItems: PagerItem[] = media.map((m) => ({
+    id: m.id,
+    url: getMediaUrl(m.filePath) || "",
+    isVideo: m.mediaType === "video",
+    title: m.title,
+    location: m.location,
+    description: m.additionalDescription,
+    isEvent: m.isEvent,
+    eventStartAt: m.eventStartAt,
+    authorName: profile?.username ? `@${profile.username}` : undefined,
+  }));
 
   if (loading) {
     return (
@@ -911,24 +935,12 @@ export default function UserProfileScreen() {
         </View>
       </ScrollView>
 
-      {/* Video Preview Modal */}
-      <VideoPreviewModal
-        visible={selectedVideo !== null}
-        videoUrl={
-          selectedVideo ? getMediaUrl(selectedVideo.filePath) || "" : ""
-        }
-        title={selectedVideo?.title || "Video"}
-        onClose={() => setSelectedVideo(null)}
-      />
-
-      {/* Image Preview Modal */}
-      <ImagePreviewModal
-        visible={selectedImage !== null}
-        imageUrl={
-          selectedImage ? getMediaUrl(selectedImage.filePath) || "" : ""
-        }
-        title={selectedImage?.title || "Slika"}
-        onClose={() => setSelectedImage(null)}
+      {/* Pregled objava — prelistavanjem, bez izlaska iz pregleda. */}
+      <MediaPager
+        visible={pagerOpen}
+        items={pagerItems}
+        initialIndex={pagerIndex}
+        onClose={() => setPagerOpen(false)}
       />
 
       {/* Compose message modal */}

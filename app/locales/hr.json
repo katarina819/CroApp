@@ -996,5 +996,9 @@
     "eventToday": "danas",
     "eventTomorrow": "sutra",
     "eventInDays": "za {{count}} d"
+  },
+  "pager": {
+    "showDetails": "Prikaži podatke",
+    "hideDetails": "Sakrij podatke"
   }
 }

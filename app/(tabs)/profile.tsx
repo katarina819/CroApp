@@ -6,6 +6,7 @@ import { router, useFocusEffect } from "expo-router";
 import { VideoView, useVideoPlayer } from "expo-video";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { MediaPager, PagerItem } from "../../components/MediaPager";
 import {
   AppState,
   ActivityIndicator,
@@ -2602,29 +2603,11 @@ function MeTab({ userId }: { userId: number | null }) {
   const [items, setItems] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
-  const [selectedMedia, setSelectedMedia] = useState<any>(null);
-  const [showMediaModal, setShowMediaModal] = useState(false);
-  const [playerReady, setPlayerReady] = useState(false);
-
-  const videoUrl = selectedMedia?.type === "video" ? selectedMedia.url : "";
-  const player = useVideoPlayer(videoUrl, (p) => {
-    p.loop = false;
-    p.muted = false;
-    setPlayerReady(true);
-  });
-
-  useEffect(() => {
-    if (
-      showMediaModal &&
-      selectedMedia?.type === "video" &&
-      playerReady &&
-      player
-    ) {
-      player.play();
-    } else if (!showMediaModal && player) {
-      player.pause();
-    }
-  }, [showMediaModal, selectedMedia, playerReady, player]);
+  // Pregled objava drži MediaPager; ovdje treba znati samo je li otvoren i
+  // na kojoj je objavi. Vlastiti video player više ne stoji ovdje — svaka
+  // stranica pregleda ima svoj.
+  const [pagerOpen, setPagerOpen] = useState(false);
+  const [pagerIndex, setPagerIndex] = useState(0);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -2657,6 +2640,12 @@ function MeTab({ userId }: { userId: number | null }) {
               thumbnailPath: v.thumbnailPath,
               createdAt: v.createdAt,
               title: v.title,
+              // Prije se ovo odbacivalo, pa je otvorena objava u "Moje"
+              // pokazivala samo sliku — bez mjesta, kategorija i datuma.
+              location: v.location,
+              additionalDescription: v.additionalDescription,
+              isEvent: v.isEvent,
+              eventStartAt: v.eventStartAt,
             })),
           );
         }
@@ -2672,10 +2661,26 @@ function MeTab({ userId }: { userId: number | null }) {
     load();
   }, [load]);
 
+  // Otvara pregled na dotaknutoj objavi; ostale se prelistavaju lijevo-desno
+  // umjesto da se za svaku izlazi natrag u mrežicu.
   const openMedia = (item: any) => {
-    setSelectedMedia(item);
-    setShowMediaModal(true);
+    const at = items.findIndex((m) => m.id === item.id);
+    setPagerIndex(at < 0 ? 0 : at);
+    setPagerOpen(true);
   };
+
+  const pagerItems: PagerItem[] = items.map((m) => ({
+    id: m.id,
+    url: m.url?.startsWith("http")
+      ? m.url
+      : `${API_BASE_URL}${m.url?.startsWith("/") ? "" : "/"}${m.url}`,
+    isVideo: m.type === "video",
+    title: m.title,
+    location: m.location,
+    description: m.additionalDescription,
+    isEvent: m.isEvent,
+    eventStartAt: m.eventStartAt,
+  }));
 
   const confirmDelete = (item: any) => {
     Alert.alert(
@@ -2859,66 +2864,18 @@ function MeTab({ userId }: { userId: number | null }) {
         />
       )}
 
-      {/* PROMJENA: Media modal sada koristi isti pattern kao BoxTab/WishlistTab
-          s gumbom "Obriši" u headeru */}
-      <Modal
-        visible={showMediaModal}
-        animationType="slide"
-        transparent={false}
-        onRequestClose={() => setShowMediaModal(false)}
-      >
-        <SafeAreaView style={{ flex: 1, backgroundColor: "#000" }}>
-          <View style={styles.mediaModalHeader}>
-            <TouchableOpacity
-              onPress={() => setShowMediaModal(false)}
-              style={{ minWidth: 60 }}
-            >
-              <Text
-                style={{ color: "#c0c0c0", fontSize: 15, fontWeight: "600" }}
-              >
-                Zatvori
-              </Text>
-            </TouchableOpacity>
-            <Text style={styles.mediaModalTitle} numberOfLines={1}>
-              {selectedMedia?.title || "Pregled"}
-            </Text>
-            {/* PROMJENA: "Obriši" gumb desno sa alert potvrdom */}
-            <TouchableOpacity
-              onPress={() => {
-                setShowMediaModal(false);
-                if (selectedMedia) confirmDelete(selectedMedia);
-              }}
-              style={{ minWidth: 60, alignItems: "flex-end" }}
-            >
-              <Text
-                style={{ color: "#C05050", fontSize: 15, fontWeight: "600" }}
-              >
-                Obriši
-              </Text>
-            </TouchableOpacity>
-          </View>
-          <View style={styles.mediaModalContent}>
-            {selectedMedia?.type === "video" ? (
-              <VideoView
-                player={player}
-                style={styles.mediaModalVideo}
-                contentFit="contain"
-                nativeControls={true}
-              />
-            ) : selectedMedia?.type === "image" ? (
-              <Image
-                source={{ uri: selectedMedia.url }}
-                style={styles.mediaModalImage}
-                resizeMode="contain"
-              />
-            ) : (
-              <View style={styles.mediaModalImage}>
-                <Text style={{ color: "#c0c0c0" }}>Nepoznati medij</Text>
-              </View>
-            )}
-          </View>
-        </SafeAreaView>
-      </Modal>
+      {/* Pregled objava — otvori se na dotaknutoj, ostale su lijevo i desno.
+          Zamijenio je modal koji je pokazivao samo jednu objavu. */}
+      <MediaPager
+        visible={pagerOpen}
+        items={pagerItems}
+        initialIndex={pagerIndex}
+        onClose={() => setPagerOpen(false)}
+        onDelete={(it) => {
+          const original = items.find((m) => m.id === it.id);
+          if (original) confirmDelete(original);
+        }}
+      />
     </View>
   );
 }

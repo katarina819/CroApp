@@ -998,5 +998,9 @@
     "eventToday": "today",
     "eventTomorrow": "tomorrow",
     "eventInDays": "in {{count}} d"
+  },
+  "pager": {
+    "showDetails": "Show details",
+    "hideDetails": "Hide details"
   }
 }
