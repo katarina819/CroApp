@@ -986,7 +986,9 @@
     "hoursAgo": "{{count}} h fa",
     "daysAgo": "{{count}} g fa",
     "loadFailedTitle": "Impossibile caricare le notifiche",
-    "loadFailedHint": "Il server non ha risposto correttamente. Trascina verso il basso per riprovare."
+    "loadFailedHint": "Il server non ha risposto correttamente. Trascina verso il basso per riprovare.",
+    "detailTitle": "Post",
+    "postGone": "Questo post non esiste più."
   },
   "post": {
     "isEvent": "Questo è un evento",

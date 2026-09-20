@@ -986,7 +986,9 @@
     "hoursAgo": "{{count}} h ago",
     "daysAgo": "{{count}} d ago",
     "loadFailedTitle": "Notifications could not be loaded",
-    "loadFailedHint": "The server did not respond properly. Pull down to try again."
+    "loadFailedHint": "The server did not respond properly. Pull down to try again.",
+    "detailTitle": "Post",
+    "postGone": "This post no longer exists."
   },
   "post": {
     "isEvent": "This is an event",

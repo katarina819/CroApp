@@ -984,7 +984,9 @@
     "hoursAgo": "prije {{count}} h",
     "daysAgo": "prije {{count}} d",
     "loadFailedTitle": "Obavijesti se nisu učitale",
-    "loadFailedHint": "Poslužitelj nije odgovorio kako treba. Povuci prema dolje da pokušaš ponovno."
+    "loadFailedHint": "Poslužitelj nije odgovorio kako treba. Povuci prema dolje da pokušaš ponovno.",
+    "detailTitle": "Objava",
+    "postGone": "Ova objava više ne postoji."
   },
   "post": {
     "isEvent": "Ovo je događaj",

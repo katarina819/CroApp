@@ -986,7 +986,9 @@
     "hoursAgo": "il y a {{count}} h",
     "daysAgo": "il y a {{count}} j",
     "loadFailedTitle": "Les notifications n'ont pas pu être chargées",
-    "loadFailedHint": "Le serveur n'a pas répondu correctement. Tire vers le bas pour réessayer."
+    "loadFailedHint": "Le serveur n'a pas répondu correctement. Tire vers le bas pour réessayer.",
+    "detailTitle": "Publication",
+    "postGone": "Cette publication n'existe plus."
   },
   "post": {
     "isEvent": "C'est un événement",

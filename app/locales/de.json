@@ -986,7 +986,9 @@
     "hoursAgo": "vor {{count}} Std.",
     "daysAgo": "vor {{count}} T.",
     "loadFailedTitle": "Benachrichtigungen konnten nicht geladen werden",
-    "loadFailedHint": "Der Server hat nicht richtig geantwortet. Zieh nach unten, um es erneut zu versuchen."
+    "loadFailedHint": "Der Server hat nicht richtig geantwortet. Zieh nach unten, um es erneut zu versuchen.",
+    "detailTitle": "Beitrag",
+    "postGone": "Diesen Beitrag gibt es nicht mehr."
   },
   "post": {
     "isEvent": "Das ist eine Veranstaltung",

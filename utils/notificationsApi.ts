@@ -230,3 +230,43 @@ export function saveFailureMessageKey(reason?: SaveFailureReason): string {
 export function saveFailureDetail(result: SavePreferencesResult): string {
   return result.status ? ` (${result.status})` : "";
 }
+
+/** Objava na koju obavijest upućuje, onoliko koliko treba za prikaz detalja. */
+export interface NotifiedPost {
+  id: number;
+  title: string;
+  additionalDescription: string;
+  location: string;
+  filePath: string;
+  mediaType?: string;
+  thumbnailPath?: string | null;
+  userId: number;
+  userName?: string;
+  userFirstName?: string;
+  userLastName?: string;
+  isEvent?: boolean;
+  eventStartAt?: string | null;
+  createdAt: string;
+}
+
+/**
+ * Dohvati objavu iz obavijesti.
+ *
+ * Vraća null i kad je objava u međuvremenu obrisana — obavijest tada ostaje u
+ * popisu, ali nema što otvoriti, pa se to i kaže umjesto praznog ekrana.
+ */
+export async function getNotifiedPost(
+  videoId: number,
+): Promise<NotifiedPost | null> {
+  const headers = await authHeaders();
+  if (!headers) return null;
+  try {
+    const res = await fetch(`${API_BASE_URL}/api/video/${videoId}`, {
+      headers,
+    });
+    if (!res.ok) return null;
+    return await res.json();
+  } catch {
+    return null;
+  }
+}
