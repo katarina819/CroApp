@@ -3,6 +3,7 @@ import { Ionicons } from "@expo/vector-icons";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as FileSystem from "expo-file-system/legacy";
+import { router } from "expo-router";
 import * as ImagePicker from "expo-image-picker";
 import * as Location from "expo-location";
 import * as MediaLibrary from "expo-media-library";
@@ -792,7 +793,19 @@ function VideoItemComponent({
       </View>
 
       <View style={vs.bottomInfo}>
-        <View style={vs.userInfo}>
+        {/* Slika i ime vode na profil autora. Dosad nisu vodili nikamo, pa se
+            do nekoga čija ti se objava svidjela dolazilo jedino preko
+            pretrage — i to ako mu pamtiš korisničko ime. */}
+        <TouchableOpacity
+          style={vs.userInfo}
+          activeOpacity={0.7}
+          onPress={() =>
+            router.push({
+              pathname: "/profile/[userId]",
+              params: { userId: String(item.userId) },
+            } as any)
+          }
+        >
           <StoryBadge userId={item.userId} size={40}>
             <FreshAvatar
               userId={item.userId}
@@ -806,7 +819,7 @@ function VideoItemComponent({
           <Text style={vs.userName}>
             {item.userName || `User_${item.userId}`}
           </Text>
-        </View>
+        </TouchableOpacity>
         <Text style={vs.videoTitle}>{item.title}</Text>
         {item.location && (
           <View style={vs.locationRow}>
