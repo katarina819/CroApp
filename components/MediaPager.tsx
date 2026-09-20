@@ -11,7 +11,6 @@
 // komponenta služi oba mjesta, da se pregled ne razilazi u dvije verzije.
 
 import { Ionicons } from "@expo/vector-icons";
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import { VideoView, useVideoPlayer } from "expo-video";
 import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -19,6 +18,7 @@ import {
   FlatList,
   Image,
   Modal,
+  Pressable,
   ScrollView,
   Text,
   TouchableOpacity,
@@ -44,9 +44,6 @@ export interface PagerItem {
   authorName?: string | null;
 }
 
-/** Pamti želi li korisnik vidjeti podatke uz objavu ili samu sliku. */
-const STORAGE_DETAILS = "vara_pager_details_v1";
-
 /** Isti oblik kao u videima: "20.09.2026. - 12:00". */
 function eventWhen(iso: string): string {
   const d = new Date(iso);
@@ -56,7 +53,12 @@ function eventWhen(iso: string): string {
 }
 
 /**
- * Jedna stranica.
+ * Jedna stranica — samo medij, preko cijele visine.
+ *
+ * Podaci su prije stajali ispod slike i na duljim opisima ispadali ispod
+ * ruba ekrana: baš ono što se htjelo pročitati (kategorije, "primjereno
+ * za") bilo je odrezano. Sada ih otvara gumb u zaglavlju, u vlastitom
+ * prozoru gdje ima mjesta za sve.
  *
  * Zaseban komponent jer svaki video treba svoj player, a playeri se rade
  * hookom — koji se ne smije zvati u petlji. Svira samo onaj na vidljivoj
@@ -67,15 +69,12 @@ function PagerPage({
   isActive,
   width,
   height,
-  showDetails,
 }: {
   item: PagerItem;
   isActive: boolean;
   width: number;
   height: number;
-  showDetails: boolean;
 }) {
-  const { t } = useTranslation();
   const player = useVideoPlayer(item.isVideo ? item.url : null, (p) => {
     p.loop = true;
   });
@@ -95,70 +94,137 @@ function PagerPage({
       {item.isVideo ? (
         <VideoView
           player={player}
-          style={{ width, height: height * 0.72 }}
+          style={{ width, height }}
           contentFit="contain"
           nativeControls
         />
       ) : (
         <Image
           source={{ uri: item.url }}
-          style={{ width, height: height * 0.72 }}
+          style={{ width, height }}
           resizeMode="contain"
         />
       )}
-
-      {showDetails && (
-        <ScrollView
-          style={{ maxHeight: height * 0.26 }}
-          contentContainerStyle={{ padding: 18, gap: 6 }}
-        >
-          {!!item.authorName && (
-            <Text style={{ color: "#8fd06a", fontSize: 14, fontWeight: "700" }}>
-              {item.authorName}
-            </Text>
-          )}
-          {!!item.title && (
-            <Text style={{ color: "#fff", fontSize: 18, fontWeight: "800" }}>
-              {item.title}
-            </Text>
-          )}
-          {!!item.location && (
-            <View
-              style={{ flexDirection: "row", alignItems: "center", gap: 6 }}
-            >
-              <Ionicons name="location-outline" size={14} color="#c9c9c9" />
-              <Text style={{ color: "#dcdcdc", fontSize: 13, flex: 1 }}>
-                {item.location}
-              </Text>
-            </View>
-          )}
-          {item.isEvent && item.eventStartAt && (
-            <View
-              style={{
-                flexDirection: "row",
-                alignItems: "center",
-                gap: 6,
-                alignSelf: "flex-start",
-                backgroundColor: "rgba(255,255,255,0.14)",
-                borderRadius: 8,
-                paddingHorizontal: 10,
-                paddingVertical: 5,
-              }}
-            >
-              <Ionicons name="calendar" size={13} color="#fff" />
-              <Text style={{ color: "#fff", fontSize: 13, fontWeight: "700" }}>
-                {t("post.eventStarts", { when: eventWhen(item.eventStartAt) })}
-              </Text>
-            </View>
-          )}
-          {!!item.description && (
-            <Text style={{ color: "#c9c9c9", fontSize: 13, lineHeight: 20 }}>
-              {item.description}
-            </Text>
-          )}
-        </ScrollView>
-      )}
     </View>
+  );
+}
+
+/**
+ * Podaci o objavi, u vlastitom prozoru.
+ *
+ * Listić se diže s dna i zauzima najviše tri četvrtine ekrana; sadržaj se
+ * unutar njega pomiče, pa i dugačak opis stane bez odsijecanja.
+ */
+function DetailsSheet({
+  item,
+  visible,
+  onClose,
+}: {
+  item: PagerItem | undefined;
+  visible: boolean;
+  onClose: () => void;
+}) {
+  const { t } = useTranslation();
+
+  if (!item) return null;
+
+  return (
+    <Modal
+      visible={visible}
+      transparent
+      animationType="slide"
+      onRequestClose={onClose}
+    >
+      <Pressable
+        style={{ flex: 1, backgroundColor: "rgba(0,0,0,0.65)" }}
+        onPress={onClose}
+      >
+        <View style={{ flex: 1 }} />
+        <Pressable
+          style={{
+            maxHeight: "75%",
+            backgroundColor: "#16301a",
+            borderTopLeftRadius: 20,
+            borderTopRightRadius: 20,
+            borderWidth: 1,
+            borderColor: "#2f5a33",
+            paddingBottom: 28,
+          }}
+          onPress={() => {}}
+        >
+          <View
+            style={{
+              flexDirection: "row",
+              alignItems: "center",
+              justifyContent: "space-between",
+              paddingHorizontal: 18,
+              paddingTop: 16,
+              paddingBottom: 10,
+            }}
+          >
+            <Text style={{ color: "#fff", fontSize: 17, fontWeight: "800" }}>
+              {t("pager.detailsTitle")}
+            </Text>
+            <CloseButton onPress={onClose} tone="light" />
+          </View>
+
+          <ScrollView
+            contentContainerStyle={{ paddingHorizontal: 18, gap: 10 }}
+          >
+            {!!item.authorName && (
+              <Text
+                style={{ color: "#8fd06a", fontSize: 14, fontWeight: "700" }}
+              >
+                {item.authorName}
+              </Text>
+            )}
+            {!!item.title && (
+              <Text style={{ color: "#fff", fontSize: 20, fontWeight: "800" }}>
+                {item.title}
+              </Text>
+            )}
+            {!!item.location && (
+              <View
+                style={{ flexDirection: "row", alignItems: "center", gap: 8 }}
+              >
+                <Ionicons name="location-outline" size={16} color="#b6cfae" />
+                <Text style={{ color: "#dcdcdc", fontSize: 15, flex: 1 }}>
+                  {item.location}
+                </Text>
+              </View>
+            )}
+            {item.isEvent && item.eventStartAt && (
+              <View
+                style={{
+                  flexDirection: "row",
+                  alignItems: "center",
+                  gap: 8,
+                  alignSelf: "flex-start",
+                  backgroundColor: "rgba(255,255,255,0.14)",
+                  borderRadius: 10,
+                  paddingHorizontal: 12,
+                  paddingVertical: 8,
+                }}
+              >
+                <Ionicons name="calendar" size={15} color="#fff" />
+                <Text
+                  style={{ color: "#fff", fontSize: 15, fontWeight: "700" }}
+                >
+                  {t("post.eventStarts", {
+                    when: eventWhen(item.eventStartAt),
+                  })}
+                </Text>
+              </View>
+            )}
+            {!!item.description && (
+              <Text style={{ color: "#d0d8cc", fontSize: 15, lineHeight: 23 }}>
+                {item.description}
+              </Text>
+            )}
+          </ScrollView>
+        </Pressable>
+      </Pressable>
+    </Modal>
   );
 }
 
@@ -181,27 +247,14 @@ export function MediaPager({
   const listRef = useRef<FlatList<PagerItem>>(null);
 
   const [index, setIndex] = useState(initialIndex);
-  const [showDetails, setShowDetails] = useState(true);
+  const [detailsOpen, setDetailsOpen] = useState(false);
 
   useEffect(() => {
-    if (visible) setIndex(initialIndex);
+    if (visible) {
+      setIndex(initialIndex);
+      setDetailsOpen(false);
+    }
   }, [visible, initialIndex]);
-
-  useEffect(() => {
-    AsyncStorage.getItem(STORAGE_DETAILS)
-      .then((v) => {
-        if (v === "0") setShowDetails(false);
-      })
-      .catch(() => {});
-  }, []);
-
-  const toggleDetails = () => {
-    setShowDetails((prev) => {
-      const next = !prev;
-      AsyncStorage.setItem(STORAGE_DETAILS, next ? "1" : "0").catch(() => {});
-      return next;
-    });
-  };
 
   const current = items[index];
 
@@ -225,25 +278,15 @@ export function MediaPager({
           </Text>
 
           <View style={{ flexDirection: "row", alignItems: "center", gap: 16 }}>
-            {/* Prekidač podataka: nekad se gleda slika, nekad se traži gdje
-                je to i kome odgovara. Izbor se pamti za idući put. */}
+            {/* Podaci o objavi. Otvaraju se preko slike, pa ih duljina
+                opisa ne može istjerati ispod ruba ekrana. */}
             <TouchableOpacity
-              onPress={toggleDetails}
+              onPress={() => setDetailsOpen(true)}
               hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
               accessibilityRole="button"
-              accessibilityLabel={
-                showDetails ? t("pager.hideDetails") : t("pager.showDetails")
-              }
+              accessibilityLabel={t("pager.detailsTitle")}
             >
-              <Ionicons
-                name={
-                  showDetails
-                    ? "information-circle"
-                    : "information-circle-outline"
-                }
-                size={24}
-                color="#fff"
-              />
+              <Ionicons name="information-circle" size={24} color="#fff" />
             </TouchableOpacity>
 
             {onDelete && current && (
@@ -286,9 +329,14 @@ export function MediaPager({
               isActive={i === index}
               width={width}
               height={height}
-              showDetails={showDetails}
             />
           )}
+        />
+
+        <DetailsSheet
+          item={current}
+          visible={detailsOpen}
+          onClose={() => setDetailsOpen(false)}
         />
       </SafeAreaView>
     </Modal>

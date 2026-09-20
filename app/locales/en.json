@@ -1000,7 +1000,6 @@
     "eventInDays": "in {{count}} d"
   },
   "pager": {
-    "showDetails": "Show details",
-    "hideDetails": "Hide details"
+    "detailsTitle": "Post details"
   }
 }

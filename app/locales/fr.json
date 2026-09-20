@@ -1000,7 +1000,6 @@
     "eventInDays": "dans {{count}} j"
   },
   "pager": {
-    "showDetails": "Afficher les détails",
-    "hideDetails": "Masquer les détails"
+    "detailsTitle": "Détails de la publication"
   }
 }

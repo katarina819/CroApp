@@ -1000,7 +1000,6 @@
     "eventInDays": "tra {{count}} g"
   },
   "pager": {
-    "showDetails": "Mostra dettagli",
-    "hideDetails": "Nascondi dettagli"
+    "detailsTitle": "Dettagli del post"
   }
 }
