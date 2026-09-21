@@ -461,7 +461,8 @@
     "addStoryComment": "Write a comment...",
     "expiresIn": "Expires in {{time}}",
     "expired": "Expired",
-    "sendMessage": "Send message"
+    "sendMessage": "Send message",
+    "loadFailed": "Could not load messages."
   },
   "badges": {
     "newBadge": "🏆 New badge!",

@@ -1813,7 +1813,10 @@ export default function MessagesScreen() {
       setConversations(convData);
       setTotalUnread(convData.reduce((sum, c) => sum + c.unreadCount, 0));
     } catch {
-      if (!silent) setError("Greška pri učitavanju poruka.");
+      // Popis se namjerno NE prazni: zadnji uspješno dohvaćeni razgovori
+      // ostaju na ekranu. Tiho osvježavanje u pozadini tako ne može
+      // zbrisati popis zbog jednog posrnulog odgovora.
+      if (!silent) setError(t("messages.loadFailed"));
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -1824,16 +1827,12 @@ export default function MessagesScreen() {
     useCallback(() => {
       setLoading(true);
       loadConversations();
-      // getConversations() nije jeftin poziv — za svakog pratitelja/
-      // praćenog radi zaseban fetch avatara PLUS zaseban fetch poruka, pa
-      // je za korisnika s recimo 20 kontakata svako osvježavanje ~42
-      // zahtjeva. Na 8s to je već ~300+ zahtjeva/min SAMO od ovog popisa,
-      // što je moglo iscrpiti opći rate limit i uzrokovati nasumične
-      // "failed to send" greške na sasvim drugim akcijama (follow, slanje
-      // poruke). Pojedinačni otvoreni chat i dalje osvježava svake 4s -
-      // ovdje je riječ samo o sažetku popisa razgovora.
-      // Osvježavanje staje kad aplikacija ode u pozadinu (vidi
-      // useActivePolling) — prije je popis radio zahtjeve i s ugašenim ekranom.
+      // Popis razgovora dolazi jednim zahtjevom (/api/message/conversations).
+      // Nekad je isti poziv u kvaru padao na stari put koji je radio 2 + N
+      // zahtjeva — zato je razmak ovdje 20s, a ne 8s. Pojedinačni otvoreni
+      // razgovor i dalje osvježava svake 4s; ovdje je riječ samo o sažetku.
+      // Osvježavanje staje kad aplikacija ode u pozadinu — prije je popis
+      // radio zahtjeve i s ugašenim ekranom.
       const stopWhenBackgrounded = (state: AppStateStatus) => {
         if (state === "active") {
           if (!pollRef.current) {

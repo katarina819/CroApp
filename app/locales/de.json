@@ -451,7 +451,8 @@
     "addStoryComment": "Schreibe einen Kommentar...",
     "expiresIn": "Läuft ab in {{time}}",
     "expired": "Abgelaufen",
-    "sendMessage": "Nachricht senden"
+    "sendMessage": "Nachricht senden",
+    "loadFailed": "Nachrichten konnten nicht geladen werden."
   },
   "search": {
     "title": "Suche",

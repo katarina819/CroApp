@@ -83,13 +83,25 @@ const toAvatarUrl = (raw?: string | null): string | null => {
 };
 
 /**
- * Popis razgovora — SAMO korisnici s kojima stvarno postoji razmijenjena
- * poruka.
+ * Popis razgovora — samo korisnici s kojima stvarno postoji razmijenjena
+ * poruka. Backend to vraća jednim upitom (/api/message/conversations).
  *
- * Backend za to sad ima jedan endpoint (/api/message/conversations) koji sve
- * vrati u jednom upitu. Dok ta verzija backenda nije objavljena, koristi se
- * stari način (spoj pratitelja i praćenih), ali sada s filtrom: kontakti bez
- * ijedne poruke se izbacuju, pa se popis ponaša isto u oba slučaja.
+ * Ovdje je nekad stajao i "stari način" za verziju backenda bez tog
+ * endpointa: spoji pratitelje i praćene, pa ZA SVAKOG dohvati cijeli
+ * razgovor samo da se pročita zadnja poruka. Problem nije bio u tome što
+ * je spor, nego kada se pokretao — na SVAKI odgovor koji nije bio `ok`,
+ * dakle i na 401, i na 500, i na kratki ispad mreže.
+ *
+ * Popis razgovora se osvježava svakih 20 sekundi. Jedan posrnuli odgovor
+ * time nije značio jednu promašenu provjeru, nego 2 + N novih zahtjeva, uz
+ * preuzimanje svih poruka svakog razgovora. Trideset kontakata je tako iz
+ * jednog neuspjeha izvlačilo tridesetak zahtjeva — i to je razlog zašto je
+ * opći limit na poslužitelju morao s 300 skočiti na 900 zahtjeva u minuti:
+ * korisnici su dobivali 429 na nepovezanim radnjama ("failed to send").
+ *
+ * Endpoint na poslužitelju postoji od MessageController.cs, pa je taj put
+ * bio mrtav kod koji se budio isključivo u kvaru — i kvar pogoršavao.
+ * Sada se greška prijavi i popis ostaje onakav kakav je bio.
  */
 export const getConversations = async (): Promise<Conversation[]> => {
   const token = await getToken();
@@ -97,107 +109,29 @@ export const getConversations = async (): Promise<Conversation[]> => {
 
   if (!token || !userId) throw new Error("Not authenticated");
 
-  try {
-    const res = await fetch(`${API_BASE_URL}/api/message/conversations`, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
-    if (res.ok) {
-      const rows: any[] = await res.json();
-      return rows.map((r) => ({
-        userId: r.userId,
-        firstName: r.firstName,
-        lastName: r.lastName,
-        username: r.username,
-        avatar: toAvatarUrl(r.avatar),
-        lastMessage: formatLastMessagePreview(
-          r.lastMessage ?? "",
-          r.lastMessageSenderId === userId,
-        ),
-        timestamp: r.timestamp,
-        unreadCount: r.unreadCount ?? 0,
-      }));
-    }
-  } catch {
-    // padamo na stari način ispod
+  const res = await fetch(`${API_BASE_URL}/api/message/conversations`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+
+  if (!res.ok) {
+    throw new Error(`Popis razgovora nije dohvaćen (${res.status})`);
   }
 
-  // ── Stari način (backend bez /conversations) ──────────────────────────────
-  // Dohvati sve korisnike koje korisnik prati i koji prate njega
-  const [followingRes, followersRes] = await Promise.all([
-    fetch(`${API_BASE_URL}/api/follow/following/${userId}`, {
-      headers: { Authorization: `Bearer ${token}` },
-    }),
-    fetch(`${API_BASE_URL}/api/follow/followers/${userId}`, {
-      headers: { Authorization: `Bearer ${token}` },
-    }),
-  ]);
+  const rows: any[] = await res.json();
 
-  const following = followingRes.ok ? await followingRes.json() : [];
-  const followers = followersRes.ok ? await followersRes.json() : [];
-
-  // Kombiniraj i ukloni duplikate
-  const allUsers = [...following, ...followers];
-  const uniqueUsers = Array.from(
-    new Map(allUsers.map((u) => [u.id, u])).values(),
-  );
-
-  // Za svakog korisnika dohvati zadnju poruku
-  const conversations = await Promise.all(
-    uniqueUsers.map(async (user) => {
-      // Avatar više ne dohvaćamo posebnim zahtjevom po korisniku — popis
-      // pratitelja/praćenih ga već vraća (FollowRepository ga spaja iz
-      // user_profiles), pa je to bio jedan suvišan zahtjev po kontaktu.
-      const avatar = toAvatarUrl(user.avatar);
-
-      // Dohvati zadnju poruku
-      const messagesRes = await fetch(
-        `${API_BASE_URL}/api/message/conversation/${user.id}`,
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        },
-      );
-
-      let lastMessage = "";
-      let timestamp = "";
-      let unreadCount = 0;
-
-      if (messagesRes.ok) {
-        const messages = await messagesRes.json();
-        if (messages.length > 0) {
-          const lastMsg = messages[messages.length - 1];
-          lastMessage = formatLastMessagePreview(
-            lastMsg.content,
-            lastMsg.senderId === userId,
-          );
-          timestamp = lastMsg.sentAt;
-          unreadCount = messages.filter(
-            (m: any) => !m.isRead && m.receiverId === userId,
-          ).length;
-        }
-      }
-
-      return {
-        userId: user.id,
-        firstName: user.firstName,
-        lastName: user.lastName,
-        username: user.username,
-        avatar: avatar,
-        lastMessage,
-        timestamp,
-        unreadCount,
-      };
-    }),
-  );
-
-  // Zadrži samo kontakte s kojima STVARNO postoji poruka. Prazan timestamp
-  // znači da razgovor nikad nije započet — takvi su se dosad prikazivali u
-  // popisu poruka iako nije razmijenjena nijedna poruka.
-  return conversations
-    .filter((c) => c.timestamp !== "")
-    .sort(
-      (a, b) =>
-        new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime(),
-    );
+  return rows.map((r) => ({
+    userId: r.userId,
+    firstName: r.firstName,
+    lastName: r.lastName,
+    username: r.username,
+    avatar: toAvatarUrl(r.avatar),
+    lastMessage: formatLastMessagePreview(
+      r.lastMessage ?? "",
+      r.lastMessageSenderId === userId,
+    ),
+    timestamp: r.timestamp,
+    unreadCount: r.unreadCount ?? 0,
+  }));
 };
 
 /**

@@ -450,7 +450,8 @@
     "addStoryComment": "Napiši komentar...",
     "expiresIn": "Ističe za {{time}}",
     "expired": "Isteklo",
-    "sendMessage": "Pošalji poruku"
+    "sendMessage": "Pošalji poruku",
+    "loadFailed": "Greška pri učitavanju poruka."
   },
   "search": {
     "title": "Pretraga",

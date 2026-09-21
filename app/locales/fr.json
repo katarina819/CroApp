@@ -345,7 +345,8 @@
     "reportSend": "Envoyer à l'admin",
     "reportSentTitle": "Merci !",
     "reportSentBody": "Ton signalement a été envoyé à l'admin. Nous allons vérifier.",
-    "reportFailed": "Le signalement n'a pas été envoyé. Vérifie ta connexion et réessaie."
+    "reportFailed": "Le signalement n'a pas été envoyé. Vérifie ta connexion et réessaie.",
+    "members": "Membres"
   },
   "videos": {
     "title": "Vidéos",
@@ -451,7 +452,8 @@
     "addStoryComment": "Écrire un commentaire...",
     "expiresIn": "Expire dans {{time}}",
     "expired": "Expiré",
-    "sendMessage": "Envoyer un message"
+    "sendMessage": "Envoyer un message",
+    "loadFailed": "Impossible de charger les messages."
   },
   "search": {
     "title": "Recherche",

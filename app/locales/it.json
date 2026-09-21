@@ -345,7 +345,8 @@
     "reportSend": "Invia all'admin",
     "reportSentTitle": "Grazie!",
     "reportSentBody": "La segnalazione è stata inviata all'admin. Verificheremo il dato.",
-    "reportFailed": "La segnalazione non è stata inviata. Controlla la connessione e riprova."
+    "reportFailed": "La segnalazione non è stata inviata. Controlla la connessione e riprova.",
+    "members": "Membri"
   },
   "videos": {
     "title": "Video",
@@ -451,7 +452,8 @@
     "addStoryComment": "Scrivi un commento...",
     "expiresIn": "Scade tra {{time}}",
     "expired": "Scaduta",
-    "sendMessage": "Invia messaggio"
+    "sendMessage": "Invia messaggio",
+    "loadFailed": "Impossibile caricare i messaggi."
   },
   "search": {
     "title": "Ricerca",
