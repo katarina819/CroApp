@@ -41,7 +41,10 @@ import { useTheme } from "../../components/AdaptiveThemeProvider";
 import { PlanMyDayModal } from "../../components/PlanMyDayModal";
 import { ag, dm, pb, pr, s } from "../../styles/varaTheme";
 import { API_BASE_URL } from "../config/api";
-import { useInputBottomOffset } from "@/hooks/use-keyboard-offset";
+import {
+  useInputBottomOffset,
+  useKeyboardHeight,
+} from "@/hooks/use-keyboard-offset";
 import { useActivePolling } from "@/hooks/use-active-polling";
 import { isOpenAt, isOpenDuringWindow } from "@/utils/openingHours";
 import { NotificationsModal } from "@/components/NotificationsModal";
@@ -1604,6 +1607,17 @@ function PlaceDetailModal({
   const scrollViewRef = useRef<ScrollView>(null);
   const commentInputRef = useRef<TextInput>(null);
   /**
+   * Tipkovnica preko lista.
+   *
+   * List je pri dnu ekrana i ne miče se kad se tipkovnica otvori — a unutar
+   * <Modal>-a na Androidu KeyboardAvoidingView nema na što djelovati (modal
+   * je zaseban prozor bez adjustResize). Zato se visina tipkovnice mjeri i
+   * list se za toliko skrati, a sadržaj dobije razmak pri dnu da se polje
+   * za unos može podići iznad nje.
+   */
+  const keyboardHeight = useKeyboardHeight();
+  const inputOffset = useInputBottomOffset();
+  /**
    * Prijava netočnog podatka o mjestu.
    *
    * Podaci o mjestima dolaze iz OpenStreetMapa i znaju biti zastarjeli —
@@ -1739,12 +1753,21 @@ function PlaceDetailModal({
         behavior={Platform.OS === "ios" ? "padding" : undefined}
       >
         <View style={dm.overlay}>
-          <View style={dm.sheet}>
+          <View
+            style={[
+              dm.sheet,
+              keyboardHeight > 0 && {
+                // Isti postotak kao u dm.sheet, samo umanjen za tipkovnicu.
+                maxHeight: SH * 0.92 - keyboardHeight,
+              },
+            ]}
+          >
             <ScrollView
               ref={scrollViewRef}
               showsVerticalScrollIndicator={false}
               bounces={false}
               keyboardShouldPersistTaps="handled"
+              contentContainerStyle={{ paddingBottom: inputOffset }}
             >
               <View style={dm.imageBox}>
                 {loading ? (
@@ -1974,6 +1997,18 @@ function PlaceDetailModal({
                       onChangeText={setReportText}
                       multiline
                       maxLength={600}
+                      onFocus={() => {
+                        // Čeka se da se tipkovnica podigne pa se polje dovede
+                        // u vidno polje; bez odgode list još ne zna svoju novu
+                        // visinu i pomak promaši.
+                        setTimeout(
+                          () =>
+                            scrollViewRef.current?.scrollToEnd({
+                              animated: true,
+                            }),
+                          350,
+                        );
+                      }}
                     />
                     <View style={{ flexDirection: "row", gap: 8 }}>
                       <TouchableOpacity
