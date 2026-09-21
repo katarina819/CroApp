@@ -1170,6 +1170,23 @@ export function PlanMyDayModal({
   const [ratingError, setRatingError] = useState<string | null>(null);
 
   const mapRef = useRef<MapView>(null);
+  // Vanjski ScrollView — da se nakon odabira mjesta iz popisa vrati gore na
+  // kartu; inače korisnik dotakne kafić i ne vidi da se išta dogodilo.
+  const pageScrollRef = useRef<ScrollView>(null);
+  /**
+   * Mjesto koje korisnik razgledava na karti.
+   *
+   * Popis kafića/parkova/kina davao je samo naziv, adresu i udaljenost u
+   * kilometrima — a "2.9 km" ne kaže je li to niz ulicu ili na drugu stranu
+   * grada. Sad se dodirom mjesto pokaže na karti zajedno s korisnikovim
+   * položajem, pa se vidi kamo zapravo treba.
+   */
+  const [previewVenue, setPreviewVenue] = useState<{
+    name: string;
+    latitude: number;
+    longitude: number;
+    address?: string;
+  } | null>(null);
   const [mapReady, setMapReady] = useState(false);
 
   const LOADING_MESSAGES = [
@@ -1464,6 +1481,36 @@ export function PlanMyDayModal({
     spontaneous,
     numDays,
   ]);
+
+  /**
+   * Pokaži mjesto iz popisa na karti, zajedno s korisnikom.
+   *
+   * fitToCoordinates umjesto animateToRegion: bitno je vidjeti OBOJE — i
+   * mjesto i sebe — jer se na temelju toga bira kamo ići. Kad položaj
+   * korisnika nije poznat, karta se samo približi mjestu.
+   */
+  const showVenueOnMap = (venue: {
+    name: string;
+    latitude: number;
+    longitude: number;
+    address?: string;
+  }) => {
+    setPreviewVenue(venue);
+    pageScrollRef.current?.scrollTo({ y: 0, animated: true });
+
+    const target = { latitude: venue.latitude, longitude: venue.longitude };
+    if (userLocation) {
+      mapRef.current?.fitToCoordinates([userLocation, target], {
+        edgePadding: { top: 80, right: 80, bottom: 80, left: 80 },
+        animated: true,
+      });
+    } else {
+      mapRef.current?.animateToRegion(
+        { ...target, latitudeDelta: 0.01, longitudeDelta: 0.01 },
+        500,
+      );
+    }
+  };
 
   const openVenueDetail = (activity: DayActivity) => {
     if (!activity.venue) return;
@@ -2305,7 +2352,10 @@ export function PlanMyDayModal({
 
         {/* ========== REZULTAT ========== */}
         {step === "result" && (
-          <ScrollView contentContainerStyle={{ paddingBottom: 60 }}>
+          <ScrollView
+            ref={pageScrollRef}
+            contentContainerStyle={{ paddingBottom: 60 }}
+          >
             {/* KARTA */}
 
             {/* PRE-LOAD IKONA — skriveni View koji inicijalizira sve Image komponente */}
@@ -2465,6 +2515,19 @@ export function PlanMyDayModal({
                       </>
                     );
                   })()}
+
+                  {/* Mjesto koje korisnik upravo razgledava iz popisa. */}
+                  {previewVenue && (
+                    <Marker
+                      coordinate={{
+                        latitude: previewVenue.latitude,
+                        longitude: previewVenue.longitude,
+                      }}
+                      title={previewVenue.name}
+                      description={previewVenue.address}
+                      pinColor="#f2c14e"
+                    />
+                  )}
                 </MapView>
 
                 {/* SELEKTOR DANA (samo ako više od 1 dana) */}
@@ -2990,7 +3053,8 @@ export function PlanMyDayModal({
                               </View>
                               <TouchableOpacity
                                 style={{ flex: 1 }}
-                                onPress={() => {
+                                // Dugi pritisak otvara pune detalje mjesta.
+                                onLongPress={() => {
                                   setSelectedPlace({
                                     id: `plan_${type}_${venue.name}`,
                                     name: venue.name,
@@ -3001,6 +3065,16 @@ export function PlanMyDayModal({
                                   });
                                   setShowDetailModal(true);
                                 }}
+                                // Dodir pokazuje mjesto na karti, jer je prvo
+                                // pitanje uvijek "gdje je to u odnosu na mene".
+                                onPress={() =>
+                                  showVenueOnMap({
+                                    name: venue.name,
+                                    latitude: venue.latitude,
+                                    longitude: venue.longitude,
+                                    address: venue.address,
+                                  })
+                                }
                               >
                                 <Text
                                   style={{
