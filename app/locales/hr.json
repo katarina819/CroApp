@@ -1003,9 +1003,12 @@
   },
   "area": {
     "title": "Objave u ovom kraju",
-    "thisArea": "Ovaj kraj",
     "empty": "Ovdje još nema objava. Probaj veći domet ili makni filtar kategorija.",
     "loadFailed": "Objave se nisu učitale. Provjeri vezu i pokušaj ponovno.",
-    "openFromPlan": "Što su drugi objavili ovdje"
+    "openFromPlan": "Što su drugi objavili ovdje",
+    "titleFor": "Objave za {{place}} i okolicu",
+    "rangeLabel": "Domet",
+    "categoriesLabel": "Kategorije",
+    "from": "od {{place}}"
   }
 }

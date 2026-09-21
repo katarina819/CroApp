@@ -1005,9 +1005,12 @@
   },
   "area": {
     "title": "Posts in this area",
-    "thisArea": "This area",
     "empty": "No posts here yet. Try a wider range, or clear the category filter.",
     "loadFailed": "Posts could not be loaded. Check your connection and try again.",
-    "openFromPlan": "What others posted here"
+    "openFromPlan": "What others posted here",
+    "titleFor": "Posts for {{place}} and the surrounding area",
+    "rangeLabel": "Range",
+    "categoriesLabel": "Categories",
+    "from": "from {{place}}"
   }
 }

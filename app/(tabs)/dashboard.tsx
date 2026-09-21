@@ -11398,7 +11398,9 @@ export default function DashboardScreen() {
               const center = mapRegion ?? initialRegion;
               if (!center) return;
               setAreaSheetPoint({
-                name: searchQuery.trim() || t("area.thisArea"),
+                // Prazno ime znači "odredi ga sam" — prikaz obrnutim
+                // geokodiranjem dozna kako se mjesto zove.
+                name: searchQuery.trim(),
                 latitude: center.latitude,
                 longitude: center.longitude,
               });

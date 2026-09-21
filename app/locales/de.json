@@ -1005,9 +1005,12 @@
   },
   "area": {
     "title": "Beiträge in dieser Gegend",
-    "thisArea": "Diese Gegend",
     "empty": "Hier gibt es noch keine Beiträge. Versuch einen größeren Umkreis oder entferne den Kategoriefilter.",
     "loadFailed": "Beiträge konnten nicht geladen werden. Prüfe deine Verbindung und versuch es erneut.",
-    "openFromPlan": "Was andere hier gepostet haben"
+    "openFromPlan": "Was andere hier gepostet haben",
+    "titleFor": "Beiträge für {{place}} und Umgebung",
+    "rangeLabel": "Umkreis",
+    "categoriesLabel": "Kategorien",
+    "from": "von {{place}}"
   }
 }

@@ -16,6 +16,7 @@
 
 import { Ionicons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import * as Location from "expo-location";
 import { useCallback, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
@@ -60,6 +61,17 @@ interface AreaPost {
 }
 
 const RADIUS_OPTIONS = [5, 10, 25, 50, 100] as const;
+
+const labelStyle = {
+  color: "#8aa483",
+  fontSize: 11,
+  fontWeight: "700" as const,
+  textTransform: "uppercase" as const,
+  letterSpacing: 0.5,
+  paddingHorizontal: 18,
+  paddingTop: 10,
+  paddingBottom: 4,
+};
 const STORAGE_RADIUS = "vara_area_radius_v1";
 
 function fullUrl(path?: string | null): string {
@@ -112,6 +124,39 @@ export function AreaActivitiesSheet({
   const [loading, setLoading] = useState(false);
   const [failed, setFailed] = useState(false);
   const [pagerAt, setPagerAt] = useState<number | null>(null);
+  /**
+   * Naziv mjesta za naslov.
+   *
+   * Kad se do ovog prikaza dođe pomicanjem karte, a ne pretragom, imamo samo
+   * koordinate — a "Ovaj kraj" korisniku ne znači ništa. Obrnutim
+   * geokodiranjem dobijemo ime grada, pa naslov kaže ZA ŠTO su objave.
+   */
+  const [placeName, setPlaceName] = useState<string>("");
+
+  useEffect(() => {
+    if (!visible || !point) return;
+    if (point.name) {
+      setPlaceName(point.name);
+      return;
+    }
+    let alive = true;
+    Location.reverseGeocodeAsync({
+      latitude: point.latitude,
+      longitude: point.longitude,
+    })
+      .then((hits) => {
+        if (!alive) return;
+        const first = hits?.[0];
+        setPlaceName(first?.city || first?.subregion || first?.region || "");
+      })
+      .catch(() => {
+        // Geokoder zna zakazati (bez mreže, bez Google Play usluga). Naslov
+        // tada ostaje bez imena umjesto da prikaz padne.
+      });
+    return () => {
+      alive = false;
+    };
+  }, [visible, point]);
 
   useEffect(() => {
     AsyncStorage.getItem(STORAGE_RADIUS)
@@ -160,17 +205,31 @@ export function AreaActivitiesSheet({
       prev.includes(id) ? prev.filter((c) => c !== id) : [...prev, id],
     );
 
-  // Filtriranje po kategoriji ide ovdje, ne na poslužitelju: stranica je
-  // ograničena na 50 objava, pa je jeftinije nego novi zahtjev pri svakom
-  // dodiru kategorije.
-  const shown = selectedCats.length
-    ? posts.filter((p) =>
-        (p.categories || "")
-          .split(",")
-          .map((c) => c.trim())
-          .some((c) => selectedCats.includes(c)),
-      )
-    : posts;
+  /** Udaljenost objave od tražene točke, ili null kad objava nema položaj. */
+  const postDistance = (p: AreaPost): number | null =>
+    point && p.latitude != null && p.longitude != null
+      ? distanceKm(point.latitude, point.longitude, p.latitude, p.longitude)
+      : null;
+
+  // Dvostruki filtar, namjerno.
+  //
+  // Po udaljenosti filtrira i poslužitelj, ali dok nova verzija ne bude
+  // postavljena, stara jednostavno zanemari nepoznate parametre lat/lon i
+  // vrati SVE objave — a one se onda ovdje prikažu kao da su u blizini
+  // (Velebit na 224 km pod dometom od 25 km). Bolje prikazati manje nego
+  // netočno.
+  //
+  // Objave bez koordinata ispadaju iz prikaza: za njih se ne može tvrditi da
+  // su u ovom kraju.
+  const shown = posts.filter((p) => {
+    const km = postDistance(p);
+    if (km === null || km > radiusKm) return false;
+    if (!selectedCats.length) return true;
+    return (p.categories || "")
+      .split(",")
+      .map((c) => c.trim())
+      .some((c) => selectedCats.includes(c));
+  });
 
   const pagerItems: PagerItem[] = shown.map((p) => ({
     id: p.id,
@@ -219,31 +278,32 @@ export function AreaActivitiesSheet({
               }}
             >
               <View style={{ flex: 1, paddingRight: 12 }}>
+                {/* Naslov nosi ime mjesta; zasebni podnaslov ("Ovaj kraj")
+                    nije govorio ništa što se iz karte već ne vidi. */}
                 <Text
                   style={{ color: "#fff", fontSize: 17, fontWeight: "800" }}
-                  numberOfLines={1}
+                  numberOfLines={2}
                 >
-                  {t("area.title")}
+                  {placeName
+                    ? t("area.titleFor", { place: placeName })
+                    : t("area.title")}
                 </Text>
-                {!!point?.name && (
-                  <Text
-                    style={{ color: "#b6cfae", fontSize: 13, marginTop: 2 }}
-                    numberOfLines={1}
-                  >
-                    {point.name}
-                  </Text>
-                )}
               </View>
               <CloseButton onPress={onClose} tone="light" />
             </View>
 
-            {/* Domet */}
+            {/* Domet.
+                flexGrow/flexShrink 0 uz zadanu visinu: bez toga vodoravni
+                popis u okomitom rasporedu dobije onoliko visine koliko
+                pretekne, pa su se natpisi ("5 km") vodoravno prepolovili. */}
+            <Text style={labelStyle}>{t("area.rangeLabel")}</Text>
             <ScrollView
               horizontal
               showsHorizontalScrollIndicator={false}
+              style={{ flexGrow: 0, flexShrink: 0, height: 44 }}
               contentContainerStyle={{
                 paddingHorizontal: 18,
-                paddingVertical: 6,
+                alignItems: "center",
                 gap: 8,
               }}
             >
@@ -277,12 +337,14 @@ export function AreaActivitiesSheet({
             </ScrollView>
 
             {/* Kategorije */}
+            <Text style={labelStyle}>{t("area.categoriesLabel")}</Text>
             <ScrollView
               horizontal
               showsHorizontalScrollIndicator={false}
+              style={{ flexGrow: 0, flexShrink: 0, height: 42 }}
               contentContainerStyle={{
                 paddingHorizontal: 18,
-                paddingVertical: 6,
+                alignItems: "center",
                 gap: 8,
               }}
             >
@@ -345,15 +407,7 @@ export function AreaActivitiesSheet({
                 }
                 renderItem={({ item, index }) => {
                   const thumb = fullUrl(item.thumbnailPath || item.filePath);
-                  const km =
-                    point && item.latitude != null && item.longitude != null
-                      ? distanceKm(
-                          point.latitude,
-                          point.longitude,
-                          item.latitude,
-                          item.longitude,
-                        )
-                      : null;
+                  const km = postDistance(item);
                   return (
                     <TouchableOpacity
                       style={{
@@ -408,11 +462,30 @@ export function AreaActivitiesSheet({
                           </Text>
                         )}
                         {km !== null && (
-                          <Text style={{ color: "#8aa483", fontSize: 12 }}>
-                            {km < 1
-                              ? `${Math.round(km * 1000)} m`
-                              : `${km.toFixed(1)} km`}
-                          </Text>
+                          <View
+                            style={{
+                              flexDirection: "row",
+                              alignItems: "center",
+                              gap: 4,
+                              marginTop: 2,
+                            }}
+                          >
+                            <Ionicons
+                              name="navigate-outline"
+                              size={12}
+                              color="#8aa483"
+                            />
+                            {/* Gola brojka ne kaže od čega se mjeri; uz ime
+                                mjesta je odmah jasno. */}
+                            <Text style={{ color: "#8aa483", fontSize: 12 }}>
+                              {km < 1
+                                ? `${Math.round(km * 1000)} m`
+                                : `${km.toFixed(1)} km`}
+                              {placeName
+                                ? ` ${t("area.from", { place: placeName })}`
+                                : ""}
+                            </Text>
+                          </View>
                         )}
                       </View>
                     </TouchableOpacity>

@@ -1005,9 +1005,12 @@
   },
   "area": {
     "title": "Publications dans cette zone",
-    "thisArea": "Cette zone",
     "empty": "Aucune publication ici pour l'instant. Essaie un rayon plus large ou enlève le filtre de catégories.",
     "loadFailed": "Impossible de charger les publications. Vérifie ta connexion et réessaie.",
-    "openFromPlan": "Ce que d'autres ont publié ici"
+    "openFromPlan": "Ce que d'autres ont publié ici",
+    "titleFor": "Publications pour {{place}} et les environs",
+    "rangeLabel": "Rayon",
+    "categoriesLabel": "Catégories",
+    "from": "de {{place}}"
   }
 }
