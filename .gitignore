@@ -31,6 +31,11 @@ yarn-error.*
 *.pem
 
 # local env files
+# .env je namjerno ovdje, ne samo .env*.local: datoteka je bila u gitu s
+# pravim Google Maps ključem. Ključ s prefiksom EXPO_PUBLIC_ ionako završi
+# u bundleu aplikacije, pa ga ne čuva tajnost nego ograničenja u Google
+# Cloud Consoleu (paket + SHA-1 otiska, i samo potrebni API-ji).
+.env
 .env*.local
 
 # typescript
