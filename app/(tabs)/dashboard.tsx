@@ -39,7 +39,7 @@ import {
 import MapView, { Circle, Marker, Region } from "react-native-maps";
 import { useTheme } from "../../components/AdaptiveThemeProvider";
 import { PlanMyDayModal } from "../../components/PlanMyDayModal";
-import { ag, dm, pb, pr, s } from "../../styles/varaTheme";
+import { ag, dm, pb, pr, s, V } from "../../styles/varaTheme";
 import { API_BASE_URL } from "../config/api";
 import {
   useInputBottomOffset,
@@ -444,7 +444,7 @@ interface DayRoute {
   coordinates: { latitude: number; longitude: number }[];
 }
 
-const ROUTE_COLORS = ["#667eea", "#ff6b6b", "#00b894", "#fdcb6e", "#a29bfe"];
+const ROUTE_COLORS = [V.visited, "#AD6452", "#669CB7", V.accentGold, "#9D57A8"];
 const ROUTE_LABELS = ["A", "B", "C", "D", "E"];
 
 // ZAMIJENI stari CATEGORY_HOURS tip i konstantu s ovim:
@@ -1338,7 +1338,7 @@ function PlaceMarker({
   isVisited?: boolean;
 }) {
   const cat = placeCategories[place.type as keyof typeof placeCategories];
-  const color = cat?.color || "#667eea";
+  const color = cat?.color || V.silverDim;
   const pulse = useRef(new Animated.Value(1)).current;
 
   useEffect(() => {
@@ -1564,11 +1564,15 @@ function StarRating({
   return (
     <View style={{ flexDirection: "row", gap: 6 }}>
       {[1, 2, 3, 4, 5].map((s) => (
-        <TouchableOpacity key={s} onPress={() => onChange(s)}>
-          <Text
-            style={{ fontSize: 28, color: s <= value ? "#ff9500" : "#ddd" }}
-          >
-            ★
+        <TouchableOpacity
+          key={s}
+          onPress={() => onChange(s)}
+          hitSlop={{ top: 8, bottom: 8, left: 4, right: 4 }}
+        >
+          {/* Prazna zvjezdica je šuplja (☆), ne samo blijeda: neocijenjeno
+              mjesto inače izgleda kao da već ima pet zvjezdica. */}
+          <Text style={[dm.star, s <= value ? dm.starOn : dm.starOff]}>
+            {s <= value ? "★" : "☆"}
           </Text>
         </TouchableOpacity>
       ))}
@@ -1705,7 +1709,7 @@ function PlaceDetailModal({
 
   if (!place) return null;
   const cat = placeCategories[place.type as keyof typeof placeCategories];
-  const color = cat?.color || "#667eea";
+  const color = cat?.color || V.silverDim;
   const emoji = EMOJIS[place.type] || "📍";
   const photos = details?.photos || [];
   const isNotified = notifPrefs.categories.includes(place.type);
@@ -1769,11 +1773,14 @@ function PlaceDetailModal({
               keyboardShouldPersistTaps="handled"
               contentContainerStyle={{ paddingBottom: inputOffset }}
             >
+              <View style={dm.grabber} />
               <View style={dm.imageBox}>
                 {loading ? (
                   <View style={[dm.imgPh, { backgroundColor: color + "22" }]}>
                     <ActivityIndicator color={color} size="large" />
-                    <Text style={{ color: "#999", marginTop: 8, fontSize: 13 }}>
+                    <Text
+                      style={{ color: V.silverDim, marginTop: 8, fontSize: 13 }}
+                    >
                       {t("common.loading")}
                     </Text>
                   </View>
@@ -1829,8 +1836,16 @@ function PlaceDetailModal({
               </View>
 
               <View style={dm.body}>
-                <View style={[dm.badge, { backgroundColor: color }]}>
-                  <Text style={dm.badgeTxt}>
+                <View
+                  style={[
+                    dm.badge,
+                    {
+                      backgroundColor: color + "26",
+                      borderColor: color + "77",
+                    },
+                  ]}
+                >
+                  <Text style={[dm.badgeTxt, { color }]}>
                     {emoji}{" "}
                     {t(`categories.${place.type}`, {
                       defaultValue: place.type,
@@ -1926,8 +1941,8 @@ function PlaceDetailModal({
                       }
                       onToggleNotif(place.type);
                     }}
-                    trackColor={{ true: "#667eea", false: "#ccc" }}
-                    thumbColor="#fff"
+                    trackColor={{ true: V.visited, false: V.borderDim }}
+                    thumbColor={isNotified ? V.silverBright : V.silverDim}
                   />
                 </View>
 
@@ -1938,7 +1953,7 @@ function PlaceDetailModal({
                     ref={commentInputRef}
                     style={dm.commentInput}
                     placeholder={t("map.commentPlaceholder")}
-                    placeholderTextColor="#bbb"
+                    placeholderTextColor={V.silverDim}
                     value={comment}
                     onChangeText={setComment}
                     multiline
@@ -1954,13 +1969,18 @@ function PlaceDetailModal({
                     style={[dm.returnToggle, wantReturn && dm.returnA]}
                     onPress={() => setWantReturn((v) => !v)}
                   >
-                    <Text style={dm.returnTxt}>
-                      {wantReturn ? " " : "⬜ "}
+                    <Text
+                      style={[
+                        dm.returnTxt,
+                        wantReturn && { color: V.silverBright },
+                      ]}
+                    >
+                      {wantReturn ? "☑  " : "☐  "}
                       {t("map.wantToReturn")}
                     </Text>
                   </TouchableOpacity>
                   <TouchableOpacity
-                    style={[dm.reviewBtn, { backgroundColor: color }]}
+                    style={dm.reviewBtn}
                     onPress={handleSave}
                     disabled={saving}
                   >
@@ -1987,7 +2007,7 @@ function PlaceDetailModal({
 
                 {!isVisited ? (
                   <TouchableOpacity
-                    style={[dm.visitBtn, { backgroundColor: color }]}
+                    style={dm.visitBtn}
                     onPress={() => {
                       onMarkVisited(place);
                       onClose();
@@ -2001,7 +2021,7 @@ function PlaceDetailModal({
                   <View style={dm.visitedBadge}>
                     <Text
                       style={{
-                        color: "#34c759",
+                        color: V.visited,
                         fontWeight: "700",
                         fontSize: 15,
                       }}
@@ -2037,7 +2057,7 @@ function PlaceDetailModal({
             <TextInput
               style={dm.reportInput}
               placeholder={t("map.reportPlaceholder")}
-              placeholderTextColor="#8aa483"
+              placeholderTextColor={V.silverDim}
               value={reportText}
               onChangeText={setReportText}
               multiline
@@ -2047,13 +2067,13 @@ function PlaceDetailModal({
 
             <View style={{ flexDirection: "row", gap: 8 }}>
               <TouchableOpacity
-                style={[dm.reportAction, { borderColor: "#8aa483" }]}
+                style={[dm.reportAction, { borderColor: V.silverDim }]}
                 onPress={() => {
                   setReportOpen(false);
                   setReportText("");
                 }}
               >
-                <Text style={{ color: "#8aa483", fontWeight: "700" }}>
+                <Text style={{ color: V.silverDim, fontWeight: "700" }}>
                   {t("common.cancel")}
                 </Text>
               </TouchableOpacity>
@@ -2061,7 +2081,9 @@ function PlaceDetailModal({
                 style={[
                   dm.reportAction,
                   {
-                    backgroundColor: reportText.trim() ? color : "#3a4a35",
+                    backgroundColor: reportText.trim()
+                      ? V.visited
+                      : V.borderDim,
                     borderColor: "transparent",
                     flex: 1,
                   },
@@ -2305,7 +2327,7 @@ function NotificationSettingsModal({
         "escapeRoom",
         "restaurant",
       ],
-      color: "#667eea",
+      color: V.visited,
     },
     {
       id: "adults",
@@ -4091,7 +4113,7 @@ export function ActivityGroupsModal({
                   const active = newGroup.category === tmpl.value;
                   const catMeta =
                     placeCategories[tmpl.value as keyof typeof placeCategories];
-                  const bgColor = catMeta?.color || "#667eea";
+                  const bgColor = catMeta?.color || V.silverDim;
                   return (
                     <TouchableOpacity
                       key={tmpl.value}
@@ -4487,7 +4509,7 @@ export function ActivityGroupsModal({
                   (categoryKey &&
                     placeCategories[categoryKey as keyof typeof placeCategories]
                       ?.color) ||
-                  "#667eea";
+                  V.silverDim;
 
                 const timeAgo = Math.floor(
                   (Date.now() - new Date(g.createdAt || Date.now()).getTime()) /
@@ -4587,7 +4609,7 @@ export function ActivityGroupsModal({
                                 width: 26,
                                 height: 26,
                                 borderRadius: 13,
-                                backgroundColor: "#667eea",
+                                backgroundColor: V.visited,
                                 justifyContent: "center",
                                 alignItems: "center",
                                 borderWidth: 2,
@@ -5563,7 +5585,7 @@ function PlaceDetailInPlan({
       .catch(() => setLoading(false));
   }, [place.name, place.latitude, place.longitude]);
 
-  if (loading) return <ActivityIndicator color="#667eea" />;
+  if (loading) return <ActivityIndicator color={V.visited} />;
 
   return (
     <ScrollView>
@@ -8477,7 +8499,7 @@ function VisitArchiveModal({
             renderItem={({ item }) => {
               const cat =
                 placeCategories[item.placeType as keyof typeof placeCategories];
-              const color = cat?.color || "#667eea";
+              const color = cat?.color || V.silverDim;
               return (
                 <TouchableOpacity
                   style={{
@@ -9560,7 +9582,7 @@ function QuickCategoryBar({
         const isFocused = focusedType === catId;
         const count = countByType[catId] || 0;
         const cat = placeCategories[catId as keyof typeof placeCategories];
-        const color = cat?.color || "#667eea";
+        const color = cat?.color || V.silverDim;
         const icon = CATEGORY_ICONS[catId];
 
         return (
@@ -9791,7 +9813,7 @@ export default function DashboardScreen() {
           "escapeRoom",
           "restaurant",
         ],
-        color: "#667eea",
+        color: V.visited,
       },
       {
         id: "adults",
@@ -10958,7 +10980,7 @@ export default function DashboardScreen() {
         showsPointsOfInterests={false}
         toolbarEnabled={false}
         loadingEnabled
-        loadingIndicatorColor="#667eea"
+        loadingIndicatorColor={V.visited}
         zoomControlEnabled={false}
       >
         {showRadiusCircle && activeSearchLoc && (
@@ -10966,8 +10988,8 @@ export default function DashboardScreen() {
             center={activeSearchLoc}
             radius={radius * 1000}
             strokeWidth={2}
-            strokeColor="#667eea"
-            fillColor="rgba(102,126,234,0.08)"
+            strokeColor={V.visited}
+            fillColor="rgba(90,138,72,0.10)"
           />
         )}
         {userLocation && (
@@ -11068,7 +11090,7 @@ export default function DashboardScreen() {
           {citySearching ? (
             <ActivityIndicator
               size="small"
-              color="#667eea"
+              color={V.visited}
               style={{ marginRight: 8 }}
             />
           ) : (

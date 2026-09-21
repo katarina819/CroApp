@@ -105,6 +105,17 @@ export const dm = StyleSheet.create({
     borderColor: V.borderGreen,
     maxHeight: SH * 0.92,
   },
+  // Drška na vrhu listića. Bez nje se na fotografiji tamnog mjesta nije
+  // vidjelo da je ovo list koji se povlači — ostajao je samo sustavni "natrag".
+  grabber: {
+    alignSelf: "center",
+    width: 42,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: V.borderGreen,
+    marginTop: 10,
+    marginBottom: 2,
+  },
   imageBox: { position: "relative" },
   imgPh: {
     width: "100%",
@@ -130,16 +141,18 @@ export const dm = StyleSheet.create({
     backgroundColor: "rgba(196,202,188,0.3)",
   },
   dotA: { backgroundColor: V.silver },
+  // Gumb stoji preko fotografije, a fotografija može biti bilo koje boje.
+  // Zato puna tamna podloga i svijetli rub — ne oslanja se na to što je ispod.
   closeBtn: {
     position: "absolute",
     top: 12,
     right: 12,
-    backgroundColor: V.overlay,
-    width: 34,
-    height: 34,
-    borderRadius: 17,
+    backgroundColor: "rgba(10,20,8,0.94)",
+    width: 36,
+    height: 36,
+    borderRadius: 18,
     borderWidth: 1,
-    borderColor: V.borderGreen,
+    borderColor: V.silverDim,
     justifyContent: "center",
     alignItems: "center",
   },
@@ -157,16 +170,22 @@ export const dm = StyleSheet.create({
     alignItems: "center",
   },
   body: { padding: 20, paddingBottom: 36 },
+  // Boja kategorije ulazi kao ton podloge i puna boja teksta, a ne kao
+  // puna ploha. Ploha je na zelenoj pozadini izgledala kao naljepnica
+  // zalijepljena preko sučelja; ovako kategorija i dalje ima svoju boju,
+  // ali pripada listiću.
   badge: {
     alignSelf: "flex-start",
-    paddingHorizontal: 12,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    paddingHorizontal: 11,
     paddingVertical: 5,
-    borderRadius: 6,
+    borderRadius: 999,
     marginBottom: 10,
     borderWidth: 1,
-    borderColor: V.borderGreen,
   },
-  badgeTxt: { color: V.silverBright, fontSize: 13, fontWeight: "700" },
+  badgeTxt: { fontSize: 13, fontWeight: "700", letterSpacing: 0.2 },
   name: {
     fontSize: 22,
     fontWeight: "800",
@@ -228,6 +247,11 @@ export const dm = StyleSheet.create({
     gap: 12,
   },
   reviewTitle: { fontSize: 15, fontWeight: "700", color: V.silver },
+  star: { fontSize: 30, marginRight: 2 },
+  starOn: { color: V.accentGold },
+  // Prazna zvjezdica bila je #ddd — gotovo bijela, pa je neocijenjeno mjesto
+  // izgledalo kao da ima punih pet zvjezdica.
+  starOff: { color: V.borderGreen },
   commentInput: {
     backgroundColor: V.forestDeep,
     borderWidth: 1,
@@ -253,14 +277,26 @@ export const dm = StyleSheet.create({
     borderColor: V.visited,
   },
   returnTxt: { fontSize: 14, color: V.silver, fontWeight: "600" },
-  reviewBtn: { borderRadius: 10, paddingVertical: 12, alignItems: "center" },
+  // "Spremi recenziju" je radnja unutar kartice, "Označi kao posjećeno"
+  // je glavna radnja listića — zato je prva tamnija od druge. Obje su iz
+  // teme: da je gumb u boji kategorije, isti bi gumb bio tirkizan na kafiću
+  // i crven na restoranu, iako radi potpuno istu stvar.
+  reviewBtn: {
+    borderRadius: 10,
+    paddingVertical: 12,
+    alignItems: "center",
+    backgroundColor: V.visitedLight,
+    borderWidth: 1,
+    borderColor: V.visited,
+  },
   reviewBtnTxt: { color: V.silverBright, fontWeight: "700", fontSize: 15 },
   visitBtn: {
     borderRadius: 10,
     paddingVertical: 14,
     alignItems: "center",
+    backgroundColor: V.visited,
     borderWidth: 1,
-    borderColor: V.visited,
+    borderColor: "rgba(232,237,228,0.22)",
   },
 
   // Prijava netočnog podatka o mjestu. Namjerno tiša od ostalih radnji —

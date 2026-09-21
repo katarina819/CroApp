@@ -43,115 +43,133 @@ export interface Place {
 // obavijesti.
 export const OTHER_CATEGORY = "other";
 
+/**
+ * Boje kategorija.
+ *
+ * Prije su ovdje stajale boje iz zadane "flat UI" palete (#FF6B6B, #4ECDC4,
+ * #F1C40F…). Na karti su bile čitljive, ali te iste boje ulaze i u sučelje —
+ * u oznaku kategorije i u gumbe na listiću mjesta — pa je nad šumsko zelenom
+ * pozadinom tirkiz na pola ekrana izgledao kao da je zalutao iz druge
+ * aplikacije.
+ *
+ * Sada su nijanse raspoređene po cijelom krugu, ali prigušene i u užem
+ * rasponu svjetline, pa pripadaju istoj obitelji kao ostatak sučelja.
+ * Razmak među njima provjeren je u Lab prostoru: najbliži par je ΔE ≈ 14,
+ * a svaka je boja ΔE ≥ 29 od pozadine — uz emoji koji svaki marker ionako
+ * nosi, kategorije se i dalje razlikuju na prvi pogled.
+ *
+ * Kad dodaješ kategoriju, drži se raspona: zasićenost ~0.35, svjetlina
+ * 0.34–0.62. Jarka boja ovdje ne ostaje samo na karti.
+ */
 export const placeCategories: Record<
   string,
   { icon: string; color: string; marker: string; osmTag: string }
 > = {
   restaurant: {
     icon: "🍽️",
-    color: "#FF6B6B",
+    color: "#AD6452",
     marker: "restaurant",
     osmTag: "amenity=restaurant",
   },
   cafe: {
     icon: "☕",
-    color: "#4ECDC4",
+    color: "#825F40",
     marker: "cafe",
     osmTag: "amenity=cafe",
   },
   club: {
     icon: "🎵",
-    color: "#9B59B6",
+    color: "#6A4C94",
     marker: "club",
     osmTag: "amenity=nightclub",
   },
   beach: {
     icon: "🏖️",
-    color: "#3498DB",
+    color: "#669CB7",
     marker: "beach",
     osmTag: "natural=beach",
   },
   landmark: {
     icon: "🏰",
-    color: "#F1C40F",
+    color: "#BDAB6B",
     marker: "landmark",
     osmTag: "historic=*",
   },
   opg: {
     icon: "🌾",
-    color: "#2ECC71",
+    color: "#95AE5B",
     marker: "opg",
     osmTag: "shop=farm",
   },
   accommodation: {
     icon: "🏨",
-    color: "#E67E22",
+    color: "#C59877",
     marker: "accommodation",
     osmTag: "tourism=hotel",
   },
   market: {
     icon: "🛒",
-    color: "#27AE60",
+    color: "#AD8952",
     marker: "market",
     osmTag: "amenity=marketplace",
   },
   paintball: {
     icon: "🎯",
-    color: "#E74C3C",
+    color: "#994853",
     marker: "paintball",
     osmTag: "sport=paintball",
   },
   cinema: {
     icon: "🎬",
-    color: "#8E44AD",
+    color: "#5B70AE",
     marker: "cinema",
     osmTag: "amenity=cinema",
   },
   park: {
     icon: "🌳",
-    color: "#27AE60",
+    color: "#619D4D",
     marker: "park",
     osmTag: "leisure=park",
   },
   escapeRoom: {
     icon: "🔐",
-    color: "#F39C12",
+    color: "#7B793D",
     marker: "escape_room",
     osmTag: "leisure=escape_game",
   },
   museum: {
     icon: "🏛️",
-    color: "#8E44AD",
+    color: "#9D57A8",
     marker: "museum",
     osmTag: "tourism=museum",
   },
   theater: {
     icon: "🎭",
-    color: "#D35400",
+    color: "#AE5B85",
     marker: "theatre",
     osmTag: "amenity=theatre",
   },
   mountain: {
     icon: "⛰️",
-    color: "#7F8C8D",
+    color: "#8B9C94",
     marker: "mountain",
     osmTag: "natural=peak",
   },
   nationalPark: {
     icon: "🏞️",
-    color: "#2ECC71",
+    color: "#37764C",
     marker: "national_park",
     osmTag: "boundary=national_park",
   },
   cave: {
     icon: "🕳️",
-    color: "#95A5A6",
+    color: "#4B5F63",
     marker: "cave",
     osmTag: "natural=cave_entrance",
   },
   spa: {
     icon: "💧",
-    color: "#1ABC9C",
+    color: "#5BAE9E",
     marker: "spa",
     osmTag: "amenity=spa",
   },
