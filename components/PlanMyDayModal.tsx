@@ -3331,21 +3331,22 @@ export function PlanMyDayModal({
               )}
             </View>
           </ScrollView>
-
-          <AreaActivitiesSheet
-            visible={areaSheetOpen}
-            point={
-              geocodedCoords
-                ? {
-                    name: destination || "",
-                    latitude: geocodedCoords.latitude,
-                    longitude: geocodedCoords.longitude,
-                  }
-                : null
-            }
-            onClose={() => setAreaSheetOpen(false)}
-          />
         )}
+
+        {/* Objave oko grada za koji je plan napravljen. */}
+        <AreaActivitiesSheet
+          visible={areaSheetOpen}
+          point={
+            geocodedCoords
+              ? {
+                  name: destination || "",
+                  latitude: geocodedCoords.latitude,
+                  longitude: geocodedCoords.longitude,
+                }
+              : null
+          }
+          onClose={() => setAreaSheetOpen(false)}
+        />
 
         {/* Place Detail Modal */}
         <PlaceDetailModalComponent
