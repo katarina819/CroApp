@@ -337,7 +337,8 @@
     "distance": "{{dist}} km de vous",
     "morningShort": "Matin",
     "afternoonShort": "Après-midi",
-    "eveningShort": "Soir"
+    "eveningShort": "Soir",
+    "activitiesBtn": "Activités"
   },
   "videos": {
     "title": "Vidéos",
@@ -1001,5 +1002,12 @@
   },
   "pager": {
     "detailsTitle": "Détails de la publication"
+  },
+  "area": {
+    "title": "Publications dans cette zone",
+    "thisArea": "Cette zone",
+    "empty": "Aucune publication ici pour l'instant. Essaie un rayon plus large ou enlève le filtre de catégories.",
+    "loadFailed": "Impossible de charger les publications. Vérifie ta connexion et réessaie.",
+    "openFromPlan": "Ce que d'autres ont publié ici"
   }
 }

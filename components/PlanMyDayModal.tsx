@@ -30,6 +30,7 @@ import {
   View,
 } from "react-native";
 import MapView, { Marker, Polyline } from "react-native-maps";
+import { AreaActivitiesSheet } from "./AreaActivitiesSheet";
 import { API_BASE_URL } from "../app/config/api"; // prilagodi putanju
 
 import {
@@ -1181,6 +1182,8 @@ export function PlanMyDayModal({
    * grada. Sad se dodirom mjesto pokaže na karti zajedno s korisnikovim
    * položajem, pa se vidi kamo zapravo treba.
    */
+  /** Objave oko grada za koji je plan napravljen. */
+  const [areaSheetOpen, setAreaSheetOpen] = useState(false);
   const [previewVenue, setPreviewVenue] = useState<{
     name: string;
     latitude: number;
@@ -2356,6 +2359,33 @@ export function PlanMyDayModal({
             ref={pageScrollRef}
             contentContainerStyle={{ paddingBottom: 60 }}
           >
+            {/* Što su drugi objavili u ovom gradu — plan govori kamo ići,
+                ovo pokazuje kako to izgleda i što se sprema. */}
+            {geocodedCoords && (
+              <TouchableOpacity
+                style={{
+                  marginHorizontal: 16,
+                  marginTop: 12,
+                  paddingVertical: 12,
+                  paddingHorizontal: 16,
+                  borderRadius: 12,
+                  borderWidth: 1,
+                  borderColor: DC.borderDim,
+                  backgroundColor: DC.card,
+                  flexDirection: "row",
+                  alignItems: "center",
+                  gap: 10,
+                }}
+                onPress={() => setAreaSheetOpen(true)}
+              >
+                <Text style={{ fontSize: 18 }}>📣</Text>
+                <Text
+                  style={{ color: DC.text, fontSize: 14, fontWeight: "700" }}
+                >
+                  {t("area.openFromPlan")}
+                </Text>
+              </TouchableOpacity>
+            )}
             {/* KARTA */}
 
             {/* PRE-LOAD IKONA — skriveni View koji inicijalizira sve Image komponente */}
@@ -3301,6 +3331,20 @@ export function PlanMyDayModal({
               )}
             </View>
           </ScrollView>
+
+          <AreaActivitiesSheet
+            visible={areaSheetOpen}
+            point={
+              geocodedCoords
+                ? {
+                    name: destination || "",
+                    latitude: geocodedCoords.latitude,
+                    longitude: geocodedCoords.longitude,
+                  }
+                : null
+            }
+            onClose={() => setAreaSheetOpen(false)}
+          />
         )}
 
         {/* Place Detail Modal */}

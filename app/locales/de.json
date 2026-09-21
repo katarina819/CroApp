@@ -326,7 +326,8 @@
     "distance": "{{dist}} km von Ihnen entfernt",
     "morningShort": "Morgen",
     "afternoonShort": "Nachmittag",
-    "eveningShort": "Abend"
+    "eveningShort": "Abend",
+    "activitiesBtn": "Aktivitäten"
   },
   "password": {
     "minLength": "Min. 6 Zeichen",
@@ -1001,5 +1002,12 @@
   },
   "pager": {
     "detailsTitle": "Beitragsdetails"
+  },
+  "area": {
+    "title": "Beiträge in dieser Gegend",
+    "thisArea": "Diese Gegend",
+    "empty": "Hier gibt es noch keine Beiträge. Versuch einen größeren Umkreis oder entferne den Kategoriefilter.",
+    "loadFailed": "Beiträge konnten nicht geladen werden. Prüfe deine Verbindung und versuch es erneut.",
+    "openFromPlan": "Was andere hier gepostet haben"
   }
 }

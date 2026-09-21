@@ -323,7 +323,8 @@
     "distance": "{{dist}} km od vas",
     "morningShort": "Jutro",
     "afternoonShort": "Popodne",
-    "eveningShort": "Večer"
+    "eveningShort": "Večer",
+    "activitiesBtn": "Aktivnosti"
   },
   "notif": {
     "unavailableTitle": "Obavijesti nisu dostupne",
@@ -999,5 +1000,12 @@
   },
   "pager": {
     "detailsTitle": "Podaci o objavi"
+  },
+  "area": {
+    "title": "Objave u ovom kraju",
+    "thisArea": "Ovaj kraj",
+    "empty": "Ovdje još nema objava. Probaj veći domet ili makni filtar kategorija.",
+    "loadFailed": "Objave se nisu učitale. Provjeri vezu i pokušaj ponovno.",
+    "openFromPlan": "Što su drugi objavili ovdje"
   }
 }

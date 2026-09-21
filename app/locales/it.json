@@ -337,7 +337,8 @@
     "distance": "{{dist}} km da te",
     "morningShort": "Mattina",
     "afternoonShort": "Pomeriggio",
-    "eveningShort": "Sera"
+    "eveningShort": "Sera",
+    "activitiesBtn": "Attività"
   },
   "videos": {
     "title": "Video",
@@ -1001,5 +1002,12 @@
   },
   "pager": {
     "detailsTitle": "Dettagli del post"
+  },
+  "area": {
+    "title": "Post in questa zona",
+    "thisArea": "Questa zona",
+    "empty": "Qui non ci sono ancora post. Prova un raggio più ampio o togli il filtro categorie.",
+    "loadFailed": "Impossibile caricare i post. Controlla la connessione e riprova.",
+    "openFromPlan": "Cosa hanno pubblicato altri qui"
   }
 }

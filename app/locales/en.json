@@ -342,7 +342,8 @@
     "distance": "{{dist}} km from you",
     "morningShort": "Morning",
     "afternoonShort": "Afternoon",
-    "eveningShort": "Evening"
+    "eveningShort": "Evening",
+    "activitiesBtn": "Activities"
   },
   "videos": {
     "title": "Videos",
@@ -1001,5 +1002,12 @@
   },
   "pager": {
     "detailsTitle": "Post details"
+  },
+  "area": {
+    "title": "Posts in this area",
+    "thisArea": "This area",
+    "empty": "No posts here yet. Try a wider range, or clear the category filter.",
+    "loadFailed": "Posts could not be loaded. Check your connection and try again.",
+    "openFromPlan": "What others posted here"
   }
 }

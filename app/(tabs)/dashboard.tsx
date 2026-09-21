@@ -53,6 +53,10 @@ import {
   saveNotificationPreferences,
 } from "@/utils/notificationsApi";
 import {
+  AreaActivitiesSheet,
+  AreaPoint,
+} from "@/components/AreaActivitiesSheet";
+import {
   POST_CATEGORY_IDS,
   clearPlacesCache,
   geocodeCity,
@@ -9553,6 +9557,15 @@ export default function DashboardScreen() {
   };
 
   const [searchQuery, setSearchQuery] = useState("");
+  /**
+   * Objave oko mjesta koje se trenutno gleda na karti.
+   *
+   * "Blizu mene" u videima mjeri od krajeva u kojima se korisnik inače
+   * kreće — tko dođe u nepoznat grad time ne dobiva ništa. Ovdje se pita
+   * što je objavljeno oko točke na koju je karta namještena, bila to
+   * pretraga ili obično pomicanje.
+   */
+  const [areaSheetPoint, setAreaSheetPoint] = useState<AreaPoint | null>(null);
   const [searchResults, setSearchResults] = useState<Place[]>([]);
   const [showSearchResults, setShowSearchResults] = useState(false);
   const [isSearching, setIsSearching] = useState(false);
@@ -11377,6 +11390,34 @@ export default function DashboardScreen() {
             {t("map.radiusBtn")}
           </Text>
 
+          {/* Što se ovdje događa. Gleda se centar karte, pa radi i nakon
+              pretrage i nakon običnog pomicanja na drugi kraj. */}
+          <TouchableOpacity
+            style={UI_STYLES.mapCtrlBtn}
+            onPress={() => {
+              const center = mapRegion ?? initialRegion;
+              if (!center) return;
+              setAreaSheetPoint({
+                name: searchQuery.trim() || t("area.thisArea"),
+                latitude: center.latitude,
+                longitude: center.longitude,
+              });
+            }}
+          >
+            <Text style={{ fontSize: 20 }}>📣</Text>
+          </TouchableOpacity>
+          <Text
+            style={{
+              fontSize: 8,
+              color: "#888",
+              fontWeight: "600",
+              textAlign: "center",
+              marginBottom: 2,
+            }}
+          >
+            {t("map.activitiesBtn")}
+          </Text>
+
           <View style={UI_STYLES.mapCtrlDivider} />
 
           {/* Posjećena mjesta */}
@@ -12078,6 +12119,13 @@ export default function DashboardScreen() {
         visits={visits}
         PlaceDetailModalComponent={PlaceDetailModal}
       />
+      {/* Objave oko mjesta na koje je karta namještena. */}
+      <AreaActivitiesSheet
+        visible={areaSheetPoint !== null}
+        point={areaSheetPoint}
+        onClose={() => setAreaSheetPoint(null)}
+      />
+
       <NotificationsModal
         onOpenSettings={() => {
           setShowNotifications(false);
