@@ -274,15 +274,23 @@ export const dm = StyleSheet.create({
     marginBottom: 10,
   },
   reportBtnTxt: { color: V.silverDim, fontSize: 14, fontWeight: "600" },
-  reportBox: {
-    borderRadius: 12,
+  // Prozor prijave sjeda uz donji rub, odmah iznad tipkovnice.
+  reportOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.6)",
+    justifyContent: "flex-end",
+    padding: 16,
+  },
+  reportDialog: {
+    borderRadius: 16,
     borderWidth: 1,
     borderColor: V.borderGreen,
-    backgroundColor: V.forestMid,
-    padding: 12,
+    backgroundColor: V.forestDeep,
+    padding: 16,
     gap: 10,
-    marginBottom: 10,
   },
+  reportTitle: { color: V.silverBright, fontSize: 17, fontWeight: "800" },
+  reportPlace: { color: V.visited, fontSize: 14, fontWeight: "600" },
   reportHint: { color: V.silverDim, fontSize: 12, lineHeight: 17 },
   reportInput: {
     minHeight: 90,

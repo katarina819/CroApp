@@ -1974,79 +1974,16 @@ function PlaceDetailModal({
                   </TouchableOpacity>
                 </View>
 
-                {/* Prijava netočnog podatka. Stoji ispod ocjenjivanja, uz
-                    ostale radnje nad mjestom, a ne među njegovim podacima —
-                    nije informacija nego radnja. */}
-                {!reportOpen ? (
-                  <TouchableOpacity
-                    style={dm.reportBtn}
-                    onPress={() => setReportOpen(true)}
-                  >
-                    <Text style={dm.reportBtnTxt}>
-                      ⚠️ {t("map.reportWrong")}
-                    </Text>
-                  </TouchableOpacity>
-                ) : (
-                  <View style={dm.reportBox}>
-                    <Text style={dm.reportHint}>{t("map.reportHint")}</Text>
-                    <TextInput
-                      style={dm.reportInput}
-                      placeholder={t("map.reportPlaceholder")}
-                      placeholderTextColor="#8aa483"
-                      value={reportText}
-                      onChangeText={setReportText}
-                      multiline
-                      maxLength={600}
-                      onFocus={() => {
-                        // Čeka se da se tipkovnica podigne pa se polje dovede
-                        // u vidno polje; bez odgode list još ne zna svoju novu
-                        // visinu i pomak promaši.
-                        setTimeout(
-                          () =>
-                            scrollViewRef.current?.scrollToEnd({
-                              animated: true,
-                            }),
-                          350,
-                        );
-                      }}
-                    />
-                    <View style={{ flexDirection: "row", gap: 8 }}>
-                      <TouchableOpacity
-                        style={[dm.reportAction, { borderColor: "#8aa483" }]}
-                        onPress={() => {
-                          setReportOpen(false);
-                          setReportText("");
-                        }}
-                      >
-                        <Text style={{ color: "#8aa483", fontWeight: "700" }}>
-                          {t("common.cancel")}
-                        </Text>
-                      </TouchableOpacity>
-                      <TouchableOpacity
-                        style={[
-                          dm.reportAction,
-                          {
-                            backgroundColor: reportText.trim()
-                              ? color
-                              : "#3a4a35",
-                            borderColor: "transparent",
-                            flex: 1,
-                          },
-                        ]}
-                        onPress={sendPlaceReport}
-                        disabled={!reportText.trim() || sendingReport}
-                      >
-                        {sendingReport ? (
-                          <ActivityIndicator color="#fff" />
-                        ) : (
-                          <Text style={{ color: "#fff", fontWeight: "700" }}>
-                            {t("map.reportSend")}
-                          </Text>
-                        )}
-                      </TouchableOpacity>
-                    </View>
-                  </View>
-                )}
+                {/* Prijava netočnog podatka otvara vlastiti prozor.
+                    Umetnuti obrazac unutar ovog lista značio je listanje do
+                    polja, a tipkovnica bi ga svejedno prekrila — list je pri
+                    dnu ekrana i nema se kamo podići. */}
+                <TouchableOpacity
+                  style={dm.reportBtn}
+                  onPress={() => setReportOpen(true)}
+                >
+                  <Text style={dm.reportBtnTxt}>⚠️ {t("map.reportWrong")}</Text>
+                </TouchableOpacity>
 
                 {!isVisited ? (
                   <TouchableOpacity
@@ -2078,6 +2015,72 @@ function PlaceDetailModal({
           </View>
         </View>
       </KeyboardAvoidingView>
+
+      {/* Prijava netočnog podatka — vlastiti, mali prozor.
+          Sadrži samo naslov, polje i dva gumba, pa nema što listati. Sjeda
+          točno iznad tipkovnice (paddingBottom = njezina visina), umjesto da
+          se pokušava izboriti za prostor unutar lista s podacima o mjestu. */}
+      <Modal
+        visible={reportOpen}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setReportOpen(false)}
+      >
+        <View style={[dm.reportOverlay, { paddingBottom: inputOffset }]}>
+          <View style={dm.reportDialog}>
+            <Text style={dm.reportTitle}>{t("map.reportWrong")}</Text>
+            <Text style={dm.reportPlace} numberOfLines={1}>
+              {place.name}
+            </Text>
+            <Text style={dm.reportHint}>{t("map.reportHint")}</Text>
+
+            <TextInput
+              style={dm.reportInput}
+              placeholder={t("map.reportPlaceholder")}
+              placeholderTextColor="#8aa483"
+              value={reportText}
+              onChangeText={setReportText}
+              multiline
+              maxLength={600}
+              autoFocus
+            />
+
+            <View style={{ flexDirection: "row", gap: 8 }}>
+              <TouchableOpacity
+                style={[dm.reportAction, { borderColor: "#8aa483" }]}
+                onPress={() => {
+                  setReportOpen(false);
+                  setReportText("");
+                }}
+              >
+                <Text style={{ color: "#8aa483", fontWeight: "700" }}>
+                  {t("common.cancel")}
+                </Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[
+                  dm.reportAction,
+                  {
+                    backgroundColor: reportText.trim() ? color : "#3a4a35",
+                    borderColor: "transparent",
+                    flex: 1,
+                  },
+                ]}
+                onPress={sendPlaceReport}
+                disabled={!reportText.trim() || sendingReport}
+              >
+                {sendingReport ? (
+                  <ActivityIndicator color="#fff" />
+                ) : (
+                  <Text style={{ color: "#fff", fontWeight: "700" }}>
+                    {t("map.reportSend")}
+                  </Text>
+                )}
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </Modal>
   );
 }
