@@ -9088,24 +9088,22 @@ async function fetchGoogleNearby(
             if (data.status !== "OK" || !data.results?.length) return [];
 
             // ========== SPREMI REZULTATE U VARIJABLU ==========
-            let results = data.results.map(
-              (item: any): Place => ({
-                id: `google_${item.place_id}`,
-                name: item.name,
-                latitude: item.geometry.location.lat,
-                longitude: item.geometry.location.lng,
-                type: type as Place["type"],
-                rating: item.rating,
-                address: item.vicinity,
-                distance: haversineKm(
-                  latitude,
-                  longitude,
-                  item.geometry.location.lat,
-                  item.geometry.location.lng,
-                ),
-                openNow: item.opening_hours?.open_now ?? null,
-              }),
-            );
+            let results = data.results.map((item: any): Place => ({
+              id: `google_${item.place_id}`,
+              name: item.name,
+              latitude: item.geometry.location.lat,
+              longitude: item.geometry.location.lng,
+              type: type as Place["type"],
+              rating: item.rating,
+              address: item.vicinity,
+              distance: haversineKm(
+                latitude,
+                longitude,
+                item.geometry.location.lat,
+                item.geometry.location.lng,
+              ),
+              openNow: item.opening_hours?.open_now ?? null,
+            }));
 
             // Google u rezultatima vraća i lokale koji su trajno zatvoreni
             // (business_status: CLOSED_PERMANENTLY) ili privremeno ne rade.

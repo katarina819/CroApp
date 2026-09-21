@@ -64,25 +64,23 @@ export const getPlacesFromGoogle = async (
         return [];
       }
 
-      return data.results.map(
-        (item: any): Place => ({
-          id: item.place_id,
-          name: item.name,
-          latitude: item.geometry.location.lat,
-          longitude: item.geometry.location.lng,
-          type: type,
-          rating: item.rating,
-          address: item.vicinity,
-          distance: calculateDistance(
-            latitude,
-            longitude,
-            item.geometry.location.lat,
-            item.geometry.location.lng,
-          ),
-          phone: item.formatted_phone_number,
-          openingHours: item.opening_hours?.open_now ? "Open now" : undefined,
-        }),
-      );
+      return data.results.map((item: any): Place => ({
+        id: item.place_id,
+        name: item.name,
+        latitude: item.geometry.location.lat,
+        longitude: item.geometry.location.lng,
+        type: type,
+        rating: item.rating,
+        address: item.vicinity,
+        distance: calculateDistance(
+          latitude,
+          longitude,
+          item.geometry.location.lat,
+          item.geometry.location.lng,
+        ),
+        phone: item.formatted_phone_number,
+        openingHours: item.opening_hours?.open_now ? "Open now" : undefined,
+      }));
     } catch (error) {
       console.error(`Error fetching ${type} from Google:`, error);
       return [];

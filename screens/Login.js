@@ -5,7 +5,7 @@ import {
   TextInput,
   TouchableOpacity,
   StyleSheet,
-  ActivityIndicator
+  ActivityIndicator,
 } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
@@ -82,9 +82,7 @@ export default function Login({ navigation, setIsAuthenticated }) {
         </TouchableOpacity>
 
         <TouchableOpacity onPress={() => navigation.navigate("Register")}>
-          <Text style={styles.link}>
-            Nemate račun? Registrirajte se
-          </Text>
+          <Text style={styles.link}>Nemate račun? Registrirajte se</Text>
         </TouchableOpacity>
       </View>
     </View>

@@ -1,0 +1,50 @@
+# Provjere koje se vrte na svaki push i svaki pull request.
+#
+# Dosad ih nije bilo nikakvih: 43 tisuće redaka bez ijedne automatske
+# provjere. Greška poput "Adjacent JSX elements must be wrapped in an
+# enclosing tag" dolazila je do Metro bundlera na računalu, umjesto da
+# padne ovdje.
+#
+# Sve tri provjere prolaze u trenutku kad je ovaj workflow dodan — ako
+# nešto pocrveni, pocrvenjelo je zbog promjene, ne zbog naslijeđenog duga.
+name: CI
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+
+# Novi push na istu granu prekida prethodni prolaz — nema smisla čekati
+# provjeru koda koji je već zamijenjen.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      # `npm ci` namjerno, ne `npm install`: instalira točno ono što piše u
+      # package-lock.json i pukne ako lockfile ne odgovara package.jsonu.
+      # Upravo je to bilo razbijeno — expo-video-thumbnails je bio u
+      # package.jsonu, a u lockfileu ga nije bilo.
+      - name: Install
+        run: npm ci
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Lint
+        run: npx expo lint
+
+      - name: Format
+        run: npm run format:check

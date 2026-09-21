@@ -6,7 +6,7 @@ import {
   TouchableOpacity,
   StyleSheet,
   Alert,
-  ScrollView
+  ScrollView,
 } from "react-native";
 
 export default function Register({ navigation }) {
@@ -79,13 +79,16 @@ export default function Register({ navigation }) {
         phone: form.phone.trim() || null,
       };
 
-      const response = await fetch("http://192.168.1.5:7089/api/auth/register", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
+      const response = await fetch(
+        "http://192.168.1.5:7089/api/auth/register",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(dataToSend),
         },
-        body: JSON.stringify(dataToSend),
-      });
+      );
 
       if (response.ok) {
         Alert.alert("Uspjeh", "Registracija uspješna!");

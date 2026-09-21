@@ -1,5 +1,11 @@
 // components/AdaptiveThemeProvider.tsx
-import React, { createContext, useContext, useEffect, useMemo, useRef } from "react";
+import React, {
+  createContext,
+  useContext,
+  useEffect,
+  useMemo,
+  useRef,
+} from "react";
 import { Animated, StyleSheet } from "react-native";
 import {
   AdaptiveThemeState,

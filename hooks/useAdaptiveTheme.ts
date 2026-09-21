@@ -8,12 +8,7 @@ import { Appearance, ColorSchemeName } from "react-native";
 
 // ─── Tipovi ───────────────────────────────────────────────────────────────────
 export type TimeZone =
-  | "dawn"
-  | "morning"
-  | "day"
-  | "evening"
-  | "night"
-  | "deep_night";
+  "dawn" | "morning" | "day" | "evening" | "night" | "deep_night";
 export type ThemeMode = "light" | "dark" | "auto";
 
 export interface AdaptiveThemeState {
@@ -140,9 +135,7 @@ export function useAdaptiveTheme(): AdaptiveThemeState {
     const tick = () => {
       const next = getCurrentTimeData();
       setTimeData((prev) =>
-        prev.hour === next.hour && prev.minute === next.minute
-          ? prev
-          : next,
+        prev.hour === next.hour && prev.minute === next.minute ? prev : next,
       );
     };
     tick(); // odmah pri montiranju

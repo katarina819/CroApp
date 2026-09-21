@@ -24,7 +24,6 @@ export default function App() {
   return (
     <NavigationContainer>
       <Stack.Navigator screenOptions={{ headerShown: false }}>
-        
         {!isAuthenticated ? (
           <>
             <Stack.Screen name="Login">
@@ -42,7 +41,6 @@ export default function App() {
             )}
           </Stack.Screen>
         )}
-
       </Stack.Navigator>
     </NavigationContainer>
   );

@@ -474,10 +474,14 @@ function FreshAvatar({
   );
 }
 
+function StableAvatarInner({ userId, size }: { userId: number; size: number }) {
+  return <FreshAvatar userId={userId} size={size} />;
+}
+
+// Bez imena se u React alatima i u stogu grešaka vidi samo "Anonymous",
+// pa se ne zna koji je od desetak avatara u listi pao.
 const StableAvatar = React.memo(
-  ({ userId, size }: { userId: number; size: number }) => (
-    <FreshAvatar userId={userId} size={size} />
-  ),
+  StableAvatarInner,
   (prev, next) => prev.userId === next.userId && prev.size === next.size,
 );
 
