@@ -338,7 +338,14 @@
     "morningShort": "Matin",
     "afternoonShort": "Après-midi",
     "eveningShort": "Soir",
-    "activitiesBtn": "Activités"
+    "activitiesBtn": "Activités",
+    "reportWrong": "Cette information est incorrecte",
+    "reportHint": "Qu'est-ce qui ne va pas ? Par exemple : le lieu a fermé, l'adresse est fausse, la catégorie ne convient pas.",
+    "reportPlaceholder": "Décris ce qui ne va pas…",
+    "reportSend": "Envoyer à l'admin",
+    "reportSentTitle": "Merci !",
+    "reportSentBody": "Ton signalement a été envoyé à l'admin. Nous allons vérifier.",
+    "reportFailed": "Le signalement n'a pas été envoyé. Vérifie ta connexion et réessaie."
   },
   "videos": {
     "title": "Vidéos",

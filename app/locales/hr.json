@@ -324,7 +324,14 @@
     "morningShort": "Jutro",
     "afternoonShort": "Popodne",
     "eveningShort": "Večer",
-    "activitiesBtn": "Aktivnosti"
+    "activitiesBtn": "Aktivnosti",
+    "reportWrong": "Podatak nije točan",
+    "reportHint": "Što je krivo? Npr. mjesto je zatvoreno, adresa je pogrešna, kategorija ne odgovara.",
+    "reportPlaceholder": "Opiši što nije u redu…",
+    "reportSend": "Pošalji adminu",
+    "reportSentTitle": "Hvala!",
+    "reportSentBody": "Prijava je poslana adminu. Provjerit ćemo podatak.",
+    "reportFailed": "Prijava nije poslana. Provjeri vezu i pokušaj ponovno."
   },
   "notif": {
     "unavailableTitle": "Obavijesti nisu dostupne",

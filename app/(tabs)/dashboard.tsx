@@ -1603,6 +1603,63 @@ function PlaceDetailModal({
   const [saved, setSaved] = useState(false);
   const scrollViewRef = useRef<ScrollView>(null);
   const commentInputRef = useRef<TextInput>(null);
+  /**
+   * Prijava netočnog podatka o mjestu.
+   *
+   * Podaci o mjestima dolaze iz OpenStreetMapa i znaju biti zastarjeli —
+   * kafić se zatvorio, adresa je kriva, kategorija promašena. Dosad je to
+   * korisnik mogao samo prešutjeti. Prijava ide u isti popis koji admin
+   * već čita (/api/support/report), pa nije trebalo ništa novo na
+   * poslužitelju.
+   */
+  const [reportOpen, setReportOpen] = useState(false);
+  const [reportText, setReportText] = useState("");
+  const [sendingReport, setSendingReport] = useState(false);
+
+  const sendPlaceReport = async () => {
+    if (!place || !reportText.trim()) return;
+    setSendingReport(true);
+    try {
+      const token = await AsyncStorage.getItem("token");
+      const [firstName, lastName, username] = await Promise.all([
+        AsyncStorage.getItem("firstName"),
+        AsyncStorage.getItem("lastName"),
+        AsyncStorage.getItem("username"),
+      ]);
+
+      // O kojem se mjestu radi ide u samu poruku: admin tako vidi sve u
+      // jednom polju, bez nove tablice i bez migracije.
+      const context =
+        `${place.name}\n` +
+        `${t(`categories.${place.type}`, { defaultValue: place.type })}\n` +
+        `${place.address ?? ""}\n` +
+        `${place.latitude}, ${place.longitude}\n` +
+        `OSM id: ${place.id}`;
+
+      const res = await fetch(`${API_BASE_URL}/api/support/report`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify({
+          type: "place",
+          message: `${context}\n\n---\n${reportText.trim()}`,
+          userName: `${firstName ?? ""} ${lastName ?? ""}`.trim(),
+          userUsername: username ?? "",
+        }),
+      });
+
+      if (!res.ok) throw new Error();
+      setReportText("");
+      setReportOpen(false);
+      Alert.alert(t("map.reportSentTitle"), t("map.reportSentBody"));
+    } catch {
+      Alert.alert(t("common.error"), t("map.reportFailed"));
+    } finally {
+      setSendingReport(false);
+    }
+  };
 
   useEffect(() => {
     if (!place || !visible) {
@@ -1893,6 +1950,68 @@ function PlaceDetailModal({
                     )}
                   </TouchableOpacity>
                 </View>
+
+                {/* Prijava netočnog podatka. Stoji ispod ocjenjivanja, uz
+                    ostale radnje nad mjestom, a ne među njegovim podacima —
+                    nije informacija nego radnja. */}
+                {!reportOpen ? (
+                  <TouchableOpacity
+                    style={dm.reportBtn}
+                    onPress={() => setReportOpen(true)}
+                  >
+                    <Text style={dm.reportBtnTxt}>
+                      ⚠️ {t("map.reportWrong")}
+                    </Text>
+                  </TouchableOpacity>
+                ) : (
+                  <View style={dm.reportBox}>
+                    <Text style={dm.reportHint}>{t("map.reportHint")}</Text>
+                    <TextInput
+                      style={dm.reportInput}
+                      placeholder={t("map.reportPlaceholder")}
+                      placeholderTextColor="#8aa483"
+                      value={reportText}
+                      onChangeText={setReportText}
+                      multiline
+                      maxLength={600}
+                    />
+                    <View style={{ flexDirection: "row", gap: 8 }}>
+                      <TouchableOpacity
+                        style={[dm.reportAction, { borderColor: "#8aa483" }]}
+                        onPress={() => {
+                          setReportOpen(false);
+                          setReportText("");
+                        }}
+                      >
+                        <Text style={{ color: "#8aa483", fontWeight: "700" }}>
+                          {t("common.cancel")}
+                        </Text>
+                      </TouchableOpacity>
+                      <TouchableOpacity
+                        style={[
+                          dm.reportAction,
+                          {
+                            backgroundColor: reportText.trim()
+                              ? color
+                              : "#3a4a35",
+                            borderColor: "transparent",
+                            flex: 1,
+                          },
+                        ]}
+                        onPress={sendPlaceReport}
+                        disabled={!reportText.trim() || sendingReport}
+                      >
+                        {sendingReport ? (
+                          <ActivityIndicator color="#fff" />
+                        ) : (
+                          <Text style={{ color: "#fff", fontWeight: "700" }}>
+                            {t("map.reportSend")}
+                          </Text>
+                        )}
+                      </TouchableOpacity>
+                    </View>
+                  </View>
+                )}
 
                 {!isVisited ? (
                   <TouchableOpacity

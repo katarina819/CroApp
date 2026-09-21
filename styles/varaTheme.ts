@@ -262,6 +262,46 @@ export const dm = StyleSheet.create({
     borderWidth: 1,
     borderColor: V.visited,
   },
+
+  // Prijava netočnog podatka o mjestu. Namjerno tiša od ostalih radnji —
+  // rijetko se koristi i ne smije odvlačiti od ocjenjivanja i posjeta.
+  reportBtn: {
+    borderRadius: 10,
+    paddingVertical: 12,
+    alignItems: "center",
+    borderWidth: 1,
+    borderColor: V.borderDim,
+    marginBottom: 10,
+  },
+  reportBtnTxt: { color: V.silverDim, fontSize: 14, fontWeight: "600" },
+  reportBox: {
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: V.borderGreen,
+    backgroundColor: V.forestMid,
+    padding: 12,
+    gap: 10,
+    marginBottom: 10,
+  },
+  reportHint: { color: V.silverDim, fontSize: 12, lineHeight: 17 },
+  reportInput: {
+    minHeight: 90,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: V.borderDim,
+    color: V.silverBright,
+    padding: 10,
+    fontSize: 14,
+    textAlignVertical: "top",
+  },
+  reportAction: {
+    borderRadius: 8,
+    paddingVertical: 11,
+    paddingHorizontal: 16,
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 1,
+  },
   visitBtnTxt: { color: V.silverBright, fontSize: 16, fontWeight: "700" },
   visitedBadge: {
     backgroundColor: V.forestMid,

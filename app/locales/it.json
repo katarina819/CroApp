@@ -338,7 +338,14 @@
     "morningShort": "Mattina",
     "afternoonShort": "Pomeriggio",
     "eveningShort": "Sera",
-    "activitiesBtn": "Attività"
+    "activitiesBtn": "Attività",
+    "reportWrong": "Questa informazione non è corretta",
+    "reportHint": "Cosa non va? Ad esempio: il posto ha chiuso, l'indirizzo è sbagliato, la categoria non corrisponde.",
+    "reportPlaceholder": "Descrivi cosa non va…",
+    "reportSend": "Invia all'admin",
+    "reportSentTitle": "Grazie!",
+    "reportSentBody": "La segnalazione è stata inviata all'admin. Verificheremo il dato.",
+    "reportFailed": "La segnalazione non è stata inviata. Controlla la connessione e riprova."
   },
   "videos": {
     "title": "Video",

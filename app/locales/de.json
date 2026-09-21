@@ -327,7 +327,14 @@
     "morningShort": "Morgen",
     "afternoonShort": "Nachmittag",
     "eveningShort": "Abend",
-    "activitiesBtn": "Aktivitäten"
+    "activitiesBtn": "Aktivitäten",
+    "reportWrong": "Diese Angabe stimmt nicht",
+    "reportHint": "Was stimmt nicht? Zum Beispiel: der Ort hat geschlossen, die Adresse ist falsch, die Kategorie passt nicht.",
+    "reportPlaceholder": "Beschreibe, was nicht stimmt…",
+    "reportSend": "An Admin senden",
+    "reportSentTitle": "Danke!",
+    "reportSentBody": "Deine Meldung wurde an den Admin geschickt. Wir prüfen die Angabe.",
+    "reportFailed": "Die Meldung wurde nicht gesendet. Prüfe deine Verbindung und versuch es erneut."
   },
   "password": {
     "minLength": "Min. 6 Zeichen",

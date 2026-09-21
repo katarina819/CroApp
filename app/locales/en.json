@@ -343,7 +343,14 @@
     "morningShort": "Morning",
     "afternoonShort": "Afternoon",
     "eveningShort": "Evening",
-    "activitiesBtn": "Activities"
+    "activitiesBtn": "Activities",
+    "reportWrong": "This information is wrong",
+    "reportHint": "What's wrong? For example: the place has closed, the address is wrong, the category doesn't fit.",
+    "reportPlaceholder": "Describe what's wrong…",
+    "reportSend": "Send to admin",
+    "reportSentTitle": "Thank you!",
+    "reportSentBody": "Your report was sent to the admin. We'll check it.",
+    "reportFailed": "The report was not sent. Check your connection and try again."
   },
   "videos": {
     "title": "Videos",
