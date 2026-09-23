@@ -4160,11 +4160,11 @@ function SettingsModal({
               onPress={() => setTutorialOpen(true)}
             >
               <View style={sm.varaBtnIcon}>
-                <Ionicons
-                  name="help-circle-outline"
-                  size={18}
-                  color={V.visited}
-                />
+                {/* Knjiga, ne upitnik. Upitnik znači "pitaj nekoga", a
+                    odmah ispod stoji Podrška s e-poštom adminu — dvije
+                    stavke s istim značenjem jedna do druge. Knjiga kaže
+                    da se ovdje nešto pročita. */}
+                <Ionicons name="book-outline" size={18} color={V.visited} />
               </View>
               <Text style={sm.varaBtnText}>{t("tutorial.reopen")}</Text>
               <Ionicons name="chevron-forward" size={16} color={V.silverDim} />

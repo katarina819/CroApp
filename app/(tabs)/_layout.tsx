@@ -42,9 +42,22 @@ export default function TabsLayout() {
   }, []);
 
   useEffect(() => {
-    hasSeenTutorial().then((seen) => {
-      if (!seen) setTutorialOpen(true);
-    });
+    // Vodič se otvara TEK kad je jezik postavljen.
+    //
+    // i18n se inicijalizira sinkrono na "hr" jer resursi moraju postojati
+    // prije prvog iscrtavanja, a spremljeni jezik stiže iz AsyncStoragea.
+    // Provjera je li vodič već viđen čita isti AsyncStorage, pa bez ovog
+    // čekanja dvije provjere trče jedna uz drugu — i vodič se zna otvoriti
+    // prije nego changeLanguage prođe. Tekst bi se potom sam ispravio (jer
+    // useTranslation prati promjenu jezika), ali korisnik koji je odabrao
+    // njemački ili francuski vidio bi bljesak hrvatskog na prvom ekranu
+    // koji uopće susreće.
+    languageReady
+      .then(hasSeenTutorial)
+      .then((seen) => {
+        if (!seen) setTutorialOpen(true);
+      })
+      .catch(() => undefined);
   }, []);
 
   useEffect(() => {
