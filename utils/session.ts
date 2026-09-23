@@ -15,6 +15,8 @@
 
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
+import { setSentryUser } from "../app/config/sentry";
+
 /** Ključevi koje prijava upisuje i koje odjava mora počistiti. */
 const AUTH_KEYS = [
   "token",
@@ -79,5 +81,10 @@ export async function getValidToken(): Promise<string | null> {
 export async function clearSession(): Promise<void> {
   try {
     await AsyncStorage.multiRemove([...AUTH_KEYS]);
+  } catch {}
+  // Odjavljeni korisnik se više ne veže uz prijave padova — inače bi se
+  // greške sljedeće osobe na istom uređaju pripisale njemu.
+  try {
+    setSentryUser(null);
   } catch {}
 }

@@ -8,6 +8,8 @@ import { AdaptiveThemeProvider } from "../components/AdaptiveThemeProvider"; // 
 import FollowRequestNotifier from "../components/FollowRequestNotifier";
 import { API_BASE_URL } from "./config/api";
 import "./config/i18n"; // ← dodaj ovo kao prvi import
+import * as Sentry from "@sentry/react-native";
+import { initSentry, sentryEnabled } from "./config/sentry";
 import { clearSession, isTokenExpired } from "../utils/session";
 import { UserProvider } from "./contexts/UserContext";
 
@@ -26,7 +28,11 @@ const trackSessionTime = async (minutes: number) => {
   } catch {}
 };
 
-export default function RootLayout() {
+// Mora se pozvati prije nego se išta iscrta, da se uhvati i pad pri
+// samom pokretanju — a ne tek onaj koji se dogodi nakon prvog rendera.
+initSentry();
+
+function RootLayout() {
   const [ready, setReady] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -215,3 +221,8 @@ export default function RootLayout() {
     </AdaptiveThemeProvider>
   );
 }
+
+// Sentryjev omotač dodaje praćenje navigacije i hvata greške koje bi inače
+// prošle pokraj React granice grešaka. Kad prijavljivanje nije uključeno
+// (razvoj ili DSN nije postavljen), izvozi se nedirnuta komponenta.
+export default sentryEnabled ? Sentry.wrap(RootLayout) : RootLayout;

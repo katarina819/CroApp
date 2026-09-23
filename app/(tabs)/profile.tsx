@@ -3714,20 +3714,44 @@ function SettingsModal({
     ]);
   };
 
+  /**
+   * Brisanje računa.
+   *
+   * Ovdje se odgovor poslužitelja NIJE provjeravao. Ruta na poslužitelju
+   * uz to nije ni postojala, pa je poziv vraćao 404 — a aplikacija bi
+   * svejedno očistila pohranu i odvela korisnika na prijavu. Korisnik je
+   * time bio uvjeren da je račun obrisan, dok su račun, objave i poruke
+   * ostajali na poslužitelju; mogao se ponovno prijaviti i sve zateći.
+   *
+   * Sada se odjava i čišćenje događaju SAMO ako je poslužitelj potvrdio
+   * brisanje. Ako nije, korisniku se kaže da je račun i dalje aktivan,
+   * umjesto da ga se tiho odjavi s krivim dojmom.
+   */
   const handleDeleteAccount = () => {
     Alert.alert(t("profile.deleteAccount"), t("profile.deleteAccountWarning"), [
-      { text: "Odustani", style: "cancel" },
+      { text: t("common.cancel"), style: "cancel" },
       {
-        text: "Obriši",
+        text: t("common.delete"),
         style: "destructive",
         onPress: async () => {
-          const token = await AsyncStorage.getItem("token");
-          await fetch(`${API_BASE_URL}/api/auth/delete-account`, {
-            method: "DELETE",
-            headers: { Authorization: `Bearer ${token}` },
-          });
-          await AsyncStorage.clear();
-          router.replace("/login");
+          try {
+            const token = await AsyncStorage.getItem("token");
+            const res = await fetch(`${API_BASE_URL}/api/auth/delete-account`, {
+              method: "DELETE",
+              headers: { Authorization: `Bearer ${token}` },
+            });
+
+            if (!res.ok) {
+              Alert.alert(t("common.error"), t("profile.deleteAccountFailed"));
+              return;
+            }
+
+            await AsyncStorage.clear();
+            Alert.alert(t("profile.deleteAccountDone"));
+            router.replace("/login");
+          } catch {
+            Alert.alert(t("common.error"), t("profile.deleteAccountFailed"));
+          }
         },
       },
     ]);

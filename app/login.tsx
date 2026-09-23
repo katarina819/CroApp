@@ -21,6 +21,9 @@ import {
 import LanguageSelector from "../components/LanguageSelector";
 import { useGoogleAuth } from "../hooks/useGoogleAuth";
 import { API_ENDPOINTS } from "./config/api";
+import { setSentryUser } from "./config/sentry";
+import * as Linking from "expo-linking";
+import { API_BASE_URL } from "./config/api";
 
 // ─── Stiliziran VARA natpis ───────────────────────────────────────────────────
 function VaraWordmark() {
@@ -136,6 +139,9 @@ export default function LoginScreen() {
       if (response.ok) {
         await AsyncStorage.setItem("token", data.token);
         await AsyncStorage.setItem("userId", data.userId.toString());
+        // Da se u prijavama padova vidi pogađa li greška jednog korisnika
+        // ili sve. Šalje se samo id — ni ime ni e-pošta.
+        setSentryUser(data.userId);
         await AsyncStorage.setItem("firstName", data.firstName);
         await AsyncStorage.setItem("lastName", data.lastName);
         // Pravo korisničko ime iz baze. Bez njega je zaslon profila, kad mu
@@ -291,6 +297,15 @@ export default function LoginScreen() {
         </View>
 
         <Text style={s.bottomNote}>{t("auth.loginTerms")}</Text>
+        {/* Oba ekrana su otprije pisala da korisnik prihvaća pravila
+            privatnosti, a pravila nisu postojala niti su bila dostupna.
+            Sada vode na stranicu koju poslužuje poslužitelj. */}
+        <Text
+          style={[s.bottomNote, { textDecorationLine: "underline" }]}
+          onPress={() => Linking.openURL(`${API_BASE_URL}/privacy.html`)}
+        >
+          {t("auth.privacyLink")}
+        </Text>
       </ScrollView>
     </KeyboardAvoidingView>
   );

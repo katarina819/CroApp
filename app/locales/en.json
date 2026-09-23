@@ -44,7 +44,9 @@
     "galleryPermission": "Allow gallery access in settings",
     "cameraPermission": "Allow camera access in settings",
     "mediaPermission": "Allow media access in settings",
-    "tooManyRequests": "Too many requests in a short time. Please wait a moment and try again."
+    "tooManyRequests": "Too many requests in a short time. Please wait a moment and try again.",
+    "checkConnection": "Please check your internet connection.",
+    "serverUnreachable": "The server is unreachable."
   },
   "auth": {
     "login": "Login",
@@ -109,7 +111,16 @@
     "googlePlayServicesUnavailable": "Google Play Services are not available on this device.",
     "googleErrorConfig": "Google sign-in isn't available right now due to a configuration issue. Please sign in with your username and password, or try again later.",
     "sessionExpiredTitle": "Your session has expired",
-    "sessionExpiredBody": "Sign in again to see your data."
+    "sessionExpiredBody": "Sign in again to see your data.",
+    "passwordTooShort": "The password must be at least 6 characters.",
+    "passwordsDoNotMatch": "The passwords do not match.",
+    "passwordSaveFailed": "The password could not be saved.",
+    "notSignedIn": "You are not signed in.",
+    "adminCredentialsRequired": "Please enter a username and password.",
+    "accessDenied": "Access denied",
+    "noAdminRights": "You do not have administrator rights.",
+    "signInFailed": "Sign-in failed.",
+    "privacyLink": "Privacy Policy"
   },
   "forgotPassword": {
     "step1Title": "Forgot your password?",
@@ -751,7 +762,10 @@
     "goldenBrowseFollowing": "Open the list of people you follow",
     "block": "Block",
     "unblock": "Unblock",
-    "goldenLinkWord": "star"
+    "goldenLinkWord": "star",
+    "deleteAccountDone": "Your account has been deleted.",
+    "deleteAccountFailed": "The account could not be deleted. It is still active — please try again or contact us.",
+    "deleteAccountWorking": "Deleting account…"
   },
   "plan": {
     "day1Label": "1 day",
@@ -1020,5 +1034,11 @@
     "rangeLabel": "Range",
     "categoriesLabel": "Categories",
     "from": "from {{place}}"
+  },
+  "media": {
+    "permissionNeeded": "Permission needed",
+    "permissionBody": "Allow gallery access to send media.",
+    "sentButMessageFailed": "The media was uploaded, but the message was not sent.",
+    "sendFailed": "The media could not be sent."
   }
 }

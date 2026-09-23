@@ -22,6 +22,8 @@ import {
   View,
 } from "react-native";
 import { API_ENDPOINTS } from "./config/api";
+import * as Linking from "expo-linking";
+import { API_BASE_URL } from "./config/api";
 
 type PasswordStrength = "empty" | "weak" | "medium" | "strong";
 
@@ -571,6 +573,15 @@ export default function RegisterScreen() {
         </View>
 
         <Text style={s.bottomNote}>{t("auth.registerTerms")}</Text>
+        {/* Oba ekrana su otprije pisala da korisnik prihvaća pravila
+            privatnosti, a pravila nisu postojala niti su bila dostupna.
+            Sada vode na stranicu koju poslužuje poslužitelj. */}
+        <Text
+          style={[s.bottomNote, { textDecorationLine: "underline" }]}
+          onPress={() => Linking.openURL(`${API_BASE_URL}/privacy.html`)}
+        >
+          {t("auth.privacyLink")}
+        </Text>
       </ScrollView>
     </KeyboardAvoidingView>
   );

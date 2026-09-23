@@ -44,7 +44,9 @@
     "galleryPermission": "Autorisez l'accès à la galerie dans les paramètres",
     "cameraPermission": "Autorisez l'accès à l'appareil photo dans les paramètres",
     "mediaPermission": "Autorisez l'accès aux médias dans les paramètres",
-    "tooManyRequests": "Trop de requêtes en peu de temps. Patientez un instant et réessayez."
+    "tooManyRequests": "Trop de requêtes en peu de temps. Patientez un instant et réessayez.",
+    "checkConnection": "Vérifiez votre connexion internet.",
+    "serverUnreachable": "Le serveur est injoignable."
   },
   "auth": {
     "login": "Connexion",
@@ -109,7 +111,16 @@
     "googlePlayServicesUnavailable": "Les services Google Play ne sont pas disponibles sur cet appareil.",
     "googleErrorConfig": "La connexion Google est actuellement indisponible en raison d'un problème de configuration. Connectez-vous avec votre nom d'utilisateur et votre mot de passe ou réessayez plus tard.",
     "sessionExpiredTitle": "Ta session a expiré",
-    "sessionExpiredBody": "Reconnecte-toi pour retrouver tes données."
+    "sessionExpiredBody": "Reconnecte-toi pour retrouver tes données.",
+    "passwordTooShort": "Le mot de passe doit comporter au moins 6 caractères.",
+    "passwordsDoNotMatch": "Les mots de passe ne correspondent pas.",
+    "passwordSaveFailed": "Le mot de passe n'a pas pu être enregistré.",
+    "notSignedIn": "Vous n'êtes pas connecté.",
+    "adminCredentialsRequired": "Veuillez saisir un nom d'utilisateur et un mot de passe.",
+    "accessDenied": "Accès refusé",
+    "noAdminRights": "Vous n'avez pas les droits d'administrateur.",
+    "signInFailed": "Échec de la connexion.",
+    "privacyLink": "Politique de confidentialité"
   },
   "forgotPassword": {
     "step1Title": "Mot de passe oublié ?",
@@ -776,7 +787,10 @@
     "goldenBrowseFollowing": "Ouvrir la liste des personnes suivies",
     "block": "Bloquer",
     "unblock": "Débloquer",
-    "goldenLinkWord": "étoile"
+    "goldenLinkWord": "étoile",
+    "deleteAccountDone": "Votre compte a été supprimé.",
+    "deleteAccountFailed": "Le compte n'a pas pu être supprimé. Il est toujours actif — réessayez ou contactez-nous.",
+    "deleteAccountWorking": "Suppression du compte…"
   },
   "plan": {
     "day1Label": "1 jour",
@@ -1021,5 +1035,11 @@
     "rangeLabel": "Rayon",
     "categoriesLabel": "Catégories",
     "from": "de {{place}}"
+  },
+  "media": {
+    "permissionNeeded": "Autorisation requise",
+    "permissionBody": "Autorisez l'accès à la galerie pour envoyer des médias.",
+    "sentButMessageFailed": "Le média a été envoyé, mais pas le message.",
+    "sendFailed": "Impossible d'envoyer le média."
   }
 }

@@ -44,7 +44,9 @@
     "galleryPermission": "Dozvolite pristup galeriji u postavkama",
     "cameraPermission": "Dozvolite pristup kameri u postavkama",
     "mediaPermission": "Dozvolite pristup medijima u postavkama",
-    "tooManyRequests": "Previše zahtjeva u kratkom vremenu. Pričekaj malo pa pokušaj ponovo."
+    "tooManyRequests": "Previše zahtjeva u kratkom vremenu. Pričekaj malo pa pokušaj ponovo.",
+    "checkConnection": "Provjerite internetsku vezu.",
+    "serverUnreachable": "Poslužitelj nije dostupan."
   },
   "auth": {
     "login": "Prijava",
@@ -109,7 +111,16 @@
     "googlePlayServicesUnavailable": "Google Play usluge nisu dostupne na ovom uređaju.",
     "googleErrorConfig": "Google prijava trenutno nije dostupna zbog problema u postavkama aplikacije. Prijavite se korisničkim imenom i lozinkom ili pokušajte kasnije.",
     "sessionExpiredTitle": "Prijava je istekla",
-    "sessionExpiredBody": "Prijavi se ponovno da vidiš svoje podatke."
+    "sessionExpiredBody": "Prijavi se ponovno da vidiš svoje podatke.",
+    "passwordTooShort": "Lozinka mora imati najmanje 6 znakova.",
+    "passwordsDoNotMatch": "Lozinke se ne podudaraju.",
+    "passwordSaveFailed": "Spremanje lozinke nije uspjelo.",
+    "notSignedIn": "Niste prijavljeni.",
+    "adminCredentialsRequired": "Molimo unesite korisničko ime i lozinku.",
+    "accessDenied": "Pristup odbijen",
+    "noAdminRights": "Nemate administratorske ovlasti.",
+    "signInFailed": "Prijava nije uspjela.",
+    "privacyLink": "Pravila privatnosti"
   },
   "forgotPassword": {
     "step1Title": "Zaboravili ste lozinku?",
@@ -751,7 +762,10 @@
     "goldenBrowseFollowing": "Otvori popis praćenih",
     "block": "Blokiraj",
     "unblock": "Odblokiraj",
-    "goldenLinkWord": "zvjezdicom"
+    "goldenLinkWord": "zvjezdicom",
+    "deleteAccountDone": "Račun je obrisan.",
+    "deleteAccountFailed": "Brisanje računa nije uspjelo. Račun je i dalje aktivan — pokušajte ponovno ili nam se javite.",
+    "deleteAccountWorking": "Brisanje računa…"
   },
   "schedBreakfast": "Doručak",
   "schedMorningTour": "Jutarnje razgledavanje — turistički promet najmanji",
@@ -1018,5 +1032,11 @@
     "rangeLabel": "Domet",
     "categoriesLabel": "Kategorije",
     "from": "od {{place}}"
+  },
+  "media": {
+    "permissionNeeded": "Dozvola je potrebna",
+    "permissionBody": "Dozvolite pristup galeriji za slanje medija.",
+    "sentButMessageFailed": "Medij je poslan, ali poruka nije.",
+    "sendFailed": "Slanje medija nije uspjelo."
   }
 }

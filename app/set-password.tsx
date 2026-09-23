@@ -92,11 +92,11 @@ export default function SetPasswordScreen() {
 
   const handleSave = async () => {
     if (password.length < 6) {
-      Alert.alert("Greška", "Lozinka mora imati najmanje 6 znakova.");
+      Alert.alert(t("common.error"), t("auth.passwordTooShort"));
       return;
     }
     if (password !== confirmPassword) {
-      Alert.alert("Greška", "Lozinke se ne podudaraju.");
+      Alert.alert(t("common.error"), t("auth.passwordsDoNotMatch"));
       return;
     }
     setSaving(true);
@@ -120,10 +120,10 @@ export default function SetPasswordScreen() {
           router.replace("/(tabs)");
         }
       } else {
-        Alert.alert("Greška", "Spremanje lozinke nije uspjelo.");
+        Alert.alert(t("common.error"), t("auth.passwordSaveFailed"));
       }
     } catch {
-      Alert.alert("Greška", "Provjeri internetsku vezu.");
+      Alert.alert(t("common.error"), t("common.checkConnection"));
     } finally {
       setSaving(false);
     }

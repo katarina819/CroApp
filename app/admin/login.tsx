@@ -3,6 +3,7 @@ import { Ionicons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { router } from "expo-router";
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import {
   ActivityIndicator,
   Alert,
@@ -18,6 +19,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { API_BASE_URL } from "../config/api";
 
 export default function AdminLoginScreen() {
+  const { t } = useTranslation();
   const [username, setUsername] = useState(""); // Promijenjeno iz email u username
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
@@ -25,7 +27,7 @@ export default function AdminLoginScreen() {
 
   const handleLogin = async () => {
     if (!username || !password) {
-      Alert.alert("Greška", "Molimo unesite korisničko ime i lozinku");
+      Alert.alert(t("common.error"), t("auth.adminCredentialsRequired"));
       return;
     }
 
@@ -52,14 +54,14 @@ export default function AdminLoginScreen() {
           await AsyncStorage.setItem("adminUsername", username);
           router.replace("/adminn/dashboard");
         } else {
-          Alert.alert("Pristup odbijen", "Nemate administratorske ovlasti");
+          Alert.alert(t("auth.accessDenied"), t("auth.noAdminRights"));
         }
       } else {
-        Alert.alert("Greška", data.message || "Prijava nije uspjela");
+        Alert.alert(t("common.error"), t("auth.signInFailed"));
       }
     } catch (error) {
       console.error("Login error:", error);
-      Alert.alert("Greška", "Ne mogu se spojiti na server");
+      Alert.alert(t("common.error"), t("common.serverUnreachable"));
     } finally {
       setLoading(false);
     }

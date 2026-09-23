@@ -44,7 +44,9 @@
     "galleryPermission": "Erlauben Sie den Zugriff auf die Galerie in den Einstellungen",
     "cameraPermission": "Erlauben Sie den Zugriff auf die Kamera in den Einstellungen",
     "mediaPermission": "Erlauben Sie den Zugriff auf Medien in den Einstellungen",
-    "tooManyRequests": "Zu viele Anfragen in kurzer Zeit. Bitte kurz warten und erneut versuchen."
+    "tooManyRequests": "Zu viele Anfragen in kurzer Zeit. Bitte kurz warten und erneut versuchen.",
+    "checkConnection": "Bitte überprüfe deine Internetverbindung.",
+    "serverUnreachable": "Der Server ist nicht erreichbar."
   },
   "auth": {
     "login": "Anmeldung",
@@ -109,7 +111,16 @@
     "googlePlayServicesUnavailable": "Google Play-Dienste sind auf diesem Gerät nicht verfügbar.",
     "googleErrorConfig": "Die Google-Anmeldung ist derzeit aufgrund eines Konfigurationsproblems nicht verfügbar. Melden Sie sich mit Benutzername und Passwort an oder versuchen Sie es später erneut.",
     "sessionExpiredTitle": "Deine Sitzung ist abgelaufen",
-    "sessionExpiredBody": "Melde dich erneut an, um deine Daten zu sehen."
+    "sessionExpiredBody": "Melde dich erneut an, um deine Daten zu sehen.",
+    "passwordTooShort": "Das Passwort muss mindestens 6 Zeichen lang sein.",
+    "passwordsDoNotMatch": "Die Passwörter stimmen nicht überein.",
+    "passwordSaveFailed": "Das Passwort konnte nicht gespeichert werden.",
+    "notSignedIn": "Du bist nicht angemeldet.",
+    "adminCredentialsRequired": "Bitte Benutzername und Passwort eingeben.",
+    "accessDenied": "Zugriff verweigert",
+    "noAdminRights": "Du hast keine Administratorrechte.",
+    "signInFailed": "Anmeldung fehlgeschlagen.",
+    "privacyLink": "Datenschutzerklärung"
   },
   "forgotPassword": {
     "step1Title": "Passwort vergessen?",
@@ -732,7 +743,10 @@
     "goldenBrowseFollowing": "Liste der gefolgten Personen öffnen",
     "block": "Blockieren",
     "unblock": "Blockierung aufheben",
-    "goldenLinkWord": "Stern"
+    "goldenLinkWord": "Stern",
+    "deleteAccountDone": "Dein Konto wurde gelöscht.",
+    "deleteAccountFailed": "Das Konto konnte nicht gelöscht werden. Es ist weiterhin aktiv — bitte versuche es erneut oder kontaktiere uns.",
+    "deleteAccountWorking": "Konto wird gelöscht…"
   },
   "schedBreakfast": "Frühstück",
   "schedMorningTour": "Morgenbesichtigung — geringstes Touristenaufkommen",
@@ -1020,5 +1034,11 @@
     "rangeLabel": "Umkreis",
     "categoriesLabel": "Kategorien",
     "from": "von {{place}}"
+  },
+  "media": {
+    "permissionNeeded": "Berechtigung erforderlich",
+    "permissionBody": "Erlaube den Galeriezugriff, um Medien zu senden.",
+    "sentButMessageFailed": "Das Medium wurde hochgeladen, die Nachricht aber nicht gesendet.",
+    "sendFailed": "Das Medium konnte nicht gesendet werden."
   }
 }

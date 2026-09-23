@@ -42,11 +42,6 @@
       ],
       "package": "com.zivac.vara",
       "versionCode": 5,
-      "config": {
-        "googleMaps": {
-          "apiKey": "AIzaSyAzgl_HOUh-kwD_eQQaWLerARekr36qrgg"
-        }
-      },
       "intentFilters": [
         {
           "action": "VIEW",

@@ -44,7 +44,9 @@
     "galleryPermission": "Consenti l'accesso alla galleria nelle impostazioni",
     "cameraPermission": "Consenti l'accesso alla fotocamera nelle impostazioni",
     "mediaPermission": "Consenti l'accesso ai media nelle impostazioni",
-    "tooManyRequests": "Troppe richieste in poco tempo. Attendi un momento e riprova."
+    "tooManyRequests": "Troppe richieste in poco tempo. Attendi un momento e riprova.",
+    "checkConnection": "Controlla la connessione a internet.",
+    "serverUnreachable": "Server non raggiungibile."
   },
   "auth": {
     "login": "Accesso",
@@ -109,7 +111,16 @@
     "googlePlayServicesUnavailable": "I servizi Google Play non sono disponibili su questo dispositivo.",
     "googleErrorConfig": "L'accesso con Google non è al momento disponibile per un problema di configurazione. Accedi con nome utente e password o riprova più tardi.",
     "sessionExpiredTitle": "La sessione è scaduta",
-    "sessionExpiredBody": "Accedi di nuovo per vedere i tuoi dati."
+    "sessionExpiredBody": "Accedi di nuovo per vedere i tuoi dati.",
+    "passwordTooShort": "La password deve contenere almeno 6 caratteri.",
+    "passwordsDoNotMatch": "Le password non coincidono.",
+    "passwordSaveFailed": "Impossibile salvare la password.",
+    "notSignedIn": "Non hai effettuato l'accesso.",
+    "adminCredentialsRequired": "Inserisci nome utente e password.",
+    "accessDenied": "Accesso negato",
+    "noAdminRights": "Non disponi dei diritti di amministratore.",
+    "signInFailed": "Accesso non riuscito.",
+    "privacyLink": "Informativa sulla privacy"
   },
   "forgotPassword": {
     "step1Title": "Password dimenticata?",
@@ -762,7 +773,10 @@
     "goldenBrowseFollowing": "Apri l'elenco delle persone che segui",
     "block": "Blocca",
     "unblock": "Sblocca",
-    "goldenLinkWord": "stella"
+    "goldenLinkWord": "stella",
+    "deleteAccountDone": "Il tuo account è stato eliminato.",
+    "deleteAccountFailed": "Impossibile eliminare l'account. È ancora attivo — riprova o contattaci.",
+    "deleteAccountWorking": "Eliminazione account…"
   },
   "schedBreakfast": "Colazione",
   "schedMorningTour": "Visita mattutina — meno turisti",
@@ -1021,5 +1035,11 @@
     "rangeLabel": "Raggio",
     "categoriesLabel": "Categorie",
     "from": "da {{place}}"
+  },
+  "media": {
+    "permissionNeeded": "Autorizzazione necessaria",
+    "permissionBody": "Consenti l'accesso alla galleria per inviare contenuti.",
+    "sentButMessageFailed": "Il contenuto è stato caricato, ma il messaggio non è stato inviato.",
+    "sendFailed": "Impossibile inviare il contenuto."
   }
 }

@@ -610,7 +610,7 @@ export default function ChatScreen() {
         ? await ImagePicker.requestMediaLibraryPermissionsAsync()
         : await ImagePicker.requestCameraPermissionsAsync();
     if (!perm.granted) {
-      Alert.alert("Dozvola potrebna", "Dozvolite pristup za slanje medija");
+      Alert.alert(t("media.permissionNeeded"), t("media.permissionBody"));
       return;
     }
     const result =
@@ -640,7 +640,7 @@ export default function ChatScreen() {
     try {
       const token = await AsyncStorage.getItem("token");
       if (!token) {
-        Alert.alert("Greška", "Niste prijavljeni.");
+        Alert.alert(t("common.error"), t("auth.notSignedIn"));
         return;
       }
 
@@ -684,11 +684,11 @@ export default function ChatScreen() {
           "Previše zahtjeva u kratkom vremenu. Pričekaj malo pa pokušaj ponovo.",
         );
       } else {
-        Alert.alert("Greška", "Medij je uploadan, ali poruka nije poslana.");
+        Alert.alert(t("common.error"), t("media.sentButMessageFailed"));
       }
     } catch (e: any) {
       console.error("Send media error:", e?.message ?? e);
-      Alert.alert("Greška", e?.message ?? "Nije moguće poslati medij");
+      Alert.alert(t("common.error"), t("media.sendFailed"));
     } finally {
       setSendingMedia(false);
     }
