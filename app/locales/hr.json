@@ -1044,13 +1044,19 @@
     "next": "Dalje",
     "start": "Kreni",
     "reopen": "Kako koristiti VARA",
-    "s1Title": "Otkrij što je oko tebe",
-    "s1Body": "Na karti odaberi kategoriju — kafići, plaže, izleti. Dodirni oznaku za radno vrijeme, ocjene i put do cilja.",
-    "s2Title": "Vidi što se događa",
-    "s2Body": "U Videima su objave ljudi iz tvoje okolice. Sam biraš koliko daleko gledaš — od 5 do 100 km.",
-    "s3Title": "Podijeli svoj izlet",
-    "s3Body": "Dodaj fotografiju ili video, označi mjesto i kategoriju. Ako je riječ o događaju, upiši datum i vrijeme.",
-    "s4Title": "Ne propusti ništa",
-    "s4Body": "Zaprati ljude i kategorije koje te zanimaju. Zvono javlja kad se u tvojoj blizini pojavi nešto novo."
+    "s1Title": "VARA govori pet jezika",
+    "s1Body": "Hrvatski, engleski, njemački, francuski i talijanski. Jezik se mijenja u Profil → Postavke → Jezik.",
+    "s2Title": "Biraj kategorije i doba dana",
+    "s2Body": "Na karti uključi kategorije koje te zanimaju — kafići, plaže, muzeji. Filtar za jutro, popodne i večer pokazuje samo ono što je tada otvoreno.",
+    "s3Title": "Vidi što se događa",
+    "s3Body": "U Videima su objave ljudi iz tvoje okolice. Sam biraš koliko daleko gledaš — od 5 do 100 km.",
+    "s4Title": "Podijeli svoj izlet",
+    "s4Body": "Dodaj fotografiju ili video, označi mjesto i kategoriju. Ako je riječ o događaju, upiši datum i vrijeme.",
+    "s5Title": "Isplaniraj dan",
+    "s5Body": "Složi plan izleta po satima ili pogledaj koje su aktivnosti dostupne u odabranom području.",
+    "s6Title": "Arhiva posjeta i značke",
+    "s6Body": "Svako mjesto označeno kao posjećeno ostaje u arhivi. Za svaku kategoriju skupljaš značke — prva stiže na 10 posjeta.",
+    "s7Title": "Ne propusti ništa",
+    "s7Body": "Zaprati ljude i kategorije koje te zanimaju. Zvono javlja kad se u tvojoj blizini pojavi nešto novo."
   }
 }

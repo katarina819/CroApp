@@ -1046,13 +1046,19 @@
     "next": "Weiter",
     "start": "Los geht's",
     "reopen": "So funktioniert VARA",
-    "s1Title": "Entdecke, was um dich herum ist",
-    "s1Body": "Wähle auf der Karte eine Kategorie — Cafés, Strände, Ausflüge. Tippe auf eine Markierung für Öffnungszeiten, Bewertungen und den Weg.",
-    "s2Title": "Sieh, was gerade läuft",
-    "s2Body": "Unter Videos siehst du Beiträge von Leuten in deiner Nähe. Wie weit das reicht, bestimmst du — von 5 bis 100 km.",
-    "s3Title": "Teile deinen Ausflug",
-    "s3Body": "Füge ein Foto oder Video hinzu und markiere Ort und Kategorie. Bei einer Veranstaltung trägst du Datum und Uhrzeit ein.",
-    "s4Title": "Verpasse nichts",
-    "s4Body": "Folge den Menschen und Kategorien, die dich interessieren. Die Glocke meldet Neues in deiner Nähe."
+    "s1Title": "VARA spricht fünf Sprachen",
+    "s1Body": "Kroatisch, Englisch, Deutsch, Französisch und Italienisch. Ändern kannst du das unter Profil → Einstellungen → Sprache.",
+    "s2Title": "Kategorien und Tageszeit wählen",
+    "s2Body": "Schalte auf der Karte die Kategorien ein, die dich interessieren — Cafés, Strände, Museen. Der Filter für Morgen, Nachmittag und Abend zeigt nur, was dann geöffnet ist.",
+    "s3Title": "Sieh, was gerade läuft",
+    "s3Body": "Unter Videos siehst du Beiträge von Leuten in deiner Nähe. Wie weit das reicht, bestimmst du — von 5 bis 100 km.",
+    "s4Title": "Teile deinen Ausflug",
+    "s4Body": "Füge ein Foto oder Video hinzu und markiere Ort und Kategorie. Bei einer Veranstaltung trägst du Datum und Uhrzeit ein.",
+    "s5Title": "Plane deinen Tag",
+    "s5Body": "Stelle einen Ausflug Stunde für Stunde zusammen oder sieh, welche Aktivitäten es in einem gewählten Gebiet gibt.",
+    "s6Title": "Besuchsarchiv und Abzeichen",
+    "s6Body": "Jeder als besucht markierte Ort bleibt im Archiv. Für jede Kategorie sammelst du Abzeichen — das erste bei 10 Besuchen.",
+    "s7Title": "Verpasse nichts",
+    "s7Body": "Folge den Menschen und Kategorien, die dich interessieren. Die Glocke meldet Neues in deiner Nähe."
   }
 }

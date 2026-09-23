@@ -19,6 +19,7 @@ import {
   FlatList,
   Image,
   Modal,
+  ScrollView,
   Text,
   TouchableOpacity,
   View,
@@ -65,51 +66,91 @@ const STORAGE_KEY = "vara_tutorial_seen_v1";
 
 /**
  * Svaki korak pokazuje ONU ikonu koju korisnik stvarno dodiruje, a ne novu
- * nacrtanu za vodič. Tri koraka vode na ikone iz aplikacije (karta i videi
- * iz donje trake, zvono s karte), a objavljivanje na gumb "+" — koji u
- * aplikaciji doista jest Ionicon u krugu, pa je ovdje prikazan onakav
- * kakav je ondje.
+ * nacrtanu za vodič. Poanta je prepoznavanje: tko je vidio ikonu u vodiču,
+ * nađe je na ekranu. S nacrtanom zamjenom vodič samo opisuje, umjesto da
+ * pokaže.
  *
- * Poanta je prepoznavanje: tko je vidio ikonu u vodiču, nađe je na ekranu.
- * S nacrtanom zamjenom vodič samo opisuje, umjesto da pokaže.
+ * Nekoliko koraka ima i male ikone ispod glavne — one imenuju upravo onaj
+ * gumb o kojem rečenica govori (filtar po dobu dana, doseg, značke), da se
+ * ne mora tražiti po ekranu.
  */
 type Step = {
-  /** Slika iz aplikacije, ili gumb "+" kakav stoji u Videima. */
+  /** Glavna slika iz aplikacije. */
   image?: number;
+  /** Manje ikone ispod glavne; isti izvor kao u aplikaciji. */
+  extras?: number[];
+  /** Gumb "+" kakav stoji u Videima. */
   plusButton?: boolean;
+  /** Zastavice — aplikacija jezike i inače prikazuje njima. */
+  flags?: boolean;
   tint: string;
   titleKey: string;
   bodyKey: string;
 };
 
+const MAP_ICON = require("../assets/images/karta.png");
+const VIDEO_ICON = require("../assets/images/video.png");
+const NOTIF_ICON = require("../assets/images/obav.png");
+const PLAN_ICON = require("../assets/images/put.png");
+const VISITED_ICON = require("../assets/images/posmjesta.png");
+const BADGES_ICON = require("../assets/images/uspjeh.png");
+const RADIUS_ICON = require("../assets/images/radijus.png");
+const MORNING_ICON = require("../assets/images/jutro.png");
+const AFTERNOON_ICON = require("../assets/images/popodne.png");
+const EVENING_ICON = require("../assets/images/vecer.png");
+
 const STEPS: Step[] = [
   {
-    // Ista datoteka koju koristi donja traka (BottomNav).
-    image: require("../assets/images/karta.png"),
+    // Jezik ide prvi: tko aplikaciju ne čita na svom jeziku, to treba
+    // saznati odmah, a ne na sedmom koraku.
+    flags: true,
     tint: V.visited,
     titleKey: "tutorial.s1Title",
     bodyKey: "tutorial.s1Body",
   },
   {
-    image: require("../assets/images/video.png"),
-    tint: "#669CB7",
+    image: MAP_ICON,
+    extras: [MORNING_ICON, AFTERNOON_ICON, EVENING_ICON],
+    tint: V.visited,
     titleKey: "tutorial.s2Title",
     bodyKey: "tutorial.s2Body",
   },
   {
-    plusButton: true,
-    tint: V.accentGold,
+    image: VIDEO_ICON,
+    extras: [RADIUS_ICON],
+    tint: "#669CB7",
     titleKey: "tutorial.s3Title",
     bodyKey: "tutorial.s3Body",
   },
   {
-    // Zvono s karte (dashboard).
-    image: require("../assets/images/obav.png"),
-    tint: "#AD6452",
+    plusButton: true,
+    tint: V.accentGold,
     titleKey: "tutorial.s4Title",
     bodyKey: "tutorial.s4Body",
   },
+  {
+    image: PLAN_ICON,
+    tint: "#C59877",
+    titleKey: "tutorial.s5Title",
+    bodyKey: "tutorial.s5Body",
+  },
+  {
+    image: VISITED_ICON,
+    extras: [BADGES_ICON],
+    tint: "#95AE5B",
+    titleKey: "tutorial.s6Title",
+    bodyKey: "tutorial.s6Body",
+  },
+  {
+    image: NOTIF_ICON,
+    tint: "#AD6452",
+    titleKey: "tutorial.s7Title",
+    bodyKey: "tutorial.s7Body",
+  },
 ];
+
+/** Iste zastavice koje stoje u biraču jezika (LanguageSelector). */
+const FLAGS = ["🇭🇷", "🇬🇧", "🇩🇪", "🇫🇷", "🇮🇹"];
 
 /** Je li vodič već prikazan. Greška u čitanju se tumači kao "jest" — bolje ga
  *  propustiti nego ga vrtjeti na svakom pokretanju. */
@@ -140,8 +181,21 @@ function StepPage({
 }) {
   const { t } = useTranslation();
 
+  // Sadržaj se pomiče unutar stranice. Koraka je sedam i neki nose dvije
+  // rečenice — na niskom ekranu bi inače tekst ispao ispod ruba, a baš to
+  // se htjelo pročitati.
   return (
-    <View style={{ width, paddingHorizontal: 32, alignItems: "center" }}>
+    <ScrollView
+      style={{ width }}
+      contentContainerStyle={{
+        flexGrow: 1,
+        paddingHorizontal: 32,
+        alignItems: "center",
+        justifyContent: "center",
+        paddingVertical: 8,
+      }}
+      showsVerticalScrollIndicator={false}
+    >
       <View
         style={{
           width: 132,
@@ -155,7 +209,25 @@ function StepPage({
           marginBottom: 32,
         }}
       >
-        {step.plusButton ? (
+        {step.flags ? (
+          // Pet zastavica u dva reda — iste one iz biriča jezika.
+          <View
+            style={{
+              flexDirection: "row",
+              flexWrap: "wrap",
+              justifyContent: "center",
+              alignItems: "center",
+              gap: 6,
+              paddingHorizontal: 14,
+            }}
+          >
+            {FLAGS.map((f) => (
+              <Text key={f} style={{ fontSize: 30 }}>
+                {f}
+              </Text>
+            ))}
+          </View>
+        ) : step.plusButton ? (
           // Gumb za objavu iz Videa, u istom obliku kao ondje: krug s
           // rubom i plusom. Samo veći, da se vidi.
           <View
@@ -183,6 +255,41 @@ function StepPage({
         )}
       </View>
 
+      {/* Male ikone imenuju točno onaj gumb o kojem rečenica govori, pa ga
+          korisnik ne mora tražiti po ekranu. */}
+      {!!step.extras?.length && (
+        <View
+          style={{
+            flexDirection: "row",
+            gap: 14,
+            marginTop: -18,
+            marginBottom: 26,
+          }}
+        >
+          {step.extras.map((ex, i) => (
+            <View
+              key={i}
+              style={{
+                width: 46,
+                height: 46,
+                borderRadius: 23,
+                backgroundColor: step.tint + "1F",
+                borderWidth: 1,
+                borderColor: step.tint + "4D",
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+            >
+              <Image
+                source={ex}
+                style={{ width: 26, height: 26 }}
+                resizeMode="contain"
+              />
+            </View>
+          ))}
+        </View>
+      )}
+
       <Text
         style={{
           color: c.title,
@@ -205,7 +312,7 @@ function StepPage({
       >
         {t(step.bodyKey)}
       </Text>
-    </View>
+    </ScrollView>
   );
 }
 

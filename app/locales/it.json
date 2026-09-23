@@ -1047,13 +1047,19 @@
     "next": "Avanti",
     "start": "Iniziamo",
     "reopen": "Come usare VARA",
-    "s1Title": "Scopri cosa c'è intorno a te",
-    "s1Body": "Scegli una categoria sulla mappa — caffè, spiagge, gite. Tocca un segnaposto per orari, valutazioni e indicazioni.",
-    "s2Title": "Guarda cosa succede",
-    "s2Body": "In Video trovi i post delle persone vicino a te. Decidi tu quanto lontano guardare — da 5 a 100 km.",
-    "s3Title": "Condividi la tua gita",
-    "s3Body": "Aggiungi una foto o un video, indica luogo e categoria. Se è un evento, inserisci data e ora.",
-    "s4Title": "Non perderti nulla",
-    "s4Body": "Segui le persone e le categorie che ti interessano. La campanella ti avvisa quando c'è qualcosa di nuovo vicino a te."
+    "s1Title": "VARA parla cinque lingue",
+    "s1Body": "Croato, inglese, tedesco, francese e italiano. Puoi cambiarla in Profilo → Impostazioni → Lingua.",
+    "s2Title": "Scegli categorie e momento della giornata",
+    "s2Body": "Attiva sulla mappa le categorie che ti interessano — caffè, spiagge, musei. Il filtro mattina, pomeriggio e sera mostra solo ciò che è aperto in quel momento.",
+    "s3Title": "Guarda cosa succede",
+    "s3Body": "In Video trovi i post delle persone vicino a te. Decidi tu quanto lontano guardare — da 5 a 100 km.",
+    "s4Title": "Condividi la tua gita",
+    "s4Body": "Aggiungi una foto o un video, indica luogo e categoria. Se è un evento, inserisci data e ora.",
+    "s5Title": "Pianifica la giornata",
+    "s5Body": "Costruisci un programma ora per ora, oppure guarda quali attività sono disponibili in una zona che scegli.",
+    "s6Title": "Archivio visite e distintivi",
+    "s6Body": "Ogni luogo segnato come visitato resta nel tuo archivio. Ogni categoria ti fa guadagnare distintivi — il primo a 10 visite.",
+    "s7Title": "Non perderti nulla",
+    "s7Body": "Segui le persone e le categorie che ti interessano. La campanella ti avvisa quando c'è qualcosa di nuovo vicino a te."
   }
 }

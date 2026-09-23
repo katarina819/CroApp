@@ -1046,13 +1046,19 @@
     "next": "Next",
     "start": "Get started",
     "reopen": "How to use VARA",
-    "s1Title": "See what's around you",
-    "s1Body": "Pick a category on the map — cafés, beaches, day trips. Tap a pin for opening hours, ratings and directions.",
-    "s2Title": "See what's happening",
-    "s2Body": "Videos shows posts from people near you. You choose how far that reaches — from 5 to 100 km.",
-    "s3Title": "Share your trip",
-    "s3Body": "Add a photo or video, tag the place and category. If it's an event, add the date and time.",
-    "s4Title": "Don't miss anything",
-    "s4Body": "Follow the people and categories you care about. The bell tells you when something new appears nearby."
+    "s1Title": "VARA speaks five languages",
+    "s1Body": "Croatian, English, German, French and Italian. Change it under Profile → Settings → Language.",
+    "s2Title": "Choose categories and time of day",
+    "s2Body": "Turn on the categories you care about — cafés, beaches, museums. The morning, afternoon and evening filter shows only what's open then.",
+    "s3Title": "See what's happening",
+    "s3Body": "Videos shows posts from people near you. You choose how far that reaches — from 5 to 100 km.",
+    "s4Title": "Share your trip",
+    "s4Body": "Add a photo or video, tag the place and category. If it's an event, add the date and time.",
+    "s5Title": "Plan your day",
+    "s5Body": "Build an hour-by-hour plan for a trip, or see which activities are available in an area you pick.",
+    "s6Title": "Visit history and badges",
+    "s6Body": "Every place you mark as visited stays in your archive. Each category earns badges — the first one at 10 visits.",
+    "s7Title": "Don't miss anything",
+    "s7Body": "Follow the people and categories you care about. The bell tells you when something new appears nearby."
   }
 }
