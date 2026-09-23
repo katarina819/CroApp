@@ -17,6 +17,7 @@ import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
   FlatList,
+  Image,
   Modal,
   Text,
   TouchableOpacity,
@@ -62,8 +63,20 @@ const DARK: Palette = {
 /** Podignut broj znači da će vodič ponovno vidjeti i oni koji su ga već prošli. */
 const STORAGE_KEY = "vara_tutorial_seen_v1";
 
+/**
+ * Svaki korak pokazuje ONU ikonu koju korisnik stvarno dodiruje, a ne novu
+ * nacrtanu za vodič. Tri koraka vode na ikone iz aplikacije (karta i videi
+ * iz donje trake, zvono s karte), a objavljivanje na gumb "+" — koji u
+ * aplikaciji doista jest Ionicon u krugu, pa je ovdje prikazan onakav
+ * kakav je ondje.
+ *
+ * Poanta je prepoznavanje: tko je vidio ikonu u vodiču, nađe je na ekranu.
+ * S nacrtanom zamjenom vodič samo opisuje, umjesto da pokaže.
+ */
 type Step = {
-  icon: keyof typeof Ionicons.glyphMap;
+  /** Slika iz aplikacije, ili gumb "+" kakav stoji u Videima. */
+  image?: number;
+  plusButton?: boolean;
   tint: string;
   titleKey: string;
   bodyKey: string;
@@ -71,25 +84,27 @@ type Step = {
 
 const STEPS: Step[] = [
   {
-    icon: "map",
+    // Ista datoteka koju koristi donja traka (BottomNav).
+    image: require("../assets/images/karta.png"),
     tint: V.visited,
     titleKey: "tutorial.s1Title",
     bodyKey: "tutorial.s1Body",
   },
   {
-    icon: "play-circle",
+    image: require("../assets/images/video.png"),
     tint: "#669CB7",
     titleKey: "tutorial.s2Title",
     bodyKey: "tutorial.s2Body",
   },
   {
-    icon: "camera",
+    plusButton: true,
     tint: V.accentGold,
     titleKey: "tutorial.s3Title",
     bodyKey: "tutorial.s3Body",
   },
   {
-    icon: "notifications",
+    // Zvono s karte (dashboard).
+    image: require("../assets/images/obav.png"),
     tint: "#AD6452",
     titleKey: "tutorial.s4Title",
     bodyKey: "tutorial.s4Body",
@@ -140,7 +155,32 @@ function StepPage({
           marginBottom: 32,
         }}
       >
-        <Ionicons name={step.icon} size={62} color={step.tint} />
+        {step.plusButton ? (
+          // Gumb za objavu iz Videa, u istom obliku kao ondje: krug s
+          // rubom i plusom. Samo veći, da se vidi.
+          <View
+            style={{
+              width: 72,
+              height: 72,
+              borderRadius: 36,
+              backgroundColor: V.forestLight,
+              borderWidth: 1.5,
+              borderColor: V.borderGreen,
+              alignItems: "center",
+              justifyContent: "center",
+            }}
+          >
+            <Ionicons name="add" size={44} color="#fff" />
+          </View>
+        ) : (
+          // Slike nisu kvadratne (npr. 195×273), pa "contain" unutar
+          // kvadrata — isto kao u donjoj traci.
+          <Image
+            source={step.image}
+            style={{ width: 76, height: 76 }}
+            resizeMode="contain"
+          />
+        )}
       </View>
 
       <Text
