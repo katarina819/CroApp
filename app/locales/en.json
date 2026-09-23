@@ -1040,5 +1040,19 @@
     "permissionBody": "Allow gallery access to send media.",
     "sentButMessageFailed": "The media was uploaded, but the message was not sent.",
     "sendFailed": "The media could not be sent."
+  },
+  "tutorial": {
+    "skip": "Skip",
+    "next": "Next",
+    "start": "Get started",
+    "reopen": "How to use VARA",
+    "s1Title": "See what's around you",
+    "s1Body": "Pick a category on the map — cafés, beaches, day trips. Tap a pin for opening hours, ratings and directions.",
+    "s2Title": "See what's happening",
+    "s2Body": "Videos shows posts from people near you. You choose how far that reaches — from 5 to 100 km.",
+    "s3Title": "Share your trip",
+    "s3Body": "Add a photo or video, tag the place and category. If it's an event, add the date and time.",
+    "s4Title": "Don't miss anything",
+    "s4Body": "Follow the people and categories you care about. The bell tells you when something new appears nearby."
   }
 }

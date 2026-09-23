@@ -1,15 +1,20 @@
 // app/(tabs)/_layout.tsx
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Slot, router } from "expo-router";
-import { useCallback, useEffect } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Alert, AppState, StyleSheet, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import BottomNav from "../../components/BottomNav";
 import i18n, { languageReady } from "../config/i18n";
 import { clearSession, isTokenExpired } from "../../utils/session";
+import { TutorialModal, hasSeenTutorial } from "../../components/TutorialModal";
 
 export default function TabsLayout() {
   const insets = useSafeAreaInsets();
+  // Vodič se pokazuje jednom, pri prvom ulasku u aplikaciju nakon prijave.
+  // Ovdje, a ne na ekranu prijave, jer ispod njega treba stajati aplikacija
+  // o kojoj govori.
+  const [tutorialOpen, setTutorialOpen] = useState(false);
   // Visina navigacijske trake: ikona+label (cca 68px) + system bar inset
   const navBarHeight = 68 + insets.bottom;
 
@@ -37,6 +42,12 @@ export default function TabsLayout() {
   }, []);
 
   useEffect(() => {
+    hasSeenTutorial().then((seen) => {
+      if (!seen) setTutorialOpen(true);
+    });
+  }, []);
+
+  useEffect(() => {
     checkSession();
 
     // Telefon zna danima stajati u pozadini — povratak u aplikaciju je
@@ -49,6 +60,10 @@ export default function TabsLayout() {
 
   return (
     <View style={styles.container}>
+      <TutorialModal
+        visible={tutorialOpen}
+        onClose={() => setTutorialOpen(false)}
+      />
       <Slot />
       <BottomNav />
       {/* Spacer koji gurne sadržaj iznad navigacijske trake */}

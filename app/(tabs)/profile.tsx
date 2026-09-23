@@ -30,6 +30,7 @@ import UserAvatar from "../../components/UserAvatar";
 import { API_BASE_URL } from "../config/api";
 import { useUser } from "./../contexts/UserContext";
 import { CloseButton } from "@/components/CloseButton";
+import { TutorialModal } from "../../components/TutorialModal";
 
 const { width: SCREEN_W } = Dimensions.get("window");
 
@@ -3517,6 +3518,7 @@ function SettingsModal({
   );
   const [blockedUsers, setBlockedUsers] = useState<any[]>([]);
   const [showBlocked, setShowBlocked] = useState(false);
+  const [tutorialOpen, setTutorialOpen] = useState(false);
   const [showActivityArchive, setShowActivityArchive] = useState(false);
   const [showAppProblemModal, setShowAppProblemModal] = useState(false);
   const [showMapProblemModal, setShowMapProblemModal] = useState(false);
@@ -4226,6 +4228,23 @@ function SettingsModal({
               {t("") ?? "Ove radnje su nepovratne"}
             </Text>
 
+            {/* Vodič se pri prvom ulasku pokaže sam, ali se zaboravi.
+                Ovdje mu se uvijek može vratiti. */}
+            <TouchableOpacity
+              style={sm.varaBtn}
+              onPress={() => setTutorialOpen(true)}
+            >
+              <View style={sm.varaBtnIcon}>
+                <Ionicons
+                  name="help-circle-outline"
+                  size={18}
+                  color={V.silverDim}
+                />
+              </View>
+              <Text style={sm.varaBtnText}>{t("tutorial.reopen")}</Text>
+              <Ionicons name="chevron-forward" size={16} color={V.silverDim} />
+            </TouchableOpacity>
+
             <TouchableOpacity style={sm.varaBtn} onPress={handleLogout}>
               <View style={sm.varaBtnIcon}>
                 <Ionicons
@@ -4253,6 +4272,11 @@ function SettingsModal({
           </View>
         </ScrollView>
       </SafeAreaView>
+      <TutorialModal
+        visible={tutorialOpen}
+        onClose={() => setTutorialOpen(false)}
+      />
+
       {/* ─── Modal za prijavu problema ─────────────────── */}
       {(["app", "map"] as const).map((type) => (
         <Modal

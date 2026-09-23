@@ -1041,5 +1041,19 @@
     "permissionBody": "Autorisez l'accès à la galerie pour envoyer des médias.",
     "sentButMessageFailed": "Le média a été envoyé, mais pas le message.",
     "sendFailed": "Impossible d'envoyer le média."
+  },
+  "tutorial": {
+    "skip": "Passer",
+    "next": "Suivant",
+    "start": "C'est parti",
+    "reopen": "Comment utiliser VARA",
+    "s1Title": "Découvre ce qui t'entoure",
+    "s1Body": "Choisis une catégorie sur la carte — cafés, plages, excursions. Touche un repère pour les horaires, les avis et l'itinéraire.",
+    "s2Title": "Vois ce qui se passe",
+    "s2Body": "Vidéos rassemble les publications des gens près de toi. Tu choisis la distance — de 5 à 100 km.",
+    "s3Title": "Partage ta sortie",
+    "s3Body": "Ajoute une photo ou une vidéo, indique le lieu et la catégorie. S'il s'agit d'un événement, précise la date et l'heure.",
+    "s4Title": "Ne rate rien",
+    "s4Body": "Suis les personnes et les catégories qui t'intéressent. La cloche te prévient dès qu'il y a du nouveau près de toi."
   }
 }

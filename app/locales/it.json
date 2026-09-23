@@ -1041,5 +1041,19 @@
     "permissionBody": "Consenti l'accesso alla galleria per inviare contenuti.",
     "sentButMessageFailed": "Il contenuto è stato caricato, ma il messaggio non è stato inviato.",
     "sendFailed": "Impossibile inviare il contenuto."
+  },
+  "tutorial": {
+    "skip": "Salta",
+    "next": "Avanti",
+    "start": "Iniziamo",
+    "reopen": "Come usare VARA",
+    "s1Title": "Scopri cosa c'è intorno a te",
+    "s1Body": "Scegli una categoria sulla mappa — caffè, spiagge, gite. Tocca un segnaposto per orari, valutazioni e indicazioni.",
+    "s2Title": "Guarda cosa succede",
+    "s2Body": "In Video trovi i post delle persone vicino a te. Decidi tu quanto lontano guardare — da 5 a 100 km.",
+    "s3Title": "Condividi la tua gita",
+    "s3Body": "Aggiungi una foto o un video, indica luogo e categoria. Se è un evento, inserisci data e ora.",
+    "s4Title": "Non perderti nulla",
+    "s4Body": "Segui le persone e le categorie che ti interessano. La campanella ti avvisa quando c'è qualcosa di nuovo vicino a te."
   }
 }
