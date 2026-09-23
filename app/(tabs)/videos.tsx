@@ -85,20 +85,10 @@ const AGE_GROUP_IDS = [
 ] as const;
 
 // ─── VARA Paleta — identična dashboard.tsx / varaTheme.ts ────────────────────
-const V = {
-  forestDeep: "#1A2E15",
-  forestMid: "#243B1E",
-  forestLight: "#2D5518",
-  borderGreen: "#4A7040",
-  borderDim: "#304A28",
-  silver: "#C4CABC",
-  silverBright: "#E8EDE4",
-  silverDim: "#8A9486",
-  accentGold: "#B8A060",
-  visited: "#5A8A48",
-  danger: "#8B3030",
-  overlay: "rgba(10,20,8,0.88)",
-} as const;
+// Ovdje je stajala jos jedna kopija palete — cetvrta u aplikaciji, i vec
+// zaostala: imala je stari danger (#8B3030, omjer 1.77) i stari silverDim.
+// Sada dolazi iz sustava boja, pa se ispravci vide i ovdje.
+import { V } from "../../styles/varaTheme";
 
 function getVT(dark: boolean) {
   return {
@@ -2187,7 +2177,7 @@ export function UploadModal({
                       upload.actionBtn,
                       {
                         flex: 1,
-                        backgroundColor: V.danger,
+                        backgroundColor: V.dangerFill,
                         borderColor: "#5A3030",
                       },
                     ]}

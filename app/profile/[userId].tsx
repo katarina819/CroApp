@@ -27,6 +27,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { StoryBadge } from "../../app/StoryBadge";
 import { useTheme } from "../../components/AdaptiveThemeProvider";
 import { API_BASE_URL } from "../config/api";
+import { getVara } from "../../styles/adaptiveVara";
 
 const PRESET_AVATARS: Record<string, any> = {
   "avatar:male": require("../../assets/images/avatar-male.png"),
@@ -34,23 +35,6 @@ const PRESET_AVATARS: Record<string, any> = {
 };
 
 const { width: SCREEN_W } = Dimensions.get("window");
-
-function getVara(dark: boolean) {
-  return {
-    forestDeep: dark ? "#1a2e1a" : "#f0ede4",
-    forestMid: dark ? "#2a4230" : "#e4ead8",
-    forestLight: dark ? "#3a5a30" : "#ccdcb8",
-    borderGreen: dark ? "#4a7040" : "#5a8a40",
-    borderDim: dark ? "#3a5a30" : "#c0d0a8",
-    silver: dark ? "#c0c0c0" : "#3a4a35",
-    silverBright: dark ? "#e8e8e8" : "#1a2a18",
-    silverDim: dark ? "#a0a0a0" : "#5a6a55",
-    accentGold: "#B8A060",
-    visited: dark ? "#5a8a48" : "#3a6a28",
-    danger: dark ? "#8B3030" : "#7a2020",
-    overlay: dark ? "rgba(0,0,0,0.6)" : "rgba(0,0,0,0.4)",
-  } as const;
-}
 
 interface PublicProfile {
   id: number;

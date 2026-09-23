@@ -26,6 +26,21 @@ import { Dimensions, Platform, StyleSheet } from "react-native";
 const { width: SW, height: SH } = Dimensions.get("window");
 
 // ── Paleta ────────────────────────────────────────────────────────
+/**
+ * Boja koja je podloga i boja koja je tekst nisu ista boja.
+ *
+ * Dosad su bile. `visited` je bio i ispuna gumba i boja teksta, `danger` i
+ * obrub i natpis — pa nijedna nije mogla zadovoljiti oboje. Izmjereno na
+ * pozadini #1A2E15, prije ovoga:
+ *
+ *   danger  #8B3030   omjer 1.77  — tekst se praktički nije vidio
+ *   tekst na glavnom gumbu        3.42
+ *   silverDim na kartici          3.87
+ *
+ * Preporuka (WCAG AA) je 4.5 za običan tekst. Ispod su odvojene uloge, pa
+ * svaka može zadovoljiti svoju. Omjeri uz svaku vrijede na #1A2E15, a gdje
+ * je važno i na kartici #243B1E.
+ */
 export const V = {
   forestDeep: "#1A2E15",
   forestMid: "#243B1E",
@@ -34,11 +49,26 @@ export const V = {
   borderDim: "#304A28",
   silver: "#C4CABC",
   silverBright: "#E8EDE4",
-  silverDim: "#8A9486",
+  /** Hint i meta tekst. Podignut s #8A9486 (3.87 na kartici) → 4.55. */
+  silverDim: "#97A192",
   accentGold: "#B8A060",
+
+  /** Ispuna glavnog gumba. Tamni tekst na njoj: 5.17. Gumb vs pozadina: 4.64. */
+  primary: "#6E9E5C",
+  /** Tekst i ikone NA glavnom gumbu. */
+  onPrimary: "#12250E",
+
+  /** Zelena kad je PLOHA ili obrub — oznaka posjećenog, prekidač, rub. */
   visited: "#5A8A48",
   visitedLight: "#3D6B32",
-  danger: "#8B3030",
+  /** Zelena kad je TEKST na tamnoj podlozi: 5.51 (prije 3.57). */
+  accentText: "#7CAC69",
+
+  /** Opasnost kao TEKST, obrub ili ikona: 5.71 / 4.80 na kartici. */
+  danger: "#E8887E",
+  /** Opasnost kao PLOHA, s bijelim tekstom na njoj: 7.37. */
+  dangerFill: "#8B3030",
+
   overlay: "rgba(10,20,8,0.88)",
   overlayLight: "rgba(26,46,21,0.92)",
   cardBg: "#1E3418",
@@ -46,6 +76,37 @@ export const V = {
   chipBg: "#1E3418",
   chipActive: "#3D6B32",
   white: "#F0F4EE",
+
+  /**
+   * Zaobljenja. Prije ih je bilo dvadesetak različitih, a kartice su ovisno
+   * o ekranu bile na 10, 12, 14 ili 16 — razlika koja se ne primijeti
+   * pojedinačno, ali se osjeti kroz aplikaciju.
+   */
+  radiusSm: 8,
+  radiusMd: 12,
+  radiusLg: 20,
+  radiusPill: 999,
+} as const;
+
+/**
+ * Prosirenje podrucja dodira za male gumbe.
+ *
+ * I Android i iOS preporucuju najmanje 44-48px za sve sto se dodiruje.
+ * U aplikaciji je 24 kontrole manje od toga — zatvaranja, strelice,
+ * ikone na karti — a hitSlop se koristio svega 14 puta. Promasen dodir
+ * korisnik ne cita kao presitan gumb, nego kao aplikaciju koja ne radi.
+ *
+ * hitSlop ne mijenja izgled: gumb ostaje iste velicine, samo prima dodir
+ * i malo izvan svog ruba.
+ */
+export const TAP_SLOP = { top: 10, bottom: 10, left: 10, right: 10 } as const;
+
+/** Za jos manje ikone (ispod 30px), gdje 10px nije dovoljno. */
+export const TAP_SLOP_LG = {
+  top: 14,
+  bottom: 14,
+  left: 14,
+  right: 14,
 } as const;
 
 // ── Marker stilovi (zamjena za `ms`) ──────────────────────────────
@@ -282,21 +343,21 @@ export const dm = StyleSheet.create({
   // teme: da je gumb u boji kategorije, isti bi gumb bio tirkizan na kafiću
   // i crven na restoranu, iako radi potpuno istu stvar.
   reviewBtn: {
-    borderRadius: 10,
+    borderRadius: V.radiusMd,
     paddingVertical: 12,
     alignItems: "center",
     backgroundColor: V.visitedLight,
     borderWidth: 1,
-    borderColor: V.visited,
+    borderColor: V.primary,
   },
   reviewBtnTxt: { color: V.silverBright, fontWeight: "700", fontSize: 15 },
   visitBtn: {
-    borderRadius: 10,
+    borderRadius: V.radiusMd,
     paddingVertical: 14,
     alignItems: "center",
-    backgroundColor: V.visited,
+    backgroundColor: V.primary,
     borderWidth: 1,
-    borderColor: "rgba(232,237,228,0.22)",
+    borderColor: "rgba(18,37,14,0.25)",
   },
 
   // Prijava netočnog podatka o mjestu. Namjerno tiša od ostalih radnji —
@@ -326,7 +387,7 @@ export const dm = StyleSheet.create({
     gap: 10,
   },
   reportTitle: { color: V.silverBright, fontSize: 17, fontWeight: "800" },
-  reportPlace: { color: V.visited, fontSize: 14, fontWeight: "600" },
+  reportPlace: { color: V.accentText, fontSize: 14, fontWeight: "600" },
   reportHint: { color: V.silverDim, fontSize: 12, lineHeight: 17 },
   reportInput: {
     minHeight: 90,
@@ -346,7 +407,7 @@ export const dm = StyleSheet.create({
     justifyContent: "center",
     borderWidth: 1,
   },
-  visitBtnTxt: { color: V.silverBright, fontSize: 16, fontWeight: "700" },
+  visitBtnTxt: { color: V.onPrimary, fontSize: 16, fontWeight: "800" },
   visitedBadge: {
     backgroundColor: V.forestMid,
     borderRadius: 10,
@@ -417,7 +478,7 @@ export const ag = StyleSheet.create({
     alignItems: "center" as const,
   },
   dmTitle: { fontSize: 16, fontWeight: "700" as const, color: V.silverBright },
-  dmSubtitle: { fontSize: 14, color: V.visited, marginTop: 2 },
+  dmSubtitle: { fontSize: 14, color: V.accentText, marginTop: 2 },
   dmWarnBadge: {
     backgroundColor: "#2A2010",
     borderRadius: 8,
@@ -646,7 +707,7 @@ export const ag = StyleSheet.create({
     shadowRadius: 4,
   },
   groupTitle: { fontSize: 16, fontWeight: "800", color: V.silverBright },
-  groupLocation: { fontSize: 13, color: V.visited, marginTop: 2 },
+  groupLocation: { fontSize: 13, color: V.accentText, marginTop: 2 },
   groupDesc: { fontSize: 13, color: V.silverDim, marginTop: 4 },
   groupIcon: {
     width: 44,
@@ -697,7 +758,7 @@ export const ag = StyleSheet.create({
     paddingHorizontal: 10,
     paddingVertical: 4,
   },
-  badgeMemberText: { fontSize: 11, color: V.visited, fontWeight: "700" },
+  badgeMemberText: { fontSize: 11, color: V.accentText, fontWeight: "700" },
   badgeFull: {
     backgroundColor: V.forestDeep,
     borderRadius: 6,
@@ -967,7 +1028,12 @@ export const pr = StyleSheet.create({
     gap: 8,
     alignItems: "flex-start",
   },
-  tipDot: { fontSize: 18, color: V.visited, fontWeight: "800", lineHeight: 22 },
+  tipDot: {
+    fontSize: 18,
+    color: V.accentText,
+    fontWeight: "800",
+    lineHeight: 22,
+  },
   tipText: { fontSize: 13, color: V.silver, lineHeight: 22, flex: 1 },
   noteBox: {
     backgroundColor: V.forestMid,
@@ -1099,7 +1165,7 @@ export const planStyles = StyleSheet.create({
     marginBottom: 10,
   },
   progressTitle: { fontSize: 14, fontWeight: "700", color: V.silver },
-  progressCount: { fontSize: 14, fontWeight: "800", color: V.visited },
+  progressCount: { fontSize: 14, fontWeight: "800", color: V.accentText },
   progressTrack: {
     height: 8,
     backgroundColor: V.borderDim,
@@ -1113,7 +1179,7 @@ export const planStyles = StyleSheet.create({
   },
   progressHint: {
     fontSize: 12,
-    color: V.visited,
+    color: V.accentText,
     marginTop: 8,
     fontWeight: "600",
   },
@@ -1203,7 +1269,7 @@ export const planStyles = StyleSheet.create({
   visitToggleTextVisited: {
     fontSize: 11,
     fontWeight: "800",
-    color: V.visited,
+    color: V.accentText,
     textAlign: "center",
   },
 });
@@ -1373,7 +1439,7 @@ export const s = StyleSheet.create({
     width: 16,
     height: 16,
     borderRadius: 8,
-    backgroundColor: V.danger,
+    backgroundColor: V.dangerFill,
     justifyContent: "center",
     alignItems: "center",
     borderWidth: 1.5,

@@ -39,7 +39,7 @@ import {
 import MapView, { Circle, Marker, Region } from "react-native-maps";
 import { useTheme } from "../../components/AdaptiveThemeProvider";
 import { PlanMyDayModal } from "../../components/PlanMyDayModal";
-import { ag, dm, pb, pr, s, V } from "../../styles/varaTheme";
+import { ag, dm, pb, pr, s, TAP_SLOP, V } from "../../styles/varaTheme";
 import { API_BASE_URL } from "../config/api";
 import {
   useInputBottomOffset,
@@ -69,61 +69,6 @@ import {
   placeCategories,
   searchPlaces,
 } from "../services/locationService";
-
-// ─── Tema palete ──────────────────────────────────────────────────────────────
-const PALETTE = {
-  vara: {
-    // Trenutna Vara zelena (nepromijenjena)
-    bg: "#1a2e1a",
-    card: "#2a4230",
-    section: "#3a5a30",
-    border: "#4a7040",
-    borderDim: "#3a5a30",
-    text: "#e8e8e8",
-    textSub: "#c0c0c0",
-    textDim: "#a0a0a0",
-    accent: "#5a8a48",
-    gold: "#B8A060",
-    danger: "#8B3030",
-    inputBg: "#2a4230",
-    overlay: "rgba(0,0,0,0.6)",
-    headerBorder: "#4a7040",
-  },
-  light: {
-    bg: "#f5f0e8",
-    card: "#fffdf5",
-    section: "#e8dfc8",
-    border: "#c8a840",
-    borderDim: "#e0d090",
-    text: "#2a2010",
-    textSub: "#5a4a20",
-    textDim: "#8a7a50",
-    accent: "#5a8a20",
-    gold: "#9a7820",
-    danger: "#8B3030",
-    inputBg: "#fffdf5",
-    overlay: "rgba(80,60,0,0.25)",
-    headerBorder: "#c8a840",
-  },
-  dark: {
-    bg: "#0a0414",
-    card: "#160d28",
-    section: "#221040",
-    border: "#5040a0",
-    borderDim: "#3a2870",
-    text: "#e0d8ff",
-    textSub: "#b0a0e0",
-    textDim: "#7060a0",
-    accent: "#7868d0",
-    gold: "#c0a840",
-    danger: "#c04060",
-    inputBg: "#160d28",
-    overlay: "rgba(0,0,0,0.75)",
-    headerBorder: "#5040a0",
-  },
-} as const;
-
-type PaletteKey = keyof typeof PALETTE;
 
 function getDashColors(isDark: boolean) {
   return {
@@ -1804,7 +1749,11 @@ function PlaceDetailModal({
                     ))}
                   </View>
                 )}
-                <TouchableOpacity style={dm.closeBtn} onPress={onClose}>
+                <TouchableOpacity
+                  style={dm.closeBtn}
+                  onPress={onClose}
+                  hitSlop={TAP_SLOP}
+                >
                   <Text
                     style={{ color: "#fff", fontSize: 15, fontWeight: "700" }}
                   >
@@ -9669,7 +9618,6 @@ function QuickCategoryBar({
 export default function DashboardScreen() {
   const { t } = useTranslation();
   const { isDark } = useTheme();
-  const themeMode: PaletteKey = isDark ? "dark" : "vara";
   const DC = getDashColors(isDark);
   // POST_CATEGORY_IDS, a ne samo placeCategories: "Ostalo" nije vrsta mjesta
   // na karti pa ga tamo nema, ali je kategorija kao i svaka druga — bez nje

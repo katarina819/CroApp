@@ -31,6 +31,7 @@ import { API_BASE_URL } from "../config/api";
 import { useUser } from "./../contexts/UserContext";
 import { CloseButton } from "@/components/CloseButton";
 import { TutorialModal } from "../../components/TutorialModal";
+import { getVara } from "../../styles/adaptiveVara";
 
 const { width: SCREEN_W } = Dimensions.get("window");
 
@@ -55,27 +56,6 @@ const V_DARK = {
 } as const;
 
 // ─── Dinamički getter boja koji se koristi UNUTAR komponenti ──────────────────
-function getVara(dark: boolean) {
-  return {
-    forestDeep: dark ? "#1a2e1a" : "#f0ede4",
-    forestMid: dark ? "#2a4230" : "#e4ead8",
-    forestLight: dark ? "#3a5a30" : "#ccdcb8",
-    borderGreen: dark ? "#4a7040" : "#5a8a40",
-    borderDim: dark ? "#3a5a30" : "#c0d0a8",
-    silver: dark ? "#c0c0c0" : "#3a4a35",
-    silverBright: dark ? "#e8e8e8" : "#1a2a18",
-    silverDim: dark ? "#a0a0a0" : "#5a6a55",
-    accentGold: "#B8A060",
-    visited: dark ? "#5a8a48" : "#3a6a28",
-    visitedLight: dark ? "#3a5a30" : "#ccdcb8",
-    danger: dark ? "#8B3030" : "#7a2020",
-    overlay: dark ? "rgba(0,0,0,0.6)" : "rgba(0,0,0,0.4)",
-    overlayLight: dark ? "rgba(26,46,21,0.92)" : "rgba(240,237,228,0.96)",
-    cardBg: dark ? "#2a4230" : "#e4ead8",
-    inputBg: dark ? "#2a4230" : "#e4ead8",
-  } as const;
-}
-
 // Navigacijska traka lebdi preko dna ekrana; bez ovog razmaka posljednji red
 // svakog popisa završi ispod nje i djeluje kao da se popis ne da pomaknuti do
 // kraja. Jedna vrijednost na svim popisima profila, da se razlikuju samo tamo
@@ -3251,7 +3231,7 @@ function WishlistTab() {
                         borderRadius: 14,
                         borderWidth: 1,
                         backgroundColor:
-                          item.isGoing === false ? V.danger : V.forestMid,
+                          item.isGoing === false ? V.dangerFill : V.forestMid,
                         borderColor:
                           item.isGoing === false ? "#C05050" : V.borderDim,
                       }}

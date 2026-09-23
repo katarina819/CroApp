@@ -29,22 +29,35 @@ const PRESET_AVATARS: Record<string, any> = {
   "avatar:female": require("../../assets/images/avatar-female.png"),
 };
 
-// ─── VARA Paleta — identična dashboardu ───────────────────────────────────────
+// ─── VARA paleta ─────────────────────────────────────────────────────────────
+//
+// Imena su ostala lokalna (bg, textPrimary, accent…) jer ih koristi cijeli
+// ovaj ekran, ali VRIJEDNOSTI dolaze iz sustava boja. Prije su bile
+// prepisane i tiho su zaostale: pozadina je ovdje bila #1a2e1a, a u
+// varaTheme #1A2E15 — dvije različite zelene u istoj ulozi.
+//
+// `accent` se ovdje gotovo uvijek koristi kao TEKST (korisničko ime, gumb
+// "Pratim", ikone), a stara vrijednost je na tamnoj podlozi davala omjer
+// 3.56 — ispod praga čitljivosti. Zato ide na accentText; jedini obrub
+// koji ga je koristio dobiva punu zelenu preko borderActive.
+import { getVara } from "../../styles/adaptiveVara";
+import { V as VARA } from "../../styles/varaTheme";
+
 const V = {
-  bg: "#1a2e1a", // --forestDeep
-  bgCard: "#2a4230", // --forestCard
-  bgCardHover: "#3a5a30", // --forestActive
-  border: "#3a5a30", // --borderDim
-  borderBright: "#4a7040", // --borderGreen
-  borderActive: "#5a8a48", // --borderActive
-  textPrimary: "#e8e8e8", // --silverBright
-  textSecondary: "#c0c0c0", // --silver
-  textMuted: "#a0a0a0", // --silverDim
-  textDisabled: "#b0b0b0", // --close btn
-  accent: "#5a8a48", // --visited green
-  inputBg: "#2a4230",
-  inputBorder: "#4a7040",
-  placeholder: "#8a8a8a",
+  bg: VARA.forestDeep,
+  bgCard: "#2A4230",
+  bgCardHover: "#3A5A30",
+  border: "#3A5A30",
+  borderBright: VARA.borderGreen,
+  borderActive: VARA.visited,
+  textPrimary: "#E8E8E8",
+  textSecondary: "#C0C0C0",
+  textMuted: VARA.silverDim,
+  textDisabled: "#B0B0B0",
+  accent: VARA.accentText,
+  inputBg: "#2A4230",
+  inputBorder: VARA.borderGreen,
+  placeholder: VARA.silverDim,
 } as const;
 
 interface User {
@@ -60,21 +73,23 @@ interface User {
 }
 
 function getV(dark: boolean) {
+  // Ista imena kao gore, vrijednosti iz zajedničke prilagodljive palete.
+  const A = getVara(dark);
   return {
-    bg: dark ? "#1a2e1a" : "#f0ede4",
-    bgCard: dark ? "#2a4230" : "#e4ead8",
-    bgCardHover: dark ? "#3a5a30" : "#ccdcb8",
-    border: dark ? "#3a5a30" : "#c0d0a8",
-    borderBright: dark ? "#4a7040" : "#5a8a40",
-    borderActive: dark ? "#5a8a48" : "#3a6a28",
-    textPrimary: dark ? "#e8e8e8" : "#1a2a18",
-    textSecondary: dark ? "#c0c0c0" : "#3a4a35",
-    textMuted: dark ? "#a0a0a0" : "#5a6a55",
-    textDisabled: dark ? "#b0b0b0" : "#7a8a75",
-    accent: dark ? "#5a8a48" : "#3a6a28",
-    inputBg: dark ? "#2a4230" : "#e4ead8",
-    inputBorder: dark ? "#4a7040" : "#5a8a40",
-    placeholder: dark ? "#8a8a8a" : "#7a8a75",
+    bg: A.forestDeep,
+    bgCard: A.forestMid,
+    bgCardHover: A.forestLight,
+    border: A.borderDim,
+    borderBright: A.borderGreen,
+    borderActive: A.visited,
+    textPrimary: A.silverBright,
+    textSecondary: A.silver,
+    textMuted: A.silverDim,
+    textDisabled: A.silverDim,
+    accent: A.accentText,
+    inputBg: A.inputBg,
+    inputBorder: A.borderGreen,
+    placeholder: A.silverDim,
   } as const;
 }
 
