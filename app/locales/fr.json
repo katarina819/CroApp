@@ -1060,6 +1060,8 @@
     "s6Title": "Historique des visites et badges",
     "s6Body": "Chaque lieu marqué comme visité reste dans ton archive. Chaque catégorie rapporte des badges — le premier à 10 visites.",
     "s7Title": "Ne rate rien",
-    "s7Body": "Suis les personnes et les catégories qui t'intéressent. La cloche te prévient dès qu'il y a du nouveau près de toi."
+    "s7Body": "Suis les personnes et les catégories qui t'intéressent. La cloche te prévient dès qu'il y a du nouveau près de toi.",
+    "sectionTitle": "Guide",
+    "sectionDesc": "Un aperçu rapide de VARA — sept étapes."
   }
 }

@@ -1059,6 +1059,8 @@
     "s6Title": "Visit history and badges",
     "s6Body": "Every place you mark as visited stays in your archive. Each category earns badges — the first one at 10 visits.",
     "s7Title": "Don't miss anything",
-    "s7Body": "Follow the people and categories you care about. The bell tells you when something new appears nearby."
+    "s7Body": "Follow the people and categories you care about. The bell tells you when something new appears nearby.",
+    "sectionTitle": "Tutorial",
+    "sectionDesc": "A short tour of what VARA can do — seven steps."
   }
 }

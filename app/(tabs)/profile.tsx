@@ -468,6 +468,15 @@ function makeSmStyles(V: ReturnType<typeof getVara>) {
       fontStyle: "italic" as const,
       color: V.silverDim,
     },
+    // Isti izgled kao dangerDesc, ali izvan "opasne zone" — posuđivati
+    // stil s tim imenom znači da sljedeća izmjena opasne zone tiho
+    // promijeni i objašnjenje uz vodič.
+    sectionHint: {
+      fontSize: 12,
+      marginTop: 10,
+      fontStyle: "italic" as const,
+      color: V.silverDim,
+    },
     varaBtn: {
       flexDirection: "row" as const,
       alignItems: "center" as const,
@@ -4139,6 +4148,30 @@ function SettingsModal({
             )}
           </View>
 
+          {/* ─── VODIČ ────────────────────────────────────── */}
+          {/* Vodič se pri prvom ulasku pokaže sam, ali se zaboravi — a
+              zaboravi se upravo ono što se rijetko koristi, pa se najviše
+              i traži. Stoji ovdje, uz arhivu, a ne dolje uz odjavu i
+              brisanje računa: pomoć nema što tražiti u opasnoj zoni. */}
+          <View style={sm.section}>
+            <Text style={sm.sectionTitle}>{t("tutorial.sectionTitle")}</Text>
+            <TouchableOpacity
+              style={sm.varaBtn}
+              onPress={() => setTutorialOpen(true)}
+            >
+              <View style={sm.varaBtnIcon}>
+                <Ionicons
+                  name="help-circle-outline"
+                  size={18}
+                  color={V.visited}
+                />
+              </View>
+              <Text style={sm.varaBtnText}>{t("tutorial.reopen")}</Text>
+              <Ionicons name="chevron-forward" size={16} color={V.silverDim} />
+            </TouchableOpacity>
+            <Text style={sm.sectionHint}>{t("tutorial.sectionDesc")}</Text>
+          </View>
+
           {/* ─── PODRŠKA ──────────────────────────────────── */}
           <View style={sm.section}>
             <Text style={sm.sectionTitle}>
@@ -4227,23 +4260,6 @@ function SettingsModal({
             <Text style={sm.dangerDesc}>
               {t("") ?? "Ove radnje su nepovratne"}
             </Text>
-
-            {/* Vodič se pri prvom ulasku pokaže sam, ali se zaboravi.
-                Ovdje mu se uvijek može vratiti. */}
-            <TouchableOpacity
-              style={sm.varaBtn}
-              onPress={() => setTutorialOpen(true)}
-            >
-              <View style={sm.varaBtnIcon}>
-                <Ionicons
-                  name="help-circle-outline"
-                  size={18}
-                  color={V.silverDim}
-                />
-              </View>
-              <Text style={sm.varaBtnText}>{t("tutorial.reopen")}</Text>
-              <Ionicons name="chevron-forward" size={16} color={V.silverDim} />
-            </TouchableOpacity>
 
             <TouchableOpacity style={sm.varaBtn} onPress={handleLogout}>
               <View style={sm.varaBtnIcon}>
