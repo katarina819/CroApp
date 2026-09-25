@@ -731,7 +731,11 @@ export default function UserProfileScreen() {
     <SafeAreaView style={styles.safeArea} edges={["top"]}>
       {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()}>
+        <TouchableOpacity
+          onPress={() => router.back()}
+          accessibilityRole="button"
+          accessibilityLabel={t("common.back")}
+        >
           <Ionicons name="arrow-back" size={28} color={V.silverBright} />
         </TouchableOpacity>
         <Text style={styles.headerTitle} numberOfLines={1}>
@@ -831,6 +835,8 @@ export default function UserProfileScreen() {
             <TouchableOpacity
               style={styles.msgBtn}
               onPress={() => setShowCompose(true)}
+              accessibilityRole="button"
+              accessibilityLabel={t("common.send")}
             >
               <Ionicons name="paper-plane-outline" size={18} color="#667eea" />
               <Text style={styles.msgBtnText}>{t("userProfile.message")}</Text>

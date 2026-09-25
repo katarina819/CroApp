@@ -523,6 +523,8 @@ export function NotificationsModal({
                 <TouchableOpacity
                   onPress={() => remove(item.id)}
                   hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                  accessibilityRole="button"
+                  accessibilityLabel={t("common.delete")}
                 >
                   <Ionicons name="trash-outline" size={18} color={C.textDim} />
                 </TouchableOpacity>

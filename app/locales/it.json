@@ -46,7 +46,10 @@
     "mediaPermission": "Consenti l'accesso ai media nelle impostazioni",
     "tooManyRequests": "Troppe richieste in poco tempo. Attendi un momento e riprova.",
     "checkConnection": "Controlla la connessione a internet.",
-    "serverUnreachable": "Server non raggiungibile."
+    "serverUnreachable": "Server non raggiungibile.",
+    "retry": "Riprova",
+    "loadFailedTitle": "Impossibile caricare",
+    "loadFailedBody": "Controlla la connessione. Se è tutto a posto, il server potrebbe essersi appena riattivato — riprova tra poco."
   },
   "auth": {
     "login": "Accesso",
@@ -357,7 +360,9 @@
     "reportSentTitle": "Grazie!",
     "reportSentBody": "La segnalazione è stata inviata all'admin. Verificheremo il dato.",
     "reportFailed": "La segnalazione non è stata inviata. Controlla la connessione e riprova.",
-    "members": "Membri"
+    "members": "Membri",
+    "emptyTitle": "Nessun luogo in quest'area",
+    "emptyBody": "Attiva altre categorie o riduci lo zoom per coprire un'area più ampia."
   },
   "videos": {
     "title": "Video",
@@ -424,7 +429,11 @@
     "radiusTitle": "Fin dove arriva “vicino a me”?",
     "radiusHint": "Vale per il feed e per le notifiche — è la distanza dalle zone in cui ti muovi.",
     "radiusValue": "{{km}} km",
-    "radiusSaveFailed": "Il raggio è cambiato per il feed, ma non è stato salvato per le notifiche."
+    "radiusSaveFailed": "Il raggio è cambiato per il feed, ma non è stato salvato per le notifiche.",
+    "emptyTitle": "Ancora nessun post",
+    "emptyBodyLocal": "Nessuno ha ancora pubblicato vicino a te. Amplia il raggio o passa a tutti i post.",
+    "emptyBodyGlobal": "Sii il primo a condividere — tocca il “+” in alto a destra.",
+    "emptyAction": "Pubblica"
   },
   "messages": {
     "title": "Messaggi",
@@ -488,7 +497,9 @@
     "messageFailed": "Messaggio non inviato",
     "followFailed": "Impossibile seguire l'utente",
     "loadFailed": "Impossibile caricare gli utenti",
-    "messageFailedCheckConnection": "Impossibile inviare il messaggio. Verifica la connessione."
+    "messageFailedCheckConnection": "Impossibile inviare il messaggio. Verifica la connessione.",
+    "emptyTitle": "Nessun risultato",
+    "emptyBody": "Prova un altro nome o nome utente — bastano due lettere."
   },
   "archive": {
     "markHint": "Segna i luoghi come visitati sulla mappa",
@@ -776,7 +787,9 @@
     "goldenLinkWord": "stella",
     "deleteAccountDone": "Il tuo account è stato eliminato.",
     "deleteAccountFailed": "Impossibile eliminare l'account. È ancora attivo — riprova o contattaci.",
-    "deleteAccountWorking": "Eliminazione account…"
+    "deleteAccountWorking": "Eliminazione account…",
+    "emptyPostsTitle": "Ancora nessun post",
+    "emptyPostsBody": "Tutto ciò che pubblichi finisce qui — foto, video ed eventi."
   },
   "schedBreakfast": "Colazione",
   "schedMorningTour": "Visita mattutina — meno turisti",

@@ -46,7 +46,10 @@
     "mediaPermission": "Allow media access in settings",
     "tooManyRequests": "Too many requests in a short time. Please wait a moment and try again.",
     "checkConnection": "Please check your internet connection.",
-    "serverUnreachable": "The server is unreachable."
+    "serverUnreachable": "The server is unreachable.",
+    "retry": "Try again",
+    "loadFailedTitle": "Couldn't load this",
+    "loadFailedBody": "Check your connection. If that's fine, the server may just be waking up — try again in a moment."
   },
   "auth": {
     "login": "Login",
@@ -361,7 +364,9 @@
     "reportSend": "Send to admin",
     "reportSentTitle": "Thank you!",
     "reportSentBody": "Your report was sent to the admin. We'll check it.",
-    "reportFailed": "The report was not sent. Check your connection and try again."
+    "reportFailed": "The report was not sent. Check your connection and try again.",
+    "emptyTitle": "No places in this area",
+    "emptyBody": "Turn on more categories, or zoom out to cover a wider area."
   },
   "videos": {
     "title": "Videos",
@@ -427,7 +432,11 @@
     "radiusTitle": "How far is “near me”?",
     "radiusHint": "Applies to the feed and to notifications — this is the distance from the areas you move around in.",
     "radiusValue": "{{km}} km",
-    "radiusSaveFailed": "The range changed for the feed, but was not saved for notifications."
+    "radiusSaveFailed": "The range changed for the feed, but was not saved for notifications.",
+    "emptyTitle": "No posts here yet",
+    "emptyBodyLocal": "Nobody has posted near you yet. Widen the radius, or switch to all posts.",
+    "emptyBodyGlobal": "Be the first to share something — tap the “+” at the top right.",
+    "emptyAction": "Post something"
   },
   "chat": {
     "activeUser": "Active user",
@@ -512,7 +521,9 @@
     "messageFailed": "Message not sent",
     "followFailed": "Unable to follow user",
     "loadFailed": "Unable to load users",
-    "messageFailedCheckConnection": "Unable to send message. Check your connection."
+    "messageFailedCheckConnection": "Unable to send message. Check your connection.",
+    "emptyTitle": "No results",
+    "emptyBody": "Try a different name or username — the first two letters are enough."
   },
   "groups": {
     "title": "Activities",
@@ -765,7 +776,9 @@
     "goldenLinkWord": "star",
     "deleteAccountDone": "Your account has been deleted.",
     "deleteAccountFailed": "The account could not be deleted. It is still active — please try again or contact us.",
-    "deleteAccountWorking": "Deleting account…"
+    "deleteAccountWorking": "Deleting account…",
+    "emptyPostsTitle": "No posts yet",
+    "emptyPostsBody": "Everything you post collects here — photos, videos and events."
   },
   "plan": {
     "day1Label": "1 day",

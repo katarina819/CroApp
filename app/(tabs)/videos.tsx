@@ -27,6 +27,7 @@ import {
   Keyboard,
   Modal,
   Platform,
+  RefreshControl,
   Pressable,
   SafeAreaView,
   ScrollView,
@@ -89,6 +90,7 @@ const AGE_GROUP_IDS = [
 // zaostala: imala je stari danger (#8B3030, omjer 1.77) i stari silverDim.
 // Sada dolazi iz sustava boja, pa se ispravci vide i ovdje.
 import { V } from "../../styles/varaTheme";
+import { StateView } from "../../components/StateView";
 
 function getVT(dark: boolean) {
   return {
@@ -1313,7 +1315,11 @@ function ShareModal({
               onChangeText={setSearch}
             />
             {search.length > 0 && (
-              <TouchableOpacity onPress={() => setSearch("")}>
+              <TouchableOpacity
+                onPress={() => setSearch("")}
+                accessibilityRole="button"
+                accessibilityLabel={t("common.close")}
+              >
                 <Ionicons name="close-circle" size={18} color={VT.textMuted} />
               </TouchableOpacity>
             )}
@@ -1845,6 +1851,8 @@ export function UploadModal({
                       setMediaUri(null);
                       setStep("pick");
                     }}
+                    accessibilityRole="button"
+                    accessibilityLabel={t("common.retry")}
                   >
                     <Ionicons name="refresh" size={16} color="#fff" />
                     <Text
@@ -2421,6 +2429,8 @@ export default function VideosScreen() {
   const [radiusKm, setRadiusKm] = useState<number>(DEFAULT_RADIUS_KM);
   const [showRadiusPicker, setShowRadiusPicker] = useState(false);
   const flatListRef = useRef<FlatList>(null);
+  const [loadFailed, setLoadFailed] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
 
   const PAGE_SIZE = 15;
 
@@ -2438,18 +2448,30 @@ export default function VideosScreen() {
         `${API_BASE_URL}/api/video?page=${pageToLoad}&pageSize=${PAGE_SIZE}&scope=${scope}&radiusKm=${radiusKm}`,
         { headers: { Authorization: `Bearer ${token}` } },
       );
-      if (res.ok) {
-        const data: VideoItem[] = await res.json();
-        setVideos((prev) => (pageToLoad === 1 ? data : [...prev, ...data]));
-        setHasMore(data.length === PAGE_SIZE);
-        setPage(pageToLoad);
-      }
+      // Odgovor koji nije `ok` prije se jednostavno preskakao, pa je
+      // neuspjeh izgledao isto kao prazan feed.
+      if (!res.ok) throw new Error(String(res.status));
+
+      const data: VideoItem[] = await res.json();
+      setVideos((prev) => (pageToLoad === 1 ? data : [...prev, ...data]));
+      setHasMore(data.length === PAGE_SIZE);
+      setPage(pageToLoad);
+      setLoadFailed(false);
     } catch {
-      Alert.alert(t("common.error"), t("videos.loadFailed"));
+      // Prekidajući Alert zamijenjen je stanjem na ekranu: ono ostaje dok
+      // se ne riješi i nosi gumb za ponovni pokušaj. Kad popis već ima
+      // sadržaj, stara objava se NE briše — greška se pokaže kao traka.
+      setLoadFailed(true);
     } finally {
       setLoading(false);
       setLoadingMore(false);
+      setRefreshing(false);
     }
+  };
+
+  const refreshVideos = () => {
+    setRefreshing(true);
+    loadVideos(1);
   };
 
   /**
@@ -2810,6 +2832,8 @@ export default function VideosScreen() {
       <TouchableOpacity
         style={vs.addButton}
         onPress={() => setShowUploadModal(true)}
+        accessibilityRole="button"
+        accessibilityLabel={t("common.add")}
       >
         <Ionicons name="add" size={32} color="white" />
       </TouchableOpacity>
@@ -2841,6 +2865,47 @@ export default function VideosScreen() {
         decelerationRate="fast"
         onEndReached={loadMoreVideos}
         onEndReachedThreshold={0.5}
+        // Povlačenje za osvježavanje: prvo što korisnik instinktivno
+        // pokuša kad nešto ne izgleda ispravno.
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={refreshVideos}
+            tintColor={V.silver}
+            colors={[V.primary]}
+            progressBackgroundColor={V.forestMid}
+          />
+        }
+        ListEmptyComponent={
+          loading ? null : loadFailed ? (
+            <View style={{ height: containerHeight, justifyContent: "center" }}>
+              <StateView
+                tone="error"
+                title={t("common.loadFailedTitle")}
+                body={t("common.loadFailedBody")}
+                onRetry={() => loadVideos(1)}
+                retrying={loading}
+              />
+            </View>
+          ) : (
+            <View style={{ height: containerHeight, justifyContent: "center" }}>
+              <StateView
+                tone="empty"
+                icon="videocam-outline"
+                title={t("videos.emptyTitle")}
+                body={
+                  scope === "local"
+                    ? t("videos.emptyBodyLocal")
+                    : t("videos.emptyBodyGlobal")
+                }
+                action={{
+                  label: t("videos.emptyAction"),
+                  onPress: () => setShowUploadModal(true),
+                }}
+              />
+            </View>
+          )
+        }
         ListFooterComponent={
           loadingMore ? (
             <View style={{ height: containerHeight, justifyContent: "center" }}>

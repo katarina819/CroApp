@@ -945,7 +945,12 @@ export default function ChatScreen() {
     <SafeAreaView style={styles.safeArea} edges={["top", "bottom"]}>
       {/* ── Header ── */}
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
+        <TouchableOpacity
+          onPress={() => router.back()}
+          style={styles.backBtn}
+          accessibilityRole="button"
+          accessibilityLabel={t("common.back")}
+        >
           <Ionicons name="chevron-back" size={26} color={V.silver} />
         </TouchableOpacity>
         <View style={styles.headerCenter}>

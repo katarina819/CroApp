@@ -32,6 +32,7 @@ import { useUser } from "./../contexts/UserContext";
 import { CloseButton } from "@/components/CloseButton";
 import { TutorialModal } from "../../components/TutorialModal";
 import { getVara } from "../../styles/adaptiveVara";
+import { ErrorBanner } from "../../components/StateView";
 
 const { width: SCREEN_W } = Dimensions.get("window");
 
@@ -4471,6 +4472,7 @@ export default function ProfileScreen() {
   const { t } = useTranslation();
   const { isDark } = useTheme();
   const V = useMemo(() => getVara(isDark), [isDark]);
+  const [profileStale, setProfileStale] = useState(false);
   const [profile, setProfile] = useState<ProfileData | null>(null);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<Tab>("me");
@@ -4502,10 +4504,16 @@ export default function ProfileScreen() {
         });
         if (res.ok) {
           setProfile(await res.json());
+          setProfileStale(false);
           setLoading(false);
           return;
         }
       } catch {}
+
+      // Rezervni prikaz je dobar, ali dosad je šutio: korisnik je gledao
+      // spremljene podatke (0 pratitelja, prazna statistika) i nije imao
+      // načina saznati da to nije stvarno stanje.
+      setProfileStale(true);
       // Rezervni prikaz kad dohvat profila ne uspije (mreža, 429, hladan
       // start poslužitelja). Korisničko ime se ovdje NE izmišlja: prije se
       // uzimalo ime korisnika u malim slovima, pa je korisnik "Karmela"
@@ -4596,6 +4604,12 @@ export default function ProfileScreen() {
       edges={["top"]}
     >
       <View style={[styles.container, { backgroundColor: V.forestDeep }]}>
+        {profileStale && (
+          <ErrorBanner
+            message={t("common.loadFailedTitle")}
+            onRetry={() => load()}
+          />
+        )}
         {/* Header */}
         <View
           style={[

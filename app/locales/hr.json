@@ -46,7 +46,10 @@
     "mediaPermission": "Dozvolite pristup medijima u postavkama",
     "tooManyRequests": "Previše zahtjeva u kratkom vremenu. Pričekaj malo pa pokušaj ponovo.",
     "checkConnection": "Provjerite internetsku vezu.",
-    "serverUnreachable": "Poslužitelj nije dostupan."
+    "serverUnreachable": "Poslužitelj nije dostupan.",
+    "retry": "Pokušaj ponovno",
+    "loadFailedTitle": "Nismo uspjeli dohvatiti podatke",
+    "loadFailedBody": "Provjeri internetsku vezu. Ako je sve u redu, poslužitelj se možda upravo budi — pokušaj za koji trenutak."
   },
   "auth": {
     "login": "Prijava",
@@ -342,7 +345,9 @@
     "reportSend": "Pošalji adminu",
     "reportSentTitle": "Hvala!",
     "reportSentBody": "Prijava je poslana adminu. Provjerit ćemo podatak.",
-    "reportFailed": "Prijava nije poslana. Provjeri vezu i pokušaj ponovno."
+    "reportFailed": "Prijava nije poslana. Provjeri vezu i pokušaj ponovno.",
+    "emptyTitle": "Nema mjesta u ovom području",
+    "emptyBody": "Uključi još kategorija ili odzumiraj kartu da zahvatiš šire područje."
   },
   "notif": {
     "unavailableTitle": "Obavijesti nisu dostupne",
@@ -422,7 +427,11 @@
     "radiusTitle": "Dokle seže „blizu mene“?",
     "radiusHint": "Vrijedi i za feed i za obavijesti — ovo je udaljenost od krajeva u kojima se krećeš.",
     "radiusValue": "{{km}} km",
-    "radiusSaveFailed": "Domet je promijenjen za feed, ali nije spremljen za obavijesti."
+    "radiusSaveFailed": "Domet je promijenjen za feed, ali nije spremljen za obavijesti.",
+    "emptyTitle": "Ovdje još nema objava",
+    "emptyBodyLocal": "U tvojoj okolici još nitko nije ništa objavio. Povećaj domet ili prebaci na prikaz svih objava.",
+    "emptyBodyGlobal": "Budi prva osoba koja će nešto podijeliti — dodirni „+” gore desno.",
+    "emptyAction": "Objavi nešto"
   },
   "messages": {
     "title": "Poruke",
@@ -486,7 +495,9 @@
     "messageFailed": "Poruka nije poslana",
     "followFailed": "Nije moguće pratiti korisnika",
     "loadFailed": "Nije moguće učitati korisnike",
-    "messageFailedCheckConnection": "Nije moguće poslati poruku. Provjerite vezu."
+    "messageFailedCheckConnection": "Nije moguće poslati poruku. Provjerite vezu.",
+    "emptyTitle": "Nema rezultata",
+    "emptyBody": "Pokušaj s drugim imenom ili korisničkim imenom — dovoljna su prva dva slova."
   },
   "badges": {
     "newBadge": "🏆 Nova značka!",
@@ -765,7 +776,9 @@
     "goldenLinkWord": "zvjezdicom",
     "deleteAccountDone": "Račun je obrisan.",
     "deleteAccountFailed": "Brisanje računa nije uspjelo. Račun je i dalje aktivan — pokušajte ponovno ili nam se javite.",
-    "deleteAccountWorking": "Brisanje računa…"
+    "deleteAccountWorking": "Brisanje računa…",
+    "emptyPostsTitle": "Još nemaš objava",
+    "emptyPostsBody": "Sve što objaviš skuplja se ovdje — fotografije, videi i događaji."
   },
   "schedBreakfast": "Doručak",
   "schedMorningTour": "Jutarnje razgledavanje — turistički promet najmanji",

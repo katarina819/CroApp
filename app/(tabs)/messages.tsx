@@ -651,6 +651,8 @@ function StoryViewer({
         <TouchableOpacity
           onPress={() => onSendMessage?.(story.userId, story.userName)}
           style={sv.interactionBtn}
+          accessibilityRole="button"
+          accessibilityLabel={t("common.send")}
         >
           <Ionicons name="paper-plane-outline" size={26} color="#fff" />
         </TouchableOpacity>
@@ -714,6 +716,8 @@ function StoryViewer({
                 onDelete(story.id);
                 onClose();
               }}
+              accessibilityRole="button"
+              accessibilityLabel={t("common.delete")}
             >
               <Ionicons name="trash-outline" size={20} color="#ff4757" />
             </TouchableOpacity>

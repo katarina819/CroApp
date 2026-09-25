@@ -46,7 +46,10 @@
     "mediaPermission": "Autorisez l'accès aux médias dans les paramètres",
     "tooManyRequests": "Trop de requêtes en peu de temps. Patientez un instant et réessayez.",
     "checkConnection": "Vérifiez votre connexion internet.",
-    "serverUnreachable": "Le serveur est injoignable."
+    "serverUnreachable": "Le serveur est injoignable.",
+    "retry": "Réessayer",
+    "loadFailedTitle": "Chargement impossible",
+    "loadFailedBody": "Vérifie ta connexion. Si tout va bien, le serveur est peut-être en train de démarrer — réessaie dans un instant."
   },
   "auth": {
     "login": "Connexion",
@@ -357,7 +360,9 @@
     "reportSentTitle": "Merci !",
     "reportSentBody": "Ton signalement a été envoyé à l'admin. Nous allons vérifier.",
     "reportFailed": "Le signalement n'a pas été envoyé. Vérifie ta connexion et réessaie.",
-    "members": "Membres"
+    "members": "Membres",
+    "emptyTitle": "Aucun lieu dans cette zone",
+    "emptyBody": "Active d'autres catégories ou dézoome pour couvrir une zone plus large."
   },
   "videos": {
     "title": "Vidéos",
@@ -424,7 +429,11 @@
     "radiusTitle": "Jusqu'où va « près de moi » ?",
     "radiusHint": "Vaut pour le fil et pour les notifications — c'est la distance depuis les endroits que tu fréquentes.",
     "radiusValue": "{{km}} km",
-    "radiusSaveFailed": "Le rayon a changé pour le fil, mais n'a pas été enregistré pour les notifications."
+    "radiusSaveFailed": "Le rayon a changé pour le fil, mais n'a pas été enregistré pour les notifications.",
+    "emptyTitle": "Aucune publication ici",
+    "emptyBodyLocal": "Personne n'a encore publié près de toi. Élargis le rayon ou affiche toutes les publications.",
+    "emptyBodyGlobal": "Sois la première personne à partager — touche le « + » en haut à droite.",
+    "emptyAction": "Publier"
   },
   "messages": {
     "title": "Messages",
@@ -488,7 +497,9 @@
     "messageFailed": "Message non envoyé",
     "followFailed": "Impossible de suivre l'utilisateur",
     "loadFailed": "Impossible de charger les utilisateurs",
-    "messageFailedCheckConnection": "Impossible d'envoyer le message. Vérifiez votre connexion."
+    "messageFailedCheckConnection": "Impossible d'envoyer le message. Vérifiez votre connexion.",
+    "emptyTitle": "Aucun résultat",
+    "emptyBody": "Essaie un autre nom ou pseudo — deux lettres suffisent."
   },
   "archive": {
     "markHint": "Marquer les lieux comme visités sur la carte",
@@ -790,7 +801,9 @@
     "goldenLinkWord": "étoile",
     "deleteAccountDone": "Votre compte a été supprimé.",
     "deleteAccountFailed": "Le compte n'a pas pu être supprimé. Il est toujours actif — réessayez ou contactez-nous.",
-    "deleteAccountWorking": "Suppression du compte…"
+    "deleteAccountWorking": "Suppression du compte…",
+    "emptyPostsTitle": "Aucune publication",
+    "emptyPostsBody": "Tout ce que tu publies se retrouve ici — photos, vidéos et événements."
   },
   "plan": {
     "day1Label": "1 jour",

@@ -46,7 +46,10 @@
     "mediaPermission": "Erlauben Sie den Zugriff auf Medien in den Einstellungen",
     "tooManyRequests": "Zu viele Anfragen in kurzer Zeit. Bitte kurz warten und erneut versuchen.",
     "checkConnection": "Bitte überprüfe deine Internetverbindung.",
-    "serverUnreachable": "Der Server ist nicht erreichbar."
+    "serverUnreachable": "Der Server ist nicht erreichbar.",
+    "retry": "Erneut versuchen",
+    "loadFailedTitle": "Konnte nicht geladen werden",
+    "loadFailedBody": "Prüfe deine Verbindung. Wenn alles in Ordnung ist, wacht der Server vielleicht gerade auf — versuche es gleich noch einmal."
   },
   "auth": {
     "login": "Anmeldung",
@@ -345,7 +348,9 @@
     "reportSend": "An Admin senden",
     "reportSentTitle": "Danke!",
     "reportSentBody": "Deine Meldung wurde an den Admin geschickt. Wir prüfen die Angabe.",
-    "reportFailed": "Die Meldung wurde nicht gesendet. Prüfe deine Verbindung und versuch es erneut."
+    "reportFailed": "Die Meldung wurde nicht gesendet. Prüfe deine Verbindung und versuch es erneut.",
+    "emptyTitle": "Keine Orte in diesem Gebiet",
+    "emptyBody": "Schalte weitere Kategorien ein oder zoome heraus, um mehr abzudecken."
   },
   "password": {
     "minLength": "Min. 6 Zeichen",
@@ -423,7 +428,11 @@
     "radiusTitle": "Wie weit reicht „in meiner Nähe“?",
     "radiusHint": "Gilt für den Feed und für Benachrichtigungen — gemessen ab den Gegenden, in denen du unterwegs bist.",
     "radiusValue": "{{km}} km",
-    "radiusSaveFailed": "Der Umkreis wurde für den Feed geändert, aber nicht für Benachrichtigungen gespeichert."
+    "radiusSaveFailed": "Der Umkreis wurde für den Feed geändert, aber nicht für Benachrichtigungen gespeichert.",
+    "emptyTitle": "Hier gibt es noch nichts",
+    "emptyBodyLocal": "In deiner Nähe hat noch niemand etwas gepostet. Erweitere den Radius oder zeige alle Beiträge.",
+    "emptyBodyGlobal": "Teile als Erste etwas — tippe oben rechts auf „+“.",
+    "emptyAction": "Etwas posten"
   },
   "messages": {
     "title": "Nachrichten",
@@ -487,7 +496,9 @@
     "messageFailed": "Nachricht nicht gesendet",
     "followFailed": "Benutzer kann nicht gefolgt werden",
     "loadFailed": "Benutzer können nicht geladen werden",
-    "messageFailedCheckConnection": "Nachricht kann nicht gesendet werden. Überprüfen Sie Ihre Verbindung."
+    "messageFailedCheckConnection": "Nachricht kann nicht gesendet werden. Überprüfen Sie Ihre Verbindung.",
+    "emptyTitle": "Keine Treffer",
+    "emptyBody": "Versuche einen anderen Namen oder Benutzernamen — zwei Buchstaben reichen."
   },
   "loadingMsg1": "Suche nach Standorten in der Nähe...",
   "loadingMsg2": "Georeferenziere Reiseziel...",
@@ -746,7 +757,9 @@
     "goldenLinkWord": "Stern",
     "deleteAccountDone": "Dein Konto wurde gelöscht.",
     "deleteAccountFailed": "Das Konto konnte nicht gelöscht werden. Es ist weiterhin aktiv — bitte versuche es erneut oder kontaktiere uns.",
-    "deleteAccountWorking": "Konto wird gelöscht…"
+    "deleteAccountWorking": "Konto wird gelöscht…",
+    "emptyPostsTitle": "Noch keine Beiträge",
+    "emptyPostsBody": "Alles, was du postest, sammelt sich hier — Fotos, Videos und Veranstaltungen."
   },
   "schedBreakfast": "Frühstück",
   "schedMorningTour": "Morgenbesichtigung — geringstes Touristenaufkommen",

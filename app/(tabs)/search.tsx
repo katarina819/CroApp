@@ -42,6 +42,7 @@ const PRESET_AVATARS: Record<string, any> = {
 // koji ga je koristio dobiva punu zelenu preko borderActive.
 import { getVara } from "../../styles/adaptiveVara";
 import { V as VARA } from "../../styles/varaTheme";
+import { StateView } from "../../components/StateView";
 
 const V = {
   bg: VARA.forestDeep,
@@ -451,6 +452,7 @@ export default function SearchScreen() {
   const [filtered, setFiltered] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [loadFailed, setLoadFailed] = useState(false);
   const [followingMap, setFollowingMap] = useState<Record<number, boolean>>({});
   const [pendingMap, setPendingMap] = useState<Record<number, boolean>>({});
   const [loadingFollow, setLoadingFollow] = useState<Record<number, boolean>>(
@@ -487,7 +489,10 @@ export default function SearchScreen() {
         }).catch(() => null),
       ]);
 
-      if (res.ok) {
+      // Odgovor koji nije `ok` prije se preskakao — popis je ostajao prazan
+      // bez ijedne riječi objašnjenja.
+      if (!res.ok) throw new Error(String(res.status));
+      {
         const data: User[] = await res.json();
         const others = data.filter(
           (u) =>
@@ -520,8 +525,10 @@ export default function SearchScreen() {
           setPendingMap(map);
         }
       } catch {}
+      setLoadFailed(false);
     } catch {
-      if (!silent) Alert.alert(t("common.error"), t("search.loadFailed"));
+      // Tiho osvježavanje ne smije zbrisati popis koji je već na ekranu.
+      if (!silent) setLoadFailed(true);
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -713,6 +720,8 @@ export default function SearchScreen() {
               setComposeTarget(item);
               setShowCompose(true);
             }}
+            accessibilityRole="button"
+            accessibilityLabel={t("common.send")}
           >
             <Ionicons name="paper-plane-outline" size={18} color={V.accent} />
           </TouchableOpacity>
@@ -747,7 +756,11 @@ export default function SearchScreen() {
             autoCorrect={false}
           />
           {query.length > 0 && (
-            <TouchableOpacity onPress={() => setQuery("")}>
+            <TouchableOpacity
+              onPress={() => setQuery("")}
+              accessibilityRole="button"
+              accessibilityLabel={t("common.close")}
+            >
               <Ionicons name="close-circle" size={18} color={V.textMuted} />
             </TouchableOpacity>
           )}
@@ -787,23 +800,33 @@ export default function SearchScreen() {
             />
           }
           ListEmptyComponent={
-            <View style={styles.emptyContainer}>
-              <View style={styles.emptyIconWrap}>
-                <Ionicons
-                  name="people-outline"
-                  size={44}
-                  color={V.borderBright}
-                />
+            loadFailed ? (
+              <StateView
+                tone="error"
+                title={t("common.loadFailedTitle")}
+                body={t("common.loadFailedBody")}
+                onRetry={() => loadData()}
+                retrying={loading}
+              />
+            ) : (
+              <View style={styles.emptyContainer}>
+                <View style={styles.emptyIconWrap}>
+                  <Ionicons
+                    name="people-outline"
+                    size={44}
+                    color={V.borderBright}
+                  />
+                </View>
+                <Text style={styles.emptyTitle}>
+                  {query ? t("search.noResults") : t("search.noUsers")}
+                </Text>
+                <Text style={styles.emptySubtitle}>
+                  {query
+                    ? t("search.noResultsDesc", { query })
+                    : t("search.noUsersDesc")}
+                </Text>
               </View>
-              <Text style={styles.emptyTitle}>
-                {query ? t("search.noResults") : t("search.noUsers")}
-              </Text>
-              <Text style={styles.emptySubtitle}>
-                {query
-                  ? t("search.noResultsDesc", { query })
-                  : t("search.noUsersDesc")}
-              </Text>
-            </View>
+            )
           }
         />
       )}
