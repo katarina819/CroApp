@@ -583,6 +583,8 @@ function StoryViewer({
         <View style={sv.userInfo}>
           <TouchableOpacity
             onPress={() => onSendMessage?.(story.userId, story.userName)}
+            accessibilityRole="button"
+            accessibilityLabel={t("videos.sendToUser")}
           >
             <View style={sv.smallAvatar}>
               {resolvedAvatarUrl && PRESET_AVATARS_MSG[resolvedAvatarUrl] ? (
@@ -1015,6 +1017,8 @@ function StoryViewer({
                   onPress={handleAddComment}
                   style={sv.commentSendBtn}
                   disabled={!commentText.trim()}
+                  accessibilityRole="button"
+                  accessibilityLabel={t("common.send")}
                 >
                   <Ionicons
                     name="send"

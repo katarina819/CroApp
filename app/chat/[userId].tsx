@@ -1034,6 +1034,8 @@ export default function ChatScreen() {
             style={styles.mediaBtn}
             onPress={() => pickMedia("gallery")}
             disabled={sendingMedia}
+            accessibilityRole="button"
+            accessibilityLabel={t("media.attach")}
           >
             <Ionicons name="images-outline" size={22} color={V.visited} />
           </TouchableOpacity>

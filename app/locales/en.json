@@ -49,7 +49,13 @@
     "serverUnreachable": "The server is unreachable.",
     "retry": "Try again",
     "loadFailedTitle": "Couldn't load this",
-    "loadFailedBody": "Check your connection. If that's fine, the server may just be waking up — try again in a moment."
+    "loadFailedBody": "Check your connection. If that's fine, the server may just be waking up — try again in a moment.",
+    "open": "Open",
+    "openPost": "Open post",
+    "settings": "Settings",
+    "accept": "Accept",
+    "decline": "Decline",
+    "comments": "Comments"
   },
   "auth": {
     "login": "Login",
@@ -123,7 +129,8 @@
     "accessDenied": "Access denied",
     "noAdminRights": "You do not have administrator rights.",
     "signInFailed": "Sign-in failed.",
-    "privacyLink": "Privacy Policy"
+    "privacyLink": "Privacy Policy",
+    "showPassword": "Show password"
   },
   "forgotPassword": {
     "step1Title": "Forgot your password?",
@@ -436,7 +443,11 @@
     "emptyTitle": "No posts here yet",
     "emptyBodyLocal": "Nobody has posted near you yet. Widen the radius, or switch to all posts.",
     "emptyBodyGlobal": "Be the first to share something — tap the “+” at the top right.",
-    "emptyAction": "Post something"
+    "emptyAction": "Post something",
+    "like": "Like",
+    "savePost": "Save post",
+    "wishlist": "Add to wishlist",
+    "sendToUser": "Send to someone"
   },
   "chat": {
     "activeUser": "Active user",
@@ -778,7 +789,9 @@
     "deleteAccountFailed": "The account could not be deleted. It is still active — please try again or contact us.",
     "deleteAccountWorking": "Deleting account…",
     "emptyPostsTitle": "No posts yet",
-    "emptyPostsBody": "Everything you post collects here — photos, videos and events."
+    "emptyPostsBody": "Everything you post collects here — photos, videos and events.",
+    "blockUser": "Block user",
+    "goldenToggle": "Golden friend"
   },
   "plan": {
     "day1Label": "1 day",
@@ -1052,7 +1065,8 @@
     "permissionNeeded": "Permission needed",
     "permissionBody": "Allow gallery access to send media.",
     "sentButMessageFailed": "The media was uploaded, but the message was not sent.",
-    "sendFailed": "The media could not be sent."
+    "sendFailed": "The media could not be sent.",
+    "attach": "Attach photo or video"
   },
   "tutorial": {
     "skip": "Skip",

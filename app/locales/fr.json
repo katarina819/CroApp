@@ -49,7 +49,13 @@
     "serverUnreachable": "Le serveur est injoignable.",
     "retry": "Réessayer",
     "loadFailedTitle": "Chargement impossible",
-    "loadFailedBody": "Vérifie ta connexion. Si tout va bien, le serveur est peut-être en train de démarrer — réessaie dans un instant."
+    "loadFailedBody": "Vérifie ta connexion. Si tout va bien, le serveur est peut-être en train de démarrer — réessaie dans un instant.",
+    "open": "Ouvrir",
+    "openPost": "Ouvrir la publication",
+    "settings": "Paramètres",
+    "accept": "Accepter",
+    "decline": "Refuser",
+    "comments": "Commentaires"
   },
   "auth": {
     "login": "Connexion",
@@ -123,7 +129,8 @@
     "accessDenied": "Accès refusé",
     "noAdminRights": "Vous n'avez pas les droits d'administrateur.",
     "signInFailed": "Échec de la connexion.",
-    "privacyLink": "Politique de confidentialité"
+    "privacyLink": "Politique de confidentialité",
+    "showPassword": "Afficher le mot de passe"
   },
   "forgotPassword": {
     "step1Title": "Mot de passe oublié ?",
@@ -433,7 +440,11 @@
     "emptyTitle": "Aucune publication ici",
     "emptyBodyLocal": "Personne n'a encore publié près de toi. Élargis le rayon ou affiche toutes les publications.",
     "emptyBodyGlobal": "Sois la première personne à partager — touche le « + » en haut à droite.",
-    "emptyAction": "Publier"
+    "emptyAction": "Publier",
+    "like": "J'aime",
+    "savePost": "Enregistrer",
+    "wishlist": "Ajouter aux envies",
+    "sendToUser": "Envoyer à quelqu'un"
   },
   "messages": {
     "title": "Messages",
@@ -803,7 +814,9 @@
     "deleteAccountFailed": "Le compte n'a pas pu être supprimé. Il est toujours actif — réessayez ou contactez-nous.",
     "deleteAccountWorking": "Suppression du compte…",
     "emptyPostsTitle": "Aucune publication",
-    "emptyPostsBody": "Tout ce que tu publies se retrouve ici — photos, vidéos et événements."
+    "emptyPostsBody": "Tout ce que tu publies se retrouve ici — photos, vidéos et événements.",
+    "blockUser": "Bloquer l'utilisateur",
+    "goldenToggle": "Ami en or"
   },
   "plan": {
     "day1Label": "1 jour",
@@ -1053,7 +1066,8 @@
     "permissionNeeded": "Autorisation requise",
     "permissionBody": "Autorisez l'accès à la galerie pour envoyer des médias.",
     "sentButMessageFailed": "Le média a été envoyé, mais pas le message.",
-    "sendFailed": "Impossible d'envoyer le média."
+    "sendFailed": "Impossible d'envoyer le média.",
+    "attach": "Joindre une photo ou vidéo"
   },
   "tutorial": {
     "skip": "Passer",

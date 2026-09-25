@@ -695,6 +695,8 @@ function VideoItemComponent({
         <TouchableOpacity
           style={vs.actionButton}
           onPress={() => onLikeToggle(item.id)}
+          accessibilityRole="button"
+          accessibilityLabel={t("videos.like")}
         >
           <Ionicons
             name={item.isLiked ? "heart" : "heart-outline"}
@@ -708,6 +710,8 @@ function VideoItemComponent({
         <TouchableOpacity
           style={vs.actionButton}
           onPress={() => onOpenComments(item)}
+          accessibilityRole="button"
+          accessibilityLabel={t("common.comments")}
         >
           <Ionicons
             name="chatbubble-outline"
@@ -721,6 +725,8 @@ function VideoItemComponent({
         <TouchableOpacity
           style={vs.actionButton}
           onPress={() => onOpenMessenger(item)}
+          accessibilityRole="button"
+          accessibilityLabel={t("videos.sendToUser")}
         >
           <Ionicons
             name="paper-plane-outline"
@@ -734,6 +740,8 @@ function VideoItemComponent({
         <TouchableOpacity
           style={vs.actionButton}
           onPress={() => onOpenShare(item)}
+          accessibilityRole="button"
+          accessibilityLabel={t("common.share")}
         >
           <Ionicons
             name="share-social-outline"
@@ -747,6 +755,8 @@ function VideoItemComponent({
         <TouchableOpacity
           style={vs.actionButton}
           onPress={() => onDownload(item)}
+          accessibilityRole="button"
+          accessibilityLabel={t("common.download")}
         >
           <Ionicons
             name="download-outline"
@@ -760,6 +770,8 @@ function VideoItemComponent({
         <TouchableOpacity
           style={vs.actionButton}
           onPress={() => onSaveToggle(item.id)}
+          accessibilityRole="button"
+          accessibilityLabel={t("videos.savePost")}
         >
           <Ionicons
             name={item.isSaved ? "bookmark" : "bookmark-outline"}
@@ -777,6 +789,8 @@ function VideoItemComponent({
         <TouchableOpacity
           style={vs.actionButton}
           onPress={() => onWishlistToggle(item.id)}
+          accessibilityRole="button"
+          accessibilityLabel={t("videos.wishlist")}
         >
           <Ionicons
             name={item.isInWishlist ? "star" : "star-outline"}
@@ -1029,6 +1043,8 @@ function CommentsModal({
               ]}
               onPress={addComment}
               disabled={!newComment.trim() || submitting}
+              accessibilityRole="button"
+              accessibilityLabel={t("common.send")}
             >
               {submitting ? (
                 <ActivityIndicator size="small" color={VT.textPrimary} />
@@ -1178,6 +1194,8 @@ function MessengerModal({
               ]}
               onPress={sendMessage}
               disabled={!message.trim() || sending}
+              accessibilityRole="button"
+              accessibilityLabel={t("common.send")}
             >
               {sending ? (
                 <ActivityIndicator size="small" color={VT.textPrimary} />

@@ -2818,6 +2818,8 @@ function MeTab({ userId }: { userId: number | null }) {
                 style={tab.gridItem}
                 onPress={() => openMedia(item)}
                 activeOpacity={0.7}
+                accessibilityRole="button"
+                accessibilityLabel={t("common.openPost")}
               >
                 {imageUrl ? (
                   <Image source={{ uri: imageUrl }} style={tab.gridImg} />
@@ -2946,6 +2948,8 @@ function BoxTab() {
             style={tab.listItem}
             onPress={() => setSelectedVideo(item)}
             activeOpacity={0.7}
+            accessibilityRole="button"
+            accessibilityLabel={t("common.openPost")}
           >
             <View style={tab.thumbContainer}>
               {savedThumbnailUrl(item) ? (
@@ -3469,6 +3473,8 @@ function GoldenFriendsTab({
             <TouchableOpacity
               style={[tab.removeBtn, { padding: 8 }]}
               onPress={() => remove(item.userId)}
+              accessibilityRole="button"
+              accessibilityLabel={t("profile.goldenToggle")}
             >
               <Ionicons name="star" size={18} color={V.accentGold} />
             </TouchableOpacity>
@@ -4139,6 +4145,8 @@ function SettingsModal({
             <TouchableOpacity
               style={sm.varaBtn}
               onPress={() => setTutorialOpen(true)}
+              accessibilityRole="button"
+              accessibilityLabel={t("tutorial.reopen")}
             >
               <View style={sm.varaBtnIcon}>
                 {/* Knjiga, ne upitnik. Upitnik znači "pitaj nekoga", a
@@ -4242,7 +4250,12 @@ function SettingsModal({
               {t("") ?? "Ove radnje su nepovratne"}
             </Text>
 
-            <TouchableOpacity style={sm.varaBtn} onPress={handleLogout}>
+            <TouchableOpacity
+              style={sm.varaBtn}
+              onPress={handleLogout}
+              accessibilityRole="button"
+              accessibilityLabel={t("profile.logoutBtn")}
+            >
               <View style={sm.varaBtnIcon}>
                 <Ionicons
                   name="log-out-outline"
@@ -4627,6 +4640,8 @@ export default function ProfileScreen() {
                 { backgroundColor: V.forestMid, borderColor: V.borderGreen },
               ]}
               onPress={() => setShowFollowRequests(true)}
+              accessibilityRole="button"
+              accessibilityLabel={t("profile.followRequests")}
             >
               <Ionicons name="person-add-outline" size={20} color={V.silver} />
               {pendingRequestsCount > 0 && (
@@ -4658,6 +4673,8 @@ export default function ProfileScreen() {
                 { backgroundColor: V.forestMid, borderColor: V.borderGreen },
               ]}
               onPress={() => setShowSettings(true)}
+              accessibilityRole="button"
+              accessibilityLabel={t("common.settings")}
             >
               <Ionicons name="settings-outline" size={22} color={V.silver} />
             </TouchableOpacity>

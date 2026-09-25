@@ -741,7 +741,11 @@ export default function UserProfileScreen() {
         <Text style={styles.headerTitle} numberOfLines={1}>
           {profile?.firstName} {profile?.lastName}
         </Text>
-        <TouchableOpacity onPress={handleBlock}>
+        <TouchableOpacity
+          onPress={handleBlock}
+          accessibilityRole="button"
+          accessibilityLabel={t("profile.blockUser")}
+        >
           <Ionicons
             name="ban"
             size={22}
@@ -846,6 +850,8 @@ export default function UserProfileScreen() {
               style={[styles.goldenBtn, isGolden && styles.goldenBtnActive]}
               onPress={handleGoldenToggle}
               disabled={goldenLoading}
+              accessibilityRole="button"
+              accessibilityLabel={t("profile.goldenToggle")}
             >
               <Ionicons
                 name={isGolden ? "star" : "star-outline"}
@@ -892,6 +898,8 @@ export default function UserProfileScreen() {
                   <TouchableOpacity
                     style={styles.mediaItem}
                     onPress={() => openMedia(item)}
+                    accessibilityRole="button"
+                    accessibilityLabel={t("common.openPost")}
                   >
                     {isImage && mediaUrl ? (
                       <Image

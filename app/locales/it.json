@@ -49,7 +49,13 @@
     "serverUnreachable": "Server non raggiungibile.",
     "retry": "Riprova",
     "loadFailedTitle": "Impossibile caricare",
-    "loadFailedBody": "Controlla la connessione. Se è tutto a posto, il server potrebbe essersi appena riattivato — riprova tra poco."
+    "loadFailedBody": "Controlla la connessione. Se è tutto a posto, il server potrebbe essersi appena riattivato — riprova tra poco.",
+    "open": "Apri",
+    "openPost": "Apri il post",
+    "settings": "Impostazioni",
+    "accept": "Accetta",
+    "decline": "Rifiuta",
+    "comments": "Commenti"
   },
   "auth": {
     "login": "Accesso",
@@ -123,7 +129,8 @@
     "accessDenied": "Accesso negato",
     "noAdminRights": "Non disponi dei diritti di amministratore.",
     "signInFailed": "Accesso non riuscito.",
-    "privacyLink": "Informativa sulla privacy"
+    "privacyLink": "Informativa sulla privacy",
+    "showPassword": "Mostra password"
   },
   "forgotPassword": {
     "step1Title": "Password dimenticata?",
@@ -433,7 +440,11 @@
     "emptyTitle": "Ancora nessun post",
     "emptyBodyLocal": "Nessuno ha ancora pubblicato vicino a te. Amplia il raggio o passa a tutti i post.",
     "emptyBodyGlobal": "Sii il primo a condividere — tocca il “+” in alto a destra.",
-    "emptyAction": "Pubblica"
+    "emptyAction": "Pubblica",
+    "like": "Mi piace",
+    "savePost": "Salva post",
+    "wishlist": "Aggiungi ai desideri",
+    "sendToUser": "Invia a qualcuno"
   },
   "messages": {
     "title": "Messaggi",
@@ -789,7 +800,9 @@
     "deleteAccountFailed": "Impossibile eliminare l'account. È ancora attivo — riprova o contattaci.",
     "deleteAccountWorking": "Eliminazione account…",
     "emptyPostsTitle": "Ancora nessun post",
-    "emptyPostsBody": "Tutto ciò che pubblichi finisce qui — foto, video ed eventi."
+    "emptyPostsBody": "Tutto ciò che pubblichi finisce qui — foto, video ed eventi.",
+    "blockUser": "Blocca utente",
+    "goldenToggle": "Amico d'oro"
   },
   "schedBreakfast": "Colazione",
   "schedMorningTour": "Visita mattutina — meno turisti",
@@ -1053,7 +1066,8 @@
     "permissionNeeded": "Autorizzazione necessaria",
     "permissionBody": "Consenti l'accesso alla galleria per inviare contenuti.",
     "sentButMessageFailed": "Il contenuto è stato caricato, ma il messaggio non è stato inviato.",
-    "sendFailed": "Impossibile inviare il contenuto."
+    "sendFailed": "Impossibile inviare il contenuto.",
+    "attach": "Allega foto o video"
   },
   "tutorial": {
     "skip": "Salta",

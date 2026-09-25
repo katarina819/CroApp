@@ -420,6 +420,8 @@ export function AreaActivitiesSheet({
                         marginBottom: 10,
                       }}
                       onPress={() => setPagerAt(index)}
+                      accessibilityRole="button"
+                      accessibilityLabel={t("common.openPost")}
                     >
                       <Image
                         source={{ uri: thumb }}

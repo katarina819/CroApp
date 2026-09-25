@@ -49,7 +49,13 @@
     "serverUnreachable": "Der Server ist nicht erreichbar.",
     "retry": "Erneut versuchen",
     "loadFailedTitle": "Konnte nicht geladen werden",
-    "loadFailedBody": "Prüfe deine Verbindung. Wenn alles in Ordnung ist, wacht der Server vielleicht gerade auf — versuche es gleich noch einmal."
+    "loadFailedBody": "Prüfe deine Verbindung. Wenn alles in Ordnung ist, wacht der Server vielleicht gerade auf — versuche es gleich noch einmal.",
+    "open": "Öffnen",
+    "openPost": "Beitrag öffnen",
+    "settings": "Einstellungen",
+    "accept": "Annehmen",
+    "decline": "Ablehnen",
+    "comments": "Kommentare"
   },
   "auth": {
     "login": "Anmeldung",
@@ -123,7 +129,8 @@
     "accessDenied": "Zugriff verweigert",
     "noAdminRights": "Du hast keine Administratorrechte.",
     "signInFailed": "Anmeldung fehlgeschlagen.",
-    "privacyLink": "Datenschutzerklärung"
+    "privacyLink": "Datenschutzerklärung",
+    "showPassword": "Passwort anzeigen"
   },
   "forgotPassword": {
     "step1Title": "Passwort vergessen?",
@@ -432,7 +439,11 @@
     "emptyTitle": "Hier gibt es noch nichts",
     "emptyBodyLocal": "In deiner Nähe hat noch niemand etwas gepostet. Erweitere den Radius oder zeige alle Beiträge.",
     "emptyBodyGlobal": "Teile als Erste etwas — tippe oben rechts auf „+“.",
-    "emptyAction": "Etwas posten"
+    "emptyAction": "Etwas posten",
+    "like": "Gefällt mir",
+    "savePost": "Beitrag speichern",
+    "wishlist": "Zur Wunschliste",
+    "sendToUser": "An jemanden senden"
   },
   "messages": {
     "title": "Nachrichten",
@@ -759,7 +770,9 @@
     "deleteAccountFailed": "Das Konto konnte nicht gelöscht werden. Es ist weiterhin aktiv — bitte versuche es erneut oder kontaktiere uns.",
     "deleteAccountWorking": "Konto wird gelöscht…",
     "emptyPostsTitle": "Noch keine Beiträge",
-    "emptyPostsBody": "Alles, was du postest, sammelt sich hier — Fotos, Videos und Veranstaltungen."
+    "emptyPostsBody": "Alles, was du postest, sammelt sich hier — Fotos, Videos und Veranstaltungen.",
+    "blockUser": "Nutzer blockieren",
+    "goldenToggle": "Goldener Freund"
   },
   "schedBreakfast": "Frühstück",
   "schedMorningTour": "Morgenbesichtigung — geringstes Touristenaufkommen",
@@ -1052,7 +1065,8 @@
     "permissionNeeded": "Berechtigung erforderlich",
     "permissionBody": "Erlaube den Galeriezugriff, um Medien zu senden.",
     "sentButMessageFailed": "Das Medium wurde hochgeladen, die Nachricht aber nicht gesendet.",
-    "sendFailed": "Das Medium konnte nicht gesendet werden."
+    "sendFailed": "Das Medium konnte nicht gesendet werden.",
+    "attach": "Foto oder Video anhängen"
   },
   "tutorial": {
     "skip": "Überspringen",

@@ -89,6 +89,36 @@ export const V = {
 } as const;
 
 /**
+ * Ljestvica veličina teksta.
+ *
+ * U aplikaciji je bilo 27 različitih veličina, a 11, 12, 13, 14, 15 i 16
+ * piksela koristilo se svaka po 80 do 140 puta. Šest veličina radilo je
+ * posao dvije — zato ništa nije očito krivo, a cjelina djeluje neujednačeno.
+ *
+ * Koraci su odabrani tako da se poklope s najčešće korištenim vrijednostima
+ * (11, 13, 15, 17), pa većina teksta ostaje točno kakva je bila; miču se
+ * samo one koje su ispale između.
+ *
+ * Kada koji korak:
+ *   caption  11  oznake, brojači, sitni meta tekst
+ *   meta     13  natpisi ispod naslova, pomoćni tekst
+ *   body     15  osnovni tekst sučelja
+ *   lead     17  istaknuti redak, naziv u kartici
+ *   title    20  naslov odjeljka
+ *   screen   24  naslov ekrana
+ *   hero     32  veliki brojevi i prazna stanja
+ */
+export const T = {
+  caption: 11,
+  meta: 13,
+  body: 15,
+  lead: 17,
+  title: 20,
+  screen: 24,
+  hero: 32,
+} as const;
+
+/**
  * Prosirenje podrucja dodira za male gumbe.
  *
  * I Android i iOS preporucuju najmanje 44-48px za sve sto se dodiruje.
@@ -125,7 +155,7 @@ export const ms = StyleSheet.create({
     shadowRadius: 5,
     elevation: 8,
   },
-  emoji: { fontSize: 22 },
+  emoji: { fontSize: T.screen },
   pin: {
     width: 5,
     height: 12,
@@ -246,15 +276,15 @@ export const dm = StyleSheet.create({
     marginBottom: 10,
     borderWidth: 1,
   },
-  badgeTxt: { fontSize: 13, fontWeight: "700", letterSpacing: 0.2 },
+  badgeTxt: { fontSize: T.meta, fontWeight: "700", letterSpacing: 0.2 },
   name: {
-    fontSize: 22,
+    fontSize: T.screen,
     fontWeight: "800",
     color: V.silverBright,
     marginBottom: 6,
   },
-  meta: { fontSize: 14, color: V.silverDim, marginBottom: 4 },
-  rating: { fontSize: 15, color: V.accentGold, marginBottom: 8 },
+  meta: { fontSize: T.body, color: V.silverDim, marginBottom: 4 },
+  rating: { fontSize: T.body, color: V.accentGold, marginBottom: 8 },
   hoursBox: {
     backgroundColor: V.forestMid,
     borderRadius: 10,
@@ -264,12 +294,12 @@ export const dm = StyleSheet.create({
     borderColor: V.borderDim,
   },
   hoursTitle: {
-    fontSize: 14,
+    fontSize: T.body,
     fontWeight: "700",
     color: V.silver,
     marginBottom: 6,
   },
-  hoursText: { fontSize: 13, color: V.silverDim, lineHeight: 20 },
+  hoursText: { fontSize: T.meta, color: V.silverDim, lineHeight: 20 },
   // Oznaka "otvoreno / zatvoreno" uz radno vrijeme. Prikazuje se samo kad se
   // stanje doista može utvrditi iz zapisanog radnog vremena — kad se ne može,
   // oznake nema, umjesto da se nagađa.
@@ -285,7 +315,7 @@ export const dm = StyleSheet.create({
     borderWidth: 1,
   },
   openBadgeDot: { width: 7, height: 7, borderRadius: 4 },
-  openBadgeText: { fontSize: 12, fontWeight: "700", letterSpacing: 0.2 },
+  openBadgeText: { fontSize: T.meta, fontWeight: "700", letterSpacing: 0.2 },
   notifRow: {
     flexDirection: "row",
     alignItems: "center",
@@ -297,7 +327,7 @@ export const dm = StyleSheet.create({
     padding: 14,
     marginBottom: 12,
   },
-  notifLabel: { fontSize: 14, color: V.silver, fontWeight: "600", flex: 1 },
+  notifLabel: { fontSize: T.body, color: V.silver, fontWeight: "600", flex: 1 },
   reviewBox: {
     backgroundColor: V.forestMid,
     borderRadius: 12,
@@ -307,8 +337,8 @@ export const dm = StyleSheet.create({
     marginBottom: 16,
     gap: 12,
   },
-  reviewTitle: { fontSize: 15, fontWeight: "700", color: V.silver },
-  star: { fontSize: 30, marginRight: 2 },
+  reviewTitle: { fontSize: T.body, fontWeight: "700", color: V.silver },
+  star: { fontSize: T.hero, marginRight: 2 },
   starOn: { color: V.accentGold },
   // Prazna zvjezdica bila je #ddd — gotovo bijela, pa je neocijenjeno mjesto
   // izgledalo kao da ima punih pet zvjezdica.
@@ -319,7 +349,7 @@ export const dm = StyleSheet.create({
     borderColor: V.borderGreen,
     borderRadius: 10,
     padding: 12,
-    fontSize: 14,
+    fontSize: T.body,
     color: V.silverBright,
     minHeight: 80,
     textAlignVertical: "top",
@@ -337,7 +367,7 @@ export const dm = StyleSheet.create({
     backgroundColor: V.forestLight,
     borderColor: V.visited,
   },
-  returnTxt: { fontSize: 14, color: V.silver, fontWeight: "600" },
+  returnTxt: { fontSize: T.body, color: V.silver, fontWeight: "600" },
   // "Spremi recenziju" je radnja unutar kartice, "Označi kao posjećeno"
   // je glavna radnja listića — zato je prva tamnija od druge. Obje su iz
   // teme: da je gumb u boji kategorije, isti bi gumb bio tirkizan na kafiću
@@ -350,7 +380,7 @@ export const dm = StyleSheet.create({
     borderWidth: 1,
     borderColor: V.primary,
   },
-  reviewBtnTxt: { color: V.silverBright, fontWeight: "700", fontSize: 15 },
+  reviewBtnTxt: { color: V.silverBright, fontWeight: "700", fontSize: T.body },
   visitBtn: {
     borderRadius: V.radiusMd,
     paddingVertical: 14,
@@ -370,7 +400,7 @@ export const dm = StyleSheet.create({
     borderColor: V.borderDim,
     marginBottom: 10,
   },
-  reportBtnTxt: { color: V.silverDim, fontSize: 14, fontWeight: "600" },
+  reportBtnTxt: { color: V.silverDim, fontSize: T.body, fontWeight: "600" },
   // Prozor prijave sjeda uz donji rub, odmah iznad tipkovnice.
   reportOverlay: {
     flex: 1,
@@ -386,9 +416,9 @@ export const dm = StyleSheet.create({
     padding: 16,
     gap: 10,
   },
-  reportTitle: { color: V.silverBright, fontSize: 17, fontWeight: "800" },
-  reportPlace: { color: V.accentText, fontSize: 14, fontWeight: "600" },
-  reportHint: { color: V.silverDim, fontSize: 12, lineHeight: 17 },
+  reportTitle: { color: V.silverBright, fontSize: T.lead, fontWeight: "800" },
+  reportPlace: { color: V.accentText, fontSize: T.body, fontWeight: "600" },
+  reportHint: { color: V.silverDim, fontSize: T.meta, lineHeight: 17 },
   reportInput: {
     minHeight: 90,
     borderRadius: 8,
@@ -396,7 +426,7 @@ export const dm = StyleSheet.create({
     borderColor: V.borderDim,
     color: V.silverBright,
     padding: 10,
-    fontSize: 14,
+    fontSize: T.body,
     textAlignVertical: "top",
   },
   reportAction: {
@@ -407,7 +437,7 @@ export const dm = StyleSheet.create({
     justifyContent: "center",
     borderWidth: 1,
   },
-  visitBtnTxt: { color: V.onPrimary, fontSize: 16, fontWeight: "800" },
+  visitBtnTxt: { color: V.onPrimary, fontSize: T.lead, fontWeight: "800" },
   visitedBadge: {
     backgroundColor: V.forestMid,
     borderRadius: 10,
@@ -477,8 +507,12 @@ export const ag = StyleSheet.create({
     justifyContent: "center" as const,
     alignItems: "center" as const,
   },
-  dmTitle: { fontSize: 16, fontWeight: "700" as const, color: V.silverBright },
-  dmSubtitle: { fontSize: 14, color: V.accentText, marginTop: 2 },
+  dmTitle: {
+    fontSize: T.lead,
+    fontWeight: "700" as const,
+    color: V.silverBright,
+  },
+  dmSubtitle: { fontSize: T.body, color: V.accentText, marginTop: 2 },
   dmWarnBadge: {
     backgroundColor: "#2A2010",
     borderRadius: 8,
@@ -493,7 +527,7 @@ export const ag = StyleSheet.create({
     borderColor: V.borderGreen,
     borderRadius: 12,
     padding: 14,
-    fontSize: 15,
+    fontSize: T.body,
     minHeight: 90,
     color: V.silverBright,
     marginBottom: 12,
@@ -506,7 +540,7 @@ export const ag = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 7,
   },
-  dmQuickText: { fontSize: 13, color: V.silver, fontWeight: "600" },
+  dmQuickText: { fontSize: T.meta, color: V.silver, fontWeight: "600" },
   dmActions: {
     flexDirection: "row" as const,
     gap: 10,
@@ -521,7 +555,7 @@ export const ag = StyleSheet.create({
     borderColor: V.borderDim,
     alignItems: "center" as const,
   },
-  dmCancelText: { color: V.silverDim, fontSize: 14, fontWeight: "600" },
+  dmCancelText: { color: V.silverDim, fontSize: T.body, fontWeight: "600" },
   dmSendBtn: {
     flex: 1,
     paddingVertical: 13,
@@ -536,10 +570,14 @@ export const ag = StyleSheet.create({
     backgroundColor: V.forestDeep,
     borderColor: V.borderDim,
   },
-  dmSendText: { color: V.silverBright, fontSize: 15, fontWeight: "700" },
-  chatHeaderBack: { color: V.silver, fontSize: 22 },
-  chatHeaderTitle: { color: V.silverBright, fontSize: 16, fontWeight: "800" },
-  chatHeaderSub: { color: V.silverDim, fontSize: 12 },
+  dmSendText: { color: V.silverBright, fontSize: T.body, fontWeight: "700" },
+  chatHeaderBack: { color: V.silver, fontSize: T.screen },
+  chatHeaderTitle: {
+    color: V.silverBright,
+    fontSize: T.lead,
+    fontWeight: "800",
+  },
+  chatHeaderSub: { color: V.silverDim, fontSize: T.meta },
   membersRow: {
     maxHeight: 72,
     borderBottomWidth: 1,
@@ -567,7 +605,7 @@ export const ag = StyleSheet.create({
     borderColor: V.borderDim,
     borderStyle: "dashed",
   },
-  memberName: { fontSize: 10, color: V.silverDim, marginTop: 2 },
+  memberName: { fontSize: T.caption, color: V.silverDim, marginTop: 2 },
   msgRow: { flexDirection: "row", marginVertical: 4, gap: 8 },
   msgAvatar: {
     width: 30,
@@ -579,7 +617,7 @@ export const ag = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
   },
-  msgSender: { fontSize: 11, color: V.silverDim, marginBottom: 2 },
+  msgSender: { fontSize: T.caption, color: V.silverDim, marginBottom: 2 },
   bubble: { borderRadius: 14, paddingHorizontal: 12, paddingVertical: 8 },
   bubbleMine: {
     backgroundColor: V.forestLight,
@@ -593,7 +631,7 @@ export const ag = StyleSheet.create({
     borderWidth: 1,
     borderColor: V.borderDim,
   },
-  msgTime: { fontSize: 10, color: V.silverDim, marginTop: 2 },
+  msgTime: { fontSize: T.caption, color: V.silverDim, marginTop: 2 },
   inputRow: {
     flexDirection: "row",
     padding: 12,
@@ -610,7 +648,7 @@ export const ag = StyleSheet.create({
     borderColor: V.borderGreen,
     paddingHorizontal: 16,
     paddingVertical: 10,
-    fontSize: 15,
+    fontSize: T.body,
     color: V.silverBright,
   },
   sendBtn: {
@@ -631,7 +669,7 @@ export const ag = StyleSheet.create({
     paddingVertical: 14,
     alignItems: "center",
   },
-  joinBtnText: { color: V.silverBright, fontSize: 16, fontWeight: "700" },
+  joinBtnText: { color: V.silverBright, fontSize: T.lead, fontWeight: "700" },
   navHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
@@ -642,10 +680,14 @@ export const ag = StyleSheet.create({
     borderBottomColor: V.borderDim,
     backgroundColor: V.forestDeep,
   },
-  navHeaderLink: { fontSize: 16, color: V.silver },
-  navHeaderTitle: { fontSize: 17, fontWeight: "800", color: V.silverBright },
+  navHeaderLink: { fontSize: T.lead, color: V.silver },
+  navHeaderTitle: {
+    fontSize: T.lead,
+    fontWeight: "800",
+    color: V.silverBright,
+  },
   formLabel: {
-    fontSize: 14,
+    fontSize: T.body,
     fontWeight: "700",
     color: V.silver,
     marginBottom: 8,
@@ -656,7 +698,7 @@ export const ag = StyleSheet.create({
     borderWidth: 1,
     borderColor: V.borderGreen,
     padding: 14,
-    fontSize: 15,
+    fontSize: T.body,
     color: V.silverBright,
     marginBottom: 16,
   },
@@ -672,7 +714,7 @@ export const ag = StyleSheet.create({
     backgroundColor: V.forestLight,
     borderColor: V.borderGreen,
   },
-  templateChipText: { fontSize: 13, fontWeight: "600", color: V.silver },
+  templateChipText: { fontSize: T.meta, fontWeight: "600", color: V.silver },
   listHeader: {
     backgroundColor: V.forestDeep,
     borderBottomWidth: 1.5,
@@ -683,7 +725,11 @@ export const ag = StyleSheet.create({
     alignItems: "center",
     justifyContent: "space-between",
   },
-  listHeaderTitle: { color: V.silverBright, fontSize: 18, fontWeight: "800" },
+  listHeaderTitle: {
+    color: V.silverBright,
+    fontSize: T.title,
+    fontWeight: "800",
+  },
   newBtn: {
     backgroundColor: V.forestLight,
     borderRadius: 8,
@@ -706,9 +752,9 @@ export const ag = StyleSheet.create({
     shadowOpacity: 0.25,
     shadowRadius: 4,
   },
-  groupTitle: { fontSize: 16, fontWeight: "800", color: V.silverBright },
-  groupLocation: { fontSize: 13, color: V.accentText, marginTop: 2 },
-  groupDesc: { fontSize: 13, color: V.silverDim, marginTop: 4 },
+  groupTitle: { fontSize: T.lead, fontWeight: "800", color: V.silverBright },
+  groupLocation: { fontSize: T.meta, color: V.accentText, marginTop: 2 },
+  groupDesc: { fontSize: T.meta, color: V.silverDim, marginTop: 4 },
   groupIcon: {
     width: 44,
     height: 44,
@@ -736,7 +782,7 @@ export const ag = StyleSheet.create({
     alignItems: "center",
   },
   groupCount: {
-    fontSize: 12,
+    fontSize: T.meta,
     color: V.silverDim,
     fontWeight: "600",
     marginLeft: 4,
@@ -749,7 +795,7 @@ export const ag = StyleSheet.create({
     paddingHorizontal: 10,
     paddingVertical: 4,
   },
-  badgeOwnText: { fontSize: 11, color: V.silver, fontWeight: "700" },
+  badgeOwnText: { fontSize: T.caption, color: V.silver, fontWeight: "700" },
   badgeMember: {
     backgroundColor: V.forestLight,
     borderRadius: 6,
@@ -758,7 +804,11 @@ export const ag = StyleSheet.create({
     paddingHorizontal: 10,
     paddingVertical: 4,
   },
-  badgeMemberText: { fontSize: 11, color: V.accentText, fontWeight: "700" },
+  badgeMemberText: {
+    fontSize: T.caption,
+    color: V.accentText,
+    fontWeight: "700",
+  },
   badgeFull: {
     backgroundColor: V.forestDeep,
     borderRadius: 6,
@@ -789,28 +839,28 @@ export const pm = StyleSheet.create({
     borderBottomColor: V.borderDim,
     backgroundColor: V.forestDeep,
   },
-  headerTitle: { fontSize: 16, fontWeight: "700", color: V.silverBright },
+  headerTitle: { fontSize: T.lead, fontWeight: "700", color: V.silverBright },
   headerLink: {
-    fontSize: 14,
+    fontSize: T.body,
     color: V.silver,
     fontWeight: "600",
     minWidth: 60,
   },
   sectionTitle: {
-    fontSize: 15,
+    fontSize: T.body,
     fontWeight: "700",
     color: V.silverBright,
     marginBottom: 10,
     marginTop: 20,
   },
-  label: { fontSize: 13, color: V.silverDim, marginBottom: 8 },
+  label: { fontSize: T.meta, color: V.silverDim, marginBottom: 8 },
   input: {
     backgroundColor: V.forestMid,
     borderRadius: 10,
     borderWidth: 1,
     borderColor: V.borderGreen,
     padding: 12,
-    fontSize: 15,
+    fontSize: T.body,
     color: V.silverBright,
     marginBottom: 10,
   },
@@ -846,7 +896,7 @@ export const pm = StyleSheet.create({
     backgroundColor: V.forestLight,
     borderColor: V.borderGreen,
   },
-  chipText: { fontSize: 13, fontWeight: "600", color: V.silver },
+  chipText: { fontSize: T.meta, fontWeight: "600", color: V.silver },
   chipTextActive: { color: V.silverBright },
   generateBtn: {
     backgroundColor: V.forestLight,
@@ -857,10 +907,14 @@ export const pm = StyleSheet.create({
     alignItems: "center",
     marginTop: 8,
   },
-  generateBtnText: { color: V.silverBright, fontSize: 16, fontWeight: "700" },
+  generateBtnText: {
+    color: V.silverBright,
+    fontSize: T.lead,
+    fontWeight: "700",
+  },
   generateHint: {
     textAlign: "center",
-    fontSize: 12,
+    fontSize: T.meta,
     color: V.silverDim,
     marginTop: 10,
   },
@@ -873,13 +927,13 @@ export const pm = StyleSheet.create({
   },
   loadingIcon: { fontSize: 64, marginTop: 24, marginBottom: 8 },
   loadingText: {
-    fontSize: 18,
+    fontSize: T.title,
     fontWeight: "700",
     color: V.silverBright,
     textAlign: "center",
   },
   loadingHint: {
-    fontSize: 13,
+    fontSize: T.meta,
     color: V.silverDim,
     marginTop: 8,
     textAlign: "center",
@@ -894,9 +948,9 @@ export const pm = StyleSheet.create({
     marginBottom: 16,
     alignSelf: "flex-start",
   },
-  resultBadgeText: { fontSize: 13, color: V.silver, fontWeight: "600" },
+  resultBadgeText: { fontSize: T.meta, color: V.silver, fontWeight: "600" },
   resultText: {
-    fontSize: 13,
+    fontSize: T.meta,
     color: V.silver,
     lineHeight: 22,
     fontFamily: Platform.OS === "ios" ? "Courier" : "monospace",
@@ -909,7 +963,11 @@ export const pm = StyleSheet.create({
     paddingVertical: 14,
     alignItems: "center",
   },
-  btnPrimaryText: { color: V.silverBright, fontSize: 15, fontWeight: "700" },
+  btnPrimaryText: {
+    color: V.silverBright,
+    fontSize: T.body,
+    fontWeight: "700",
+  },
   btnSecondary: {
     borderRadius: 12,
     paddingVertical: 14,
@@ -917,7 +975,7 @@ export const pm = StyleSheet.create({
     borderWidth: 1.5,
     borderColor: V.borderGreen,
   },
-  btnSecondaryText: { color: V.silver, fontSize: 15, fontWeight: "600" },
+  btnSecondaryText: { color: V.silver, fontSize: T.body, fontWeight: "600" },
 });
 
 // ── Plan Renderer (zamjena za `pr`) ───────────────────────────────
@@ -939,17 +997,17 @@ export const pr = StyleSheet.create({
     shadowRadius: 8,
     elevation: 6,
   },
-  titleEmoji: { fontSize: 34 },
+  titleEmoji: { fontSize: T.hero },
   titleSub: {
     color: V.silverDim,
-    fontSize: 10,
+    fontSize: T.caption,
     fontWeight: "700",
     letterSpacing: 1.8,
     marginBottom: 2,
   },
   titleMain: {
     color: V.silverBright,
-    fontSize: 20,
+    fontSize: T.title,
     fontWeight: "900",
     lineHeight: 26,
   },
@@ -963,7 +1021,7 @@ export const pr = StyleSheet.create({
     gap: 6,
   },
   metaRow: { flexDirection: "row" },
-  metaText: { fontSize: 13, color: V.silver, lineHeight: 21, flex: 1 },
+  metaText: { fontSize: T.meta, color: V.silver, lineHeight: 21, flex: 1 },
   dayCard: {
     backgroundColor: V.forestMid,
     borderRadius: 12,
@@ -976,7 +1034,7 @@ export const pr = StyleSheet.create({
     borderWidth: 1,
     borderColor: V.borderDim,
   },
-  dayText: { fontSize: 17, fontWeight: "900", color: V.silverBright },
+  dayText: { fontSize: T.lead, fontWeight: "900", color: V.silverBright },
   timeBlock: {
     borderRadius: 8,
     borderLeftWidth: 4,
@@ -986,7 +1044,7 @@ export const pr = StyleSheet.create({
     marginBottom: 4,
     backgroundColor: V.forestMid,
   },
-  timeText: { fontSize: 14, fontWeight: "700" },
+  timeText: { fontSize: T.body, fontWeight: "700" },
   activityCard: {
     backgroundColor: V.forestMid,
     borderRadius: 8,
@@ -997,7 +1055,7 @@ export const pr = StyleSheet.create({
     borderWidth: 1,
     borderColor: V.borderDim,
   },
-  activityText: { fontSize: 13, color: V.silver, lineHeight: 20 },
+  activityText: { fontSize: T.meta, color: V.silver, lineHeight: 20 },
   costBox: {
     backgroundColor: "#231C0A",
     borderRadius: 8,
@@ -1009,7 +1067,7 @@ export const pr = StyleSheet.create({
     borderWidth: 1,
     borderColor: "#3A2E10",
   },
-  costText: { fontSize: 13, color: V.accentGold, fontWeight: "700" },
+  costText: { fontSize: T.meta, color: V.accentGold, fontWeight: "700" },
   tipsHeader: {
     backgroundColor: V.forestMid,
     borderRadius: 12,
@@ -1020,7 +1078,7 @@ export const pr = StyleSheet.create({
     borderWidth: 1,
     borderColor: V.borderDim,
   },
-  tipsTitle: { fontSize: 16, fontWeight: "800", color: V.silverBright },
+  tipsTitle: { fontSize: T.lead, fontWeight: "800", color: V.silverBright },
   tipRow: {
     flexDirection: "row",
     paddingVertical: 6,
@@ -1029,12 +1087,12 @@ export const pr = StyleSheet.create({
     alignItems: "flex-start",
   },
   tipDot: {
-    fontSize: 18,
+    fontSize: T.title,
     color: V.accentText,
     fontWeight: "800",
     lineHeight: 22,
   },
-  tipText: { fontSize: 13, color: V.silver, lineHeight: 22, flex: 1 },
+  tipText: { fontSize: T.meta, color: V.silver, lineHeight: 22, flex: 1 },
   noteBox: {
     backgroundColor: V.forestMid,
     borderRadius: 10,
@@ -1045,7 +1103,7 @@ export const pr = StyleSheet.create({
     borderWidth: 1,
     borderColor: V.borderDim,
   },
-  noteText: { fontSize: 12, color: V.silverDim, lineHeight: 18 },
+  noteText: { fontSize: T.meta, color: V.silverDim, lineHeight: 18 },
   closingBox: {
     backgroundColor: V.forestLight,
     borderRadius: 10,
@@ -1056,7 +1114,7 @@ export const pr = StyleSheet.create({
     borderColor: V.borderGreen,
   },
   closingText: {
-    fontSize: 14,
+    fontSize: T.body,
     color: V.silverBright,
     fontWeight: "700",
     textAlign: "center",
@@ -1072,9 +1130,9 @@ export const mapLegend = StyleSheet.create({
     marginBottom: 10,
     paddingHorizontal: 2,
   },
-  headerTitle: { fontSize: 16, fontWeight: "800", color: V.silverBright },
+  headerTitle: { fontSize: T.lead, fontWeight: "800", color: V.silverBright },
   headerSub: {
-    fontSize: 12,
+    fontSize: T.meta,
     color: V.silverDim,
     marginTop: 2,
     maxWidth: "90%",
@@ -1098,7 +1156,7 @@ export const mapLegend = StyleSheet.create({
     marginBottom: 8,
   },
   legendTitle: {
-    fontSize: 12,
+    fontSize: T.meta,
     fontWeight: "700",
     color: V.silverDim,
     marginBottom: 8,
@@ -1116,7 +1174,7 @@ export const mapLegend = StyleSheet.create({
     borderWidth: 1.5,
   },
   dot: { width: 8, height: 8, borderRadius: 4 },
-  chipText: { fontSize: 11, fontWeight: "600", color: V.silver },
+  chipText: { fontSize: T.caption, fontWeight: "600", color: V.silver },
   distanceSection: {
     backgroundColor: V.forestMid,
     borderRadius: 12,
@@ -1126,7 +1184,7 @@ export const mapLegend = StyleSheet.create({
     marginBottom: 16,
   },
   distanceTitle: {
-    fontSize: 13,
+    fontSize: T.meta,
     fontWeight: "700",
     color: V.silver,
     marginBottom: 10,
@@ -1143,9 +1201,9 @@ export const mapLegend = StyleSheet.create({
     borderColor: V.borderDim,
     gap: 10,
   },
-  distanceEmoji: { fontSize: 22 },
-  distanceName: { fontSize: 13, fontWeight: "600", color: V.silver },
-  distanceKm: { fontSize: 12, fontWeight: "700", marginTop: 2 },
+  distanceEmoji: { fontSize: T.screen },
+  distanceName: { fontSize: T.meta, fontWeight: "600", color: V.silver },
+  distanceKm: { fontSize: T.meta, fontWeight: "700", marginTop: 2 },
 });
 
 // ── Plan styles (zamjena za `planStyles`) ─────────────────────────
@@ -1164,8 +1222,8 @@ export const planStyles = StyleSheet.create({
     alignItems: "center",
     marginBottom: 10,
   },
-  progressTitle: { fontSize: 14, fontWeight: "700", color: V.silver },
-  progressCount: { fontSize: 14, fontWeight: "800", color: V.accentText },
+  progressTitle: { fontSize: T.body, fontWeight: "700", color: V.silver },
+  progressCount: { fontSize: T.body, fontWeight: "800", color: V.accentText },
   progressTrack: {
     height: 8,
     backgroundColor: V.borderDim,
@@ -1178,18 +1236,18 @@ export const planStyles = StyleSheet.create({
     borderRadius: 4,
   },
   progressHint: {
-    fontSize: 12,
+    fontSize: T.meta,
     color: V.accentText,
     marginTop: 8,
     fontWeight: "600",
   },
   sectionHeader: {
-    fontSize: 16,
+    fontSize: T.lead,
     fontWeight: "800",
     color: V.silverBright,
     marginBottom: 4,
   },
-  sectionSub: { fontSize: 12, color: V.silverDim, marginBottom: 12 },
+  sectionSub: { fontSize: T.meta, color: V.silverDim, marginBottom: 12 },
   categorySection: {
     backgroundColor: V.forestMid,
     borderRadius: 14,
@@ -1222,15 +1280,15 @@ export const planStyles = StyleSheet.create({
     borderWidth: 1,
     borderColor: V.borderGreen,
   },
-  categoryTitle: { fontSize: 15, fontWeight: "800", color: V.silverBright },
-  categorySub: { fontSize: 12, color: V.silverDim, marginTop: 2 },
+  categoryTitle: { fontSize: T.body, fontWeight: "800", color: V.silverBright },
+  categorySub: { fontSize: T.meta, color: V.silverDim, marginTop: 2 },
   catBadge: {
     borderRadius: 8,
     paddingHorizontal: 10,
     paddingVertical: 4,
     borderWidth: 1.5,
   },
-  catBadgeText: { fontSize: 12, fontWeight: "800" },
+  catBadgeText: { fontSize: T.meta, fontWeight: "800" },
   venueCard: {
     flexDirection: "row",
     alignItems: "center",
@@ -1242,10 +1300,10 @@ export const planStyles = StyleSheet.create({
     backgroundColor: V.forestMid,
   },
   venueCardVisited: { backgroundColor: "#1C301A" },
-  venueName: { fontSize: 14, fontWeight: "700", color: V.silverBright },
-  venueAddress: { fontSize: 11, color: V.silverDim, marginTop: 2 },
-  venueDist: { fontSize: 11, fontWeight: "700", marginTop: 2 },
-  venueDetailHint: { fontSize: 11, color: V.silverDim, marginTop: 2 },
+  venueName: { fontSize: T.body, fontWeight: "700", color: V.silverBright },
+  venueAddress: { fontSize: T.caption, color: V.silverDim, marginTop: 2 },
+  venueDist: { fontSize: T.caption, fontWeight: "700", marginTop: 2 },
+  venueDetailHint: { fontSize: T.caption, color: V.silverDim, marginTop: 2 },
   visitToggleBtn: {
     minWidth: 50, // ← smanjeno
     maxWidth: 52, // ← dodaj max
@@ -1261,13 +1319,13 @@ export const planStyles = StyleSheet.create({
     borderColor: V.visited,
   },
   visitToggleText: {
-    fontSize: 11,
+    fontSize: T.caption,
     fontWeight: "700",
     textAlign: "center",
     lineHeight: 14,
   },
   visitToggleTextVisited: {
-    fontSize: 11,
+    fontSize: T.caption,
     fontWeight: "800",
     color: V.accentText,
     textAlign: "center",
@@ -1296,7 +1354,7 @@ export const s = StyleSheet.create({
     // tintColor: "#fff",
   },
   sideBtnEmoji: {
-    fontSize: 26,
+    fontSize: T.screen,
     color: V.silverBright, // Dodaj boju za emoji
   },
   sideBtnActive: {
@@ -1322,7 +1380,7 @@ export const s = StyleSheet.create({
   },
   cityInput: {
     flex: 1,
-    fontSize: 14,
+    fontSize: T.body,
     color: V.silverBright,
     paddingVertical: 8,
   },
@@ -1365,7 +1423,7 @@ export const s = StyleSheet.create({
     shadowRadius: 4,
     elevation: 5,
   },
-  topBtnText: { fontSize: 14, fontWeight: "600", color: V.silver },
+  topBtnText: { fontSize: T.body, fontWeight: "600", color: V.silver },
   // Jutro / poslijepodne / večer su jedan izbor, pa i izgledaju kao jedna
   // kontrola: zajednički okvir i sjena umjesto tri odvojena gumba. Gornja
   // traka time izgleda kao tri stavke (☰, Kategorije, doba dana), a ne pet.
@@ -1396,7 +1454,7 @@ export const s = StyleSheet.create({
   },
   todLabel: {
     marginTop: 1,
-    fontSize: 9,
+    fontSize: T.caption,
     fontWeight: "600",
     color: V.silverDim,
   },
@@ -1407,7 +1465,7 @@ export const s = StyleSheet.create({
     backgroundColor: V.forestLight,
     borderColor: V.silver,
   },
-  todTxt: { fontSize: 18 },
+  todTxt: { fontSize: T.title },
 
   // ── Side panel — ikone desno na karti ────────────────────────────
   sidePanel: { position: "absolute", right: 12, bottom: 60, gap: 6 },
@@ -1431,7 +1489,7 @@ export const s = StyleSheet.create({
     borderColor: V.silver,
   },
   sideBtnNotif: { backgroundColor: "#231C0A", borderColor: V.accentGold },
-  sideBtnTxt: { fontSize: 20 },
+  sideBtnTxt: { fontSize: T.title },
   notifDot: {
     position: "absolute",
     top: 0,
@@ -1463,7 +1521,7 @@ export const s = StyleSheet.create({
     gap: 10,
     justifyContent: "center",
   },
-  loadingTxt: { color: V.silver, fontSize: 14, fontWeight: "600" },
+  loadingTxt: { color: V.silver, fontSize: T.body, fontWeight: "600" },
   bottomBar: {
     position: "absolute",
     bottom: 90,
@@ -1479,7 +1537,7 @@ export const s = StyleSheet.create({
     alignItems: "center",
     justifyContent: "space-between",
   },
-  countTxt: { color: V.silver, fontSize: 13, fontWeight: "600", flex: 1 },
+  countTxt: { color: V.silver, fontSize: T.meta, fontWeight: "600", flex: 1 },
   showMoreBtn: {
     backgroundColor: V.forestLight,
     borderRadius: 8,
@@ -1489,5 +1547,5 @@ export const s = StyleSheet.create({
     paddingVertical: 6,
     marginLeft: 8,
   },
-  showMoreTxt: { color: V.silverBright, fontSize: 12, fontWeight: "700" },
+  showMoreTxt: { color: V.silverBright, fontSize: T.meta, fontWeight: "700" },
 });
