@@ -974,7 +974,8 @@
     "actEscapeRoom": "Escape game",
     "actTheater": "Spectacle au théâtre",
     "actCinema": "Cinéma",
-    "actClub": "Sortie nocturne"
+    "actClub": "Sortie nocturne",
+    "anonymous": "Utilisateur anonyme"
   },
   "story": {
     "myStory": "Mon story",

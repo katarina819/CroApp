@@ -26,7 +26,14 @@ export default function LanguageSelector() {
         <Text style={s.arrow}>▾</Text>
       </TouchableOpacity>
 
-      <Modal visible={visible} transparent animationType="fade">
+      {/* onRequestClose: bez njega tipka "natrag" na Androidu ne zatvara
+          birač jezika — korisnik ostaje zarobljen dok ne pogodi pozadinu. */}
+      <Modal
+        visible={visible}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setVisible(false)}
+      >
         <TouchableOpacity style={s.overlay} onPress={() => setVisible(false)}>
           <View style={s.modal}>
             <Text style={s.modalTitle}>{t("auth.language")}</Text>

@@ -971,7 +971,8 @@
     "actEscapeRoom": "Escape room",
     "actTheater": "Predstava u kazalištu",
     "actCinema": "Kino",
-    "actClub": "Noćni izlazak"
+    "actClub": "Noćni izlazak",
+    "anonymous": "Anonimni korisnik"
   },
   "story": {
     "myStory": "Moj story",

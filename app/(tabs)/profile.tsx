@@ -33,6 +33,7 @@ import { CloseButton } from "@/components/CloseButton";
 import { TutorialModal } from "../../components/TutorialModal";
 import { getVara } from "../../styles/adaptiveVara";
 import { ErrorBanner } from "../../components/StateView";
+import { saveLanguage } from "../config/i18n";
 
 const { width: SCREEN_W } = Dimensions.get("window");
 
@@ -3600,24 +3601,23 @@ function SettingsModal({
     { code: "fr", label: "Français", flag: "🇫🇷" },
   ];
 
+  /**
+   * Promjena jezika.
+   *
+   * Ovdje se jezik spremao pod ključ "appLanguage", a i18n pri pokretanju
+   * čita "vara_language" — dva različita ključa za istu stvar. Posljedica:
+   * jezik odabran U POSTAVKAMA vrijedio je samo do gašenja aplikacije, a
+   * pri sljedećem pokretanju se vraćao jezik uređaja. Birač na ekranu
+   * prijave je radio ispravno, jer on zove saveLanguage() — pa je ispadalo
+   * da "ponekad zapamti, ponekad ne".
+   *
+   * Sada ide kroz istu funkciju kao i birač pri prijavi. Ona usput šalje
+   * jezik i na poslužitelj, pa je taj poziv odavde uklonjen umjesto da
+   * stoji u dvije verzije.
+   */
   const changeLanguage = async (langCode: string) => {
-    await i18n.changeLanguage(langCode);
     setCurrentLang(langCode);
-    await AsyncStorage.setItem("appLanguage", langCode);
-
-    try {
-      const token = await AsyncStorage.getItem("token");
-      await fetch(`${API_BASE_URL}/api/auth/language`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({ language: langCode }),
-      });
-    } catch (err) {
-      console.warn("Nije uspjelo spremanje jezika na server:", err);
-    }
+    await saveLanguage(langCode);
   };
 
   const saveSettings = async () => {

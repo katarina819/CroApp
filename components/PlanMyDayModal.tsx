@@ -1329,12 +1329,19 @@ export function PlanMyDayModal({
     setRatingLoading(true);
     setRatingError(null);
     try {
-      const token = await AsyncStorage.getItem("userToken"); // prilagodi ključ ako je drugačiji
-      const userRaw = await AsyncStorage.getItem("userData");
-      const user = userRaw ? JSON.parse(userRaw) : null;
-      const userName = user
-        ? `${user.firstName ?? ""} ${user.lastName ?? ""}`.trim()
-        : "Anonimni korisnik";
+      // Ovdje su stajali ključevi "userToken" i "userData" — nijedan se
+      // nigdje ne upisuje (komentar uz njih je i priznavao nesigurnost).
+      // Token je zato uvijek bio prazan, a ime korisnika također, pa je
+      // SVAKA ocjena plana stizala adminu kao "Anonimni korisnik". Nije
+      // pucalo jer je ruta /api/plan-ratings namjerno dostupna i bez
+      // prijave — samo se tiho gubilo tko je ocijenio.
+      const [token, firstName, lastName] = await Promise.all([
+        AsyncStorage.getItem("token"),
+        AsyncStorage.getItem("firstName"),
+        AsyncStorage.getItem("lastName"),
+      ]);
+      const userName =
+        `${firstName ?? ""} ${lastName ?? ""}`.trim() || t("plan.anonymous");
 
       const response = await fetch(`${API_BASE_URL}/api/plan-ratings`, {
         method: "POST",

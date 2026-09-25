@@ -949,7 +949,8 @@
     "actEscapeRoom": "Escape room",
     "actTheater": "Show at the theatre",
     "actCinema": "Cinema",
-    "actClub": "Night out"
+    "actClub": "Night out",
+    "anonymous": "Anonymous user"
   },
   "schedBreakfast": "Breakfast",
   "schedMorningTour": "Morning sightseeing — least tourist traffic",
