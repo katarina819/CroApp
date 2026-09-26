@@ -1391,12 +1391,33 @@ function isValidOPG(tags: Record<string, string>, name: string): boolean {
 }
 
 // ─── Deduplikacija po imenu + blizini (za duple prikaze poput Zoo Hotel) ──────
-// ✅ FIX: ID-based dedup nije dovoljan jer Overpass i Nominatim daju različite ID-eve
-// za isti objekt. Dodajemo provjeru: isti naziv + udaljenost < 100m = duplikat.
+/**
+ * Uklanjanje duplikata — ali samo UNUTAR iste kategorije.
+ *
+ * Overpass i Nominatim daju različite ID-eve za isti objekt, pa se duplikat
+ * prepoznaje po nazivu i udaljenosti manjoj od 100 m.
+ *
+ * Kategorija je ovdje bila izostavljena i to je imalo posljedicu koja se u
+ * aplikaciji vidjela kao kriva kategorija na karti. Mjesta se dohvaćaju
+ * jednim upitom PO KATEGORIJI, a rezultati se spajaju redom kojim su
+ * kategorije zadane. Kako u placeCategories "restaurant" dolazi prije
+ * "cafe", lokal označen u OSM-u i kao amenity=restaurant i kao amenity=cafe
+ * — a takvih je mnogo, svaka kavana koja poslužuje hranu — zadržao bi se
+ * kao restoran, dok bi njegova inačica iz kategorije kafića ispala kao
+ * "duplikat".
+ *
+ * Korisnik bi tako uključio Kafiće i Restorane i vidio restoran ondje gdje
+ * zna da je kafić. S uključenom samo jednom kategorijom sve je izgledalo
+ * ispravno, pa je greška djelovala nasumično.
+ *
+ * Isto mjesto koje je stvarno i kafić i restoran sada se pojavljuje pod
+ * obje kategorije — to nije duplikat, nego točan odgovor na oba filtra.
+ */
 function deduplicatePlaces(places: Place[]): Place[] {
   const result: Place[] = [];
   for (const place of places) {
     const isDuplicate = result.some((existing) => {
+      if (existing.type !== place.type) return false;
       const sameName =
         existing.name.toLowerCase().trim() === place.name.toLowerCase().trim();
       const closeEnough =

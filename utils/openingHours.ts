@@ -72,9 +72,25 @@ const UNSUPPORTED = [
   /\beaster\b/,
   /\bweek\s*\d/,
   /\bschool\s*holiday\b/,
-  /\b(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)\b/,
   /"/,
 ];
+
+/**
+ * Pravilo vezano uz datum ili mjesec — "Dec 25 off", "Mar-Oct 09:00-20:00".
+ *
+ * Mjesec je prije bio na popisu UNSUPPORTED, pa je BILO GDJE u nizu obarao
+ * cijelo tumačenje. Posljedica: mjesto sa sasvim običnim radnim vremenom i
+ * jednom blagdanskom iznimkom — "Mo-Su 09:00-17:00; Dec 25 off", što je
+ * čest zapis — ispadalo je "ne zna se", pa je filtar po dobu dana za njega
+ * posezao za grubom procjenom po kategoriji. Otud mjesta koja rade, a
+ * prikazuju se kao zatvorena.
+ *
+ * Sada se takvo pravilo preskače kao i "PH": ostala pravila i dalje vrijede.
+ * Ako su SVA pravila vezana uz mjesec (sezonski zapis poput "Mar-Oct
+ * 09:00-20:00"), ne ostane nijedno i rezultat je i dalje "ne zna se" — što
+ * je ispravno, jer izvan sezone to mjesto doista ne radi.
+ */
+const MONTH_SCOPED = /\b(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)\b/;
 
 /** "Mo-Fr", "Sa,Su", "Su-Th" (prelazi kraj tjedna) → skup indeksa dana. */
 function daysFromSpec(spec: string): Set<number> | null {
@@ -167,6 +183,11 @@ function parseRules(spec: string): Rule[] | null {
 
     // "PH off", "PH 10:00-14:00" — praznike ne možemo znati, preskačemo ih.
     if (/^ph\b/.test(rule)) continue;
+    // Isto vrijedi za pravila vezana uz mjesec ili datum.
+    if (MONTH_SCOPED.test(rule)) {
+      sawUnparseable = true;
+      continue;
+    }
     // Višak ključnih riječi: "09:00-17:00 open", "Mo-Fr 09:00-17:00 unknown".
     rule = rule.replace(/\s+(open|unknown)$/, "").trim();
 
@@ -179,7 +200,13 @@ function parseRules(spec: string): Rule[] | null {
       continue;
     }
 
-    const daySpecText = m[1].trim();
+    // "Mo-Su,PH 00:00-24:00": praznik nabrojan MEĐU danima rušio je čitanje
+    // cijelog popisa, pa je i sasvim obično radno vrijeme ispadalo nečitljivo.
+    const daySpecText = m[1]
+      .replace(/\bph\b/g, "")
+      .replace(/,\s*,/g, ",")
+      .replace(/^[,\s]+|[,\s]+$/g, "")
+      .trim();
     const days = daySpecText ? daysFromSpec(daySpecText) : null;
     if (daySpecText && days === null) {
       sawUnparseable = true;
@@ -195,7 +222,7 @@ function parseRules(spec: string): Rule[] | null {
     rules.push({ days, spans });
   }
 
-  if (rules.length === 0) return sawUnparseable ? null : null;
+  if (rules.length === 0) return null;
   return rules;
 }
 
