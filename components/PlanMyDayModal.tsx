@@ -40,7 +40,7 @@ import {
   Place,
   placeCategories,
 } from "../app/services/locationService";
-import { pb } from "../styles/varaTheme";
+import { T, pb } from "../styles/varaTheme";
 import { useTheme } from "./AdaptiveThemeProvider";
 
 // ---------------------------------------------------------------------------
@@ -68,6 +68,8 @@ interface DayActivity {
   time: string;
   venueName: string;
   venueType: string;
+  /** Minute puta od prethodne postaje; 0 za prvu postaju u danu. */
+  travelMinutes: number;
   venue: VenueItem | null;
   type: string;
   duration: number;
@@ -593,6 +595,8 @@ function getTimeBasedActivities(
     type: string;
     venue: VenueItem;
     description: string;
+    /** Minute puta od prethodne postaje; 0 za prvu. */
+    travelMinutes: number;
   }
   const placed: PlacedStop[] = [];
   const usedCount: Record<string, number> = {};
@@ -612,6 +616,10 @@ function getTimeBasedActivities(
       fallback: string;
     },
     venue: VenueItem,
+    // Minute puta od prethodne postaje. Plan ih je oduvijek RAČUNAO (mjesta
+    // se biraju po blizini), ali ih nije nigdje pokazivao — pa korisnik nije
+    // imao po čemu prosuditi je li plan dobar ili nasumičan.
+    travelMinutes = 0,
   ) => {
     usedVenueNames.add(venue.name);
     usedCount[tpl.type] = (usedCount[tpl.type] || 0) + 1;
@@ -622,6 +630,7 @@ function getTimeBasedActivities(
       type: tpl.type,
       venue,
       description: tr(tpl.descriptionKey, tpl.fallback),
+      travelMinutes,
     });
     cursor = startAt + tpl.duration;
     position = venue;
@@ -643,7 +652,7 @@ function getTimeBasedActivities(
           startAt <= anchor.latest &&
           startAt + anchor.duration <= DAY_END_MINUTES
         ) {
-          place(startAt, anchor, found.venue);
+          place(startAt, anchor, found.venue, found.travel);
           continue;
         }
       }
@@ -674,6 +683,7 @@ function getTimeBasedActivities(
       startAt: number;
       duration: number;
       score: number;
+      travel: number;
     } | null = null;
 
     for (const tpl of ACTIVITY_CATALOG) {
@@ -703,7 +713,14 @@ function getTimeBasedActivities(
         // Skraćena aktivnost je slabija od pune.
         (tpl.duration - duration) * 0.2;
       if (!bestCandidate || score > bestCandidate.score) {
-        bestCandidate = { tpl, venue: found.venue, startAt, duration, score };
+        bestCandidate = {
+          tpl,
+          venue: found.venue,
+          startAt,
+          duration,
+          score,
+          travel: found.travel,
+        };
       }
     }
 
@@ -712,6 +729,7 @@ function getTimeBasedActivities(
         bestCandidate.startAt,
         { ...bestCandidate.tpl, duration: bestCandidate.duration },
         bestCandidate.venue,
+        bestCandidate.travel,
       );
       continue;
     }
@@ -742,6 +760,8 @@ function getTimeBasedActivities(
       duration: stop.duration,
       cost: stop.cost,
       description: stop.description,
+      // Prva postaja nema od čega putovati, pa se vrijeme puta ne prikazuje.
+      travelMinutes: idx === 0 ? 0 : stop.travelMinutes,
       order: idx,
     };
   });
@@ -925,7 +945,7 @@ const InterestiGrid = React.memo(function InterestiGrid({
                   )}
                   <Text
                     style={{
-                      fontSize: 11,
+                      fontSize: T.caption,
                       fontWeight: active ? "700" : "600",
                       color: active ? "#fff" : DC.textSub,
                       textAlign: "center",
@@ -1468,6 +1488,8 @@ export function PlanMyDayModal({
         activities.forEach((act) => {
           planText += `⏰ ${act.time} – ${act.venueName} ${EMOJIS[act.venueType] || "📍"}\n`;
           planText += `💬 Zašto: ${act.description}\n`;
+          if (act.travelMinutes > 0)
+            planText += `🚶 Put: ~${act.travelMinutes} min od prethodne postaje\n`;
           planText += `⏱️ Trajanje: ${act.duration} min\n`;
           planText += `💶 Trošak: ~${act.cost} EUR\n\n`;
         });
@@ -1567,7 +1589,7 @@ export function PlanMyDayModal({
           </Text>
           <Text
             style={{
-              fontSize: 18,
+              fontSize: T.title,
               fontWeight: "700",
               color: DC.text,
               marginTop: 12,
@@ -1579,7 +1601,7 @@ export function PlanMyDayModal({
           <ProgressBar step={loadingStep} total={LOADING_MESSAGES.length} />
           <Text
             style={{
-              fontSize: 13,
+              fontSize: T.meta,
               color: DC.textDim,
               marginTop: 12,
               textAlign: "center",
@@ -1626,7 +1648,11 @@ export function PlanMyDayModal({
             {step === "result" ? (
               <TouchableOpacity onPress={() => setStep("form")}>
                 <Text
-                  style={{ fontSize: 15, color: DC.accent, fontWeight: "700" }}
+                  style={{
+                    fontSize: T.body,
+                    color: DC.accent,
+                    fontWeight: "700",
+                  }}
                   numberOfLines={1}
                 >
                   {t("plan.newPlan")}
@@ -1634,7 +1660,7 @@ export function PlanMyDayModal({
               </TouchableOpacity>
             ) : (
               <Text
-                style={{ fontSize: 20, fontWeight: "800", color: DC.text }}
+                style={{ fontSize: T.title, fontWeight: "800", color: DC.text }}
                 numberOfLines={1}
               >
                 {t("plan.planTrip")}
@@ -1646,7 +1672,7 @@ export function PlanMyDayModal({
             <Text
               style={{
                 flex: 1,
-                fontSize: 17,
+                fontSize: T.lead,
                 fontWeight: "800",
                 color: DC.text,
                 textAlign: "center",
@@ -1672,7 +1698,11 @@ export function PlanMyDayModal({
                 onPress={() => Share.share({ message: result }).catch(() => {})}
               >
                 <Text
-                  style={{ fontSize: 14, color: DC.textDim, fontWeight: "600" }}
+                  style={{
+                    fontSize: T.body,
+                    color: DC.textDim,
+                    fontWeight: "600",
+                  }}
                   numberOfLines={1}
                 >
                   {t("plan.share")}
@@ -1680,7 +1710,11 @@ export function PlanMyDayModal({
               </TouchableOpacity>
               <TouchableOpacity onPress={handleClose}>
                 <Text
-                  style={{ fontSize: 14, color: DC.textDim, fontWeight: "600" }}
+                  style={{
+                    fontSize: T.body,
+                    color: DC.textDim,
+                    fontWeight: "600",
+                  }}
                   numberOfLines={1}
                 >
                   {t("common.close")}
@@ -1690,7 +1724,11 @@ export function PlanMyDayModal({
           ) : (
             <TouchableOpacity onPress={handleClose} style={{ flexShrink: 0 }}>
               <Text
-                style={{ fontSize: 14, color: DC.textDim, fontWeight: "600" }}
+                style={{
+                  fontSize: T.body,
+                  color: DC.textDim,
+                  fontWeight: "600",
+                }}
                 numberOfLines={1}
               >
                 {t("common.close")}
@@ -1734,12 +1772,20 @@ export function PlanMyDayModal({
               >
                 <View style={{ flex: 1 }}>
                   <Text
-                    style={{ fontSize: 15, fontWeight: "700", color: DC.text }}
+                    style={{
+                      fontSize: T.body,
+                      fontWeight: "700",
+                      color: DC.text,
+                    }}
                   >
                     {t("plan.spontaneous")}
                   </Text>
                   <Text
-                    style={{ fontSize: 12, color: DC.textDim, marginTop: 2 }}
+                    style={{
+                      fontSize: T.meta,
+                      color: DC.textDim,
+                      marginTop: 2,
+                    }}
                   >
                     {t("plan.spontaneousDesc")}
                   </Text>
@@ -1775,7 +1821,7 @@ export function PlanMyDayModal({
               <View style={{ paddingHorizontal: 16, marginTop: 8 }}>
                 <Text
                   style={{
-                    fontSize: 13,
+                    fontSize: T.meta,
                     fontWeight: "700",
                     color: DC.textSub,
                     marginBottom: 6,
@@ -1795,7 +1841,7 @@ export function PlanMyDayModal({
                       paddingHorizontal: 16,
                       paddingVertical: 13,
                       paddingRight: 40,
-                      fontSize: 16,
+                      fontSize: T.lead,
                       color: DC.text,
                       fontWeight: "600",
                     }}
@@ -1818,7 +1864,7 @@ export function PlanMyDayModal({
                         position: "absolute",
                         right: 14,
                         color: "#4CAF50",
-                        fontSize: 18,
+                        fontSize: T.title,
                         fontWeight: "700",
                       }}
                     >
@@ -1828,7 +1874,11 @@ export function PlanMyDayModal({
                 </View>
                 {!locationValid && destination.trim().length > 0 && (
                   <Text
-                    style={{ fontSize: 12, color: DC.textDim, marginTop: 6 }}
+                    style={{
+                      fontSize: T.meta,
+                      color: DC.textDim,
+                      marginTop: 6,
+                    }}
                   >
                     {t("plan.destinationPickFromList")}
                   </Text>
@@ -1861,7 +1911,7 @@ export function PlanMyDayModal({
                           }}
                           onPress={() => selectDestination(s)}
                         >
-                          <Text style={{ color: DC.text, fontSize: 14 }}>
+                          <Text style={{ color: DC.text, fontSize: T.body }}>
                             {s.displayName}
                           </Text>
                         </TouchableOpacity>
@@ -1876,7 +1926,7 @@ export function PlanMyDayModal({
                 <View style={{ paddingHorizontal: 16, marginTop: 20 }}>
                   <Text
                     style={{
-                      fontSize: 13,
+                      fontSize: T.meta,
                       fontWeight: "700",
                       color: DC.textSub,
                       marginBottom: 10,
@@ -1927,7 +1977,7 @@ export function PlanMyDayModal({
                       >
                         <Text
                           style={{
-                            fontSize: 14,
+                            fontSize: T.body,
                             fontWeight: numDays === o.val ? "700" : "400",
                             color: numDays === o.val ? DC.text : DC.textDim,
                           }}
@@ -1944,7 +1994,7 @@ export function PlanMyDayModal({
               <View style={{ paddingHorizontal: 16, marginTop: 20 }}>
                 <Text
                   style={{
-                    fontSize: 13,
+                    fontSize: T.meta,
                     fontWeight: "700",
                     color: DC.textSub,
                     marginBottom: 10,
@@ -1985,12 +2035,12 @@ export function PlanMyDayModal({
                       }}
                       onPress={() => setPlanStyle(o.val)}
                     >
-                      <Text style={{ fontSize: 26, marginBottom: 4 }}>
+                      <Text style={{ fontSize: T.screen, marginBottom: 4 }}>
                         {o.emoji}
                       </Text>
                       <Text
                         style={{
-                          fontSize: 12,
+                          fontSize: T.meta,
                           fontWeight: planStyle === o.val ? "700" : "500",
                           color: planStyle === o.val ? DC.text : DC.textDim,
                         }}
@@ -2020,11 +2070,15 @@ export function PlanMyDayModal({
                 onPress={() => setShowAdvanced((v) => !v)}
               >
                 <Text
-                  style={{ fontSize: 13, color: DC.textSub, fontWeight: "600" }}
+                  style={{
+                    fontSize: T.meta,
+                    color: DC.textSub,
+                    fontWeight: "600",
+                  }}
                 >
                   {t("plan.advancedOptions")}
                 </Text>
-                <Text style={{ fontSize: 13, color: DC.textDim }}>
+                <Text style={{ fontSize: T.meta, color: DC.textDim }}>
                   {showAdvanced
                     ? t("plan.advancedHide")
                     : t("plan.advancedShow")}
@@ -2050,7 +2104,7 @@ export function PlanMyDayModal({
                   <View>
                     <Text
                       style={{
-                        fontSize: 12,
+                        fontSize: T.meta,
                         fontWeight: "700",
                         color: DC.textSub,
                         marginBottom: 8,
@@ -2106,11 +2160,11 @@ export function PlanMyDayModal({
                             )
                           }
                         >
-                          <Text style={{ fontSize: 22 }}>{o.emoji}</Text>
+                          <Text style={{ fontSize: T.screen }}>{o.emoji}</Text>
                           <View style={{ flex: 1 }}>
                             <Text
                               style={{
-                                fontSize: 13,
+                                fontSize: T.meta,
                                 fontWeight:
                                   companions === o.val ? "700" : "500",
                                 color:
@@ -2119,12 +2173,16 @@ export function PlanMyDayModal({
                             >
                               {o.label}
                             </Text>
-                            <Text style={{ fontSize: 11, color: DC.textDim }}>
+                            <Text
+                              style={{ fontSize: T.caption, color: DC.textDim }}
+                            >
                               {o.desc}
                             </Text>
                           </View>
                           {companions === o.val && (
-                            <Text style={{ fontSize: 16, color: DC.accent }}>
+                            <Text
+                              style={{ fontSize: T.lead, color: DC.accent }}
+                            >
                               ✓
                             </Text>
                           )}
@@ -2137,7 +2195,7 @@ export function PlanMyDayModal({
                   <View>
                     <Text
                       style={{
-                        fontSize: 12,
+                        fontSize: T.meta,
                         fontWeight: "700",
                         color: DC.textSub,
                         marginBottom: 8,
@@ -2183,7 +2241,7 @@ export function PlanMyDayModal({
                         >
                           <Text
                             style={{
-                              fontSize: 12,
+                              fontSize: T.meta,
                               fontWeight: transport === o.val ? "700" : "400",
                               color: transport === o.val ? DC.text : DC.textDim,
                             }}
@@ -2199,7 +2257,7 @@ export function PlanMyDayModal({
                   <View>
                     <Text
                       style={{
-                        fontSize: 12,
+                        fontSize: T.meta,
                         fontWeight: "700",
                         color: DC.textSub,
                         marginBottom: 8,
@@ -2220,11 +2278,13 @@ export function PlanMyDayModal({
                         gap: 8,
                       }}
                     >
-                      <Text style={{ fontSize: 16, color: DC.textDim }}>€</Text>
+                      <Text style={{ fontSize: T.lead, color: DC.textDim }}>
+                        €
+                      </Text>
                       <TextInput
                         style={{
                           flex: 1,
-                          fontSize: 16,
+                          fontSize: T.lead,
                           fontWeight: "600",
                           color: DC.text,
                           padding: 0,
@@ -2238,7 +2298,7 @@ export function PlanMyDayModal({
                         keyboardType="numeric"
                         maxLength={6}
                       />
-                      <Text style={{ fontSize: 12, color: DC.textDim }}>
+                      <Text style={{ fontSize: T.meta, color: DC.textDim }}>
                         EUR
                       </Text>
                     </View>
@@ -2248,7 +2308,7 @@ export function PlanMyDayModal({
                   <View>
                     <Text
                       style={{
-                        fontSize: 12,
+                        fontSize: T.meta,
                         fontWeight: "700",
                         color: DC.textSub,
                         marginBottom: 8,
@@ -2278,7 +2338,7 @@ export function PlanMyDayModal({
                         >
                           <Text
                             style={{
-                              fontSize: 12,
+                              fontSize: T.meta,
                               fontWeight: activityRadius === r ? "700" : "400",
                               color:
                                 activityRadius === r ? DC.text : DC.textDim,
@@ -2302,7 +2362,7 @@ export function PlanMyDayModal({
                     >
                       <Text
                         style={{
-                          fontSize: 12,
+                          fontSize: T.meta,
                           fontWeight: "700",
                           color: DC.textSub,
                         }}
@@ -2313,7 +2373,7 @@ export function PlanMyDayModal({
                         <TouchableOpacity onPress={() => setInterests([])}>
                           <Text
                             style={{
-                              fontSize: 12,
+                              fontSize: T.meta,
                               color: DC.accent,
                               fontWeight: "600",
                             }}
@@ -2348,11 +2408,17 @@ export function PlanMyDayModal({
                 onPress={generate}
               >
                 <Text
-                  style={{ color: DC.text, fontSize: 17, fontWeight: "800" }}
+                  style={{
+                    color: DC.text,
+                    fontSize: T.lead,
+                    fontWeight: "800",
+                  }}
                 >
                   {spontaneous ? t("plan.discoverBtn") : t("plan.generateBtn")}
                 </Text>
-                <Text style={{ color: DC.textDim, fontSize: 12, marginTop: 4 }}>
+                <Text
+                  style={{ color: DC.textDim, fontSize: T.meta, marginTop: 4 }}
+                >
                   {t("plan.generateSubtitle")}
                 </Text>
               </TouchableOpacity>
@@ -2385,9 +2451,13 @@ export function PlanMyDayModal({
                 }}
                 onPress={() => setAreaSheetOpen(true)}
               >
-                <Text style={{ fontSize: 18 }}>📣</Text>
+                <Text style={{ fontSize: T.title }}>📣</Text>
                 <Text
-                  style={{ color: DC.text, fontSize: 14, fontWeight: "700" }}
+                  style={{
+                    color: DC.text,
+                    fontSize: T.body,
+                    fontWeight: "700",
+                  }}
                 >
                   {t("area.openFromPlan")}
                 </Text>
@@ -2442,7 +2512,7 @@ export function PlanMyDayModal({
                       <Text
                         style={{
                           color: "#fff",
-                          fontSize: 13,
+                          fontSize: T.meta,
                           fontWeight: "700",
                         }}
                       >
@@ -2452,7 +2522,7 @@ export function PlanMyDayModal({
                     <View style={{ flex: 1 }}>
                       <Text
                         style={{
-                          fontSize: 13,
+                          fontSize: T.meta,
                           fontWeight: "700",
                           color: DC.text,
                         }}
@@ -2460,15 +2530,27 @@ export function PlanMyDayModal({
                       >
                         {activeDayActivities[activeStop].venueName}{" "}
                       </Text>
-                      <Text style={{ fontSize: 11, color: DC.textSub }}>
+                      {/* Vrijeme puta od prethodne postaje. Plan bira mjesta
+                          po blizini i to je oduvijek racunao — ali dosad nije
+                          pokazivao, pa korisnik nije imao po cemu prosuditi
+                          je li redoslijed smislen ili nasumican. */}
+                      <Text style={{ fontSize: T.caption, color: DC.textSub }}>
                         {activeDayActivities[activeStop].description}
                         {" • "}
                         {activeDayActivities[activeStop].duration} min
+                        {" • "}
+                        {activeStop === 0 ||
+                        !activeDayActivities[activeStop].travelMinutes
+                          ? t("plan.firstStop")
+                          : t("plan.travelFromPrevious", {
+                              min: activeDayActivities[activeStop]
+                                .travelMinutes,
+                            })}
                       </Text>
                     </View>
                     <Text
                       style={{
-                        fontSize: 12,
+                        fontSize: T.meta,
                         fontWeight: "700",
                         color: ROUTE_COLORS[activeDay % ROUTE_COLORS.length],
                       }}
@@ -2599,7 +2681,7 @@ export function PlanMyDayModal({
                         >
                           <Text
                             style={{
-                              fontSize: 12,
+                              fontSize: T.meta,
                               fontWeight: "700",
                               color:
                                 activeDay === i
@@ -2728,7 +2810,7 @@ export function PlanMyDayModal({
                 marginBottom: 2,
               }}
             >
-              <Text style={{ fontSize: 11, color: DC.textSub }}>
+              <Text style={{ fontSize: T.caption, color: DC.textSub }}>
                 {t("plan.stopOf", {
                   current: activeStop + 1,
                   total: activeDayActivities.length,
@@ -2740,7 +2822,7 @@ export function PlanMyDayModal({
             <View style={{ marginHorizontal: 16, marginBottom: 12 }}>
               <Text
                 style={{
-                  fontSize: 13,
+                  fontSize: T.meta,
                   fontWeight: "700",
                   color: DC.textSub,
                   textTransform: "uppercase",
@@ -2822,7 +2904,7 @@ export function PlanMyDayModal({
                           <Text
                             style={{
                               color: "#fff",
-                              fontSize: 13,
+                              fontSize: T.meta,
                               fontWeight: "900",
                             }}
                           >
@@ -2838,7 +2920,7 @@ export function PlanMyDayModal({
                       <View style={{ flex: 1 }}>
                         <Text
                           style={{
-                            fontSize: 13,
+                            fontSize: T.meta,
                             fontWeight: "700",
                             color: DC.text,
                           }}
@@ -2847,14 +2929,16 @@ export function PlanMyDayModal({
                         </Text>
                         <Text
                           style={{
-                            fontSize: 11,
+                            fontSize: T.caption,
                             color: DC.textSub,
                             marginTop: 2,
                           }}
                         >
                           {activity.description}
                         </Text>
-                        <Text style={{ fontSize: 11, color: DC.textSub }}>
+                        <Text
+                          style={{ fontSize: T.caption, color: DC.textSub }}
+                        >
                           {activity.duration} min • ~{activity.cost} EUR
                         </Text>
                       </View>
@@ -2874,7 +2958,7 @@ export function PlanMyDayModal({
                         >
                           <Text
                             style={{
-                              fontSize: 11,
+                              fontSize: T.caption,
                               color: "#fff",
                               fontWeight: "800",
                             }}
@@ -2914,7 +2998,7 @@ export function PlanMyDayModal({
                           >
                             <Text
                               style={{
-                                fontSize: 11,
+                                fontSize: T.caption,
                                 color: "#fff",
                                 fontWeight: "900",
                               }}
@@ -2938,7 +3022,7 @@ export function PlanMyDayModal({
                         >
                           <Text
                             style={{
-                              fontSize: 11,
+                              fontSize: T.caption,
                               color: "#34c759",
                               fontWeight: "800",
                             }}
@@ -2958,7 +3042,7 @@ export function PlanMyDayModal({
               <View style={{ marginHorizontal: 16, marginBottom: 12 }}>
                 <Text
                   style={{
-                    fontSize: 13,
+                    fontSize: T.meta,
                     fontWeight: "700",
                     color: DC.textSub,
                     marginBottom: 10,
@@ -3010,21 +3094,23 @@ export function PlanMyDayModal({
                             resizeMode="contain"
                           />
                         ) : (
-                          <Text style={{ fontSize: 22 }}>
+                          <Text style={{ fontSize: T.screen }}>
                             {EMOJIS[type] || "📍"}
                           </Text>
                         )}
                         <View style={{ flex: 1 }}>
                           <Text
                             style={{
-                              fontSize: 13,
+                              fontSize: T.meta,
                               fontWeight: "700",
                               color: DC.text,
                             }}
                           >
                             {t(`categories.${type}`, { defaultValue: type })}
                           </Text>
-                          <Text style={{ fontSize: 11, color: DC.textDim }}>
+                          <Text
+                            style={{ fontSize: T.caption, color: DC.textDim }}
+                          >
                             {options.length} {t("plan.placesWord")}
                             {visitedCount > 0
                               ? ` · ✓ ${visitedCount} ${t("plan.visitedWord")}`
@@ -3032,7 +3118,7 @@ export function PlanMyDayModal({
                           </Text>
                         </View>
                         <Text
-                          style={{ fontSize: 12, color, fontWeight: "700" }}
+                          style={{ fontSize: T.meta, color, fontWeight: "700" }}
                         >
                           {isOpen ? "▲" : "▼"}
                         </Text>
@@ -3115,7 +3201,7 @@ export function PlanMyDayModal({
                               >
                                 <Text
                                   style={{
-                                    fontSize: 13,
+                                    fontSize: T.meta,
                                     fontWeight: "700",
                                     color: visited ? "#34c759" : DC.text,
                                   }}
@@ -3126,7 +3212,7 @@ export function PlanMyDayModal({
                                 {venue.address && (
                                   <Text
                                     style={{
-                                      fontSize: 11,
+                                      fontSize: T.caption,
                                       color: DC.textDim,
                                       marginTop: 1,
                                     }}
@@ -3138,7 +3224,7 @@ export function PlanMyDayModal({
                                 {dist !== null && (
                                   <Text
                                     style={{
-                                      fontSize: 11,
+                                      fontSize: T.caption,
                                       color: dist < 1 ? "#34c759" : color,
                                       marginTop: 1,
                                     }}
@@ -3198,7 +3284,11 @@ export function PlanMyDayModal({
                 onPress={() => Share.share({ message: result }).catch(() => {})}
               >
                 <Text
-                  style={{ color: DC.text, fontSize: 15, fontWeight: "700" }}
+                  style={{
+                    color: DC.text,
+                    fontSize: T.body,
+                    fontWeight: "700",
+                  }}
                 >
                   {t("plan.sharePlan")}
                 </Text>
@@ -3215,7 +3305,11 @@ export function PlanMyDayModal({
                 onPress={() => setStep("form")}
               >
                 <Text
-                  style={{ color: DC.textSub, fontSize: 14, fontWeight: "600" }}
+                  style={{
+                    color: DC.textSub,
+                    fontSize: T.body,
+                    fontWeight: "600",
+                  }}
                 >
                   {t("plan.newPlanBtn")}
                 </Text>
@@ -3233,7 +3327,7 @@ export function PlanMyDayModal({
             >
               <Text
                 style={{
-                  fontSize: 14,
+                  fontSize: T.body,
                   fontWeight: "700",
                   color: DC.text,
                   marginBottom: 10,
@@ -3250,7 +3344,7 @@ export function PlanMyDayModal({
                   >
                     <Text
                       style={{
-                        fontSize: 34,
+                        fontSize: T.hero,
                         color: planRating >= n ? "#f39c12" : DC.borderDim,
                       }}
                     >
@@ -3265,7 +3359,7 @@ export function PlanMyDayModal({
                 <Text
                   style={{
                     color: DC.danger,
-                    fontSize: 12,
+                    fontSize: T.meta,
                     marginTop: 8,
                     textAlign: "center",
                   }}
@@ -3320,7 +3414,7 @@ export function PlanMyDayModal({
                     style={{
                       color: "#34c759",
                       fontWeight: "700",
-                      fontSize: 14,
+                      fontSize: T.body,
                     }}
                   >
                     ✓ {t("plan.rateThankYou")}
@@ -3328,7 +3422,7 @@ export function PlanMyDayModal({
                   <Text
                     style={{
                       color: DC.textDim,
-                      fontSize: 12,
+                      fontSize: T.meta,
                       marginTop: 4,
                     }}
                   >

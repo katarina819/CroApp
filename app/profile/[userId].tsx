@@ -28,6 +28,7 @@ import { StoryBadge } from "../../app/StoryBadge";
 import { useTheme } from "../../components/AdaptiveThemeProvider";
 import { API_BASE_URL } from "../config/api";
 import { getVara } from "../../styles/adaptiveVara";
+import { T } from "../../styles/varaTheme";
 
 const PRESET_AVATARS: Record<string, any> = {
   "avatar:male": require("../../assets/images/avatar-male.png"),
@@ -133,7 +134,9 @@ function VideoPreviewModal({
       <SafeAreaView style={{ flex: 1, backgroundColor: "#000" }}>
         <View style={vpModal.header}>
           <TouchableOpacity onPress={onClose}>
-            <Text style={{ color: "#c0c0c0", fontSize: 15, fontWeight: "600" }}>
+            <Text
+              style={{ color: "#c0c0c0", fontSize: T.body, fontWeight: "600" }}
+            >
               {t("common.close")}
             </Text>
           </TouchableOpacity>
@@ -166,7 +169,7 @@ const vpModal = StyleSheet.create({
     backgroundColor: "#000",
   },
   title: {
-    fontSize: 16,
+    fontSize: T.lead,
     fontWeight: "600",
     color: "#fff",
     flex: 1,
@@ -216,13 +219,15 @@ function ImagePreviewModal({
           }}
         >
           <TouchableOpacity onPress={onClose}>
-            <Text style={{ color: "#c0c0c0", fontSize: 15, fontWeight: "600" }}>
+            <Text
+              style={{ color: "#c0c0c0", fontSize: T.body, fontWeight: "600" }}
+            >
               {t("common.close")}
             </Text>
           </TouchableOpacity>
           <Text
             style={{
-              fontSize: 16,
+              fontSize: T.lead,
               fontWeight: "600",
               color: "#fff",
               flex: 1,
@@ -970,7 +975,7 @@ export default function UserProfileScreen() {
                 <Text
                   style={{
                     color: V.silverDim,
-                    fontSize: 15,
+                    fontSize: T.body,
                     fontWeight: "600",
                   }}
                 >
@@ -1026,7 +1031,7 @@ export default function UserProfileScreen() {
                   <Text
                     style={{
                       color: V.silverBright,
-                      fontSize: 15,
+                      fontSize: T.body,
                       fontWeight: "700",
                     }}
                   >
@@ -1055,7 +1060,7 @@ export default function UserProfileScreen() {
 //   },
 //   headerTitle: {
 //     flex: 1,
-//     fontSize: 17,
+//     fontSize: T.lead,
 //     fontWeight: "600",
 //     color: "#333",
 //     marginHorizontal: 12,
@@ -1078,13 +1083,13 @@ export default function UserProfileScreen() {
 //   },
 //   avatarInitials: { color: "#fff", fontSize: 38, fontWeight: "700" },
 //   name: {
-//     fontSize: 22,
+//     fontSize: T.screen,
 //     fontWeight: "700",
 //     color: "#1a1a1a",
 //     marginTop: 12,
 //     marginBottom: 4,
 //   },
-//   username: { fontSize: 15, color: "#667eea", marginBottom: 16 },
+//   username: { fontSize: T.body, color: "#667eea", marginBottom: 16 },
 //   statsRow: {
 //     flexDirection: "row",
 //     alignItems: "center",
@@ -1092,8 +1097,8 @@ export default function UserProfileScreen() {
 //     marginBottom: 20,
 //   },
 //   stat: { alignItems: "center" },
-//   statNum: { fontSize: 20, fontWeight: "700", color: "#1a1a1a" },
-//   statLabel: { fontSize: 12, color: "#999", marginTop: 2 },
+//   statNum: { fontSize: T.title, fontWeight: "700", color: "#1a1a1a" },
+//   statLabel: { fontSize: T.meta, color: "#999", marginTop: 2 },
 //   statDivider: { width: 1, height: 32, backgroundColor: "#e0e0e0" },
 //   actionRow: { flexDirection: "row", gap: 10, alignItems: "center" },
 //   followBtn: {
@@ -1109,7 +1114,7 @@ export default function UserProfileScreen() {
 //     borderWidth: 1.5,
 //     borderColor: "#667eea",
 //   },
-//   followBtnText: { color: "#fff", fontSize: 15, fontWeight: "700" },
+//   followBtnText: { color: "#fff", fontSize: T.body, fontWeight: "700" },
 //   followingBtnText: { color: "#667eea" },
 //   msgBtn: {
 //     flexDirection: "row",
@@ -1120,7 +1125,7 @@ export default function UserProfileScreen() {
 //     paddingHorizontal: 16,
 //     paddingVertical: 10,
 //   },
-//   msgBtnText: { color: "#667eea", fontSize: 14, fontWeight: "600" },
+//   msgBtnText: { color: "#667eea", fontSize: T.body, fontWeight: "600" },
 //   goldenBtn: {
 //     width: 44,
 //     height: 44,
@@ -1141,10 +1146,10 @@ export default function UserProfileScreen() {
 //     padding: 10,
 //     marginTop: 12,
 //   },
-//   blockedText: { fontSize: 12, color: "#ff4757", flex: 1 },
+//   blockedText: { fontSize: T.meta, color: "#ff4757", flex: 1 },
 //   mediaSection: { padding: 16 },
 //   mediaSectionTitle: {
-//     fontSize: 16,
+//     fontSize: T.lead,
 //     fontWeight: "700",
 //     color: "#1a1a1a",
 //     marginBottom: 12,
@@ -1186,7 +1191,7 @@ export default function UserProfileScreen() {
 //   },
 //   likeCount: { color: "#fff", fontSize: 10, fontWeight: "600" },
 //   emptyMedia: { alignItems: "center", paddingTop: 40, gap: 12 },
-//   emptyMediaText: { fontSize: 15, color: "#bbb" },
+//   emptyMediaText: { fontSize: T.body, color: "#bbb" },
 //   composeHeader: {
 //     flexDirection: "row",
 //     justifyContent: "space-between",
@@ -1196,7 +1201,7 @@ export default function UserProfileScreen() {
 //     borderBottomColor: "#eee",
 //   },
 //   composeTitle: {
-//     fontSize: 15,
+//     fontSize: T.body,
 //     fontWeight: "600",
 //     color: "#333",
 //     flex: 1,
@@ -1212,7 +1217,7 @@ export default function UserProfileScreen() {
 //   composeSendBtnText: { color: "#fff", fontWeight: "700" },
 //   composeInput: {
 //     flex: 1,
-//     fontSize: 16,
+//     fontSize: T.lead,
 //     color: "#333",
 //     padding: 16,
 //     lineHeight: 24,
@@ -1227,7 +1232,7 @@ export default function UserProfileScreen() {
 //     borderBottomColor: "#222",
 //   },
 //   imageModalTitle: {
-//     fontSize: 16,
+//     fontSize: T.lead,
 //     fontWeight: "600",
 //     color: "#fff",
 //     flex: 1,
@@ -1268,7 +1273,7 @@ function makeStyles(V: ReturnType<typeof getVara>) {
     },
     headerTitle: {
       flex: 1,
-      fontSize: 17,
+      fontSize: T.lead,
       fontWeight: "600",
       color: V.silverBright,
       marginHorizontal: 12,
@@ -1292,13 +1297,13 @@ function makeStyles(V: ReturnType<typeof getVara>) {
     },
     avatarInitials: { color: V.silverBright, fontSize: 38, fontWeight: "700" },
     name: {
-      fontSize: 22,
+      fontSize: T.screen,
       fontWeight: "700",
       color: V.silverBright,
       marginTop: 12,
       marginBottom: 4,
     },
-    username: { fontSize: 15, color: V.visited, marginBottom: 16 },
+    username: { fontSize: T.body, color: V.visited, marginBottom: 16 },
     statsRow: {
       flexDirection: "row",
       alignItems: "center",
@@ -1306,8 +1311,8 @@ function makeStyles(V: ReturnType<typeof getVara>) {
       marginBottom: 20,
     },
     stat: { alignItems: "center" },
-    statNum: { fontSize: 20, fontWeight: "700", color: V.silverBright },
-    statLabel: { fontSize: 12, color: V.silverDim, marginTop: 2 },
+    statNum: { fontSize: T.title, fontWeight: "700", color: V.silverBright },
+    statLabel: { fontSize: T.meta, color: V.silverDim, marginTop: 2 },
     statDivider: { width: 1, height: 32, backgroundColor: V.borderDim },
     actionRow: { flexDirection: "row", gap: 10, alignItems: "center" },
     followBtn: {
@@ -1323,7 +1328,11 @@ function makeStyles(V: ReturnType<typeof getVara>) {
       borderWidth: 1.5,
       borderColor: V.visited,
     },
-    followBtnText: { color: V.silverBright, fontSize: 15, fontWeight: "700" },
+    followBtnText: {
+      color: V.silverBright,
+      fontSize: T.body,
+      fontWeight: "700",
+    },
     followingBtnText: { color: V.visited },
     msgBtn: {
       flexDirection: "row",
@@ -1336,7 +1345,7 @@ function makeStyles(V: ReturnType<typeof getVara>) {
       borderWidth: 1,
       borderColor: V.borderGreen,
     },
-    msgBtnText: { color: V.visited, fontSize: 14, fontWeight: "600" },
+    msgBtnText: { color: V.visited, fontSize: T.body, fontWeight: "600" },
     goldenBtn: {
       width: 44,
       height: 44,
@@ -1362,10 +1371,10 @@ function makeStyles(V: ReturnType<typeof getVara>) {
       borderWidth: 1,
       borderColor: V.danger,
     },
-    blockedText: { fontSize: 12, color: V.danger, flex: 1 },
+    blockedText: { fontSize: T.meta, color: V.danger, flex: 1 },
     mediaSection: { padding: 16, backgroundColor: V.forestDeep },
     mediaSectionTitle: {
-      fontSize: 16,
+      fontSize: T.lead,
       fontWeight: "700",
       color: V.silverBright,
       marginBottom: 12,
@@ -1407,7 +1416,7 @@ function makeStyles(V: ReturnType<typeof getVara>) {
     },
     likeCount: { color: "#fff", fontSize: 10, fontWeight: "600" },
     emptyMedia: { alignItems: "center", paddingTop: 40, gap: 12 },
-    emptyMediaText: { fontSize: 15, color: V.silverDim },
+    emptyMediaText: { fontSize: T.body, color: V.silverDim },
     // Compose modal
     composeHeader: {
       flexDirection: "row",
@@ -1419,7 +1428,7 @@ function makeStyles(V: ReturnType<typeof getVara>) {
       backgroundColor: V.forestDeep,
     },
     composeTitle: {
-      fontSize: 15,
+      fontSize: T.body,
       fontWeight: "600",
       color: V.silverBright,
       flex: 1,
@@ -1435,7 +1444,7 @@ function makeStyles(V: ReturnType<typeof getVara>) {
     composeSendBtnText: { color: V.silverBright, fontWeight: "700" },
     composeInput: {
       flex: 1,
-      fontSize: 16,
+      fontSize: T.lead,
       color: V.silverBright,
       padding: 16,
       lineHeight: 24,
@@ -1450,7 +1459,7 @@ function makeStyles(V: ReturnType<typeof getVara>) {
       backgroundColor: "#000",
     },
     imageModalTitle: {
-      fontSize: 16,
+      fontSize: T.lead,
       fontWeight: "600",
       color: "#fff",
       flex: 1,

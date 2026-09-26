@@ -13,6 +13,7 @@ import {
   View,
 } from "react-native";
 import { API_ENDPOINTS } from "./config/api";
+import { T } from "../styles/varaTheme";
 
 export default function CompleteProfileScreen() {
   const [birthDate, setBirthDate] = useState<Date | null>(null);
@@ -96,14 +97,14 @@ const s = StyleSheet.create({
     justifyContent: "center",
   },
   title: {
-    fontSize: 22,
+    fontSize: T.screen,
     fontWeight: "800",
     color: "#fff",
     marginBottom: 8,
     textAlign: "center",
   },
   subtitle: {
-    fontSize: 14,
+    fontSize: T.body,
     color: "rgba(255,255,255,0.7)",
     marginBottom: 32,
     textAlign: "center",
@@ -115,12 +116,12 @@ const s = StyleSheet.create({
     alignItems: "center",
     marginBottom: 24,
   },
-  dateBtnText: { fontSize: 16, color: "#142F09", fontWeight: "600" },
+  dateBtnText: { fontSize: T.lead, color: "#142F09", fontWeight: "600" },
   saveBtn: {
     backgroundColor: "#2D6418",
     borderRadius: 14,
     paddingVertical: 16,
     alignItems: "center",
   },
-  saveBtnText: { color: "#fff", fontSize: 16, fontWeight: "700" },
+  saveBtnText: { color: "#fff", fontSize: T.lead, fontWeight: "700" },
 });

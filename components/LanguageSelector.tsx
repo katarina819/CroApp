@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Modal, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { saveLanguage } from "../app/config/i18n";
+import { T } from "../styles/varaTheme";
 
 const LANGUAGES = [
   { code: "hr", flag: "🇭🇷" },
@@ -78,8 +79,8 @@ const s = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 6,
   },
-  flag: { fontSize: 18 },
-  langName: { color: "#fff", fontSize: 13, fontWeight: "600" },
+  flag: { fontSize: T.title },
+  langName: { color: "#fff", fontSize: T.meta, fontWeight: "600" },
   arrow: { color: "#fff", fontSize: 10 },
   overlay: {
     flex: 1,
@@ -98,7 +99,7 @@ const s = StyleSheet.create({
     elevation: 10,
   },
   modalTitle: {
-    fontSize: 16,
+    fontSize: T.lead,
     fontWeight: "700",
     color: "#333",
     marginBottom: 16,
@@ -113,8 +114,8 @@ const s = StyleSheet.create({
     borderRadius: 10,
   },
   optionActive: { backgroundColor: "#f0f7ee" },
-  optionFlag: { fontSize: 22 },
-  optionText: { flex: 1, fontSize: 15, color: "#333" },
+  optionFlag: { fontSize: T.screen },
+  optionText: { flex: 1, fontSize: T.body, color: "#333" },
   optionTextActive: { color: "#2D6418", fontWeight: "700" },
-  check: { color: "#2D6418", fontSize: 16, fontWeight: "700" },
+  check: { color: "#2D6418", fontSize: T.lead, fontWeight: "700" },
 });

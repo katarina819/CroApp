@@ -24,6 +24,7 @@ import {
 import { API_ENDPOINTS } from "./config/api";
 import * as Linking from "expo-linking";
 import { API_BASE_URL } from "./config/api";
+import { T } from "../styles/varaTheme";
 
 type PasswordStrength = "empty" | "weak" | "medium" | "strong";
 
@@ -390,7 +391,9 @@ export default function RegisterScreen() {
                 onPress={() => setShowPassword((v) => !v)}
                 hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
               >
-                <Text style={{ fontSize: 18, opacity: showPassword ? 1 : 0.5 }}>
+                <Text
+                  style={{ fontSize: T.title, opacity: showPassword ? 1 : 0.5 }}
+                >
                   👁️
                 </Text>
               </TouchableOpacity>
@@ -398,7 +401,7 @@ export default function RegisterScreen() {
 
             <Text
               style={{
-                fontSize: 12,
+                fontSize: T.meta,
                 marginTop: 6,
                 color:
                   form.password.length === 0
@@ -435,7 +438,7 @@ export default function RegisterScreen() {
                 </View>
                 <Text
                   style={{
-                    fontSize: 12,
+                    fontSize: T.meta,
                     fontWeight: "700",
                     marginTop: 4,
                     color:
@@ -458,7 +461,7 @@ export default function RegisterScreen() {
             >
               <Text
                 style={{
-                  fontSize: 13,
+                  fontSize: T.meta,
                   fontWeight: "700",
                   color: GREEN_MID,
                   textDecorationLine: "underline",
@@ -494,7 +497,7 @@ export default function RegisterScreen() {
                 }}
                 onPress={() => setShowPicker(true)}
               >
-                <Text style={{ fontSize: 18 }}>📅</Text>
+                <Text style={{ fontSize: T.title }}>📅</Text>
               </TouchableOpacity>
             </View>
             <Text style={s.helperText}>{t("auth.birthDateHelper")}</Text>
@@ -539,7 +542,9 @@ export default function RegisterScreen() {
             }}
           >
             <View style={{ flex: 1, height: 1, backgroundColor: "#D1DADB" }} />
-            <Text style={{ marginHorizontal: 10, color: MUTED, fontSize: 12 }}>
+            <Text
+              style={{ marginHorizontal: 10, color: MUTED, fontSize: T.meta }}
+            >
               {t("common.or").toUpperCase()}
             </Text>
             <View style={{ flex: 1, height: 1, backgroundColor: "#D1DADB" }} />
@@ -660,7 +665,7 @@ const s = StyleSheet.create({
     paddingLeft: 4,
   },
   appName: {
-    fontSize: 26,
+    fontSize: T.screen,
     fontWeight: "900",
     color: "#FFFFFF",
     letterSpacing: 8,
@@ -669,7 +674,7 @@ const s = StyleSheet.create({
     textShadowRadius: 6,
   },
   headerSub: {
-    fontSize: 13,
+    fontSize: T.meta,
     color: "rgba(200,225,200,0.55)",
     letterSpacing: 0.5,
     marginTop: 2,
@@ -690,7 +695,7 @@ const s = StyleSheet.create({
   half: { flex: 1 },
   fieldWrap: { marginBottom: 16 },
   label: {
-    fontSize: 11,
+    fontSize: T.caption,
     fontWeight: "700",
     color: MUTED,
     letterSpacing: 1.2,
@@ -698,7 +703,7 @@ const s = StyleSheet.create({
   },
   optional: { color: "#9AA9A7", fontWeight: "400" },
   helperText: {
-    fontSize: 12,
+    fontSize: T.meta,
     color: MUTED,
     marginTop: 6,
   },
@@ -709,7 +714,7 @@ const s = StyleSheet.create({
     borderColor: "#D1DADB",
     paddingHorizontal: 14,
     paddingVertical: 12,
-    fontSize: 15,
+    fontSize: T.body,
     color: TEXT,
   },
   inputFocused: { borderColor: GREEN_MID, backgroundColor: "#FFFFFF" },
@@ -718,7 +723,7 @@ const s = StyleSheet.create({
     position: "absolute",
     right: 14,
     color: "#4CAF50",
-    fontSize: 16,
+    fontSize: T.lead,
     fontWeight: "700",
   },
   btn: {
@@ -736,7 +741,7 @@ const s = StyleSheet.create({
   btnDisabled: { backgroundColor: "#9AA9A7", shadowOpacity: 0, elevation: 0 },
   btnText: {
     color: "#FFFFFF",
-    fontSize: 16,
+    fontSize: T.lead,
     fontWeight: "700",
     letterSpacing: 0.5,
   },
@@ -753,15 +758,15 @@ const s = StyleSheet.create({
     backgroundColor: "#FFFFFF",
   },
   googleBtnText: {
-    fontSize: 15,
+    fontSize: T.body,
     fontWeight: "700",
     color: TEXT,
   },
   linkWrap: { marginTop: 20, alignItems: "center" },
-  linkText: { fontSize: 14, color: MUTED },
+  linkText: { fontSize: T.body, color: MUTED },
   linkBold: { color: GREEN_MID, fontWeight: "700" },
   bottomNote: {
-    fontSize: 11,
+    fontSize: T.caption,
     color: "rgba(200,225,200,0.4)",
     textAlign: "center",
     marginTop: 24,

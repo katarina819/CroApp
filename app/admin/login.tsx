@@ -17,6 +17,7 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { API_BASE_URL } from "../config/api";
+import { T } from "../../styles/varaTheme";
 
 export default function AdminLoginScreen() {
   const { t } = useTranslation();
@@ -184,7 +185,7 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   subtitle: {
-    fontSize: 14,
+    fontSize: T.body,
     color: "#999",
   },
   form: {
@@ -203,7 +204,7 @@ const styles = StyleSheet.create({
   input: {
     flex: 1,
     paddingVertical: 14,
-    fontSize: 16,
+    fontSize: T.lead,
     color: "#333",
   },
   loginButton: {
@@ -215,12 +216,12 @@ const styles = StyleSheet.create({
   },
   loginButtonText: {
     color: "#fff",
-    fontSize: 16,
+    fontSize: T.lead,
     fontWeight: "600",
   },
   securityNote: {
     textAlign: "center",
-    fontSize: 12,
+    fontSize: T.meta,
     color: "#999",
     marginTop: 24,
   },

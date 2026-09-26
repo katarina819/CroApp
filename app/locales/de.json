@@ -945,7 +945,9 @@
     "actTheater": "Vorstellung im Theater",
     "actCinema": "Kino",
     "actClub": "Abend im Club",
-    "anonymous": "Anonymer Nutzer"
+    "anonymous": "Anonymer Nutzer",
+    "travelFromPrevious": "{{min}} Min. von der vorigen Station",
+    "firstStop": "Erste Station"
   },
   "story": {
     "myStory": "Meine Story",
@@ -1009,7 +1011,28 @@
     "visitCount": "{{count}} Besuche",
     "nextBadgeIn": "Nächstes Abzeichen in {{count}} mehr",
     "allEarned": "🏆 Alle Abzeichen verdient!",
-    "nextBadge": "Nächstes Abzeichen in {{count}} mehr"
+    "nextBadge": "Nächstes Abzeichen in {{count}} mehr",
+    "titles": {
+      "restaurant": "Feinschmecker",
+      "cafe": "Kaffeejäger",
+      "club": "Nachtschwärmer",
+      "beach": "Strandgänger",
+      "landmark": "Geschichtsfan",
+      "opg": "Hoffreund",
+      "accommodation": "Reisender",
+      "market": "Marktgänger",
+      "paintball": "Scharfschütze",
+      "cinema": "Cineast",
+      "park": "Spaziergänger",
+      "escapeRoom": "Rätselfuchs",
+      "museum": "Museumsgänger",
+      "theater": "Theatergänger",
+      "mountain": "Bergsteiger",
+      "nationalPark": "Naturhüter",
+      "cave": "Höhlenforscher",
+      "spa": "Entspanner",
+      "other": "Entdecker"
+    }
   },
   "chat": {
     "activeUser": "Aktiver Benutzer",

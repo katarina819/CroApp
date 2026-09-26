@@ -35,6 +35,7 @@ import { StoryBadge } from "../../app/StoryBadge";
 import { useTheme } from "../../components/AdaptiveThemeProvider";
 import { Conversation, getConversations } from "../../utils/messagesApi";
 import { useInputBottomOffset } from "@/hooks/use-keyboard-offset";
+import { T } from "../../styles/varaTheme";
 
 const PRESET_AVATARS_MSG: Record<string, any> = {
   "avatar:male": require("../../assets/images/avatar-male.png"),
@@ -195,7 +196,7 @@ const storyTimerStyle = StyleSheet.create({
     backgroundColor: "rgba(255,71,87,0.3)",
   },
   text: {
-    fontSize: 12,
+    fontSize: T.meta,
     color: "rgba(255,255,255,0.9)",
     fontWeight: "600",
   },
@@ -623,7 +624,9 @@ function StoryViewer({
           </View>
         </View>
         <TouchableOpacity onPress={onClose} style={sv.closeBtn}>
-          <Text style={{ color: "#c0c0c0", fontSize: 15, fontWeight: "600" }}>
+          <Text
+            style={{ color: "#c0c0c0", fontSize: T.body, fontWeight: "600" }}
+          >
             Zatvori
           </Text>
         </TouchableOpacity>
@@ -751,7 +754,11 @@ function StoryViewer({
                 }}
               >
                 <Text
-                  style={{ color: "#c0c0c0", fontSize: 15, fontWeight: "600" }}
+                  style={{
+                    color: "#c0c0c0",
+                    fontSize: T.body,
+                    fontWeight: "600",
+                  }}
                 >
                   Zatvori
                 </Text>
@@ -825,7 +832,11 @@ function StoryViewer({
                 }}
               >
                 <Text
-                  style={{ color: "#c0c0c0", fontSize: 15, fontWeight: "600" }}
+                  style={{
+                    color: "#c0c0c0",
+                    fontSize: T.body,
+                    fontWeight: "600",
+                  }}
                 >
                   Zatvori
                 </Text>
@@ -901,7 +912,11 @@ function StoryViewer({
               </Text>
               <TouchableOpacity onPress={handleCloseComments}>
                 <Text
-                  style={{ color: "#c0c0c0", fontSize: 15, fontWeight: "600" }}
+                  style={{
+                    color: "#c0c0c0",
+                    fontSize: T.body,
+                    fontWeight: "600",
+                  }}
                 >
                   Zatvori
                 </Text>
@@ -1075,9 +1090,9 @@ const sv = StyleSheet.create({
     overflow: "hidden",
   },
   smallAvatarImg: { width: 40, height: 40 },
-  smallAvatarText: { color: "#e8e8e8", fontWeight: "700", fontSize: 16 },
-  storyUser: { color: "#fff", fontWeight: "700", fontSize: 15 },
-  storyTime: { color: "rgba(255,255,255,0.7)", fontSize: 12 },
+  smallAvatarText: { color: "#e8e8e8", fontWeight: "700", fontSize: T.lead },
+  storyUser: { color: "#fff", fontWeight: "700", fontSize: T.body },
+  storyTime: { color: "rgba(255,255,255,0.7)", fontSize: T.meta },
   closeBtn: { padding: 8 },
   interactions: {
     position: "absolute",
@@ -1087,7 +1102,7 @@ const sv = StyleSheet.create({
     alignItems: "center",
   },
   interactionBtn: { alignItems: "center", gap: 4 },
-  interactionCount: { color: "#fff", fontSize: 12, fontWeight: "600" },
+  interactionCount: { color: "#fff", fontSize: T.meta, fontWeight: "600" },
   reactionPickerOverlay: {
     flex: 1,
     backgroundColor: "rgba(0,0,0,0.6)",
@@ -1104,7 +1119,7 @@ const sv = StyleSheet.create({
     borderColor: "#5a8a48",
   },
   reactionOption: { padding: 8 },
-  reactionEmoji: { fontSize: 32 },
+  reactionEmoji: { fontSize: T.hero },
   footer: {
     position: "absolute",
     bottom: Platform.OS === "ios" ? 40 : 24,
@@ -1132,7 +1147,7 @@ const sv = StyleSheet.create({
     paddingVertical: 8,
     borderRadius: 20,
   },
-  viewersBtnText: { color: "#fff", fontSize: 14 },
+  viewersBtnText: { color: "#fff", fontSize: T.body },
   deleteBtn: {
     backgroundColor: "rgba(0,0,0,0.55)",
     padding: 10,
@@ -1164,7 +1179,7 @@ const sv = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: "#3a5a30",
   },
-  viewersTitle: { fontSize: 18, fontWeight: "700", color: "#e8e8e8" },
+  viewersTitle: { fontSize: T.title, fontWeight: "700", color: "#e8e8e8" },
   viewerRow: {
     flexDirection: "row",
     alignItems: "center",
@@ -1184,8 +1199,8 @@ const sv = StyleSheet.create({
     borderColor: "#5a8a48",
   },
   viewerAvatarText: { color: "#e8e8e8", fontWeight: "700" },
-  viewerName: { fontSize: 15, color: "#e8e8e8" },
-  reactionType: { marginLeft: "auto", fontSize: 18 },
+  viewerName: { fontSize: T.body, color: "#e8e8e8" },
+  reactionType: { marginLeft: "auto", fontSize: T.title },
   noViewers: { color: "#6a9a60", textAlign: "center", marginTop: 20 },
 
   // ── Comments Modal ──
@@ -1212,7 +1227,7 @@ const sv = StyleSheet.create({
     borderBottomColor: "#3a5a30",
     backgroundColor: "#1a2e1a",
   },
-  commentsTitle: { fontSize: 18, fontWeight: "700", color: "#e8e8e8" },
+  commentsTitle: { fontSize: T.title, fontWeight: "700", color: "#e8e8e8" },
   commentsList: { flex: 1, paddingHorizontal: 16 },
   commentItem: {
     paddingVertical: 14,
@@ -1228,10 +1243,10 @@ const sv = StyleSheet.create({
     marginBottom: 8,
   },
   commentAvatar: { width: 32, height: 32, borderRadius: 16 },
-  commentUserName: { fontWeight: "700", color: "#e8e8e8", fontSize: 14 },
-  commentTime: { fontSize: 11, color: "#6a9a60", marginLeft: "auto" },
+  commentUserName: { fontWeight: "700", color: "#e8e8e8", fontSize: T.body },
+  commentTime: { fontSize: T.caption, color: "#6a9a60", marginLeft: "auto" },
   commentText: {
-    fontSize: 14,
+    fontSize: T.body,
     color: "#c0c0c0",
     lineHeight: 20,
     marginLeft: 42,
@@ -1251,7 +1266,7 @@ const sv = StyleSheet.create({
     borderWidth: 1,
     borderColor: "#3a5a30",
   },
-  commentReactionBadgeText: { fontSize: 14 },
+  commentReactionBadgeText: { fontSize: T.body },
   commentReactionButtons: {
     flexDirection: "row",
     flexWrap: "wrap",
@@ -1271,7 +1286,7 @@ const sv = StyleSheet.create({
     backgroundColor: "#3a5a30",
     borderColor: "#5a8a48",
   },
-  commentReactionEmoji: { fontSize: 16 },
+  commentReactionEmoji: { fontSize: T.lead },
   commentInputContainer: {
     padding: 16,
     borderTopWidth: 1,
@@ -1291,7 +1306,7 @@ const sv = StyleSheet.create({
   },
   commentInput: {
     flex: 1,
-    fontSize: 15,
+    fontSize: T.body,
     color: "#e8e8e8",
     maxHeight: 120,
     paddingVertical: 8,
@@ -1582,7 +1597,7 @@ const getSrsStyles = (colors: any, M: ReturnType<typeof getM>) =>
       justifyContent: "center",
       alignItems: "center",
     },
-    initials: { color: M.textPrimary, fontSize: 22, fontWeight: "700" },
+    initials: { color: M.textPrimary, fontSize: T.screen, fontWeight: "700" },
     addIcon: {
       position: "absolute",
       bottom: -2,
@@ -1596,7 +1611,7 @@ const getSrsStyles = (colors: any, M: ReturnType<typeof getM>) =>
       borderWidth: 2,
       borderColor: M.bg,
     },
-    label: { fontSize: 12, color: M.textMuted, textAlign: "center" },
+    label: { fontSize: T.meta, color: M.textMuted, textAlign: "center" },
   });
 
 // ─── Add Story Modal ──────────────────────────────────────────────────────────
@@ -1696,7 +1711,11 @@ function AddStoryModal({
           <Text style={asm.title}>{t("story.addStory")}</Text>
           <TouchableOpacity onPress={onClose}>
             <Text
-              style={{ color: M.textMuted, fontSize: 15, fontWeight: "600" }}
+              style={{
+                color: M.textMuted,
+                fontSize: T.body,
+                fontWeight: "600",
+              }}
             >
               Zatvori
             </Text>
@@ -1765,7 +1784,7 @@ const getAsmStyles = (colors: any, M: ReturnType<typeof getM>) =>
       borderBottomColor: M.borderBright,
       backgroundColor: M.bg,
     },
-    title: { fontSize: 20, fontWeight: "800", color: M.textPrimary },
+    title: { fontSize: T.title, fontWeight: "800", color: M.textPrimary },
     pickContainer: {
       flex: 1,
       justifyContent: "center",
@@ -1773,7 +1792,7 @@ const getAsmStyles = (colors: any, M: ReturnType<typeof getM>) =>
       gap: 24,
       backgroundColor: M.bg,
     },
-    hint: { fontSize: 16, color: M.textMuted, marginBottom: 8 },
+    hint: { fontSize: T.lead, color: M.textMuted, marginBottom: 8 },
     pickBtn: {
       width: 160,
       alignItems: "center",
@@ -1785,7 +1804,7 @@ const getAsmStyles = (colors: any, M: ReturnType<typeof getM>) =>
       gap: 10,
       backgroundColor: M.bgCard,
     },
-    pickLabel: { fontSize: 16, color: M.accent, fontWeight: "600" },
+    pickLabel: { fontSize: T.lead, color: M.accent, fontWeight: "600" },
     preview: { flex: 1 },
     previewActions: {
       flexDirection: "row",
@@ -1794,7 +1813,7 @@ const getAsmStyles = (colors: any, M: ReturnType<typeof getM>) =>
       backgroundColor: M.bg,
     },
     btn: { flex: 1, padding: 16, borderRadius: 12, alignItems: "center" },
-    btnText: { color: M.textPrimary, fontSize: 16, fontWeight: "600" },
+    btnText: { color: M.textPrimary, fontSize: T.lead, fontWeight: "600" },
   });
 
 // ─── Main Messages Screen ─────────────────────────────────────────────────────
@@ -2099,7 +2118,11 @@ function ConversationItem({
               }}
             >
               <Text
-                style={{ color: "#E8EDE4", fontSize: 20, fontWeight: "700" }}
+                style={{
+                  color: "#E8EDE4",
+                  fontSize: T.title,
+                  fontWeight: "700",
+                }}
               >
                 {initials || "?"}
               </Text>
@@ -2177,7 +2200,7 @@ const getStyles = (colors: any, isDark: boolean, M: ReturnType<typeof getM>) =>
       minWidth: 24,
       alignItems: "center",
     },
-    badgeText: { color: "#fff", fontSize: 13, fontWeight: "700" },
+    badgeText: { color: "#fff", fontSize: T.meta, fontWeight: "700" },
     errorBanner: {
       flexDirection: "row",
       alignItems: "center",
@@ -2188,7 +2211,7 @@ const getStyles = (colors: any, isDark: boolean, M: ReturnType<typeof getM>) =>
       borderBottomWidth: 1,
       borderBottomColor: M.errorBorder,
     },
-    errorText: { fontSize: 13, color: "#ff3b30", flex: 1 },
+    errorText: { fontSize: T.meta, color: "#ff3b30", flex: 1 },
     listContent: { paddingBottom: 24 },
     emptyContainer: { flex: 1 },
     center: {
@@ -2205,9 +2228,9 @@ const getStyles = (colors: any, isDark: boolean, M: ReturnType<typeof getM>) =>
       paddingTop: 60,
       gap: 12,
     },
-    emptyTitle: { fontSize: 20, fontWeight: "700", color: M.textPrimary },
+    emptyTitle: { fontSize: T.title, fontWeight: "700", color: M.textPrimary },
     emptySubtitle: {
-      fontSize: 14,
+      fontSize: T.body,
       color: M.textMuted,
       textAlign: "center",
       lineHeight: 20,
@@ -2221,7 +2244,11 @@ const getStyles = (colors: any, isDark: boolean, M: ReturnType<typeof getM>) =>
       borderWidth: 1.5,
       borderColor: M.accent,
     },
-    newMsgBtnText: { color: M.textPrimary, fontWeight: "600", fontSize: 15 },
+    newMsgBtnText: {
+      color: M.textPrimary,
+      fontWeight: "600",
+      fontSize: T.body,
+    },
     convItem: {
       flexDirection: "row",
       paddingHorizontal: 16,
@@ -2241,7 +2268,11 @@ const getStyles = (colors: any, isDark: boolean, M: ReturnType<typeof getM>) =>
       alignItems: "center",
       marginRight: 12,
     },
-    convAvatarText: { color: M.textPrimary, fontSize: 18, fontWeight: "700" },
+    convAvatarText: {
+      color: M.textPrimary,
+      fontSize: T.title,
+      fontWeight: "700",
+    },
     convInfo: { flex: 1, gap: 4 },
     convNameRow: {
       flexDirection: "row",
@@ -2249,20 +2280,20 @@ const getStyles = (colors: any, isDark: boolean, M: ReturnType<typeof getM>) =>
       alignItems: "center",
     },
     convName: {
-      fontSize: 15,
+      fontSize: T.body,
       fontWeight: "500",
       color: M.textPrimary,
       flex: 1,
     },
     convNameBold: { fontWeight: "700", color: M.textPrimary },
-    convTime: { fontSize: 12, color: M.accentBright, marginLeft: 8 },
+    convTime: { fontSize: T.meta, color: M.accentBright, marginLeft: 8 },
     convTimeUnread: { color: M.accent, fontWeight: "600" },
     convMsgRow: {
       flexDirection: "row",
       alignItems: "center",
       justifyContent: "space-between",
     },
-    convLastMsg: { fontSize: 14, color: M.textMuted, flex: 1 },
+    convLastMsg: { fontSize: T.body, color: M.textMuted, flex: 1 },
     convLastMsgUnread: { color: M.textSecondary, fontWeight: "600" },
     unreadBadge: {
       backgroundColor: M.unreadBg,
@@ -2275,5 +2306,9 @@ const getStyles = (colors: any, isDark: boolean, M: ReturnType<typeof getM>) =>
       borderWidth: 1,
       borderColor: M.accent,
     },
-    unreadBadgeText: { color: M.textPrimary, fontSize: 11, fontWeight: "700" },
+    unreadBadgeText: {
+      color: M.textPrimary,
+      fontSize: T.caption,
+      fontWeight: "700",
+    },
   });

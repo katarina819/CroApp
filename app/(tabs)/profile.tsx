@@ -34,6 +34,7 @@ import { TutorialModal } from "../../components/TutorialModal";
 import { getVara } from "../../styles/adaptiveVara";
 import { ErrorBanner } from "../../components/StateView";
 import { saveLanguage } from "../config/i18n";
+import { T } from "../../styles/varaTheme";
 
 const { width: SCREEN_W } = Dimensions.get("window");
 
@@ -141,7 +142,7 @@ function makeFlStyles(V: ReturnType<typeof getVara>) {
       borderBottomColor: V.borderGreen,
       backgroundColor: V.forestDeep,
     },
-    title: { fontSize: 17, fontWeight: "600", color: V.silverBright },
+    title: { fontSize: T.lead, fontWeight: "600", color: V.silverBright },
     row: {
       flexDirection: "row",
       alignItems: "center",
@@ -151,8 +152,8 @@ function makeFlStyles(V: ReturnType<typeof getVara>) {
     },
     avatarContainer: { marginRight: 12 },
     userInfo: { flex: 1 },
-    name: { fontSize: 15, fontWeight: "600", color: V.silverBright },
-    username: { fontSize: 13, color: V.visited, marginTop: 2 },
+    name: { fontSize: T.body, fontWeight: "600", color: V.silverBright },
+    username: { fontSize: T.meta, color: V.visited, marginTop: 2 },
     actionButtons: { flexDirection: "row", gap: 8 },
     goldenBtn: {
       width: 40,
@@ -197,7 +198,7 @@ function makeFlStyles(V: ReturnType<typeof getVara>) {
       justifyContent: "center",
       alignItems: "center",
     },
-    emptyText: { fontSize: 16, color: V.silverDim },
+    emptyText: { fontSize: T.lead, color: V.silverDim },
   });
 }
 
@@ -222,7 +223,7 @@ function makeAcStyles(V: ReturnType<typeof getVara>) {
       backgroundColor: V.forestLight,
       borderColor: V.borderGreen,
     },
-    periodBtnText: { fontSize: 13, color: V.silverDim },
+    periodBtnText: { fontSize: T.meta, color: V.silverDim },
     periodBtnTextActive: { color: V.silverBright, fontWeight: "600" },
     summaryRow: {
       flexDirection: "row",
@@ -245,8 +246,8 @@ function makeAcStyles(V: ReturnType<typeof getVara>) {
       borderTopWidth: 3,
       gap: 4,
     },
-    summaryNum: { fontSize: 22, fontWeight: "800" },
-    summaryLabel: { fontSize: 12, color: V.silverDim },
+    summaryNum: { fontSize: T.screen, fontWeight: "800" },
+    summaryLabel: { fontSize: T.meta, color: V.silverDim },
     followersCard: {
       flexDirection: "row",
       alignItems: "center",
@@ -260,10 +261,10 @@ function makeAcStyles(V: ReturnType<typeof getVara>) {
       borderLeftWidth: 3,
       borderLeftColor: V.visited,
     },
-    followersNum: { fontSize: 24, fontWeight: "800", color: V.visited },
-    followersLabel: { fontSize: 12, color: V.silverDim },
+    followersNum: { fontSize: T.screen, fontWeight: "800", color: V.visited },
+    followersLabel: { fontSize: T.meta, color: V.silverDim },
     sectionTitle: {
-      fontSize: 15,
+      fontSize: T.body,
       fontWeight: "700",
       color: V.silverBright,
       paddingHorizontal: 16,
@@ -280,7 +281,7 @@ function makeAcStyles(V: ReturnType<typeof getVara>) {
       borderColor: V.borderDim,
     },
     chartTitle: {
-      fontSize: 13,
+      fontSize: T.meta,
       fontWeight: "600",
       color: V.silver,
       marginBottom: 10,
@@ -312,7 +313,7 @@ function makeTabStyles(V: ReturnType<typeof getVara>) {
       paddingVertical: 12,
       gap: 8,
     },
-    addBtnText: { color: V.silverBright, fontSize: 15, fontWeight: "600" },
+    addBtnText: { color: V.silverBright, fontSize: T.body, fontWeight: "600" },
     gridItem: { flex: 1 / 3, aspectRatio: 1, padding: 1 },
     gridImg: { width: "100%", height: "100%" },
     videoIcon: {
@@ -359,13 +360,13 @@ function makeTabStyles(V: ReturnType<typeof getVara>) {
       backgroundColor: "rgba(0,0,0,0.3)",
     },
     itemTitle: {
-      fontSize: 14,
+      fontSize: T.body,
       fontWeight: "600",
       color: V.silverBright,
       marginBottom: 3,
     },
-    itemMeta: { fontSize: 13, color: V.visited, marginBottom: 2 },
-    itemDate: { fontSize: 12, color: V.silverDim },
+    itemMeta: { fontSize: T.meta, color: V.visited, marginBottom: 2 },
+    itemDate: { fontSize: T.meta, color: V.silverDim },
     removeBtn: { padding: 8 },
     empty: {
       alignItems: "center",
@@ -384,7 +385,7 @@ function makeTabStyles(V: ReturnType<typeof getVara>) {
       alignItems: "center",
     },
     emptyText: {
-      fontSize: 16,
+      fontSize: T.lead,
       color: V.silverDim,
       textAlign: "center",
       paddingHorizontal: 32,
@@ -407,9 +408,9 @@ function makeTabStyles(V: ReturnType<typeof getVara>) {
       backgroundColor: V.forestLight,
       borderColor: V.borderGreen,
     },
-    filterBtnText: { fontSize: 13, color: V.silver },
+    filterBtnText: { fontSize: T.meta, color: V.silver },
     filterBtnTextActive: { color: V.silverBright, fontWeight: "600" },
-    goingBadge: { fontSize: 13, color: V.visited, marginTop: 4 },
+    goingBadge: { fontSize: T.meta, color: V.visited, marginTop: 4 },
     // deleteOverlay removed — ikona smeća više se ne prikazuje u gridu
   });
 }
@@ -438,14 +439,14 @@ function makeSmStyles(V: ReturnType<typeof getVara>) {
       backgroundColor: V.borderGreen,
     },
     dangerHeaderText: {
-      fontSize: 11,
+      fontSize: T.caption,
       fontWeight: "700",
       textTransform: "uppercase" as const,
       letterSpacing: 1.5,
       color: V.silverDim,
     },
     dangerDesc: {
-      fontSize: 12,
+      fontSize: T.meta,
       marginBottom: 16,
       fontStyle: "italic" as const,
       color: V.silverDim,
@@ -454,7 +455,7 @@ function makeSmStyles(V: ReturnType<typeof getVara>) {
     // stil s tim imenom znači da sljedeća izmjena opasne zone tiho
     // promijeni i objašnjenje uz vodič.
     sectionHint: {
-      fontSize: 12,
+      fontSize: T.meta,
       marginTop: 10,
       fontStyle: "italic" as const,
       color: V.silverDim,
@@ -492,21 +493,21 @@ function makeSmStyles(V: ReturnType<typeof getVara>) {
     },
     varaBtnText: {
       flex: 1,
-      fontSize: 15,
+      fontSize: T.body,
       fontWeight: "500" as const,
       color: V.silver,
     },
     varaBtnTextDestructive: {
       flex: 1,
-      fontSize: 15,
+      fontSize: T.body,
       fontWeight: "600" as const,
       color: V.accentGold,
     },
-    title: { fontSize: 17, fontWeight: "600", color: V.silverBright },
-    saveBtn: { fontSize: 16, fontWeight: "600", color: V.visited },
+    title: { fontSize: T.lead, fontWeight: "600", color: V.silverBright },
+    saveBtn: { fontSize: T.lead, fontWeight: "600", color: V.visited },
     section: { marginTop: 12, paddingHorizontal: 16 },
     sectionTitle: {
-      fontSize: 12,
+      fontSize: T.meta,
       fontWeight: "700",
       marginBottom: 12,
       textTransform: "uppercase" as const,
@@ -521,10 +522,10 @@ function makeSmStyles(V: ReturnType<typeof getVara>) {
       borderBottomWidth: StyleSheet.hairlineWidth,
       borderBottomColor: V.borderDim,
     },
-    rowLabel: { fontSize: 16, color: V.silverBright },
-    rowSub: { fontSize: 13, marginTop: 2, color: V.silverDim },
+    rowLabel: { fontSize: T.lead, color: V.silverBright },
+    rowSub: { fontSize: T.meta, marginTop: 2, color: V.silverDim },
     currentValue: {
-      fontSize: 12,
+      fontSize: T.meta,
       marginTop: 4,
       marginBottom: 8,
       color: V.visited,
@@ -540,7 +541,7 @@ function makeSmStyles(V: ReturnType<typeof getVara>) {
       backgroundColor: V.forestMid,
       borderColor: V.borderGreen,
     },
-    activeLimitText: { fontSize: 13, fontWeight: "600", color: V.visited },
+    activeLimitText: { fontSize: T.meta, fontWeight: "600", color: V.visited },
     timeRow: { flexDirection: "row", flexWrap: "wrap", gap: 8, marginTop: 12 },
     timeBtn: {
       paddingHorizontal: 12,
@@ -554,7 +555,7 @@ function makeSmStyles(V: ReturnType<typeof getVara>) {
       backgroundColor: V.forestLight,
       borderColor: V.borderGreen,
     },
-    timeBtnText: { fontSize: 13, color: V.silver },
+    timeBtnText: { fontSize: T.meta, color: V.silver },
     timeBtnTextActive: { fontWeight: "600", color: V.silverBright },
     blockedUser: {
       flexDirection: "row",
@@ -572,7 +573,7 @@ function makeSmStyles(V: ReturnType<typeof getVara>) {
       borderRadius: 12,
       borderWidth: 1.5,
     },
-    dangerBtnText: { fontSize: 15, fontWeight: "600" },
+    dangerBtnText: { fontSize: T.body, fontWeight: "600" },
   });
 }
 
@@ -589,8 +590,8 @@ function makeLangStyles(V: ReturnType<typeof getVara>) {
       borderRadius: 10,
       marginBottom: 12,
     },
-    currentLangLabel: { fontSize: 14, color: V.silverDim },
-    currentLangValue: { fontSize: 14, fontWeight: "700", color: V.visited },
+    currentLangLabel: { fontSize: T.body, color: V.silverDim },
+    currentLangValue: { fontSize: T.body, fontWeight: "700", color: V.visited },
     langGrid: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
     langBtn: {
       flexDirection: "row",
@@ -609,8 +610,8 @@ function makeLangStyles(V: ReturnType<typeof getVara>) {
       backgroundColor: V.forestLight,
       borderColor: V.borderGreen,
     },
-    langFlag: { fontSize: 18 },
-    langLabel: { fontSize: 13, fontWeight: "600", color: V.silver },
+    langFlag: { fontSize: T.title },
+    langLabel: { fontSize: T.meta, fontWeight: "600", color: V.silver },
     langLabelActive: { color: V.silverBright },
   });
 }
@@ -631,7 +632,7 @@ function makeSctStyles(V: ReturnType<typeof getVara>) {
       marginBottom: 8,
     },
     warning: { backgroundColor: "#2A1010", borderColor: "#5A3030" },
-    text: { fontSize: 13, color: V.visited, fontWeight: "600" },
+    text: { fontSize: T.meta, color: V.visited, fontWeight: "600" },
     warningText: { color: "#C05050" },
   });
 }
@@ -682,8 +683,8 @@ function makeThemeStyles(V: ReturnType<typeof getVara>) {
       alignSelf: "flex-end",
       marginTop: 2,
     },
-    themeLabelLight: { fontSize: 22 },
-    themeTitleLight: { fontSize: 12, fontWeight: "700", color: "#5a4a10" },
+    themeLabelLight: { fontSize: T.screen },
+    themeTitleLight: { fontSize: T.meta, fontWeight: "700", color: "#5a4a10" },
     themeCardAuto: { backgroundColor: V.forestMid, borderColor: V.borderDim },
     themeCardActiveAuto: {
       borderColor: V.visited,
@@ -720,8 +721,12 @@ function makeThemeStyles(V: ReturnType<typeof getVara>) {
       alignSelf: "flex-end",
       marginTop: 2,
     },
-    themeLabelAuto: { fontSize: 22 },
-    themeTitleAuto: { fontSize: 12, fontWeight: "700", color: V.silverBright },
+    themeLabelAuto: { fontSize: T.screen },
+    themeTitleAuto: {
+      fontSize: T.meta,
+      fontWeight: "700",
+      color: V.silverBright,
+    },
     themeSubAuto: { fontSize: 9, color: V.silverDim, textAlign: "center" },
     themeCardDark: { backgroundColor: "#120820", borderColor: "#4a3870" },
     themeCardActiveDark: {
@@ -758,8 +763,8 @@ function makeThemeStyles(V: ReturnType<typeof getVara>) {
       alignSelf: "flex-end",
       marginTop: 2,
     },
-    themeLabelDark: { fontSize: 22 },
-    themeTitleDark: { fontSize: 12, fontWeight: "700", color: "#c0b0ff" },
+    themeLabelDark: { fontSize: T.screen },
+    themeTitleDark: { fontSize: T.meta, fontWeight: "700", color: "#c0b0ff" },
     checkDot: {
       position: "absolute",
       top: 6,
@@ -781,9 +786,13 @@ function makeThemeStyles(V: ReturnType<typeof getVara>) {
       borderColor: V.borderGreen,
       marginTop: 4,
     },
-    autoInfoEmoji: { fontSize: 24 },
-    autoInfoTitle: { fontSize: 14, fontWeight: "700", color: V.silverBright },
-    autoInfoSub: { fontSize: 11, color: V.silverDim, marginTop: 2 },
+    autoInfoEmoji: { fontSize: T.screen },
+    autoInfoTitle: {
+      fontSize: T.body,
+      fontWeight: "700",
+      color: V.silverBright,
+    },
+    autoInfoSub: { fontSize: T.caption, color: V.silverDim, marginTop: 2 },
     autoSchemeDot: {
       paddingHorizontal: 8,
       paddingVertical: 4,
@@ -1200,7 +1209,11 @@ function AvatarSection({ onUpdate }: { onUpdate: () => void }) {
               >
                 <Ionicons name={opt.icon as any} size={20} color={V.visited} />
                 <Text
-                  style={{ fontSize: 15, color: V.silver, fontWeight: "500" }}
+                  style={{
+                    fontSize: T.body,
+                    color: V.silver,
+                    fontWeight: "500",
+                  }}
                 >
                   {opt.label}
                 </Text>
@@ -1240,7 +1253,7 @@ const av = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
   },
-  initials: { fontSize: 30, fontWeight: "700" },
+  initials: { fontSize: T.hero, fontWeight: "700" },
   overlay: {
     position: "absolute",
     width: 76,
@@ -1276,8 +1289,8 @@ const avModal = StyleSheet.create({
     paddingBottom: 36,
   },
   handle: { width: 40, height: 4, borderRadius: 2, marginBottom: 16 },
-  title: { fontSize: 18, fontWeight: "700", marginBottom: 4 },
-  subtitle: { fontSize: 13, marginBottom: 24 },
+  title: { fontSize: T.title, fontWeight: "700", marginBottom: 4 },
+  subtitle: { fontSize: T.meta, marginBottom: 24 },
   avatarRow: {
     flexDirection: "row",
     flexWrap: "wrap",
@@ -1303,7 +1316,7 @@ const avModal = StyleSheet.create({
     alignItems: "center",
     borderWidth: 1.5,
   },
-  initialsText: { fontSize: 30, fontWeight: "700" },
+  initialsText: { fontSize: T.hero, fontWeight: "700" },
   checkBadge: {
     position: "absolute",
     bottom: 2,
@@ -1315,9 +1328,9 @@ const avModal = StyleSheet.create({
     alignItems: "center",
     borderWidth: 2,
   },
-  optionLabel: { marginTop: 8, fontSize: 13, fontWeight: "600" },
+  optionLabel: { marginTop: 8, fontSize: T.meta, fontWeight: "600" },
   cancelBtn: { paddingVertical: 12, paddingHorizontal: 32 },
-  cancelText: { fontSize: 15, fontWeight: "600" },
+  cancelText: { fontSize: T.body, fontWeight: "600" },
 });
 
 // ─── Followers / Following List Modal ─────────────────────────────────────────
@@ -1843,7 +1856,7 @@ function FollowRequestsModal({
             <Text
               style={[
                 fl.emptyText,
-                { fontSize: 12, marginTop: 8, opacity: 0.75 },
+                { fontSize: T.meta, marginTop: 8, opacity: 0.75 },
               ]}
             >
               {t("follow.requestsOnlyPrivateHint")}
@@ -2006,7 +2019,7 @@ function ActivityArchive({ userId }: { userId: number | null }) {
       <Text
         style={{
           color: V.silverDim,
-          fontSize: 13,
+          fontSize: T.meta,
           textAlign: "center",
           paddingHorizontal: 24,
           paddingVertical: 20,
@@ -2184,7 +2197,9 @@ function ImagePreviewModal({
       <SafeAreaView style={{ flex: 1, backgroundColor: "#000" }}>
         <View style={vpModal.header}>
           <TouchableOpacity onPress={onClose} style={vpModal.headerBtn}>
-            <Text style={{ color: "#c0c0c0", fontSize: 15, fontWeight: "600" }}>
+            <Text
+              style={{ color: "#c0c0c0", fontSize: T.body, fontWeight: "600" }}
+            >
               {t("common.close")}
             </Text>
           </TouchableOpacity>
@@ -2200,7 +2215,11 @@ function ImagePreviewModal({
               style={vpModal.headerBtn}
             >
               <Text
-                style={{ color: "#C05050", fontSize: 15, fontWeight: "600" }}
+                style={{
+                  color: "#C05050",
+                  fontSize: T.body,
+                  fontWeight: "600",
+                }}
               >
                 {t("common.delete")}
               </Text>
@@ -2283,7 +2302,9 @@ function VideoPreviewModal({
         {/* PROMJENA: header sada ima "Zatvori" lijevo, naziv u sredini, "Obriši" desno */}
         <View style={vpModal.header}>
           <TouchableOpacity onPress={onClose} style={vpModal.headerBtn}>
-            <Text style={{ color: "#c0c0c0", fontSize: 15, fontWeight: "600" }}>
+            <Text
+              style={{ color: "#c0c0c0", fontSize: T.body, fontWeight: "600" }}
+            >
               Zatvori
             </Text>
           </TouchableOpacity>
@@ -2299,7 +2320,11 @@ function VideoPreviewModal({
               style={vpModal.headerBtn}
             >
               <Text
-                style={{ color: "#C05050", fontSize: 15, fontWeight: "600" }}
+                style={{
+                  color: "#C05050",
+                  fontSize: T.body,
+                  fontWeight: "600",
+                }}
               >
                 Obriši
               </Text>
@@ -2337,7 +2362,7 @@ const vpModal = StyleSheet.create({
     minWidth: 60,
   },
   title: {
-    fontSize: 16,
+    fontSize: T.lead,
     fontWeight: "600",
     color: "#c0c0c0",
     flex: 1,
@@ -2577,7 +2602,9 @@ function EmptyTab({
           }}
           onPress={onAction}
         >
-          <Text style={{ color: V.visited, fontSize: 14, fontWeight: "600" }}>
+          <Text
+            style={{ color: V.visited, fontSize: T.body, fontWeight: "600" }}
+          >
             {actionLabel}
           </Text>
         </TouchableOpacity>
@@ -3216,7 +3243,7 @@ function WishlistTab() {
                     >
                       <Text
                         style={{
-                          fontSize: 12,
+                          fontSize: T.meta,
                           fontWeight: "600",
                           color:
                             item.isGoing === true
@@ -3244,7 +3271,7 @@ function WishlistTab() {
                     >
                       <Text
                         style={{
-                          fontSize: 12,
+                          fontSize: T.meta,
                           fontWeight: "600",
                           color:
                             item.isGoing === false
@@ -3419,7 +3446,7 @@ function GoldenFriendsTab({
                   <Text
                     style={{
                       color: V.silverBright,
-                      fontSize: 18,
+                      fontSize: T.title,
                       fontWeight: "700",
                     }}
                   >
@@ -4100,7 +4127,7 @@ function SettingsModal({
                         <Text
                           style={{
                             color: V.visited,
-                            fontSize: 13,
+                            fontSize: T.meta,
                             fontWeight: "600",
                           }}
                         >
@@ -4335,7 +4362,7 @@ function SettingsModal({
                 />
                 <Text
                   style={{
-                    fontSize: 17,
+                    fontSize: T.lead,
                     fontWeight: "700",
                     color: V.silverBright,
                     flex: 1,
@@ -4357,7 +4384,11 @@ function SettingsModal({
               </View>
 
               <Text
-                style={{ fontSize: 13, color: V.silverDim, marginBottom: 16 }}
+                style={{
+                  fontSize: T.meta,
+                  color: V.silverDim,
+                  marginBottom: 16,
+                }}
               >
                 {type === "app"
                   ? t("profile.appProblemDesc")
@@ -4388,7 +4419,7 @@ function SettingsModal({
                   textAlignVertical="top"
                   style={{
                     padding: 12,
-                    fontSize: 14,
+                    fontSize: T.body,
                     color: V.silverBright,
                     minHeight: 110,
                   }}
@@ -4396,7 +4427,7 @@ function SettingsModal({
                 />
                 <Text
                   style={{
-                    fontSize: 11,
+                    fontSize: T.caption,
                     color: V.silverDim,
                     textAlign: "right",
                     paddingRight: 10,
@@ -4430,7 +4461,7 @@ function SettingsModal({
                     style={{
                       color: V.silverDim,
                       fontWeight: "600",
-                      fontSize: 15,
+                      fontSize: T.body,
                     }}
                   >
                     {t("common.cancel")}
@@ -4462,7 +4493,7 @@ function SettingsModal({
                       style={{
                         color: V.silverBright,
                         fontWeight: "600",
-                        fontSize: 15,
+                        fontSize: T.body,
                       }}
                     >
                       {t("common.send")}
@@ -4660,7 +4691,11 @@ export default function ProfileScreen() {
                   }}
                 >
                   <Text
-                    style={{ color: "#fff", fontSize: 11, fontWeight: "700" }}
+                    style={{
+                      color: "#fff",
+                      fontSize: T.caption,
+                      fontWeight: "700",
+                    }}
                   >
                     {pendingRequestsCount > 99 ? "99+" : pendingRequestsCount}
                   </Text>
@@ -4869,8 +4904,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     borderBottomWidth: 1,
   },
-  name: { fontSize: 20, fontWeight: "700", marginBottom: 2 },
-  usernameText: { fontSize: 14, marginBottom: 4 },
+  name: { fontSize: T.title, fontWeight: "700", marginBottom: 2 },
+  usernameText: { fontSize: T.body, marginBottom: 4 },
   privacyBadge: {
     flexDirection: "row",
     alignItems: "center",
@@ -4881,11 +4916,11 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     marginBottom: 10,
   },
-  privacyText: { fontSize: 12, fontWeight: "500" },
+  privacyText: { fontSize: T.meta, fontWeight: "500" },
   statsRow: { flexDirection: "row", alignItems: "center", gap: 32 },
   stat: { alignItems: "center" },
-  statNum: { fontSize: 22, fontWeight: "700" },
-  statLabel: { fontSize: 13, marginTop: 2 },
+  statNum: { fontSize: T.screen, fontWeight: "700" },
+  statLabel: { fontSize: T.meta, marginTop: 2 },
   statDivider: { width: 1, height: 36 },
   tabBar: { flexDirection: "row", borderBottomWidth: 1.5 },
   tabBtn: {
@@ -4896,7 +4931,7 @@ const styles = StyleSheet.create({
     borderBottomWidth: 2,
     borderBottomColor: "transparent",
   },
-  tabBtnText: { fontSize: 11 },
+  tabBtnText: { fontSize: T.caption },
   mediaModalHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
@@ -4907,7 +4942,7 @@ const styles = StyleSheet.create({
     borderBottomColor: "#222",
   },
   mediaModalTitle: {
-    fontSize: 16,
+    fontSize: T.lead,
     fontWeight: "600",
     color: "#c0c0c0",
     flex: 1,

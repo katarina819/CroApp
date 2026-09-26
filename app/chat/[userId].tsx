@@ -39,6 +39,7 @@ import { API_BASE_URL } from "../config/api";
 import i18n from "../config/i18n";
 import { useActivePolling } from "@/hooks/use-active-polling";
 import { CloseButton } from "@/components/CloseButton";
+import { T } from "../../styles/varaTheme";
 
 // ─── VARA Paleta ───────────────────────────────────────────────────────────────
 function getV(isDark: boolean) {
@@ -1153,12 +1154,12 @@ const BUBBLE_RADIUS = 16;
 //     marginLeft: 4,
 //   },
 //   headerName: {
-//     fontSize: 16,
+//     fontSize: T.lead,
 //     fontWeight: "700",
 //     color: V.silverBright,
 //     maxWidth: 180,
 //   },
-//   headerStatus: { fontSize: 12, color: V.silverDim, marginTop: 1 },
+//   headerStatus: { fontSize: T.meta, color: V.silverDim, marginTop: 1 },
 
 //   // Error
 //   errorBanner: {
@@ -1171,7 +1172,7 @@ const BUBBLE_RADIUS = 16;
 //     borderBottomWidth: 1,
 //     borderBottomColor: "#5A2A2A",
 //   },
-//   errorText: { fontSize: 13, color: "#ff3b30", flex: 1 },
+//   errorText: { fontSize: T.meta, color: "#ff3b30", flex: 1 },
 
 //   // Messages list
 //   messagesList: {
@@ -1197,7 +1198,7 @@ const BUBBLE_RADIUS = 16;
 //     height: StyleSheet.hairlineWidth,
 //     backgroundColor: V.borderDim,
 //   },
-//   dateSepText: { fontSize: 12, color: V.silverDim, fontWeight: "500" },
+//   dateSepText: { fontSize: T.meta, color: V.silverDim, fontWeight: "500" },
 
 //   // Message row
 //   msgRow: { flexDirection: "row", marginVertical: 3, alignItems: "flex-end" },
@@ -1228,20 +1229,20 @@ const BUBBLE_RADIUS = 16;
 //     borderWidth: 1,
 //     borderColor: V.borderDim,
 //   },
-//   bubbleTextMine: { color: V.silverBright, fontSize: 15, lineHeight: 21 },
-//   bubbleTextOther: { color: V.silver, fontSize: 15, lineHeight: 21 },
+//   bubbleTextMine: { color: V.silverBright, fontSize: T.body, lineHeight: 21 },
+//   bubbleTextOther: { color: V.silver, fontSize: T.body, lineHeight: 21 },
 
 //   // Time
 //   timeRow: { flexDirection: "row", alignItems: "center", marginTop: 3 },
 //   timeRowRight: { justifyContent: "flex-end" },
 //   timeRowLeft: { justifyContent: "flex-start" },
-//   timeText: { fontSize: 11, color: V.silverDim },
+//   timeText: { fontSize: T.caption, color: V.silverDim },
 
 //   // Empty state
 //   emptyState: { alignItems: "center", paddingHorizontal: 48, gap: 12 },
-//   emptyTitle: { fontSize: 18, fontWeight: "700", color: V.silverDim },
+//   emptyTitle: { fontSize: T.title, fontWeight: "700", color: V.silverDim },
 //   emptySubtitle: {
-//     fontSize: 14,
+//     fontSize: T.body,
 //     color: V.silverDim,
 //     textAlign: "center",
 //     lineHeight: 20,
@@ -1255,7 +1256,7 @@ const BUBBLE_RADIUS = 16;
 //     gap: 12,
 //     backgroundColor: V.forestDeep,
 //   },
-//   loadingText: { color: V.silverDim, fontSize: 14 },
+//   loadingText: { color: V.silverDim, fontSize: T.body },
 
 //   // Input area
 //   inputArea: {
@@ -1288,7 +1289,7 @@ const BUBBLE_RADIUS = 16;
 //     borderColor: V.borderGreen,
 //     paddingHorizontal: 16,
 //     paddingVertical: 10,
-//     fontSize: 15,
+//     fontSize: T.body,
 //     color: V.silverBright,
 //     lineHeight: 20,
 //   },
@@ -1321,7 +1322,7 @@ const BUBBLE_RADIUS = 16;
 //     padding: 16,
 //     backgroundColor: "#000",
 //   },
-//   previewTitle: { fontSize: 17, fontWeight: "600", color: "#fff" },
+//   previewTitle: { fontSize: T.lead, fontWeight: "600", color: "#fff" },
 //   previewSendBtn: {
 //     backgroundColor: V.forestLight,
 //     paddingHorizontal: 16,
@@ -1363,12 +1364,12 @@ const getStyles = (V: ReturnType<typeof getV>, isDark: boolean) =>
       marginLeft: 4,
     },
     headerName: {
-      fontSize: 16,
+      fontSize: T.lead,
       fontWeight: "700",
       color: V.silverBright,
       maxWidth: 180,
     },
-    headerStatus: { fontSize: 12, color: V.silverDim, marginTop: 1 },
+    headerStatus: { fontSize: T.meta, color: V.silverDim, marginTop: 1 },
 
     errorBanner: {
       flexDirection: "row",
@@ -1380,7 +1381,7 @@ const getStyles = (V: ReturnType<typeof getV>, isDark: boolean) =>
       borderBottomWidth: 1,
       borderBottomColor: isDark ? "#5A2A2A" : "#f0b0b0",
     },
-    errorText: { fontSize: 13, color: "#ff3b30", flex: 1 },
+    errorText: { fontSize: T.meta, color: "#ff3b30", flex: 1 },
 
     messagesList: {
       padding: 12,
@@ -1404,7 +1405,7 @@ const getStyles = (V: ReturnType<typeof getV>, isDark: boolean) =>
       height: StyleSheet.hairlineWidth,
       backgroundColor: V.borderDim,
     },
-    dateSepText: { fontSize: 12, color: V.silverDim, fontWeight: "500" },
+    dateSepText: { fontSize: T.meta, color: V.silverDim, fontWeight: "500" },
 
     msgRow: { flexDirection: "row", marginVertical: 3, alignItems: "flex-end" },
     msgRowLeft: { justifyContent: "flex-start" },
@@ -1432,18 +1433,18 @@ const getStyles = (V: ReturnType<typeof getV>, isDark: boolean) =>
       borderWidth: 1,
       borderColor: V.borderDim,
     },
-    bubbleTextMine: { color: V.silverBright, fontSize: 15, lineHeight: 21 },
-    bubbleTextOther: { color: V.silver, fontSize: 15, lineHeight: 21 },
+    bubbleTextMine: { color: V.silverBright, fontSize: T.body, lineHeight: 21 },
+    bubbleTextOther: { color: V.silver, fontSize: T.body, lineHeight: 21 },
 
     timeRow: { flexDirection: "row", alignItems: "center", marginTop: 3 },
     timeRowRight: { justifyContent: "flex-end" },
     timeRowLeft: { justifyContent: "flex-start" },
-    timeText: { fontSize: 11, color: V.silverDim },
+    timeText: { fontSize: T.caption, color: V.silverDim },
 
     emptyState: { alignItems: "center", paddingHorizontal: 48, gap: 12 },
-    emptyTitle: { fontSize: 18, fontWeight: "700", color: V.silverDim },
+    emptyTitle: { fontSize: T.title, fontWeight: "700", color: V.silverDim },
     emptySubtitle: {
-      fontSize: 14,
+      fontSize: T.body,
       color: V.silverDim,
       textAlign: "center",
       lineHeight: 20,
@@ -1456,7 +1457,7 @@ const getStyles = (V: ReturnType<typeof getV>, isDark: boolean) =>
       gap: 12,
       backgroundColor: V.forestDeep,
     },
-    loadingText: { color: V.silverDim, fontSize: 14 },
+    loadingText: { color: V.silverDim, fontSize: T.body },
 
     inputArea: {
       flexDirection: "row",
@@ -1488,7 +1489,7 @@ const getStyles = (V: ReturnType<typeof getV>, isDark: boolean) =>
       borderColor: V.borderGreen,
       paddingHorizontal: 16,
       paddingVertical: 10,
-      fontSize: 15,
+      fontSize: T.body,
       color: V.silverBright,
       lineHeight: 20,
     },
@@ -1520,7 +1521,7 @@ const getStyles = (V: ReturnType<typeof getV>, isDark: boolean) =>
       padding: 16,
       backgroundColor: "#000",
     },
-    previewTitle: { fontSize: 17, fontWeight: "600", color: "#fff" },
+    previewTitle: { fontSize: T.lead, fontWeight: "600", color: "#fff" },
     previewSendBtn: {
       backgroundColor: V.forestLight,
       paddingHorizontal: 16,

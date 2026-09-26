@@ -504,7 +504,28 @@
     "nextBadge": "Next badge in {{count}} more",
     "allEarned": "🏆 All badges earned!",
     "visitCount": "{{count}} visits",
-    "nextBadgeIn": "Next badge in {{count}} more"
+    "nextBadgeIn": "Next badge in {{count}} more",
+    "titles": {
+      "restaurant": "Gourmet",
+      "cafe": "Coffee Hunter",
+      "club": "Night Owl",
+      "beach": "Beachcomber",
+      "landmark": "History Buff",
+      "opg": "Farm Friend",
+      "accommodation": "Traveller",
+      "market": "Market Regular",
+      "paintball": "Sharpshooter",
+      "cinema": "Cinephile",
+      "park": "Stroller",
+      "escapeRoom": "Puzzler",
+      "museum": "Museum Goer",
+      "theater": "Theatregoer",
+      "mountain": "Mountaineer",
+      "nationalPark": "Park Ranger",
+      "cave": "Caver",
+      "spa": "Unwinder",
+      "other": "Explorer"
+    }
   },
   "archive": {
     "markHint": "Mark places as visited on the map",
@@ -950,7 +971,9 @@
     "actTheater": "Show at the theatre",
     "actCinema": "Cinema",
     "actClub": "Night out",
-    "anonymous": "Anonymous user"
+    "anonymous": "Anonymous user",
+    "travelFromPrevious": "{{min}} min from the previous stop",
+    "firstStop": "First stop"
   },
   "schedBreakfast": "Breakfast",
   "schedMorningTour": "Morning sightseeing — least tourist traffic",

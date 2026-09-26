@@ -18,6 +18,7 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { API_BASE_URL } from "../config/api";
+import { T } from "../../styles/varaTheme";
 
 const { width } = Dimensions.get("window");
 
@@ -477,7 +478,7 @@ export default function AdminDashboard() {
                   >
                     <Text
                       style={{
-                        fontSize: 11,
+                        fontSize: T.caption,
                         color: "#ff9500",
                         fontWeight: "600",
                       }}
@@ -496,7 +497,7 @@ export default function AdminDashboard() {
                   >
                     <Text
                       style={{
-                        fontSize: 11,
+                        fontSize: T.caption,
                         color: "#34c759",
                         fontWeight: "600",
                       }}
@@ -548,7 +549,7 @@ export default function AdminDashboard() {
                       >
                         <Text
                           style={{
-                            fontSize: 11,
+                            fontSize: T.caption,
                             fontWeight: "700",
                             color:
                               report.type === "app" ? "#ff9500" : "#34c759",
@@ -557,17 +558,23 @@ export default function AdminDashboard() {
                           {report.type === "app" ? "🐛 Aplikacija" : "🗺 Karta"}
                         </Text>
                       </View>
-                      <Text style={{ fontSize: 12, color: "#999", flex: 1 }}>
+                      <Text
+                        style={{ fontSize: T.meta, color: "#999", flex: 1 }}
+                      >
                         {report.userName} · @{report.userUsername}
                       </Text>
-                      <Text style={{ fontSize: 11, color: "#bbb" }}>
+                      <Text style={{ fontSize: T.caption, color: "#bbb" }}>
                         {new Date(report.createdAt).toLocaleDateString("hr-HR")}
                       </Text>
                     </View>
 
                     {/* Poruka */}
                     <Text
-                      style={{ fontSize: 13, color: "#333", lineHeight: 18 }}
+                      style={{
+                        fontSize: T.meta,
+                        color: "#333",
+                        lineHeight: 18,
+                      }}
                     >
                       {report.message}
                     </Text>
@@ -596,15 +603,21 @@ export default function AdminDashboard() {
                     }}
                   >
                     <Text
-                      style={{ fontSize: 14, fontWeight: "600", color: "#333" }}
+                      style={{
+                        fontSize: T.body,
+                        fontWeight: "600",
+                        color: "#333",
+                      }}
                     >
                       {(
                         planRatings.reduce((sum, r) => sum + r.rating, 0) /
                         planRatings.length
                       ).toFixed(1)}
                     </Text>
-                    <Text style={{ fontSize: 14, color: "#f39c12" }}>★</Text>
-                    <Text style={{ fontSize: 12, color: "#999" }}>
+                    <Text style={{ fontSize: T.body, color: "#f39c12" }}>
+                      ★
+                    </Text>
+                    <Text style={{ fontSize: T.meta, color: "#999" }}>
                       ({planRatings.length})
                     </Text>
                   </View>
@@ -671,7 +684,7 @@ export default function AdminDashboard() {
                           { flexDirection: "row", alignItems: "center" },
                         ]}
                       >
-                        <Text style={{ fontSize: 13, color: "#f39c12" }}>
+                        <Text style={{ fontSize: T.meta, color: "#f39c12" }}>
                           {"★".repeat(item.rating)}
                           <Text style={{ color: "#ddd" }}>
                             {"★".repeat(5 - item.rating)}
@@ -721,12 +734,12 @@ const styles = StyleSheet.create({
     borderBottomColor: "#e0e0e0",
   },
   headerTitle: {
-    fontSize: 24,
+    fontSize: T.screen,
     fontWeight: "bold",
     color: "#333",
   },
   headerSubtitle: {
-    fontSize: 12,
+    fontSize: T.meta,
     color: "#999",
     marginTop: 2,
   },
@@ -751,13 +764,13 @@ const styles = StyleSheet.create({
     borderColor: "#e0e0e0",
   },
   summaryNumber: {
-    fontSize: 24,
+    fontSize: T.screen,
     fontWeight: "bold",
     color: "#333",
     marginTop: 8,
   },
   summaryLabel: {
-    fontSize: 12,
+    fontSize: T.meta,
     color: "#999",
     marginTop: 4,
   },
@@ -775,7 +788,7 @@ const styles = StyleSheet.create({
   searchInput: {
     flex: 1,
     paddingVertical: 12,
-    fontSize: 16,
+    fontSize: T.lead,
     color: "#333",
   },
   listContainer: {
@@ -803,19 +816,19 @@ const styles = StyleSheet.create({
   },
   userInitials: {
     color: "#fff",
-    fontSize: 18,
+    fontSize: T.title,
     fontWeight: "600",
   },
   userInfo: {
     flex: 1,
   },
   userName: {
-    fontSize: 16,
+    fontSize: T.lead,
     fontWeight: "600",
     color: "#333",
   },
   userEmail: {
-    fontSize: 12,
+    fontSize: T.meta,
     color: "#999",
     marginTop: 2,
   },
@@ -830,7 +843,7 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   userStatText: {
-    fontSize: 11,
+    fontSize: T.caption,
     color: "#666",
   },
   modalContainer: {
@@ -848,7 +861,7 @@ const styles = StyleSheet.create({
     borderBottomColor: "#e0e0e0",
   },
   modalTitle: {
-    fontSize: 18,
+    fontSize: T.title,
     fontWeight: "600",
     color: "#333",
   },
@@ -874,26 +887,26 @@ const styles = StyleSheet.create({
   },
   userDetailInitials: {
     color: "#fff",
-    fontSize: 32,
+    fontSize: T.hero,
     fontWeight: "600",
   },
   userDetailName: {
-    fontSize: 20,
+    fontSize: T.title,
     fontWeight: "600",
     color: "#333",
   },
   userDetailUsername: {
-    fontSize: 14,
+    fontSize: T.body,
     color: "#667eea",
     marginTop: 4,
   },
   userDetailEmail: {
-    fontSize: 14,
+    fontSize: T.body,
     color: "#999",
     marginTop: 4,
   },
   userDetailDate: {
-    fontSize: 12,
+    fontSize: T.meta,
     color: "#999",
     marginTop: 8,
   },
@@ -912,13 +925,13 @@ const styles = StyleSheet.create({
     borderColor: "#e0e0e0",
   },
   statNumber: {
-    fontSize: 20,
+    fontSize: T.title,
     fontWeight: "bold",
     color: "#333",
     marginTop: 8,
   },
   statLabel: {
-    fontSize: 11,
+    fontSize: T.caption,
     color: "#999",
     marginTop: 4,
   },
@@ -928,7 +941,7 @@ const styles = StyleSheet.create({
     padding: 16,
   },
   activityTitle: {
-    fontSize: 16,
+    fontSize: T.lead,
     fontWeight: "600",
     color: "#333",
     marginBottom: 12,
@@ -956,7 +969,7 @@ const styles = StyleSheet.create({
   },
   activityDate: {
     width: 80,
-    fontSize: 11,
+    fontSize: T.caption,
     color: "#666",
   },
   activityBars: {
@@ -980,7 +993,7 @@ const ratingsStyles = StyleSheet.create({
     marginBottom: 4,
   },
   headerCell: {
-    fontSize: 11,
+    fontSize: T.caption,
     color: "#999",
     fontWeight: "600",
     textTransform: "uppercase",
@@ -1007,18 +1020,18 @@ const ratingsStyles = StyleSheet.create({
     alignItems: "center",
   },
   avatarText: {
-    fontSize: 11,
+    fontSize: T.caption,
     fontWeight: "600",
     color: "#667eea",
   },
   nameText: {
-    fontSize: 13,
+    fontSize: T.meta,
     color: "#333",
     fontWeight: "500",
     flex: 1,
   },
   cell: {
-    fontSize: 13,
+    fontSize: T.meta,
     color: "#333",
   },
 });

@@ -17,7 +17,7 @@ import { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { ActivityIndicator, Text, TouchableOpacity, View } from "react-native";
 
-import { TAP_SLOP, V } from "../styles/varaTheme";
+import { T, TAP_SLOP, V } from "../styles/varaTheme";
 
 type Tone = "error" | "empty";
 
@@ -83,7 +83,7 @@ export function StateView({
         <Text
           style={{
             color: V.silverDim,
-            fontSize: 14,
+            fontSize: T.body,
             lineHeight: 21,
             textAlign: "center",
           }}
@@ -116,7 +116,9 @@ export function StateView({
           ) : (
             <Ionicons name="refresh" size={16} color={V.onPrimary} />
           )}
-          <Text style={{ color: V.onPrimary, fontWeight: "700", fontSize: 15 }}>
+          <Text
+            style={{ color: V.onPrimary, fontWeight: "700", fontSize: T.body }}
+          >
             {t("common.retry")}
           </Text>
         </TouchableOpacity>
@@ -138,7 +140,7 @@ export function StateView({
           }}
         >
           <Text
-            style={{ color: V.accentText, fontWeight: "700", fontSize: 15 }}
+            style={{ color: V.accentText, fontWeight: "700", fontSize: T.body }}
           >
             {action.label}
           </Text>
@@ -172,7 +174,7 @@ export function ErrorBanner({
       }}
     >
       <Ionicons name="alert-circle-outline" size={18} color={V.danger} />
-      <Text style={{ color: V.silverBright, fontSize: 13, flex: 1 }}>
+      <Text style={{ color: V.silverBright, fontSize: T.meta, flex: 1 }}>
         {message}
       </Text>
       {!!onRetry && (
@@ -183,7 +185,7 @@ export function ErrorBanner({
           accessibilityLabel={t("common.retry")}
         >
           <Text
-            style={{ color: V.accentText, fontWeight: "700", fontSize: 13 }}
+            style={{ color: V.accentText, fontWeight: "700", fontSize: T.meta }}
           >
             {t("common.retry")}
           </Text>

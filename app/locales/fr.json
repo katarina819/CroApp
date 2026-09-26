@@ -525,7 +525,28 @@
     "visitCount": "{{count}} visites",
     "nextBadgeIn": "Prochain badge dans {{count}} de plus",
     "allEarned": "🏆 Tous les badges gagnés !",
-    "nextBadge": "Prochain badge dans {{count}} de plus"
+    "nextBadge": "Prochain badge dans {{count}} de plus",
+    "titles": {
+      "restaurant": "Gourmet",
+      "cafe": "Accro au café",
+      "club": "Oiseau de nuit",
+      "beach": "Marin",
+      "landmark": "Féru d'histoire",
+      "opg": "Ami des fermes",
+      "accommodation": "Voyageur",
+      "market": "Chineur",
+      "paintball": "Tireur",
+      "cinema": "Cinéphile",
+      "park": "Promeneur",
+      "escapeRoom": "Énigmiste",
+      "museum": "Muséophile",
+      "theater": "Théâtreux",
+      "mountain": "Montagnard",
+      "nationalPark": "Gardien de la nature",
+      "cave": "Spéléologue",
+      "spa": "Détendu",
+      "other": "Explorateur"
+    }
   },
   "chat": {
     "activeUser": "Utilisateur actif",
@@ -975,7 +996,9 @@
     "actTheater": "Spectacle au théâtre",
     "actCinema": "Cinéma",
     "actClub": "Sortie nocturne",
-    "anonymous": "Utilisateur anonyme"
+    "anonymous": "Utilisateur anonyme",
+    "travelFromPrevious": "{{min}} min depuis l'arrêt précédent",
+    "firstStop": "Premier arrêt"
   },
   "story": {
     "myStory": "Mon story",

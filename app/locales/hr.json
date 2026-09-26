@@ -519,7 +519,28 @@
     "visitCount": "{{count}} posjeta",
     "nextBadgeIn": "Sljedeća značka za još {{count}}",
     "allEarned": "🏆 Sve značke zarađene!",
-    "nextBadge": "Sljedeća značka za {{count}} više"
+    "nextBadge": "Sljedeća značka za {{count}} više",
+    "titles": {
+      "restaurant": "Gurman",
+      "cafe": "Kafomanijak",
+      "club": "Noćna ptica",
+      "beach": "Morski vuk",
+      "landmark": "Znalac",
+      "opg": "Seljak",
+      "accommodation": "Putnik",
+      "market": "Tržničar",
+      "paintball": "Strijelac",
+      "cinema": "Filmofil",
+      "park": "Šetač",
+      "escapeRoom": "Zagonetač",
+      "museum": "Muzealac",
+      "theater": "Kazalištarac",
+      "mountain": "Planinar",
+      "nationalPark": "Čuvar prirode",
+      "cave": "Speleolog",
+      "spa": "Opuštenko",
+      "other": "Istraživač"
+    }
   },
   "chat": {
     "activeUser": "Aktivan korisnik",
@@ -972,7 +993,9 @@
     "actTheater": "Predstava u kazalištu",
     "actCinema": "Kino",
     "actClub": "Noćni izlazak",
-    "anonymous": "Anonimni korisnik"
+    "anonymous": "Anonimni korisnik",
+    "travelFromPrevious": "{{min}} min od prethodne postaje",
+    "firstStop": "Prva postaja"
   },
   "story": {
     "myStory": "Moj story",

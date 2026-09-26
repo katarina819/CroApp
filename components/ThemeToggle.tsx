@@ -7,6 +7,7 @@ import {
   ThemeMode,
 } from "../hooks/useAdaptiveTheme";
 import { useTheme } from "./AdaptiveThemeProvider";
+import { T } from "../styles/varaTheme";
 
 const OPTIONS: { key: ThemeMode; label: string; emoji: string }[] = [
   { key: "light", label: "Svjetla", emoji: "☀️" },
@@ -111,8 +112,8 @@ const s = StyleSheet.create({
     borderWidth: 1,
   },
   zoneEmoji: { fontSize: 28 },
-  zoneLabel: { fontSize: 15, fontWeight: "600" },
-  zoneSub: { fontSize: 12, marginTop: 2 },
+  zoneLabel: { fontSize: T.body, fontWeight: "600" },
+  zoneSub: { fontSize: T.meta, marginTop: 2 },
   selector: {
     flexDirection: "row",
     borderRadius: 12,
@@ -134,7 +135,7 @@ const s = StyleSheet.create({
     shadowRadius: 4,
     elevation: 2,
   },
-  optEmoji: { fontSize: 16 },
-  optLabel: { fontSize: 11, fontWeight: "500" },
-  desc: { fontSize: 12, lineHeight: 17 },
+  optEmoji: { fontSize: T.lead },
+  optLabel: { fontSize: T.caption, fontWeight: "500" },
+  desc: { fontSize: T.meta, lineHeight: 17 },
 });

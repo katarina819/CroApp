@@ -525,7 +525,28 @@
     "visitCount": "{{count}} visite",
     "nextBadgeIn": "Prossimo badge tra {{count}} visite",
     "allEarned": "🏆 Tutti i badge guadagnati!",
-    "nextBadge": "Prossimo badge tra {{count}} visite"
+    "nextBadge": "Prossimo badge tra {{count}} visite",
+    "titles": {
+      "restaurant": "Buongustaio",
+      "cafe": "Caffeinomane",
+      "club": "Nottambulo",
+      "beach": "Bagnante",
+      "landmark": "Storico",
+      "opg": "Amico della fattoria",
+      "accommodation": "Viaggiatore",
+      "market": "Mercatante",
+      "paintball": "Tiratore",
+      "cinema": "Cinefilo",
+      "park": "Passeggiatore",
+      "escapeRoom": "Enigmista",
+      "museum": "Museofilo",
+      "theater": "Teatrante",
+      "mountain": "Alpinista",
+      "nationalPark": "Custode della natura",
+      "cave": "Speleologo",
+      "spa": "Rilassato",
+      "other": "Esploratore"
+    }
   },
   "chat": {
     "activeUser": "Utente attivo",
@@ -975,7 +996,9 @@
     "actTheater": "Spettacolo a teatro",
     "actCinema": "Cinema",
     "actClub": "Serata fuori",
-    "anonymous": "Utente anonimo"
+    "anonymous": "Utente anonimo",
+    "travelFromPrevious": "{{min}} min dalla tappa precedente",
+    "firstStop": "Prima tappa"
   },
   "story": {
     "myStory": "La mia storia",

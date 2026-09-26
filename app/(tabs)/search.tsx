@@ -41,7 +41,7 @@ const PRESET_AVATARS: Record<string, any> = {
 // 3.56 — ispod praga čitljivosti. Zato ide na accentText; jedini obrub
 // koji ga je koristio dobiva punu zelenu preko borderActive.
 import { getVara } from "../../styles/adaptiveVara";
-import { V as VARA } from "../../styles/varaTheme";
+import { T, V as VARA } from "../../styles/varaTheme";
 import { StateView } from "../../components/StateView";
 
 const V = {
@@ -272,13 +272,21 @@ function ComposeMessageModal({
           }}
         >
           <Text
-            style={{ fontSize: 20, fontWeight: "800", color: V.textPrimary }}
+            style={{
+              fontSize: T.title,
+              fontWeight: "800",
+              color: V.textPrimary,
+            }}
           >
             {t("search.sendMessage")}
           </Text>
           <TouchableOpacity onPress={handleClose}>
             <Text
-              style={{ fontSize: 14, color: V.textDisabled, fontWeight: "600" }}
+              style={{
+                fontSize: T.body,
+                color: V.textDisabled,
+                fontWeight: "600",
+              }}
             >
               {t("common.close")}
             </Text>
@@ -297,7 +305,9 @@ function ComposeMessageModal({
             backgroundColor: V.bg,
           }}
         >
-          <Text style={{ fontSize: 15, fontWeight: "600", color: V.textMuted }}>
+          <Text
+            style={{ fontSize: T.body, fontWeight: "600", color: V.textMuted }}
+          >
             {t("search.messageTo")}
           </Text>
           <View
@@ -328,7 +338,9 @@ function ComposeMessageModal({
               size={28}
               V={V}
             />
-            <Text style={{ fontSize: 14, fontWeight: "600", color: V.accent }}>
+            <Text
+              style={{ fontSize: T.body, fontWeight: "600", color: V.accent }}
+            >
               @{recipient.username}
             </Text>
           </View>
@@ -345,7 +357,7 @@ function ComposeMessageModal({
               borderColor: V.inputBorder,
               paddingHorizontal: 14,
               paddingVertical: 12,
-              fontSize: 15,
+              fontSize: T.body,
               color: V.textPrimary,
               textAlignVertical: "top",
             }}
@@ -359,7 +371,7 @@ function ComposeMessageModal({
           />
           <Text
             style={{
-              fontSize: 12,
+              fontSize: T.meta,
               textAlign: "right",
               marginTop: 6,
               color: V.textMuted,
@@ -378,7 +390,9 @@ function ComposeMessageModal({
             backgroundColor: V.bgCard,
           }}
         >
-          <Text style={{ fontSize: 13, marginBottom: 10, color: V.textMuted }}>
+          <Text
+            style={{ fontSize: T.meta, marginBottom: 10, color: V.textMuted }}
+          >
             {t("search.quickMessages")}
           </Text>
           <ScrollView horizontal showsHorizontalScrollIndicator={false}>
@@ -398,7 +412,7 @@ function ComposeMessageModal({
                 >
                   <Text
                     style={{
-                      fontSize: 13,
+                      fontSize: T.meta,
                       color: V.textSecondary,
                       fontWeight: "600",
                     }}
@@ -430,7 +444,11 @@ function ComposeMessageModal({
             <ActivityIndicator color={V.textPrimary} />
           ) : (
             <Text
-              style={{ color: V.textPrimary, fontSize: 16, fontWeight: "700" }}
+              style={{
+                color: V.textPrimary,
+                fontSize: T.lead,
+                fontWeight: "700",
+              }}
             >
               {t("search.sendBtn")}
             </Text>
@@ -857,7 +875,7 @@ function makeStyles(V: ReturnType<typeof getV>) {
       borderBottomColor: V.borderBright,
       backgroundColor: V.bg,
     },
-    headerTitle: { fontSize: 20, fontWeight: "800", color: V.textPrimary },
+    headerTitle: { fontSize: T.title, fontWeight: "800", color: V.textPrimary },
     searchBarWrap: { padding: 16 },
     searchBar: {
       flexDirection: "row",
@@ -869,9 +887,9 @@ function makeStyles(V: ReturnType<typeof getV>) {
       paddingHorizontal: 14,
       paddingVertical: 10,
     },
-    searchInput: { flex: 1, fontSize: 15, color: V.textPrimary },
+    searchInput: { flex: 1, fontSize: T.body, color: V.textPrimary },
     resultsInfo: {
-      fontSize: 12,
+      fontSize: T.meta,
       paddingHorizontal: 20,
       marginBottom: 4,
       color: V.textMuted,
@@ -889,9 +907,9 @@ function makeStyles(V: ReturnType<typeof getV>) {
       gap: 12,
     },
     userInfo: { flex: 1, gap: 2 },
-    userName: { fontSize: 15, fontWeight: "700", color: V.textPrimary },
-    userUsername: { fontSize: 13, color: V.accent },
-    followersCount: { fontSize: 12, color: V.textMuted, marginTop: 1 },
+    userName: { fontSize: T.body, fontWeight: "700", color: V.textPrimary },
+    userUsername: { fontSize: T.meta, color: V.accent },
+    followersCount: { fontSize: T.meta, color: V.textMuted, marginTop: 1 },
     actions: { flexDirection: "row", alignItems: "center", gap: 8 },
     followBtn: {
       backgroundColor: V.bgCardHover,
@@ -904,7 +922,11 @@ function makeStyles(V: ReturnType<typeof getV>) {
       alignItems: "center",
     },
     followingBtn: { backgroundColor: "transparent", borderColor: V.accent },
-    followBtnText: { color: V.textPrimary, fontSize: 13, fontWeight: "600" },
+    followBtnText: {
+      color: V.textPrimary,
+      fontSize: T.meta,
+      fontWeight: "600",
+    },
     followingBtnText: { color: V.accent },
     msgBtn: {
       width: 38,
@@ -922,7 +944,7 @@ function makeStyles(V: ReturnType<typeof getV>) {
       alignItems: "center",
       gap: 12,
     },
-    loadingText: { fontSize: 14, color: V.textMuted },
+    loadingText: { fontSize: T.body, color: V.textMuted },
     emptyContainer: {
       flex: 1,
       alignItems: "center",
@@ -940,9 +962,13 @@ function makeStyles(V: ReturnType<typeof getV>) {
       justifyContent: "center",
       alignItems: "center",
     },
-    emptyTitle: { fontSize: 18, fontWeight: "700", color: V.textSecondary },
+    emptyTitle: {
+      fontSize: T.title,
+      fontWeight: "700",
+      color: V.textSecondary,
+    },
     emptySubtitle: {
-      fontSize: 14,
+      fontSize: T.body,
       textAlign: "center",
       color: V.textMuted,
       paddingHorizontal: 32,
@@ -962,7 +988,7 @@ function makeStyles(V: ReturnType<typeof getV>) {
 //     borderBottomColor: V.borderBright,
 //     backgroundColor: V.bg,
 //   },
-//   headerTitle: { fontSize: 20, fontWeight: "800", color: V.textPrimary },
+//   headerTitle: { fontSize: T.title, fontWeight: "800", color: V.textPrimary },
 
 //   // Search bar — identičan dashboard filter inputu
 //   searchBarWrap: { padding: 16 },
@@ -976,10 +1002,10 @@ function makeStyles(V: ReturnType<typeof getV>) {
 //     paddingHorizontal: 14,
 //     paddingVertical: 10,
 //   },
-//   searchInput: { flex: 1, fontSize: 15, color: V.textPrimary },
+//   searchInput: { flex: 1, fontSize: T.body, color: V.textPrimary },
 
 //   resultsInfo: {
-//     fontSize: 12,
+//     fontSize: T.meta,
 //     paddingHorizontal: 20,
 //     marginBottom: 4,
 //     color: V.textMuted,
@@ -1002,9 +1028,9 @@ function makeStyles(V: ReturnType<typeof getV>) {
 //   },
 
 //   userInfo: { flex: 1, gap: 2 },
-//   userName: { fontSize: 15, fontWeight: "700", color: V.textPrimary },
-//   userUsername: { fontSize: 13, color: V.accent },
-//   followersCount: { fontSize: 12, color: V.textMuted, marginTop: 1 },
+//   userName: { fontSize: T.body, fontWeight: "700", color: V.textPrimary },
+//   userUsername: { fontSize: T.meta, color: V.accent },
+//   followersCount: { fontSize: T.meta, color: V.textMuted, marginTop: 1 },
 
 //   // Akcijski gumbi — dashboard stil
 //   actions: { flexDirection: "row", alignItems: "center", gap: 8 },
@@ -1023,7 +1049,7 @@ function makeStyles(V: ReturnType<typeof getV>) {
 //     backgroundColor: "transparent",
 //     borderColor: V.accent,
 //   },
-//   followBtnText: { color: V.textPrimary, fontSize: 13, fontWeight: "600" },
+//   followBtnText: { color: V.textPrimary, fontSize: T.meta, fontWeight: "600" },
 //   followingBtnText: { color: V.accent },
 
 //   msgBtn: {
@@ -1039,7 +1065,7 @@ function makeStyles(V: ReturnType<typeof getV>) {
 
 //   // Loading
 //   center: { flex: 1, justifyContent: "center", alignItems: "center", gap: 12 },
-//   loadingText: { fontSize: 14, color: V.textMuted },
+//   loadingText: { fontSize: T.body, color: V.textMuted },
 
 //   // Empty state
 //   emptyContainer: {
@@ -1059,9 +1085,9 @@ function makeStyles(V: ReturnType<typeof getV>) {
 //     justifyContent: "center",
 //     alignItems: "center",
 //   },
-//   emptyTitle: { fontSize: 18, fontWeight: "700", color: V.textSecondary },
+//   emptyTitle: { fontSize: T.title, fontWeight: "700", color: V.textSecondary },
 //   emptySubtitle: {
-//     fontSize: 14,
+//     fontSize: T.body,
 //     textAlign: "center",
 //     color: V.textMuted,
 //     paddingHorizontal: 32,

@@ -27,6 +27,7 @@ import {
   markAllNotificationsRead,
   markNotificationRead,
 } from "@/utils/notificationsApi";
+import { T } from "../styles/varaTheme";
 
 function colors(isDark: boolean) {
   return {
@@ -151,7 +152,7 @@ function NotificationDetail({
             borderBottomColor: C.border,
           }}
         >
-          <Text style={{ fontSize: 18, fontWeight: "800", color: C.text }}>
+          <Text style={{ fontSize: T.title, fontWeight: "800", color: C.text }}>
             {t("notifications.detailTitle")}
           </Text>
           <CloseButton onPress={onClose} tone={isDark ? "light" : "muted"} />
@@ -165,7 +166,7 @@ function NotificationDetail({
             <Text
               style={{
                 color: C.textSub,
-                fontSize: 15,
+                fontSize: T.body,
                 fontWeight: "600",
                 marginTop: 12,
                 textAlign: "center",
@@ -202,12 +203,18 @@ function NotificationDetail({
             <View style={{ padding: 16, gap: 8 }}>
               {!!author && (
                 <Text
-                  style={{ color: C.accent, fontSize: 14, fontWeight: "700" }}
+                  style={{
+                    color: C.accent,
+                    fontSize: T.body,
+                    fontWeight: "700",
+                  }}
                 >
                   {author}
                 </Text>
               )}
-              <Text style={{ color: C.text, fontSize: 19, fontWeight: "800" }}>
+              <Text
+                style={{ color: C.text, fontSize: T.title, fontWeight: "800" }}
+              >
                 {post.title}
               </Text>
 
@@ -220,7 +227,7 @@ function NotificationDetail({
                     size={15}
                     color={C.textDim}
                   />
-                  <Text style={{ color: C.textSub, fontSize: 14, flex: 1 }}>
+                  <Text style={{ color: C.textSub, fontSize: T.body, flex: 1 }}>
                     {post.location}
                   </Text>
                 </View>
@@ -241,7 +248,11 @@ function NotificationDetail({
                 >
                   <Ionicons name="calendar" size={14} color={C.text} />
                   <Text
-                    style={{ color: C.text, fontSize: 14, fontWeight: "700" }}
+                    style={{
+                      color: C.text,
+                      fontSize: T.body,
+                      fontWeight: "700",
+                    }}
                   >
                     {t("post.eventStarts", {
                       when: eventWhen(post.eventStartAt),
@@ -252,7 +263,7 @@ function NotificationDetail({
 
               {!!post.additionalDescription && (
                 <Text
-                  style={{ color: C.textSub, fontSize: 14, lineHeight: 21 }}
+                  style={{ color: C.textSub, fontSize: T.body, lineHeight: 21 }}
                 >
                   {post.additionalDescription}
                 </Text>
@@ -356,7 +367,7 @@ export function NotificationsModal({
             borderBottomColor: C.border,
           }}
         >
-          <Text style={{ fontSize: 20, fontWeight: "800", color: C.text }}>
+          <Text style={{ fontSize: T.title, fontWeight: "800", color: C.text }}>
             {t("notifications.title")}
           </Text>
           <View style={{ flexDirection: "row", alignItems: "center", gap: 14 }}>
@@ -379,7 +390,9 @@ export function NotificationsModal({
             onPress={markAll}
             style={{ paddingHorizontal: 16, paddingVertical: 10 }}
           >
-            <Text style={{ color: C.accent, fontWeight: "700", fontSize: 14 }}>
+            <Text
+              style={{ color: C.accent, fontWeight: "700", fontSize: T.body }}
+            >
               {t("notifications.markAllRead")}
             </Text>
           </TouchableOpacity>
@@ -415,7 +428,7 @@ export function NotificationsModal({
                 <Text
                   style={{
                     color: C.textSub,
-                    fontSize: 15,
+                    fontSize: T.body,
                     fontWeight: "600",
                     marginTop: 12,
                     textAlign: "center",
@@ -428,7 +441,7 @@ export function NotificationsModal({
                 <Text
                   style={{
                     color: C.textDim,
-                    fontSize: 13,
+                    fontSize: T.meta,
                     marginTop: 6,
                     textAlign: "center",
                     lineHeight: 19,
@@ -480,7 +493,7 @@ export function NotificationsModal({
                   <Text
                     style={{
                       color: item.isRead ? C.textDim : "#fff",
-                      fontSize: 12,
+                      fontSize: T.meta,
                       fontWeight: "800",
                     }}
                   >
@@ -491,7 +504,7 @@ export function NotificationsModal({
                   <Text
                     style={{
                       color: C.text,
-                      fontSize: 15,
+                      fontSize: T.body,
                       fontWeight: item.isRead ? "600" : "800",
                     }}
                   >
@@ -499,13 +512,17 @@ export function NotificationsModal({
                   </Text>
                   {!!item.body && (
                     <Text
-                      style={{ color: C.textSub, fontSize: 13, marginTop: 3 }}
+                      style={{
+                        color: C.textSub,
+                        fontSize: T.meta,
+                        marginTop: 3,
+                      }}
                     >
                       {item.body}
                     </Text>
                   )}
                   <Text
-                    style={{ color: C.textDim, fontSize: 12, marginTop: 6 }}
+                    style={{ color: C.textDim, fontSize: T.meta, marginTop: 6 }}
                   >
                     {[
                       item.actorName,

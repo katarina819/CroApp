@@ -39,7 +39,7 @@ import {
 import MapView, { Circle, Marker, Region } from "react-native-maps";
 import { useTheme } from "../../components/AdaptiveThemeProvider";
 import { PlanMyDayModal } from "../../components/PlanMyDayModal";
-import { ag, dm, pb, pr, s, TAP_SLOP, V } from "../../styles/varaTheme";
+import { T, TAP_SLOP, V, ag, dm, pb, pr, s } from "../../styles/varaTheme";
 import { API_BASE_URL } from "../config/api";
 import {
   useInputBottomOffset,
@@ -601,12 +601,12 @@ const UI_STYLES = StyleSheet.create({
     elevation: 7,
   },
   searchPrefixIcon: {
-    fontSize: 16,
+    fontSize: T.lead,
     color: "#999",
   },
   searchInput: {
     flex: 1,
-    fontSize: 15,
+    fontSize: T.body,
     color: "#333",
     paddingVertical: 7,
   },
@@ -619,7 +619,7 @@ const UI_STYLES = StyleSheet.create({
   searchGoBtnText: {
     color: "#fff",
     fontWeight: "700",
-    fontSize: 13,
+    fontSize: T.meta,
     letterSpacing: 0.3,
   },
   searchClearBtn: {
@@ -633,7 +633,7 @@ const UI_STYLES = StyleSheet.create({
   },
   searchClearText: {
     color: "#888",
-    fontSize: 14,
+    fontSize: T.body,
     fontWeight: "700",
   },
   locationBadge: {
@@ -650,7 +650,7 @@ const UI_STYLES = StyleSheet.create({
   },
   locationBadgeText: {
     color: "#e0f0d0",
-    fontSize: 12,
+    fontSize: T.meta,
     fontWeight: "600",
   },
 
@@ -684,7 +684,7 @@ const UI_STYLES = StyleSheet.create({
     height: 22,
   },
   todChipLabel: {
-    fontSize: 12,
+    fontSize: T.meta,
     fontWeight: "700",
     color: "#444",
     letterSpacing: 0.2,
@@ -703,7 +703,7 @@ const UI_STYLES = StyleSheet.create({
   },
   filterActiveBadgeText: {
     color: "#e0f0d0",
-    fontSize: 11,
+    fontSize: T.caption,
     fontWeight: "700",
   },
 
@@ -779,7 +779,7 @@ const UI_STYLES = StyleSheet.create({
   },
   infoBarText: {
     color: "#d0e8c0",
-    fontSize: 13,
+    fontSize: T.meta,
     fontWeight: "600",
     flex: 1,
   },
@@ -793,7 +793,7 @@ const UI_STYLES = StyleSheet.create({
   },
   infoShowMoreText: {
     color: "#e0f0d0",
-    fontSize: 12,
+    fontSize: T.meta,
     fontWeight: "700",
   },
 
@@ -898,43 +898,34 @@ const UI_STYLES = StyleSheet.create({
 });
 
 const BADGE_T = [10, 20, 30, 40, 50];
-const BADGE_NAMES: Record<string, Record<number, string>> = {
-  restaurant: {
-    10: "Gurman I",
-    20: "Gurman II",
-    30: "Gurman III",
-    40: "Gurman IV",
-    50: "Gurman V",
-  },
-  cafe: {
-    10: "Kafomanijak I",
-    20: "Kafomanijak II",
-    30: "Kafomanijak III",
-    40: "Kafomanijak IV",
-    50: "Kafomanijak V",
-  },
-  accommodation: {
-    10: "Putnik I",
-    20: "Putnik II",
-    30: "Putnik III",
-    40: "Putnik IV",
-    50: "Putnik V",
-  },
-  market: {
-    10: "Tržničar I",
-    20: "Tržničar II",
-    30: "Tržničar III",
-    40: "Tržničar IV",
-    50: "Tržničar V",
-  },
-  opg: {
-    10: "Seljak I",
-    20: "Seljak II",
-    30: "Seljak III",
-    40: "Seljak IV",
-    50: "Seljak V",
-  },
-};
+/**
+ * Naziv titule za kategoriju i razinu, npr. "Planinar III".
+ *
+ * Prije je ovdje stajala tablica s upisanim hrvatskim nazivima, i to samo
+ * za pet od osamnaest kategorija. Planine, plaže, muzeji i ostalih trinaest
+ * dobivali su općenito "značka 3. razine" umjesto titule — a korisnik na
+ * njemačkom je za deset kafića dobivao "Kafomanijak III".
+ *
+ * Sada se sprema samo osnovni naziv po kategoriji (badges.titles.<id>), a
+ * razina se dopisuje kao rimski broj. Time je 19 kategorija x 5 razina x 5
+ * jezika svedeno s 475 nizova na 95, i nova kategorija traži jedan redak po
+ * jeziku umjesto pet.
+ */
+const BADGE_LEVEL_NUMERALS = ["I", "II", "III", "IV", "V"] as const;
+
+function badgeTitle(
+  t: (key: string, opts?: Record<string, unknown>) => string,
+  category: string,
+  level: number,
+): string {
+  const base = t(`badges.titles.${category}`, { defaultValue: "" });
+  const tier = BADGE_T.indexOf(level);
+  const numeral = tier >= 0 ? BADGE_LEVEL_NUMERALS[tier] : "";
+  // Kategorija bez naziva (nova, još neprevedena) ne smije dati prazan
+  // natpis — tada se vraća opisna zamjena.
+  if (!base) return t("badges.badge", { level });
+  return numeral ? `${base} ${numeral}` : base;
+}
 
 // ─── Storage helpers ──────────────────────────────────────────────────────────
 const loadJSON = async <T,>(key: string, def: T) => {
@@ -1263,7 +1254,7 @@ function UserLocationMarker() {
 //     shadowRadius: 4,
 //     elevation: 7,
 //   },
-//   emoji: { fontSize: 22 },
+//   emoji: { fontSize: T.screen },
 //   pin: {
 //     width: 5,
 //     height: 12,
@@ -1376,7 +1367,9 @@ function PlaceMarker({
               borderColor: "#fff",
             }}
           >
-            <Text style={{ fontSize: 22 }}>{EMOJIS[place.type] || "📍"}</Text>
+            <Text style={{ fontSize: T.screen }}>
+              {EMOJIS[place.type] || "📍"}
+            </Text>
           </View>
         )}
         {isVisited && (
@@ -1459,7 +1452,7 @@ function PlaceMarkerPlan({
               resizeMode="contain"
             />
           ) : (
-            <Text style={{ fontSize: 20 }}>{EMOJIS[type] || "📍"}</Text>
+            <Text style={{ fontSize: T.title }}>{EMOJIS[type] || "📍"}</Text>
           )}
         </View>
         <View
@@ -1724,7 +1717,11 @@ function PlaceDetailModal({
                   <View style={[dm.imgPh, { backgroundColor: color + "22" }]}>
                     <ActivityIndicator color={color} size="large" />
                     <Text
-                      style={{ color: V.silverDim, marginTop: 8, fontSize: 13 }}
+                      style={{
+                        color: V.silverDim,
+                        marginTop: 8,
+                        fontSize: T.meta,
+                      }}
                     >
                       {t("common.loading")}
                     </Text>
@@ -1755,7 +1752,11 @@ function PlaceDetailModal({
                   hitSlop={TAP_SLOP}
                 >
                   <Text
-                    style={{ color: "#fff", fontSize: 15, fontWeight: "700" }}
+                    style={{
+                      color: "#fff",
+                      fontSize: T.body,
+                      fontWeight: "700",
+                    }}
                   >
                     ✕
                   </Text>
@@ -1780,7 +1781,7 @@ function PlaceDetailModal({
                     )
                   }
                 >
-                  <Text style={{ fontSize: 18 }}></Text>
+                  <Text style={{ fontSize: T.title }}></Text>
                 </TouchableOpacity> */}
               </View>
 
@@ -1972,7 +1973,7 @@ function PlaceDetailModal({
                       style={{
                         color: V.visited,
                         fontWeight: "700",
-                        fontSize: 15,
+                        fontSize: T.body,
                       }}
                     >
                       ✓ {t("map.visited")}
@@ -2122,10 +2123,10 @@ function PlaceDetailModal({
 //     borderRadius: 20,
 //     marginBottom: 10,
 //   },
-//   badgeTxt: { color: "#fff", fontSize: 13, fontWeight: "700" },
-//   name: { fontSize: 22, fontWeight: "800", color: "#1a1a1a", marginBottom: 6 },
-//   meta: { fontSize: 14, color: "#666", marginBottom: 4 },
-//   rating: { fontSize: 15, color: "#ff9500", marginBottom: 8 },
+//   badgeTxt: { color: "#fff", fontSize: T.meta, fontWeight: "700" },
+//   name: { fontSize: T.screen, fontWeight: "800", color: "#1a1a1a", marginBottom: 6 },
+//   meta: { fontSize: T.body, color: "#666", marginBottom: 4 },
+//   rating: { fontSize: T.body, color: "#ff9500", marginBottom: 8 },
 //   hoursBox: {
 //     backgroundColor: "#f5f5f5",
 //     borderRadius: 12,
@@ -2133,12 +2134,12 @@ function PlaceDetailModal({
 //     marginVertical: 12,
 //   },
 //   hoursTitle: {
-//     fontSize: 14,
+//     fontSize: T.body,
 //     fontWeight: "700",
 //     color: "#333",
 //     marginBottom: 6,
 //   },
-//   hoursText: { fontSize: 13, color: "#555", lineHeight: 20 },
+//   hoursText: { fontSize: T.meta, color: "#555", lineHeight: 20 },
 //   notifRow: {
 //     flexDirection: "row",
 //     alignItems: "center",
@@ -2148,7 +2149,7 @@ function PlaceDetailModal({
 //     padding: 14,
 //     marginBottom: 12,
 //   },
-//   notifLabel: { fontSize: 14, color: "#333", fontWeight: "600", flex: 1 },
+//   notifLabel: { fontSize: T.body, color: "#333", fontWeight: "600", flex: 1 },
 //   reviewBox: {
 //     backgroundColor: "#fafafa",
 //     borderRadius: 14,
@@ -2156,14 +2157,14 @@ function PlaceDetailModal({
 //     marginBottom: 16,
 //     gap: 12,
 //   },
-//   reviewTitle: { fontSize: 15, fontWeight: "700", color: "#333" },
+//   reviewTitle: { fontSize: T.body, fontWeight: "700", color: "#333" },
 //   commentInput: {
 //     backgroundColor: "#fff",
 //     borderWidth: 1,
 //     borderColor: "#e0e0e0",
 //     borderRadius: 10,
 //     padding: 12,
-//     fontSize: 14,
+//     fontSize: T.body,
 //     color: "#333",
 //     minHeight: 80,
 //     textAlignVertical: "top",
@@ -2176,11 +2177,11 @@ function PlaceDetailModal({
 //     alignSelf: "flex-start",
 //   },
 //   returnA: { backgroundColor: "#e8f5e9" },
-//   returnTxt: { fontSize: 14, color: "#333", fontWeight: "600" },
+//   returnTxt: { fontSize: T.body, color: "#333", fontWeight: "600" },
 //   reviewBtn: { borderRadius: 12, paddingVertical: 12, alignItems: "center" },
-//   reviewBtnTxt: { color: "#fff", fontWeight: "700", fontSize: 15 },
+//   reviewBtnTxt: { color: "#fff", fontWeight: "700", fontSize: T.body },
 //   visitBtn: { borderRadius: 14, paddingVertical: 14, alignItems: "center" },
-//   visitBtnTxt: { color: "#fff", fontSize: 16, fontWeight: "700" },
+//   visitBtnTxt: { color: "#fff", fontSize: T.lead, fontWeight: "700" },
 //   visitedBadge: {
 //     backgroundColor: "#e8f5e9",
 //     borderRadius: 14,
@@ -2352,12 +2353,14 @@ function NotificationSettingsModal({
             backgroundColor: DC.bg,
           }}
         >
-          <Text style={{ fontSize: 20, fontWeight: "800", color: DC.text }}>
+          <Text
+            style={{ fontSize: T.title, fontWeight: "800", color: DC.text }}
+          >
             {t("map.notifSettings")}
           </Text>
           <TouchableOpacity onPress={onClose}>
             <Text
-              style={{ fontSize: 14, color: DC.textDim, fontWeight: "600" }}
+              style={{ fontSize: T.body, color: DC.textDim, fontWeight: "600" }}
             >
               {t("common.close")}
             </Text>
@@ -2389,7 +2392,9 @@ function NotificationSettingsModal({
                 marginBottom: 10,
               }}
             >
-              <Text style={{ fontSize: 15, fontWeight: "700", color: DC.text }}>
+              <Text
+                style={{ fontSize: T.body, fontWeight: "700", color: DC.text }}
+              >
                 {t("map.appNotifications")}
               </Text>
               <Switch
@@ -2422,7 +2427,9 @@ function NotificationSettingsModal({
                 borderColor: DC.borderDim,
               }}
             >
-              <Text style={{ fontSize: 15, fontWeight: "700", color: DC.text }}>
+              <Text
+                style={{ fontSize: T.body, fontWeight: "700", color: DC.text }}
+              >
                 {t("map.emailNotifications")}
               </Text>
               <Switch
@@ -2452,7 +2459,7 @@ function NotificationSettingsModal({
                   borderColor: DC.border,
                   paddingHorizontal: 14,
                   paddingVertical: 10,
-                  fontSize: 15,
+                  fontSize: T.body,
                   color: DC.text,
                 }}
                 placeholder={t("auth.emailPlaceholder")}
@@ -2481,11 +2488,17 @@ function NotificationSettingsModal({
             >
               <View style={{ flex: 1, marginRight: 12 }}>
                 <Text
-                  style={{ fontSize: 15, fontWeight: "700", color: DC.text }}
+                  style={{
+                    fontSize: T.body,
+                    fontWeight: "700",
+                    color: DC.text,
+                  }}
                 >
                   {t("notif.globalActivities")}
                 </Text>
-                <Text style={{ fontSize: 12, color: DC.textDim, marginTop: 2 }}>
+                <Text
+                  style={{ fontSize: T.meta, color: DC.textDim, marginTop: 2 }}
+                >
                   {t("notif.globalActivitiesHint")}
                 </Text>
               </View>
@@ -2515,7 +2528,11 @@ function NotificationSettingsModal({
               }}
             >
               <Text
-                style={{ fontSize: 14, fontWeight: "700", color: DC.textSub }}
+                style={{
+                  fontSize: T.body,
+                  fontWeight: "700",
+                  color: DC.textSub,
+                }}
               >
                 {t("profile.notifications")}
               </Text>
@@ -2525,7 +2542,7 @@ function NotificationSettingsModal({
                 >
                   <Text
                     style={{
-                      fontSize: 13,
+                      fontSize: T.meta,
                       color: DC.accent,
                       fontWeight: "600",
                     }}
@@ -2564,7 +2581,7 @@ function NotificationSettingsModal({
                     />
                     <Text
                       style={{
-                        fontSize: 11,
+                        fontSize: T.caption,
                         fontWeight: "600",
                         color: on ? "#fff" : DC.textSub,
                         textAlign: "center",
@@ -2623,7 +2640,11 @@ function NotificationSettingsModal({
               }}
             >
               <Text
-                style={{ fontSize: 14, fontWeight: "700", color: DC.textSub }}
+                style={{
+                  fontSize: T.body,
+                  fontWeight: "700",
+                  color: DC.textSub,
+                }}
               >
                 {t("map.forAgeGroup")}
               </Text>
@@ -2633,7 +2654,7 @@ function NotificationSettingsModal({
                 >
                   <Text
                     style={{
-                      fontSize: 13,
+                      fontSize: T.meta,
                       color: DC.accent,
                       fontWeight: "600",
                     }}
@@ -2670,7 +2691,7 @@ function NotificationSettingsModal({
                     <View>
                       <Text
                         style={{
-                          fontSize: 13,
+                          fontSize: T.meta,
                           fontWeight: "700",
                           color: active ? "#fff" : DC.text,
                         }}
@@ -2713,7 +2734,9 @@ function NotificationSettingsModal({
               );
             }}
           >
-            <Text style={{ color: DC.text, fontSize: 16, fontWeight: "700" }}>
+            <Text
+              style={{ color: DC.text, fontSize: T.lead, fontWeight: "700" }}
+            >
               {t("common.save")}
             </Text>
           </TouchableOpacity>
@@ -3520,7 +3543,11 @@ export function ActivityGroupsModal({
               }}
             >
               <Text
-                style={{ color: DC.accent, fontSize: 13, fontWeight: "600" }}
+                style={{
+                  color: DC.accent,
+                  fontSize: T.meta,
+                  fontWeight: "600",
+                }}
               >
                 ← {t("common.back")}
               </Text>
@@ -3552,7 +3579,7 @@ export function ActivityGroupsModal({
                 <Text
                   style={{
                     color: DC.text,
-                    fontSize: 13,
+                    fontSize: T.meta,
                     fontWeight: "800",
                     letterSpacing: 0.3,
                   }}
@@ -3573,7 +3600,11 @@ export function ActivityGroupsModal({
                 }}
               >
                 <Text
-                  style={{ color: DC.accent, fontSize: 13, fontWeight: "700" }}
+                  style={{
+                    color: DC.accent,
+                    fontSize: T.meta,
+                    fontWeight: "700",
+                  }}
                 >
                   {t("groups.leave")}
                 </Text>
@@ -3663,7 +3694,7 @@ export function ActivityGroupsModal({
                     { backgroundColor: DC.cardHover, borderColor: DC.border },
                   ]}
                 >
-                  <Text style={{ color: DC.accent, fontSize: 18 }}>+</Text>
+                  <Text style={{ color: DC.accent, fontSize: T.title }}>+</Text>
                 </View>
                 <Text style={{ fontSize: 10, color: DC.textDim, marginTop: 2 }}>
                   {t("groups.freeSpots")}
@@ -3691,7 +3722,7 @@ export function ActivityGroupsModal({
                   <View style={{ alignItems: "center", marginVertical: 6 }}>
                     <Text
                       style={{
-                        fontSize: 12,
+                        fontSize: T.meta,
                         color: DC.textDim,
                         fontStyle: "italic",
                       }}
@@ -3733,7 +3764,7 @@ export function ActivityGroupsModal({
                         <Text
                           style={{
                             color: DC.text,
-                            fontSize: 12,
+                            fontSize: T.meta,
                             fontWeight: "700",
                           }}
                         >
@@ -3762,7 +3793,7 @@ export function ActivityGroupsModal({
                       <Text
                         style={{
                           color: isMe ? "#fff" : DC.text,
-                          fontSize: 14,
+                          fontSize: T.body,
                         }}
                       >
                         {text}
@@ -3826,7 +3857,11 @@ export function ActivityGroupsModal({
                 disabled={!chatMsg.trim()}
               >
                 <Text
-                  style={{ color: "#fff", fontSize: 16, letterSpacing: -0.5 }}
+                  style={{
+                    color: "#fff",
+                    fontSize: T.lead,
+                    letterSpacing: -0.5,
+                  }}
                 >
                   ➤
                 </Text>
@@ -3853,7 +3888,11 @@ export function ActivityGroupsModal({
                 onPress={() => joinGroup(selectedGroup.id)}
               >
                 <Text
-                  style={{ color: DC.text, fontSize: 16, fontWeight: "700" }}
+                  style={{
+                    color: DC.text,
+                    fontSize: T.lead,
+                    fontWeight: "700",
+                  }}
                 >
                   {t("groups.joinGroup")}
                 </Text>
@@ -3893,7 +3932,7 @@ export function ActivityGroupsModal({
                       <Text
                         style={{
                           color: "#fff",
-                          fontSize: 18,
+                          fontSize: T.title,
                           fontWeight: "800",
                         }}
                       >
@@ -4018,7 +4057,7 @@ export function ActivityGroupsModal({
             <Text
               style={{
                 flex: 1,
-                fontSize: 20,
+                fontSize: T.title,
                 fontWeight: "800",
                 color: DC.text,
               }}
@@ -4027,7 +4066,11 @@ export function ActivityGroupsModal({
             </Text>
             <TouchableOpacity onPress={() => setShowCreate(false)}>
               <Text
-                style={{ fontSize: 16, color: DC.accent, fontWeight: "700" }}
+                style={{
+                  fontSize: T.lead,
+                  color: DC.accent,
+                  fontWeight: "700",
+                }}
               >
                 {t("common.back")}
               </Text>
@@ -4049,7 +4092,7 @@ export function ActivityGroupsModal({
             >
               <Text
                 style={{
-                  fontSize: 14,
+                  fontSize: T.body,
                   fontWeight: "700",
                   color: DC.textSub,
                   marginBottom: 10,
@@ -4094,7 +4137,7 @@ export function ActivityGroupsModal({
                       />
                       <Text
                         style={{
-                          fontSize: 11,
+                          fontSize: T.caption,
                           fontWeight: "600",
                           color: active ? "#fff" : DC.textSub,
                           textAlign: "center",
@@ -4119,7 +4162,7 @@ export function ActivityGroupsModal({
             >
               <Text
                 style={{
-                  fontSize: 14,
+                  fontSize: T.body,
                   fontWeight: "700",
                   color: DC.textSub,
                   marginBottom: 10,
@@ -4135,7 +4178,7 @@ export function ActivityGroupsModal({
                   borderColor: DC.border,
                   paddingHorizontal: 14,
                   paddingVertical: 10,
-                  fontSize: 15,
+                  fontSize: T.body,
                   color: DC.text,
                 }}
                 placeholder={t("groups.activityPlaceholder")}
@@ -4158,7 +4201,7 @@ export function ActivityGroupsModal({
             >
               <Text
                 style={{
-                  fontSize: 14,
+                  fontSize: T.body,
                   fontWeight: "700",
                   color: DC.textSub,
                   marginBottom: 10,
@@ -4174,7 +4217,7 @@ export function ActivityGroupsModal({
                   borderColor: DC.border,
                   paddingHorizontal: 14,
                   paddingVertical: 10,
-                  fontSize: 15,
+                  fontSize: T.body,
                   color: DC.text,
                 }}
                 placeholder={t("groups.locationPlaceholder")}
@@ -4195,14 +4238,14 @@ export function ActivityGroupsModal({
                   <Text
                     style={{
                       color: "#34c759",
-                      fontSize: 14,
+                      fontSize: T.body,
                       fontWeight: "700",
                     }}
                   >
                     ✓ Lokacija potvrđena
                   </Text>
                 ) : newGroup.locationName.trim().length >= 3 ? (
-                  <Text style={{ color: DC.textDim, fontSize: 12 }}>
+                  <Text style={{ color: DC.textDim, fontSize: T.meta }}>
                     Odaberite lokaciju s popisa da je potvrdite
                   </Text>
                 ) : null}
@@ -4233,7 +4276,7 @@ export function ActivityGroupsModal({
                       onPress={() => selectLocationSuggestion(sug)}
                     >
                       <Text
-                        style={{ color: DC.text, fontSize: 13 }}
+                        style={{ color: DC.text, fontSize: T.meta }}
                         numberOfLines={2}
                       >
                         📍 {sug.name}
@@ -4254,7 +4297,7 @@ export function ActivityGroupsModal({
             >
               <Text
                 style={{
-                  fontSize: 14,
+                  fontSize: T.body,
                   fontWeight: "700",
                   color: DC.textSub,
                   marginBottom: 10,
@@ -4270,7 +4313,7 @@ export function ActivityGroupsModal({
                   borderColor: DC.border,
                   paddingHorizontal: 14,
                   paddingVertical: 10,
-                  fontSize: 15,
+                  fontSize: T.body,
                   color: DC.text,
                   minHeight: 80,
                   textAlignVertical: "top",
@@ -4296,7 +4339,7 @@ export function ActivityGroupsModal({
             >
               <Text
                 style={{
-                  fontSize: 14,
+                  fontSize: T.body,
                   fontWeight: "700",
                   color: DC.textSub,
                   marginBottom: 10,
@@ -4324,7 +4367,7 @@ export function ActivityGroupsModal({
                     >
                       <Text
                         style={{
-                          fontSize: 13,
+                          fontSize: T.meta,
                           color: active ? DC.text : DC.textDim,
                           fontWeight: active ? "700" : "400",
                         }}
@@ -4350,7 +4393,9 @@ export function ActivityGroupsModal({
               }}
               onPress={createGroup}
             >
-              <Text style={{ color: DC.text, fontSize: 16, fontWeight: "700" }}>
+              <Text
+                style={{ color: DC.text, fontSize: T.lead, fontWeight: "700" }}
+              >
                 {t("groups.postActivity")}
               </Text>
             </TouchableOpacity>
@@ -4372,12 +4417,18 @@ export function ActivityGroupsModal({
               backgroundColor: DC.bg,
             }}
           >
-            <Text style={{ fontSize: 20, fontWeight: "800", color: DC.text }}>
+            <Text
+              style={{ fontSize: T.title, fontWeight: "800", color: DC.text }}
+            >
               {t("groups.title")}
             </Text>
             <TouchableOpacity onPress={onClose}>
               <Text
-                style={{ fontSize: 14, color: DC.textDim, fontWeight: "600" }}
+                style={{
+                  fontSize: T.body,
+                  color: DC.textDim,
+                  fontWeight: "600",
+                }}
               >
                 {t("common.close")}
               </Text>
@@ -4394,12 +4445,14 @@ export function ActivityGroupsModal({
               }}
             >
               <Text style={{ fontSize: 64 }}>🤝</Text>
-              <Text style={{ fontSize: 18, fontWeight: "700", color: DC.text }}>
+              <Text
+                style={{ fontSize: T.title, fontWeight: "700", color: DC.text }}
+              >
                 {t("groups.noActivities")}
               </Text>
               <Text
                 style={{
-                  fontSize: 14,
+                  fontSize: T.body,
                   color: DC.textDim,
                   textAlign: "center",
                   paddingHorizontal: 40,
@@ -4496,7 +4549,7 @@ export function ActivityGroupsModal({
                       <View style={{ flex: 1 }}>
                         <Text
                           style={{
-                            fontSize: 16,
+                            fontSize: T.lead,
                             fontWeight: "800",
                             color: DC.text,
                           }}
@@ -4510,7 +4563,7 @@ export function ActivityGroupsModal({
                         </Text>
                         <Text
                           style={{
-                            fontSize: 13,
+                            fontSize: T.meta,
                             color: DC.accent,
                             marginTop: 2,
                           }}
@@ -4520,7 +4573,7 @@ export function ActivityGroupsModal({
                         {g.description ? (
                           <Text
                             style={{
-                              fontSize: 13,
+                              fontSize: T.meta,
                               color: DC.textDim,
                               marginTop: 4,
                             }}
@@ -4603,7 +4656,7 @@ export function ActivityGroupsModal({
                         })}
                         <Text
                           style={{
-                            fontSize: 12,
+                            fontSize: T.meta,
                             color: DC.textSub,
                             fontWeight: "600",
                             marginLeft: 4,
@@ -4619,7 +4672,9 @@ export function ActivityGroupsModal({
                           alignItems: "center",
                         }}
                       >
-                        <Text style={{ fontSize: 11, color: DC.textDim }}>
+                        <Text
+                          style={{ fontSize: T.caption, color: DC.textDim }}
+                        >
                           {timeStr}
                         </Text>
                         {isCreator ? (
@@ -4635,7 +4690,7 @@ export function ActivityGroupsModal({
                           >
                             <Text
                               style={{
-                                fontSize: 11,
+                                fontSize: T.caption,
                                 color: DC.accent,
                                 fontWeight: "700",
                               }}
@@ -4654,7 +4709,7 @@ export function ActivityGroupsModal({
                           >
                             <Text
                               style={{
-                                fontSize: 11,
+                                fontSize: T.caption,
                                 color: "#34c759",
                                 fontWeight: "700",
                               }}
@@ -4671,7 +4726,9 @@ export function ActivityGroupsModal({
                               paddingVertical: 4,
                             }}
                           >
-                            <Text style={{ fontSize: 11, color: DC.textDim }}>
+                            <Text
+                              style={{ fontSize: T.caption, color: DC.textDim }}
+                            >
                               {t("groups.full")}
                             </Text>
                           </View>
@@ -4689,7 +4746,7 @@ export function ActivityGroupsModal({
                           >
                             <Text
                               style={{
-                                fontSize: 12,
+                                fontSize: T.meta,
                                 color: DC.text,
                                 fontWeight: "700",
                               }}
@@ -4727,7 +4784,9 @@ export function ActivityGroupsModal({
             }}
             onPress={() => setShowCreate(true)}
           >
-            <Text style={{ color: DC.text, fontSize: 16, fontWeight: "700" }}>
+            <Text
+              style={{ color: DC.text, fontSize: T.lead, fontWeight: "700" }}
+            >
               {t("groups.create")}
             </Text>
           </TouchableOpacity>
@@ -4760,11 +4819,15 @@ export function ActivityGroupsModal({
             }}
           >
             <Text
-              style={{ fontSize: 22, textAlign: "center", marginBottom: 8 }}
+              style={{
+                fontSize: T.screen,
+                textAlign: "center",
+                marginBottom: 8,
+              }}
             ></Text>
             <Text
               style={{
-                fontSize: 17,
+                fontSize: T.lead,
                 fontWeight: "800",
                 color: DC.text,
                 textAlign: "center",
@@ -4775,7 +4838,7 @@ export function ActivityGroupsModal({
             </Text>
             <Text
               style={{
-                fontSize: 13,
+                fontSize: T.meta,
                 color: DC.textDim,
                 textAlign: "center",
                 marginBottom: 24,
@@ -4799,7 +4862,7 @@ export function ActivityGroupsModal({
               <Text
                 style={{
                   color: isDark ? "#c8d8a0" : "#2a5a10",
-                  fontSize: 15,
+                  fontSize: T.body,
                   fontWeight: "700",
                 }}
               >
@@ -4818,7 +4881,11 @@ export function ActivityGroupsModal({
               onPress={() => setShowDeleteConfirm(null)}
             >
               <Text
-                style={{ color: DC.textSub, fontSize: 15, fontWeight: "600" }}
+                style={{
+                  color: DC.textSub,
+                  fontSize: T.body,
+                  fontWeight: "600",
+                }}
               >
                 {t("common.cancel")}
               </Text>
@@ -4884,8 +4951,8 @@ export function ActivityGroupsModal({
 //     justifyContent: "center" as const,
 //     alignItems: "center" as const,
 //   },
-//   dmTitle: { fontSize: 16, fontWeight: "700" as const, color: "#1a1a1a" },
-//   dmSubtitle: { fontSize: 14, color: "#667eea", marginTop: 2 },
+//   dmTitle: { fontSize: T.lead, fontWeight: "700" as const, color: "#1a1a1a" },
+//   dmSubtitle: { fontSize: T.body, color: "#667eea", marginTop: 2 },
 //   dmWarnBadge: {
 //     backgroundColor: "#fff8e6",
 //     borderRadius: 8,
@@ -4896,7 +4963,7 @@ export function ActivityGroupsModal({
 //     backgroundColor: "#f5f5f5",
 //     borderRadius: 14,
 //     padding: 14,
-//     fontSize: 15,
+//     fontSize: T.body,
 //     minHeight: 90,
 //     color: "#333",
 //     marginBottom: 12,
@@ -4907,7 +4974,7 @@ export function ActivityGroupsModal({
 //     paddingHorizontal: 12,
 //     paddingVertical: 7,
 //   },
-//   dmQuickText: { fontSize: 13, color: "#667eea", fontWeight: "600" },
+//   dmQuickText: { fontSize: T.meta, color: "#667eea", fontWeight: "600" },
 //   dmActions: {
 //     flexDirection: "row" as const,
 //     gap: 10,
@@ -4920,7 +4987,7 @@ export function ActivityGroupsModal({
 //     backgroundColor: "#f0f0f0",
 //     alignItems: "center" as const,
 //   },
-//   dmCancelText: { color: "#666", fontSize: 14, fontWeight: "600" },
+//   dmCancelText: { color: "#666", fontSize: T.body, fontWeight: "600" },
 //   dmSendBtn: {
 //     flex: 1,
 //     paddingVertical: 13,
@@ -4939,11 +5006,11 @@ export function ActivityGroupsModal({
 //     shadowOpacity: 0,
 //     elevation: 0,
 //   },
-//   dmSendText: { color: "#fff", fontSize: 15, fontWeight: "700" },
+//   dmSendText: { color: "#fff", fontSize: T.body, fontWeight: "700" },
 
-//   chatHeaderBack: { color: "#fff", fontSize: 22 },
-//   chatHeaderTitle: { color: "#fff", fontSize: 16, fontWeight: "800" },
-//   chatHeaderSub: { color: "rgba(255,255,255,0.8)", fontSize: 12 },
+//   chatHeaderBack: { color: "#fff", fontSize: T.screen },
+//   chatHeaderTitle: { color: "#fff", fontSize: T.lead, fontWeight: "800" },
+//   chatHeaderSub: { color: "rgba(255,255,255,0.8)", fontSize: T.meta },
 //   membersRow: {
 //     maxHeight: 72,
 //     borderBottomWidth: 1,
@@ -4979,7 +5046,7 @@ export function ActivityGroupsModal({
 //     justifyContent: "center",
 //     alignItems: "center",
 //   },
-//   msgSender: { fontSize: 11, color: "#999", marginBottom: 2 },
+//   msgSender: { fontSize: T.caption, color: "#999", marginBottom: 2 },
 //   bubble: { borderRadius: 16, paddingHorizontal: 12, paddingVertical: 8 },
 //   bubbleMine: { backgroundColor: "#667eea", borderBottomRightRadius: 4 },
 //   bubbleOther: { backgroundColor: "#f2f2f7", borderBottomLeftRadius: 4 },
@@ -4998,7 +5065,7 @@ export function ActivityGroupsModal({
 //     borderRadius: 22,
 //     paddingHorizontal: 16,
 //     paddingVertical: 10,
-//     fontSize: 15,
+//     fontSize: T.body,
 //     color: "#333",
 //   },
 //   sendBtn: {
@@ -5015,7 +5082,7 @@ export function ActivityGroupsModal({
 //     paddingVertical: 14,
 //     alignItems: "center",
 //   },
-//   joinBtnText: { color: "#fff", fontSize: 16, fontWeight: "700" },
+//   joinBtnText: { color: "#fff", fontSize: T.lead, fontWeight: "700" },
 //   // Nav header (forma za kreiranje)
 //   navHeader: {
 //     flexDirection: "row",
@@ -5026,10 +5093,10 @@ export function ActivityGroupsModal({
 //     borderBottomWidth: 1,
 //     borderBottomColor: "#eee",
 //   },
-//   navHeaderLink: { fontSize: 16, color: "#667eea" },
-//   navHeaderTitle: { fontSize: 17, fontWeight: "800" },
+//   navHeaderLink: { fontSize: T.lead, color: "#667eea" },
+//   navHeaderTitle: { fontSize: T.lead, fontWeight: "800" },
 //   formLabel: {
-//     fontSize: 14,
+//     fontSize: T.body,
 //     fontWeight: "700",
 //     color: "#333",
 //     marginBottom: 8,
@@ -5038,7 +5105,7 @@ export function ActivityGroupsModal({
 //     backgroundColor: "#f5f5f5",
 //     borderRadius: 12,
 //     padding: 14,
-//     fontSize: 15,
+//     fontSize: T.body,
 //     color: "#333",
 //     marginBottom: 16,
 //     borderWidth: 1,
@@ -5051,7 +5118,7 @@ export function ActivityGroupsModal({
 //     backgroundColor: "#f0f0f0",
 //   },
 //   templateChipActive: { backgroundColor: "#667eea" },
-//   templateChipText: { fontSize: 13, fontWeight: "600", color: "#444" },
+//   templateChipText: { fontSize: T.meta, fontWeight: "600", color: "#444" },
 //   // Lista grupa
 //   listHeader: {
 //     backgroundColor: "#667eea",
@@ -5061,7 +5128,7 @@ export function ActivityGroupsModal({
 //     alignItems: "center",
 //     justifyContent: "space-between",
 //   },
-//   listHeaderTitle: { color: "#fff", fontSize: 18, fontWeight: "800" },
+//   listHeaderTitle: { color: "#fff", fontSize: T.title, fontWeight: "800" },
 //   newBtn: {
 //     backgroundColor: "rgba(255,255,255,0.25)",
 //     borderRadius: 20,
@@ -5080,9 +5147,9 @@ export function ActivityGroupsModal({
 //     shadowOpacity: 0.08,
 //     shadowRadius: 4,
 //   },
-//   groupTitle: { fontSize: 16, fontWeight: "800", color: "#1a1a1a" },
-//   groupLocation: { fontSize: 13, color: "#667eea", marginTop: 2 },
-//   groupDesc: { fontSize: 13, color: "#666", marginTop: 4 },
+//   groupTitle: { fontSize: T.lead, fontWeight: "800", color: "#1a1a1a" },
+//   groupLocation: { fontSize: T.meta, color: "#667eea", marginTop: 2 },
+//   groupDesc: { fontSize: T.meta, color: "#666", marginTop: 4 },
 //   groupIcon: {
 //     width: 44,
 //     height: 44,
@@ -5107,21 +5174,21 @@ export function ActivityGroupsModal({
 //     borderWidth: 2,
 //     borderColor: "#fff",
 //   },
-//   groupCount: { fontSize: 12, color: "#666", fontWeight: "600", marginLeft: 4 },
+//   groupCount: { fontSize: T.meta, color: "#666", fontWeight: "600", marginLeft: 4 },
 //   badgeOwn: {
 //     backgroundColor: "#f0f0ff",
 //     borderRadius: 12,
 //     paddingHorizontal: 10,
 //     paddingVertical: 4,
 //   },
-//   badgeOwnText: { fontSize: 11, color: "#667eea", fontWeight: "700" },
+//   badgeOwnText: { fontSize: T.caption, color: "#667eea", fontWeight: "700" },
 //   badgeMember: {
 //     backgroundColor: "#e8f5e9",
 //     borderRadius: 12,
 //     paddingHorizontal: 10,
 //     paddingVertical: 4,
 //   },
-//   badgeMemberText: { fontSize: 11, color: "#34c759", fontWeight: "700" },
+//   badgeMemberText: { fontSize: T.caption, color: "#34c759", fontWeight: "700" },
 //   badgeFull: {
 //     backgroundColor: "#f9f9f9",
 //     borderRadius: 12,
@@ -5567,7 +5634,7 @@ function PlaceDetailInPlan({
           <Text style={{ fontWeight: "700", marginBottom: 4 }}>
             🕐 {t("map.openingHours")}
           </Text>
-          <Text style={{ fontSize: 13, color: "#555" }}>
+          <Text style={{ fontSize: T.meta, color: "#555" }}>
             {details.openingHours}
           </Text>
         </View>
@@ -5592,26 +5659,26 @@ function PlaceDetailInPlan({
 //     borderBottomColor: "#eee",
 //     backgroundColor: "#fff",
 //   },
-//   headerTitle: { fontSize: 16, fontWeight: "700", color: "#1a1a1a" },
+//   headerTitle: { fontSize: T.lead, fontWeight: "700", color: "#1a1a1a" },
 //   headerLink: {
-//     fontSize: 14,
+//     fontSize: T.body,
 //     color: "#667eea",
 //     fontWeight: "600",
 //     minWidth: 60,
 //   },
 //   sectionTitle: {
-//     fontSize: 15,
+//     fontSize: T.body,
 //     fontWeight: "700",
 //     color: "#1a1a1a",
 //     marginBottom: 10,
 //     marginTop: 20,
 //   },
-//   label: { fontSize: 13, color: "#666", marginBottom: 8 },
+//   label: { fontSize: T.meta, color: "#666", marginBottom: 8 },
 //   input: {
 //     backgroundColor: "#f5f5f5",
 //     borderRadius: 12,
 //     padding: 12,
-//     fontSize: 15,
+//     fontSize: T.body,
 //     color: "#333",
 //     marginBottom: 10,
 //     borderWidth: 1,
@@ -5640,7 +5707,7 @@ function PlaceDetailInPlan({
 //     minWidth: 64,
 //   },
 //   chipActive: { backgroundColor: "#667eea" },
-//   chipText: { fontSize: 13, fontWeight: "600", color: "#555" },
+//   chipText: { fontSize: T.meta, fontWeight: "600", color: "#555" },
 //   chipTextActive: { color: "#fff" },
 //   generateBtn: {
 //     backgroundColor: "#667eea",
@@ -5649,10 +5716,10 @@ function PlaceDetailInPlan({
 //     alignItems: "center",
 //     marginTop: 8,
 //   },
-//   generateBtnText: { color: "#fff", fontSize: 16, fontWeight: "700" },
+//   generateBtnText: { color: "#fff", fontSize: T.lead, fontWeight: "700" },
 //   generateHint: {
 //     textAlign: "center",
-//     fontSize: 12,
+//     fontSize: T.meta,
 //     color: "#999",
 //     marginTop: 10,
 //   },
@@ -5664,13 +5731,13 @@ function PlaceDetailInPlan({
 //   },
 //   loadingIcon: { fontSize: 64, marginTop: 24, marginBottom: 8 },
 //   loadingText: {
-//     fontSize: 18,
+//     fontSize: T.title,
 //     fontWeight: "700",
 //     color: "#1a1a1a",
 //     textAlign: "center",
 //   },
 //   loadingHint: {
-//     fontSize: 13,
+//     fontSize: T.meta,
 //     color: "#999",
 //     marginTop: 8,
 //     textAlign: "center",
@@ -5683,9 +5750,9 @@ function PlaceDetailInPlan({
 //     marginBottom: 16,
 //     alignSelf: "flex-start",
 //   },
-//   resultBadgeText: { fontSize: 13, color: "#667eea", fontWeight: "600" },
+//   resultBadgeText: { fontSize: T.meta, color: "#667eea", fontWeight: "600" },
 //   resultText: {
-//     fontSize: 13,
+//     fontSize: T.meta,
 //     color: "#333",
 //     lineHeight: 22,
 //     fontFamily: Platform.OS === "ios" ? "Courier" : "monospace",
@@ -5696,7 +5763,7 @@ function PlaceDetailInPlan({
 //     paddingVertical: 14,
 //     alignItems: "center",
 //   },
-//   btnPrimaryText: { color: "#fff", fontSize: 15, fontWeight: "700" },
+//   btnPrimaryText: { color: "#fff", fontSize: T.body, fontWeight: "700" },
 //   btnSecondary: {
 //     borderRadius: 14,
 //     paddingVertical: 14,
@@ -5704,7 +5771,7 @@ function PlaceDetailInPlan({
 //     borderWidth: 1.5,
 //     borderColor: "#667eea",
 //   },
-//   btnSecondaryText: { color: "#667eea", fontSize: 15, fontWeight: "600" },
+//   btnSecondaryText: { color: "#667eea", fontSize: T.body, fontWeight: "600" },
 // });
 
 function PlanRenderer({ text }: { text: string }) {
@@ -5914,7 +5981,7 @@ function PlanRenderer({ text }: { text: string }) {
 //     shadowRadius: 10,
 //     elevation: 7,
 //   },
-//   titleEmoji: { fontSize: 34 },
+//   titleEmoji: { fontSize: T.hero },
 //   titleSub: {
 //     color: "rgba(255,255,255,0.7)",
 //     fontSize: 10,
@@ -5922,7 +5989,7 @@ function PlanRenderer({ text }: { text: string }) {
 //     letterSpacing: 1.8,
 //     marginBottom: 2,
 //   },
-//   titleMain: { color: "#fff", fontSize: 20, fontWeight: "900", lineHeight: 26 },
+//   titleMain: { color: "#fff", fontSize: T.title, fontWeight: "900", lineHeight: 26 },
 
 //   // Meta info card
 //   metaCard: {
@@ -5935,7 +6002,7 @@ function PlanRenderer({ text }: { text: string }) {
 //     gap: 6,
 //   },
 //   metaRow: { flexDirection: "row" },
-//   metaText: { fontSize: 13, color: "#444", lineHeight: 21, flex: 1 },
+//   metaText: { fontSize: T.meta, color: "#444", lineHeight: 21, flex: 1 },
 
 //   // Day card — blue-left border
 //   dayCard: {
@@ -5953,7 +6020,7 @@ function PlanRenderer({ text }: { text: string }) {
 //     shadowRadius: 6,
 //     elevation: 3,
 //   },
-//   dayText: { fontSize: 17, fontWeight: "900", color: "#222" },
+//   dayText: { fontSize: T.lead, fontWeight: "900", color: "#222" },
 
 //   // Time blocks
 //   timeBlock: {
@@ -5964,7 +6031,7 @@ function PlanRenderer({ text }: { text: string }) {
 //     marginTop: 12,
 //     marginBottom: 4,
 //   },
-//   timeText: { fontSize: 14, fontWeight: "700" },
+//   timeText: { fontSize: T.body, fontWeight: "700" },
 
 //   // Activity items
 //   activityCard: {
@@ -5982,7 +6049,7 @@ function PlanRenderer({ text }: { text: string }) {
 //     shadowRadius: 3,
 //     elevation: 1,
 //   },
-//   activityText: { fontSize: 13, color: "#333", lineHeight: 20 },
+//   activityText: { fontSize: T.meta, color: "#333", lineHeight: 20 },
 
 //   // Cost estimate
 //   costBox: {
@@ -5994,7 +6061,7 @@ function PlanRenderer({ text }: { text: string }) {
 //     borderLeftWidth: 4,
 //     borderLeftColor: "#ff9500",
 //   },
-//   costText: { fontSize: 13, color: "#8a5c00", fontWeight: "700" },
+//   costText: { fontSize: T.meta, color: "#8a5c00", fontWeight: "700" },
 
 //   // Tips section
 //   tipsHeader: {
@@ -6005,7 +6072,7 @@ function PlanRenderer({ text }: { text: string }) {
 //     borderLeftWidth: 5,
 //     borderLeftColor: "#34c759",
 //   },
-//   tipsTitle: { fontSize: 16, fontWeight: "800", color: "#1b5e20" },
+//   tipsTitle: { fontSize: T.lead, fontWeight: "800", color: "#1b5e20" },
 //   tipRow: {
 //     flexDirection: "row",
 //     paddingVertical: 6,
@@ -6013,8 +6080,8 @@ function PlanRenderer({ text }: { text: string }) {
 //     gap: 8,
 //     alignItems: "flex-start",
 //   },
-//   tipDot: { fontSize: 18, color: "#34c759", fontWeight: "800", lineHeight: 22 },
-//   tipText: { fontSize: 13, color: "#333", lineHeight: 22, flex: 1 },
+//   tipDot: { fontSize: T.title, color: "#34c759", fontWeight: "800", lineHeight: 22 },
+//   tipText: { fontSize: T.meta, color: "#333", lineHeight: 22, flex: 1 },
 
 //   // Note
 //   noteBox: {
@@ -6025,7 +6092,7 @@ function PlanRenderer({ text }: { text: string }) {
 //     borderLeftWidth: 4,
 //     borderLeftColor: "#2196f3",
 //   },
-//   noteText: { fontSize: 12, color: "#0d47a1", lineHeight: 18 },
+//   noteText: { fontSize: T.meta, color: "#0d47a1", lineHeight: 18 },
 
 //   // Closing
 //   closingBox: {
@@ -6038,7 +6105,7 @@ function PlanRenderer({ text }: { text: string }) {
 //     borderColor: "#c8e6c9",
 //   },
 //   closingText: {
-//     fontSize: 14,
+//     fontSize: T.body,
 //     color: "#2D6418",
 //     fontWeight: "700",
 //     textAlign: "center",
@@ -6471,19 +6538,19 @@ function venueToPlace(
 //           {step === "result" ? (
 //             <TouchableOpacity onPress={() => setStep("form")}>
 //               <Text
-//                 style={{ fontSize: 16, color: DC.accent, fontWeight: "700" }}
+//                 style={{ fontSize: T.lead, color: DC.accent, fontWeight: "700" }}
 //               >
 //                 Novi plan
 //               </Text>
 //             </TouchableOpacity>
 //           ) : (
-//             <Text style={{ fontSize: 20, fontWeight: "800", color: DC.text }}>
+//             <Text style={{ fontSize: T.title, fontWeight: "800", color: DC.text }}>
 //               {step === "loading" ? t("map.generatingPlan") : t("map.planTrip")}
 //             </Text>
 //           )}
 
 //           {step === "result" && (
-//             <Text style={{ fontSize: 18, fontWeight: "800", color: DC.text }}>
+//             <Text style={{ fontSize: T.title, fontWeight: "800", color: DC.text }}>
 //               {t("map.tripPlan")}
 //             </Text>
 //           )}
@@ -6491,7 +6558,7 @@ function venueToPlace(
 //           {step === "result" ? (
 //             <TouchableOpacity onPress={copyPlan}>
 //               <Text
-//                 style={{ fontSize: 14, color: DC.textDim, fontWeight: "600" }}
+//                 style={{ fontSize: T.body, color: DC.textDim, fontWeight: "600" }}
 //               >
 //                 📋 {t("common.copy")}
 //               </Text>
@@ -6501,7 +6568,7 @@ function venueToPlace(
 //           ) : (
 //             <TouchableOpacity onPress={handleClose}>
 //               <Text
-//                 style={{ fontSize: 14, color: DC.textDim, fontWeight: "600" }}
+//                 style={{ fontSize: T.body, color: DC.textDim, fontWeight: "600" }}
 //               >
 //                 {t("common.close")}
 //               </Text>
@@ -6588,7 +6655,7 @@ function venueToPlace(
 //                     )
 //                   }
 //                 >
-//                   <Text style={{ fontSize: 18 }}>🎯</Text>
+//                   <Text style={{ fontSize: T.title }}>🎯</Text>
 //                 </TouchableOpacity>
 //               )}
 //             </View>
@@ -6767,7 +6834,7 @@ function venueToPlace(
 //                                       resizeMode="contain"
 //                                     />
 //                                   ) : (
-//                                     <Text style={{ fontSize: 18 }}>
+//                                     <Text style={{ fontSize: T.title }}>
 //                                       {EMOJIS[type] || "📍"}
 //                                     </Text>
 //                                   )}
@@ -6862,7 +6929,7 @@ function venueToPlace(
 //                       borderColor: DC.borderDim,
 //                     }}
 //                   >
-//                     <Text style={{ fontSize: 12, color: DC.accent, flex: 1 }}>
+//                     <Text style={{ fontSize: T.meta, color: DC.accent, flex: 1 }}>
 //                       📍 Prikazano{" "}
 //                       {Math.min(mapMarkerLimit, allMapVenues.length)} od{" "}
 //                       {allMapVenues.length} mjesta
@@ -6909,7 +6976,7 @@ function venueToPlace(
 //                           <Text
 //                             style={{
 //                               color: DC.text,
-//                               fontSize: 11,
+//                               fontSize: T.caption,
 //                               fontWeight: "700",
 //                             }}
 //                           >
@@ -6956,7 +7023,7 @@ function venueToPlace(
 //                           <Text
 //                             style={{
 //                               color: DC.text,
-//                               fontSize: 11,
+//                               fontSize: T.caption,
 //                               fontWeight: "700",
 //                             }}
 //                           >
@@ -6997,7 +7064,7 @@ function venueToPlace(
 //                             <Text
 //                               style={{
 //                                 color: DC.accent,
-//                                 fontSize: 11,
+//                                 fontSize: T.caption,
 //                                 fontWeight: "700",
 //                               }}
 //                             >
@@ -7009,7 +7076,7 @@ function venueToPlace(
 //                     ) : (
 //                       <Text
 //                         style={{
-//                           fontSize: 11,
+//                           fontSize: T.caption,
 //                           color: DC.accent,
 //                           fontWeight: "600",
 //                         }}
@@ -7112,7 +7179,7 @@ function venueToPlace(
 //                   })()}
 //                 </View>
 //               </ScrollView>
-//               <Text style={{ fontSize: 11, color: DC.accent, marginTop: 6 }}>
+//               <Text style={{ fontSize: T.caption, color: DC.accent, marginTop: 6 }}>
 //                 💡 Tapnite marker → slike, radno vrijeme, ocjena, označi posjet
 //                 · D1 = Dan 1, D2 = Dan 2...
 //               </Text>
@@ -7216,7 +7283,7 @@ function venueToPlace(
 //                         borderColor: DC.borderDim,
 //                       }}
 //                     >
-//                       <Text style={{ fontSize: 12, color: DC.accent }}>
+//                       <Text style={{ fontSize: T.meta, color: DC.accent }}>
 //                         ℹ️ Pronađeno {displayOptions.length} mjesta u radijusu{" "}
 //                         {activityRadius} km. Povećajte radijus za više opcija.
 //                       </Text>
@@ -7262,7 +7329,7 @@ function venueToPlace(
 //                         >
 //                           <Text
 //                             style={{
-//                               fontSize: 11,
+//                               fontSize: T.caption,
 //                               fontWeight: "800",
 //                               color: visited ? "#34c759" : color,
 //                             }}
@@ -7430,7 +7497,7 @@ function venueToPlace(
 //               >
 //                 <Text
 //                   style={{
-//                     fontSize: 14,
+//                     fontSize: T.body,
 //                     fontWeight: "700",
 //                     color: DC.textSub,
 //                     marginBottom: 10,
@@ -7446,7 +7513,7 @@ function venueToPlace(
 //                     borderColor: DC.border,
 //                     paddingHorizontal: 14,
 //                     paddingVertical: 10,
-//                     fontSize: 15,
+//                     fontSize: T.body,
 //                     color: DC.text,
 //                     marginBottom: 8,
 //                   }}
@@ -7463,7 +7530,7 @@ function venueToPlace(
 //                     borderColor: DC.border,
 //                     paddingHorizontal: 14,
 //                     paddingVertical: 10,
-//                     fontSize: 15,
+//                     fontSize: T.body,
 //                     color: DC.text,
 //                   }}
 //                   placeholder={t("plan.postalCode")}
@@ -7481,7 +7548,7 @@ function venueToPlace(
 //                     borderColor: DC.border,
 //                     paddingHorizontal: 14,
 //                     paddingVertical: 10,
-//                     fontSize: 15,
+//                     fontSize: T.body,
 //                     color: DC.text,
 //                   }}
 //                   placeholder={t("plan.accommodation")}
@@ -7501,7 +7568,7 @@ function venueToPlace(
 //               >
 //                 <Text
 //                   style={{
-//                     fontSize: 14,
+//                     fontSize: T.body,
 //                     fontWeight: "700",
 //                     color: DC.textSub,
 //                     marginBottom: 10,
@@ -7529,7 +7596,7 @@ function venueToPlace(
 //                       >
 //                         <Text
 //                           style={{
-//                             fontSize: 13,
+//                             fontSize: T.meta,
 //                             color: active ? DC.text : DC.textDim,
 //                             fontWeight: active ? "700" : "400",
 //                           }}
@@ -7552,7 +7619,7 @@ function venueToPlace(
 //               >
 //                 <Text
 //                   style={{
-//                     fontSize: 14,
+//                     fontSize: T.body,
 //                     fontWeight: "700",
 //                     color: DC.textSub,
 //                     marginBottom: 10,
@@ -7561,7 +7628,7 @@ function venueToPlace(
 //                   {t("map.travelers")}
 //                 </Text>
 //                 <Text
-//                   style={{ fontSize: 13, color: DC.textDim, marginBottom: 8 }}
+//                   style={{ fontSize: T.meta, color: DC.textDim, marginBottom: 8 }}
 //                 >
 //                   {t("plan.numberOfPeople")}
 //                 </Text>
@@ -7591,7 +7658,7 @@ function venueToPlace(
 //                       >
 //                         <Text
 //                           style={{
-//                             fontSize: 13,
+//                             fontSize: T.meta,
 //                             color: active ? DC.text : DC.textDim,
 //                             fontWeight: active ? "700" : "400",
 //                           }}
@@ -7603,7 +7670,7 @@ function venueToPlace(
 //                   })}
 //                 </View>
 //                 <Text
-//                   style={{ fontSize: 13, color: DC.textDim, marginBottom: 8 }}
+//                   style={{ fontSize: T.meta, color: DC.textDim, marginBottom: 8 }}
 //                 >
 //                   {t("plan.travelWith")}
 //                 </Text>
@@ -7636,7 +7703,7 @@ function venueToPlace(
 //                         />
 //                         <Text
 //                           style={{
-//                             fontSize: 11,
+//                             fontSize: T.caption,
 //                             fontWeight: "600",
 //                             color: active ? "#fff" : DC.textSub,
 //                             textAlign: "center",
@@ -7661,7 +7728,7 @@ function venueToPlace(
 //               >
 //                 <Text
 //                   style={{
-//                     fontSize: 14,
+//                     fontSize: T.body,
 //                     fontWeight: "700",
 //                     color: DC.textSub,
 //                     marginBottom: 10,
@@ -7693,7 +7760,7 @@ function venueToPlace(
 //                       >
 //                         <Text
 //                           style={{
-//                             fontSize: 13,
+//                             fontSize: T.meta,
 //                             color: active ? DC.text : DC.textDim,
 //                             fontWeight: active ? "700" : "400",
 //                           }}
@@ -7716,7 +7783,7 @@ function venueToPlace(
 //               >
 //                 <Text
 //                   style={{
-//                     fontSize: 14,
+//                     fontSize: T.body,
 //                     fontWeight: "700",
 //                     color: DC.textSub,
 //                     marginBottom: 10,
@@ -7744,7 +7811,7 @@ function venueToPlace(
 //                       >
 //                         <Text
 //                           style={{
-//                             fontSize: 13,
+//                             fontSize: T.meta,
 //                             color: active ? DC.text : DC.textDim,
 //                             fontWeight: active ? "700" : "400",
 //                           }}
@@ -7767,7 +7834,7 @@ function venueToPlace(
 //               >
 //                 <Text
 //                   style={{
-//                     fontSize: 14,
+//                     fontSize: T.body,
 //                     fontWeight: "700",
 //                     color: DC.textSub,
 //                     marginBottom: 10,
@@ -7804,7 +7871,7 @@ function venueToPlace(
 //                         />
 //                         <Text
 //                           style={{
-//                             fontSize: 11,
+//                             fontSize: T.caption,
 //                             fontWeight: "600",
 //                             color: active ? "#fff" : DC.textSub,
 //                             textAlign: "center",
@@ -7829,7 +7896,7 @@ function venueToPlace(
 //               >
 //                 <Text
 //                   style={{
-//                     fontSize: 14,
+//                     fontSize: T.body,
 //                     fontWeight: "700",
 //                     color: DC.textSub,
 //                     marginBottom: 10,
@@ -7866,7 +7933,7 @@ function venueToPlace(
 //                         />
 //                         <Text
 //                           style={{
-//                             fontSize: 11,
+//                             fontSize: T.caption,
 //                             fontWeight: "600",
 //                             color: active ? "#fff" : DC.textSub,
 //                             textAlign: "center",
@@ -7899,7 +7966,7 @@ function venueToPlace(
 //                 >
 //                   <Text
 //                     style={{
-//                       fontSize: 14,
+//                       fontSize: T.body,
 //                       fontWeight: "700",
 //                       color: DC.textSub,
 //                     }}
@@ -7910,7 +7977,7 @@ function venueToPlace(
 //                     <TouchableOpacity onPress={() => setInterests([])}>
 //                       <Text
 //                         style={{
-//                           fontSize: 13,
+//                           fontSize: T.meta,
 //                           color: DC.accent,
 //                           fontWeight: "600",
 //                         }}
@@ -7955,7 +8022,7 @@ function venueToPlace(
 //                         )}
 //                         <Text
 //                           style={{
-//                             fontSize: 11,
+//                             fontSize: T.caption,
 //                             fontWeight: "600",
 //                             color: active ? "#fff" : DC.textSub,
 //                             textAlign: "center",
@@ -7984,7 +8051,7 @@ function venueToPlace(
 //                 onPress={generate}
 //               >
 //                 <Text
-//                   style={{ color: DC.text, fontSize: 16, fontWeight: "700" }}
+//                   style={{ color: DC.text, fontSize: T.lead, fontWeight: "700" }}
 //                 >
 //                   {t("map.generatePlan")}
 //                 </Text>
@@ -7992,7 +8059,7 @@ function venueToPlace(
 //               <Text
 //                 style={{
 //                   textAlign: "center",
-//                   fontSize: 12,
+//                   fontSize: T.meta,
 //                   color: DC.textDim,
 //                   marginBottom: 24,
 //                   paddingHorizontal: 20,
@@ -8064,8 +8131,8 @@ function venueToPlace(
 //     marginBottom: 10,
 //     paddingHorizontal: 2,
 //   },
-//   headerTitle: { fontSize: 16, fontWeight: "800", color: "#1a1a1a" },
-//   headerSub: { fontSize: 12, color: "#888", marginTop: 2, maxWidth: "90%" },
+//   headerTitle: { fontSize: T.lead, fontWeight: "800", color: "#1a1a1a" },
+//   headerSub: { fontSize: T.meta, color: "#888", marginTop: 2, maxWidth: "90%" },
 //   recenterBtn: {
 //     width: 38,
 //     height: 38,
@@ -8083,7 +8150,7 @@ function venueToPlace(
 //     borderColor: "#f0f0f0",
 //   },
 //   legendTitle: {
-//     fontSize: 12,
+//     fontSize: T.meta,
 //     fontWeight: "700",
 //     color: "#888",
 //     marginBottom: 8,
@@ -8101,7 +8168,7 @@ function venueToPlace(
 //     borderWidth: 1.5,
 //   },
 //   dot: { width: 8, height: 8, borderRadius: 4 },
-//   chipText: { fontSize: 11, fontWeight: "600", color: "#333" },
+//   chipText: { fontSize: T.caption, fontWeight: "600", color: "#333" },
 //   distanceSection: {
 //     backgroundColor: "#f8f9ff",
 //     borderRadius: 14,
@@ -8109,7 +8176,7 @@ function venueToPlace(
 //     marginBottom: 16,
 //   },
 //   distanceTitle: {
-//     fontSize: 13,
+//     fontSize: T.meta,
 //     fontWeight: "700",
 //     color: "#333",
 //     marginBottom: 10,
@@ -8129,9 +8196,9 @@ function venueToPlace(
 //     shadowRadius: 3,
 //     elevation: 1,
 //   },
-//   distanceEmoji: { fontSize: 22 },
-//   distanceName: { fontSize: 13, fontWeight: "600", color: "#333" },
-//   distanceKm: { fontSize: 12, fontWeight: "700", marginTop: 2 },
+//   distanceEmoji: { fontSize: T.screen },
+//   distanceName: { fontSize: T.meta, fontWeight: "600", color: "#333" },
+//   distanceKm: { fontSize: T.meta, fontWeight: "700", marginTop: 2 },
 // });
 
 // const planStyles = StyleSheet.create({
@@ -8150,8 +8217,8 @@ function venueToPlace(
 //     alignItems: "center",
 //     marginBottom: 10,
 //   },
-//   progressTitle: { fontSize: 14, fontWeight: "700", color: "#333" },
-//   progressCount: { fontSize: 14, fontWeight: "800", color: "#667eea" },
+//   progressTitle: { fontSize: T.body, fontWeight: "700", color: "#333" },
+//   progressCount: { fontSize: T.body, fontWeight: "800", color: "#667eea" },
 //   progressTrack: {
 //     height: 8,
 //     backgroundColor: "rgba(102,126,234,0.15)",
@@ -8164,7 +8231,7 @@ function venueToPlace(
 //     borderRadius: 4,
 //   },
 //   progressHint: {
-//     fontSize: 12,
+//     fontSize: T.meta,
 //     color: "#667eea",
 //     marginTop: 8,
 //     fontWeight: "600",
@@ -8172,12 +8239,12 @@ function venueToPlace(
 
 //   // Section headers
 //   sectionHeader: {
-//     fontSize: 16,
+//     fontSize: T.lead,
 //     fontWeight: "800",
 //     color: "#1a1a1a",
 //     marginBottom: 4,
 //   },
-//   sectionSub: { fontSize: 12, color: "#999", marginBottom: 12 },
+//   sectionSub: { fontSize: T.meta, color: "#999", marginBottom: 12 },
 
 //   // Category section
 //   categorySection: {
@@ -8208,15 +8275,15 @@ function venueToPlace(
 //     justifyContent: "center",
 //     alignItems: "center",
 //   },
-//   categoryTitle: { fontSize: 15, fontWeight: "800", color: "#1a1a1a" },
-//   categorySub: { fontSize: 12, color: "#888", marginTop: 2 },
+//   categoryTitle: { fontSize: T.body, fontWeight: "800", color: "#1a1a1a" },
+//   categorySub: { fontSize: T.meta, color: "#888", marginTop: 2 },
 //   catBadge: {
 //     borderRadius: 12,
 //     paddingHorizontal: 10,
 //     paddingVertical: 4,
 //     borderWidth: 1.5,
 //   },
-//   catBadgeText: { fontSize: 12, fontWeight: "800" },
+//   catBadgeText: { fontSize: T.meta, fontWeight: "800" },
 
 //   // Venue card
 //   venueCard: {
@@ -8233,22 +8300,22 @@ function venueToPlace(
 //     backgroundColor: "#f0fff4",
 //   },
 //   venueName: {
-//     fontSize: 14,
+//     fontSize: T.body,
 //     fontWeight: "700",
 //     color: "#1a1a1a",
 //   },
 //   venueAddress: {
-//     fontSize: 11,
+//     fontSize: T.caption,
 //     color: "#999",
 //     marginTop: 2,
 //   },
 //   venueDist: {
-//     fontSize: 11,
+//     fontSize: T.caption,
 //     fontWeight: "700",
 //     marginTop: 2,
 //   },
 //   venueDetailHint: {
-//     fontSize: 11,
+//     fontSize: T.caption,
 //     color: "#bbb",
 //     marginTop: 2,
 //   },
@@ -8268,13 +8335,13 @@ function venueToPlace(
 //     borderColor: "#34c759",
 //   },
 //   visitToggleText: {
-//     fontSize: 11,
+//     fontSize: T.caption,
 //     fontWeight: "700",
 //     textAlign: "center",
 //     lineHeight: 14,
 //   },
 //   visitToggleTextVisited: {
-//     fontSize: 11,
+//     fontSize: T.caption,
 //     fontWeight: "800",
 //     color: "#34c759",
 //     textAlign: "center",
@@ -8325,12 +8392,14 @@ function VisitArchiveModal({
             backgroundColor: DC.bg,
           }}
         >
-          <Text style={{ fontSize: 20, fontWeight: "800", color: DC.text }}>
+          <Text
+            style={{ fontSize: T.title, fontWeight: "800", color: DC.text }}
+          >
             {t("map.visitArchive")}
           </Text>
           <TouchableOpacity onPress={onClose}>
             <Text
-              style={{ fontSize: 14, color: DC.textDim, fontWeight: "600" }}
+              style={{ fontSize: T.body, color: DC.textDim, fontWeight: "600" }}
             >
               {t("common.close")}
             </Text>
@@ -8367,7 +8436,7 @@ function VisitArchiveModal({
             >
               <Text
                 style={{
-                  fontSize: 13,
+                  fontSize: T.meta,
                   fontWeight: "600",
                   color: !filter ? DC.text : DC.textDim,
                 }}
@@ -8397,7 +8466,7 @@ function VisitArchiveModal({
                 >
                   <Text
                     style={{
-                      fontSize: 13,
+                      fontSize: T.meta,
                       fontWeight: "600",
                       color: active ? "#fff" : DC.textDim,
                     }}
@@ -8423,12 +8492,14 @@ function VisitArchiveModal({
             }}
           >
             <Text style={{ fontSize: 64 }}>🗺️</Text>
-            <Text style={{ fontSize: 18, fontWeight: "700", color: DC.text }}>
+            <Text
+              style={{ fontSize: T.title, fontWeight: "700", color: DC.text }}
+            >
               {visits.length === 0 ? t("map.noPlaces") : t("common.noResults")}
             </Text>
             <Text
               style={{
-                fontSize: 14,
+                fontSize: T.body,
                 color: DC.textDim,
                 textAlign: "center",
                 paddingHorizontal: 40,
@@ -8482,7 +8553,7 @@ function VisitArchiveModal({
                       borderColor: color + "66",
                     }}
                   >
-                    <Text style={{ fontSize: 22 }}>
+                    <Text style={{ fontSize: T.screen }}>
                       {EMOJIS[item.placeType] || "📍"}
                     </Text>
                   </View>
@@ -8491,7 +8562,7 @@ function VisitArchiveModal({
                   <View style={{ flex: 1 }}>
                     <Text
                       style={{
-                        fontSize: 15,
+                        fontSize: T.body,
                         fontWeight: "700",
                         color: DC.text,
                       }}
@@ -8502,7 +8573,7 @@ function VisitArchiveModal({
                     {item.address ? (
                       <Text
                         style={{
-                          fontSize: 12,
+                          fontSize: T.meta,
                           color: DC.textDim,
                           marginTop: 2,
                         }}
@@ -8513,7 +8584,7 @@ function VisitArchiveModal({
                     ) : null}
                     <Text
                       style={{
-                        fontSize: 12,
+                        fontSize: T.meta,
                         color: DC.accent,
                         marginTop: 4,
                         fontWeight: "600",
@@ -8554,7 +8625,7 @@ function VisitArchiveModal({
                       )
                     }
                   >
-                    <Text style={{ fontSize: 16 }}></Text>
+                    <Text style={{ fontSize: T.lead }}></Text>
                   </TouchableOpacity>
                 </TouchableOpacity>
               );
@@ -8621,12 +8692,14 @@ function BadgesModal({
             backgroundColor: DC.bg,
           }}
         >
-          <Text style={{ fontSize: 20, fontWeight: "800", color: DC.text }}>
+          <Text
+            style={{ fontSize: T.title, fontWeight: "800", color: DC.text }}
+          >
             {t("map.badges")}
           </Text>
           <TouchableOpacity onPress={onClose}>
             <Text
-              style={{ fontSize: 14, color: DC.textDim, fontWeight: "600" }}
+              style={{ fontSize: T.body, color: DC.textDim, fontWeight: "600" }}
             >
               {t("common.close")}
             </Text>
@@ -8656,7 +8729,7 @@ function BadgesModal({
             <Text style={{ fontSize: 28, fontWeight: "900", color: DC.accent }}>
               {totalVisits}
             </Text>
-            <Text style={{ fontSize: 12, color: DC.textDim, marginTop: 2 }}>
+            <Text style={{ fontSize: T.meta, color: DC.textDim, marginTop: 2 }}>
               {t("badges.totalVisits")}
             </Text>
           </View>
@@ -8674,7 +8747,7 @@ function BadgesModal({
             <Text style={{ fontSize: 28, fontWeight: "900", color: "#f0c040" }}>
               {totalBadges}
             </Text>
-            <Text style={{ fontSize: 12, color: DC.textDim, marginTop: 2 }}>
+            <Text style={{ fontSize: T.meta, color: DC.textDim, marginTop: 2 }}>
               {t("badges.earnedBadges")}
             </Text>
           </View>
@@ -8748,7 +8821,7 @@ function BadgesModal({
                   <View style={{ flex: 1 }}>
                     <Text
                       style={{
-                        fontSize: 15,
+                        fontSize: T.body,
                         fontWeight: "800",
                         color: DC.text,
                       }}
@@ -8757,7 +8830,7 @@ function BadgesModal({
                     </Text>
                     <Text
                       style={{
-                        fontSize: 13,
+                        fontSize: T.meta,
                         color: DC.accent,
                         marginTop: 2,
                         fontWeight: "600",
@@ -8767,7 +8840,11 @@ function BadgesModal({
                     </Text>
                     {next && (
                       <Text
-                        style={{ fontSize: 11, color: DC.accent, marginTop: 1 }}
+                        style={{
+                          fontSize: T.caption,
+                          color: DC.accent,
+                          marginTop: 1,
+                        }}
                       >
                         {t("badges.nextBadgeIn", { count: next - count })}
                       </Text>
@@ -8775,7 +8852,7 @@ function BadgesModal({
                     {!next && count > 0 && (
                       <Text
                         style={{
-                          fontSize: 11,
+                          fontSize: T.caption,
                           color: "#f0c040",
                           marginTop: 1,
                           fontWeight: "700",
@@ -8800,7 +8877,7 @@ function BadgesModal({
                     >
                       <Text
                         style={{
-                          fontSize: 13,
+                          fontSize: T.meta,
                           color: cat.color,
                           fontWeight: "800",
                         }}
@@ -8856,7 +8933,7 @@ function BadgesModal({
                 >
                   {BADGE_T.map((threshold) => {
                     const isEarned = earned.includes(threshold);
-                    const badgeName = BADGE_NAMES[cat.id]?.[threshold];
+                    const badgeName = badgeTitle(t, cat.id, threshold);
                     return (
                       <View
                         key={threshold}
@@ -8874,7 +8951,7 @@ function BadgesModal({
                         <Text
                           style={{
                             color: isEarned ? "#fff" : DC.textDim,
-                            fontSize: 11,
+                            fontSize: T.caption,
                             fontWeight: "800",
                           }}
                         >
@@ -8959,7 +9036,7 @@ function MapCtrlTooltip({
           <Text
             style={{
               color: "#d0f0a0",
-              fontSize: 12,
+              fontSize: T.meta,
               fontWeight: "700",
               // whiteSpace: "nowrap",
             }}
@@ -9569,11 +9646,11 @@ function QuickCategoryBar({
                 resizeMode="contain"
               />
             ) : (
-              <Text style={{ fontSize: 14 }}>{EMOJIS[catId] || "📍"}</Text>
+              <Text style={{ fontSize: T.body }}>{EMOJIS[catId] || "📍"}</Text>
             )}
             <Text
               style={{
-                fontSize: 11,
+                fontSize: T.caption,
                 fontWeight: "700",
                 color: isFocused ? "#fff" : isOn ? "#c0e8a0" : "#333",
               }}
@@ -10768,9 +10845,7 @@ export default function DashboardScreen() {
         Alert.alert(
           t("badges.newBadge"),
           t("badges.earned", {
-            name:
-              BADGE_NAMES[b.category]?.[b.level] ||
-              t("badges.badge", { level: b.level }),
+            name: badgeTitle(t, b.category, b.level),
           }),
         );
     } else
@@ -11044,7 +11119,9 @@ export default function DashboardScreen() {
               style={s.citySearchBtn}
               onPress={handleCitySearch}
             >
-              <Text style={{ color: "#fff", fontWeight: "700", fontSize: 13 }}>
+              <Text
+                style={{ color: "#fff", fontWeight: "700", fontSize: T.meta }}
+              >
                 {t("common.go")}
               </Text>
             </TouchableOpacity>
@@ -11052,7 +11129,11 @@ export default function DashboardScreen() {
           {searchLocation && (
             <TouchableOpacity style={s.clearCityBtn} onPress={clearCitySearch}>
               <Text
-                style={{ color: "#ff4757", fontSize: 12, fontWeight: "700" }}
+                style={{
+                  color: "#ff4757",
+                  fontSize: T.meta,
+                  fontWeight: "700",
+                }}
               >
                 {t("map.myLocationShort")}
               </Text>
@@ -11061,7 +11142,9 @@ export default function DashboardScreen() {
         </View>
         {searchLocation && (
           <View style={s.remoteBadge}>
-            <Text style={{ color: "#fff", fontSize: 12, fontWeight: "600" }}>
+            <Text
+              style={{ color: "#fff", fontSize: T.meta, fontWeight: "600" }}
+            >
               📍 {searchLocationName}
             </Text>
           </View>
@@ -11194,7 +11277,9 @@ export default function DashboardScreen() {
             elevation: 6,
           }}
         >
-          <Text style={{ color: "#d0f0a0", fontSize: 12, fontWeight: "600" }}>
+          <Text
+            style={{ color: "#d0f0a0", fontSize: T.meta, fontWeight: "600" }}
+          >
             {todHint}
           </Text>
         </View>
@@ -11331,7 +11416,7 @@ export default function DashboardScreen() {
               <Text
                 style={{
                   color: "#d0e8c0",
-                  fontSize: 13,
+                  fontSize: T.meta,
                   fontWeight: "600",
                   minWidth: 80,
                 }}
@@ -11367,7 +11452,7 @@ export default function DashboardScreen() {
         }}
         onPress={() => setShowMapCtrlPanel((v) => !v)}
       >
-        <Text style={{ fontSize: 16, color: "#555" }}>
+        <Text style={{ fontSize: T.lead, color: "#555" }}>
           {showMapCtrlPanel ? "›" : "‹"}
         </Text>
         <Text
@@ -11531,7 +11616,7 @@ export default function DashboardScreen() {
               });
             }}
           >
-            <Text style={{ fontSize: 20 }}>📣</Text>
+            <Text style={{ fontSize: T.title }}>📣</Text>
           </TouchableOpacity>
           <Text
             style={{
@@ -11576,7 +11661,7 @@ export default function DashboardScreen() {
               >
                 <Text
                   style={{
-                    fontSize: 13,
+                    fontSize: T.meta,
                     color: showOnlyVisited ? "#34c759" : "#888",
                     fontWeight: "700",
                     lineHeight: 15,
@@ -11622,12 +11707,18 @@ export default function DashboardScreen() {
               backgroundColor: DC.bg,
             }}
           >
-            <Text style={{ fontSize: 20, fontWeight: "800", color: DC.text }}>
+            <Text
+              style={{ fontSize: T.title, fontWeight: "800", color: DC.text }}
+            >
               {t("map.filters")}
             </Text>
             <TouchableOpacity onPress={() => setShowFilterPanel(false)}>
               <Text
-                style={{ fontSize: 14, color: DC.textDim, fontWeight: "600" }}
+                style={{
+                  fontSize: T.body,
+                  color: DC.textDim,
+                  fontWeight: "600",
+                }}
               >
                 {t("common.close")}
               </Text>
@@ -11645,7 +11736,7 @@ export default function DashboardScreen() {
             >
               <Text
                 style={{
-                  fontSize: 14,
+                  fontSize: T.body,
                   fontWeight: "700",
                   color: DC.textSub,
                   marginBottom: 10,
@@ -11706,7 +11797,7 @@ export default function DashboardScreen() {
                       <View style={{ flex: 1 }}>
                         <Text
                           style={{
-                            fontSize: 14,
+                            fontSize: T.body,
                             fontWeight: "700",
                             color: DC.text,
                           }}
@@ -11715,7 +11806,7 @@ export default function DashboardScreen() {
                         </Text>
                         <Text
                           style={{
-                            fontSize: 12,
+                            fontSize: T.meta,
                             color: DC.textDim,
                             marginTop: 3,
                           }}
@@ -11738,7 +11829,7 @@ export default function DashboardScreen() {
                           <Text
                             style={{
                               color: "#fff",
-                              fontSize: 12,
+                              fontSize: T.meta,
                               fontWeight: "800",
                             }}
                           >
@@ -11771,7 +11862,11 @@ export default function DashboardScreen() {
                 }}
               >
                 <Text
-                  style={{ fontSize: 14, fontWeight: "700", color: DC.textSub }}
+                  style={{
+                    fontSize: T.body,
+                    fontWeight: "700",
+                    color: DC.textSub,
+                  }}
                 >
                   {t("map.categories")}
                 </Text>
@@ -11784,7 +11879,7 @@ export default function DashboardScreen() {
                   >
                     <Text
                       style={{
-                        fontSize: 13,
+                        fontSize: T.meta,
                         color: DC.accent,
                         fontWeight: "600",
                       }}
@@ -11828,7 +11923,7 @@ export default function DashboardScreen() {
                       />
                       <Text
                         style={{
-                          fontSize: 11,
+                          fontSize: T.caption,
                           fontWeight: "600",
                           color: active ? "#fff" : DC.textSub,
                           textAlign: "center",
@@ -11853,7 +11948,7 @@ export default function DashboardScreen() {
             >
               <Text
                 style={{
-                  fontSize: 14,
+                  fontSize: T.body,
                   fontWeight: "700",
                   color: DC.textSub,
                   marginBottom: 10,
@@ -11879,7 +11974,7 @@ export default function DashboardScreen() {
                     >
                       <Text
                         style={{
-                          fontSize: 13,
+                          fontSize: T.meta,
                           color: active ? DC.text : DC.textDim,
                           fontWeight: active ? "700" : "400",
                         }}
@@ -11909,7 +12004,11 @@ export default function DashboardScreen() {
                 }}
               >
                 <Text
-                  style={{ fontSize: 14, fontWeight: "700", color: DC.textSub }}
+                  style={{
+                    fontSize: T.body,
+                    fontWeight: "700",
+                    color: DC.textSub,
+                  }}
                 >
                   {t("map.forAgeGroup")}
                 </Text>
@@ -11917,7 +12016,7 @@ export default function DashboardScreen() {
                   <TouchableOpacity onPress={() => setSelectedAgeGroups([])}>
                     <Text
                       style={{
-                        fontSize: 13,
+                        fontSize: T.meta,
                         color: DC.accent,
                         fontWeight: "600",
                       }}
@@ -11978,7 +12077,7 @@ export default function DashboardScreen() {
                       <View>
                         <Text
                           style={{
-                            fontSize: 13,
+                            fontSize: T.meta,
                             fontWeight: "700",
                             color: active ? "#fff" : DC.text,
                           }}
@@ -12013,7 +12112,7 @@ export default function DashboardScreen() {
                 >
                   <Text
                     style={{
-                      fontSize: 12,
+                      fontSize: T.meta,
                       color: DC.accent,
                       fontWeight: "600",
                     }}
@@ -12038,7 +12137,7 @@ export default function DashboardScreen() {
             >
               <Text
                 style={{
-                  fontSize: 14,
+                  fontSize: T.body,
                   fontWeight: "700",
                   color: DC.textSub,
                   marginBottom: 4,
@@ -12051,7 +12150,11 @@ export default function DashboardScreen() {
                 })}
               </Text>
               <Text
-                style={{ fontSize: 12, color: DC.textDim, marginBottom: 12 }}
+                style={{
+                  fontSize: T.meta,
+                  color: DC.textDim,
+                  marginBottom: 12,
+                }}
               >
                 {t("map.displayLimitHint")}
               </Text>
@@ -12078,7 +12181,7 @@ export default function DashboardScreen() {
                         >
                           <Text
                             style={{
-                              fontSize: 13,
+                              fontSize: T.meta,
                               color: active ? DC.text : DC.textDim,
                               fontWeight: active ? "700" : "400",
                             }}
@@ -12107,7 +12210,7 @@ export default function DashboardScreen() {
                   >
                     <Text
                       style={{
-                        fontSize: 13,
+                        fontSize: T.meta,
                         color:
                           displayLimit >= allPlaces.length
                             ? "#e8e8e8"
@@ -12126,7 +12229,7 @@ export default function DashboardScreen() {
               <View style={{ padding: 16 }}>
                 <Text
                   style={{
-                    fontSize: 14,
+                    fontSize: T.body,
                     fontWeight: "700",
                     color: DC.textSub,
                     marginBottom: 8,
@@ -12151,7 +12254,7 @@ export default function DashboardScreen() {
                     onPress={() => handleRestorePlace(id)}
                   >
                     <Text
-                      style={{ fontSize: 12, color: DC.textDim, flex: 1 }}
+                      style={{ fontSize: T.meta, color: DC.textDim, flex: 1 }}
                       numberOfLines={1}
                     >
                       ID: {id.split("_").slice(-1)[0]}
@@ -12177,7 +12280,9 @@ export default function DashboardScreen() {
               }}
               onPress={() => setShowFilterPanel(false)}
             >
-              <Text style={{ color: DC.text, fontSize: 16, fontWeight: "700" }}>
+              <Text
+                style={{ color: DC.text, fontSize: T.lead, fontWeight: "700" }}
+              >
                 {selectedTypes.length > 0
                   ? t("map.applyWithCount", { count: selectedTypes.length })
                   : t("map.apply")}
@@ -12366,7 +12471,7 @@ export default function DashboardScreen() {
 //     shadowRadius: 4,
 //     elevation: 5,
 //   },
-//   cityInput: { flex: 1, fontSize: 14, color: "#333", paddingVertical: 8 },
+//   cityInput: { flex: 1, fontSize: T.body, color: "#333", paddingVertical: 8 },
 //   citySearchBtn: {
 //     backgroundColor: "#667eea",
 //     borderRadius: 18,
@@ -12398,7 +12503,7 @@ export default function DashboardScreen() {
 //     shadowRadius: 4,
 //     elevation: 4,
 //   },
-//   topBtnText: { fontSize: 14, fontWeight: "600", color: "#333" },
+//   topBtnText: { fontSize: T.body, fontWeight: "600", color: "#333" },
 //   todBtn: {
 //     backgroundColor: "rgba(255,255,255,0.92)",
 //     width: 40,
@@ -12413,7 +12518,7 @@ export default function DashboardScreen() {
 //     elevation: 3,
 //   },
 //   todBtnA: { backgroundColor: "#667eea" },
-//   todTxt: { fontSize: 18 },
+//   todTxt: { fontSize: T.title },
 //   sidePanel: { position: "absolute", right: 12, bottom: 110, gap: 8 },
 //   sideBtn: {
 //     backgroundColor: "#fff",
@@ -12430,7 +12535,7 @@ export default function DashboardScreen() {
 //   },
 //   sideBtnA: { backgroundColor: "#667eea" },
 //   sideBtnNotif: { backgroundColor: "#fff3cd" },
-//   sideBtnTxt: { fontSize: 20 },
+//   sideBtnTxt: { fontSize: T.title },
 //   notifDot: {
 //     position: "absolute",
 //     top: 0,
@@ -12458,7 +12563,7 @@ export default function DashboardScreen() {
 //     gap: 10,
 //     justifyContent: "center",
 //   },
-//   loadingTxt: { color: "#fff", fontSize: 14, fontWeight: "600" },
+//   loadingTxt: { color: "#fff", fontSize: T.body, fontWeight: "600" },
 //   // Bottom bar: count + "Prikaži više" gumb
 //   bottomBar: {
 //     position: "absolute",
@@ -12473,7 +12578,7 @@ export default function DashboardScreen() {
 //     alignItems: "center",
 //     justifyContent: "space-between",
 //   },
-//   countTxt: { color: "#fff", fontSize: 13, fontWeight: "600", flex: 1 },
+//   countTxt: { color: "#fff", fontSize: T.meta, fontWeight: "600", flex: 1 },
 //   showMoreBtn: {
 //     backgroundColor: "#667eea",
 //     borderRadius: 16,
@@ -12481,5 +12586,5 @@ export default function DashboardScreen() {
 //     paddingVertical: 6,
 //     marginLeft: 8,
 //   },
-//   showMoreTxt: { color: "#fff", fontSize: 12, fontWeight: "700" },
+//   showMoreTxt: { color: "#fff", fontSize: T.meta, fontWeight: "700" },
 // })

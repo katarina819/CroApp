@@ -15,6 +15,7 @@ import {
   View,
 } from "react-native";
 import { API_ENDPOINTS } from "./config/api";
+import { T } from "../styles/varaTheme";
 
 type Step = "email" | "code" | "newPassword";
 
@@ -278,7 +279,10 @@ export default function ForgotPasswordScreen() {
                   hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
                 >
                   <Text
-                    style={{ fontSize: 18, opacity: showNewPassword ? 1 : 0.5 }}
+                    style={{
+                      fontSize: T.title,
+                      opacity: showNewPassword ? 1 : 0.5,
+                    }}
                   >
                     👁️
                   </Text>
@@ -316,7 +320,7 @@ export default function ForgotPasswordScreen() {
                 >
                   <Text
                     style={{
-                      fontSize: 18,
+                      fontSize: T.title,
                       opacity: showConfirmPassword ? 1 : 0.5,
                     }}
                   >
@@ -399,7 +403,7 @@ const styles = StyleSheet.create({
   dotDone: { backgroundColor: VALID_GREEN },
   icon: { fontSize: 48, marginBottom: 14 },
   title: {
-    fontSize: 24,
+    fontSize: T.screen,
     fontWeight: "800",
     color: TEXT_DARK,
     textAlign: "center",
@@ -407,14 +411,14 @@ const styles = StyleSheet.create({
     letterSpacing: 0.3,
   },
   subtitle: {
-    fontSize: 14,
+    fontSize: T.body,
     color: TEXT_MID,
     textAlign: "center",
     marginBottom: 28,
   },
   form: { width: "100%" },
   label: {
-    fontSize: 11,
+    fontSize: T.caption,
     fontWeight: "700",
     color: TEXT_MID,
     letterSpacing: 1.2,
@@ -425,7 +429,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     paddingHorizontal: 16,
     paddingVertical: 14,
-    fontSize: 16,
+    fontSize: T.lead,
     borderWidth: 1.5,
     borderColor: "#D1DADB",
     color: TEXT_DARK,
@@ -453,13 +457,13 @@ const styles = StyleSheet.create({
   buttonDisabled: { backgroundColor: SILVER, shadowOpacity: 0, elevation: 0 },
   buttonText: {
     color: "#FFFFFF",
-    fontSize: 16,
+    fontSize: T.lead,
     fontWeight: "700",
     letterSpacing: 0.5,
   },
   resendBtn: { marginTop: 16, alignItems: "center" },
-  resendText: { color: GREEN_MID, fontSize: 14, fontWeight: "600" },
+  resendText: { color: GREEN_MID, fontSize: T.body, fontWeight: "600" },
   backBtn: { marginTop: 28 },
-  backText: { color: TEXT_MID, fontSize: 14 },
-  errorText: { color: "#C0392B", fontSize: 12, marginBottom: 4 },
+  backText: { color: TEXT_MID, fontSize: T.body },
+  errorText: { color: "#C0392B", fontSize: T.meta, marginBottom: 4 },
 });

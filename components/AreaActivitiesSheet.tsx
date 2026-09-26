@@ -36,6 +36,7 @@ import { API_BASE_URL } from "@/app/config/api";
 import { POST_CATEGORY_IDS } from "@/app/services/locationService";
 import { CloseButton } from "./CloseButton";
 import { MediaPager, PagerItem } from "./MediaPager";
+import { T } from "../styles/varaTheme";
 
 /** Mjesto oko kojeg se traži. */
 export interface AreaPoint {
@@ -64,7 +65,7 @@ const RADIUS_OPTIONS = [5, 10, 25, 50, 100] as const;
 
 const labelStyle = {
   color: "#8aa483",
-  fontSize: 11,
+  fontSize: T.caption,
   fontWeight: "700" as const,
   textTransform: "uppercase" as const,
   letterSpacing: 0.5,
@@ -281,7 +282,7 @@ export function AreaActivitiesSheet({
                 {/* Naslov nosi ime mjesta; zasebni podnaslov ("Ovaj kraj")
                     nije govorio ništa što se iz karte već ne vidi. */}
                 <Text
-                  style={{ color: "#fff", fontSize: 17, fontWeight: "800" }}
+                  style={{ color: "#fff", fontSize: T.lead, fontWeight: "800" }}
                   numberOfLines={2}
                 >
                   {placeName
@@ -325,7 +326,7 @@ export function AreaActivitiesSheet({
                     <Text
                       style={{
                         color: on ? "#fff" : "#b6cfae",
-                        fontSize: 13,
+                        fontSize: T.meta,
                         fontWeight: "700",
                       }}
                     >
@@ -366,7 +367,7 @@ export function AreaActivitiesSheet({
                     <Text
                       style={{
                         color: on ? "#f2d78a" : "#9fbc96",
-                        fontSize: 12,
+                        fontSize: T.meta,
                         fontWeight: "600",
                       }}
                     >
@@ -394,7 +395,7 @@ export function AreaActivitiesSheet({
                     <Text
                       style={{
                         color: "#b6cfae",
-                        fontSize: 14,
+                        fontSize: T.body,
                         marginTop: 12,
                         textAlign: "center",
                         paddingHorizontal: 24,
@@ -437,7 +438,7 @@ export function AreaActivitiesSheet({
                         <Text
                           style={{
                             color: "#fff",
-                            fontSize: 15,
+                            fontSize: T.body,
                             fontWeight: "700",
                           }}
                           numberOfLines={1}
@@ -446,7 +447,7 @@ export function AreaActivitiesSheet({
                         </Text>
                         {!!item.location && (
                           <Text
-                            style={{ color: "#b6cfae", fontSize: 12 }}
+                            style={{ color: "#b6cfae", fontSize: T.meta }}
                             numberOfLines={1}
                           >
                             {item.location}
@@ -456,7 +457,7 @@ export function AreaActivitiesSheet({
                           <Text
                             style={{
                               color: "#f2d78a",
-                              fontSize: 12,
+                              fontSize: T.meta,
                               fontWeight: "700",
                             }}
                           >
@@ -479,7 +480,9 @@ export function AreaActivitiesSheet({
                             />
                             {/* Gola brojka ne kaže od čega se mjeri; uz ime
                                 mjesta je odmah jasno. */}
-                            <Text style={{ color: "#8aa483", fontSize: 12 }}>
+                            <Text
+                              style={{ color: "#8aa483", fontSize: T.meta }}
+                            >
                               {km < 1
                                 ? `${Math.round(km * 1000)} m`
                                 : `${km.toFixed(1)} km`}

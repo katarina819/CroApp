@@ -24,6 +24,7 @@ import { API_ENDPOINTS } from "./config/api";
 import { setSentryUser } from "./config/sentry";
 import * as Linking from "expo-linking";
 import { API_BASE_URL } from "./config/api";
+import { T } from "../styles/varaTheme";
 
 // ─── Stiliziran VARA natpis ───────────────────────────────────────────────────
 function VaraWordmark() {
@@ -234,7 +235,9 @@ export default function LoginScreen() {
                 onPress={() => setShowPassword((v) => !v)}
                 hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
               >
-                <Text style={{ fontSize: 18, opacity: showPassword ? 1 : 0.5 }}>
+                <Text
+                  style={{ fontSize: T.title, opacity: showPassword ? 1 : 0.5 }}
+                >
                   👁️
                 </Text>
               </TouchableOpacity>
@@ -345,7 +348,7 @@ const s = StyleSheet.create({
     marginBottom: 16,
   },
   tagline: {
-    fontSize: 14,
+    fontSize: T.body,
     color: "rgba(200,225,200,0.65)",
     letterSpacing: 2,
     marginTop: 8,
@@ -368,7 +371,7 @@ const s = StyleSheet.create({
     elevation: 12,
   },
   cardTitle: {
-    fontSize: 24,
+    fontSize: T.screen,
     fontWeight: "800",
     color: TEXT_DARK,
     marginBottom: 24,
@@ -380,14 +383,14 @@ const s = StyleSheet.create({
     marginBottom: 16,
   },
   label: {
-    fontSize: 11,
+    fontSize: T.caption,
     fontWeight: "700",
     color: TEXT_MID,
     letterSpacing: 1.2,
     marginBottom: 7,
   },
   helperText: {
-    fontSize: 12,
+    fontSize: T.meta,
     color: TEXT_MID,
     marginTop: 6,
   },
@@ -398,7 +401,7 @@ const s = StyleSheet.create({
     borderColor: "#D1DADB",
     paddingHorizontal: 16,
     paddingVertical: 14,
-    fontSize: 16,
+    fontSize: T.lead,
     color: TEXT_DARK,
   },
   inputFocused: {
@@ -418,7 +421,7 @@ const s = StyleSheet.create({
     position: "absolute",
     right: 14,
     color: VALID_GREEN,
-    fontSize: 16,
+    fontSize: T.lead,
     fontWeight: "700",
   },
   eyeButton: {
@@ -437,7 +440,7 @@ const s = StyleSheet.create({
     marginTop: -6,
   },
   forgotText: {
-    fontSize: 13,
+    fontSize: T.meta,
     color: GREEN_MID,
     fontWeight: "600",
   },
@@ -461,7 +464,7 @@ const s = StyleSheet.create({
   },
   btnText: {
     color: "#FFFFFF",
-    fontSize: 16,
+    fontSize: T.lead,
     fontWeight: "700",
     letterSpacing: 0.5,
   },
@@ -479,7 +482,7 @@ const s = StyleSheet.create({
     backgroundColor: "#E8EEEE",
   },
   dividerText: {
-    fontSize: 13,
+    fontSize: T.meta,
     color: TEXT_MID,
   },
 
@@ -497,7 +500,7 @@ const s = StyleSheet.create({
     backgroundColor: "#FFFFFF",
   },
   googleBtnText: {
-    fontSize: 15,
+    fontSize: T.body,
     fontWeight: "700",
     color: TEXT_DARK,
   },
@@ -512,14 +515,14 @@ const s = StyleSheet.create({
   },
   outlineBtnText: {
     color: GREEN_MID,
-    fontSize: 16,
+    fontSize: T.lead,
     fontWeight: "700",
     letterSpacing: 0.3,
   },
 
   // Dno
   bottomNote: {
-    fontSize: 11,
+    fontSize: T.caption,
     color: "rgba(200,225,200,0.45)",
     textAlign: "center",
     marginTop: 24,

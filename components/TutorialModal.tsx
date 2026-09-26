@@ -27,7 +27,7 @@ import {
 } from "react-native";
 
 import { useTheme } from "./AdaptiveThemeProvider";
-import { V } from "../styles/varaTheme";
+import { T, V } from "../styles/varaTheme";
 
 /**
  * Vodič se otvara preko cijelog ekrana, pa mora pratiti odabranu temu —
@@ -222,7 +222,7 @@ function StepPage({
             }}
           >
             {FLAGS.map((f) => (
-              <Text key={f} style={{ fontSize: 30 }}>
+              <Text key={f} style={{ fontSize: T.hero }}>
                 {f}
               </Text>
             ))}
@@ -293,7 +293,7 @@ function StepPage({
       <Text
         style={{
           color: c.title,
-          fontSize: 23,
+          fontSize: T.screen,
           fontWeight: "800",
           textAlign: "center",
           marginBottom: 12,
@@ -305,7 +305,7 @@ function StepPage({
       <Text
         style={{
           color: c.body,
-          fontSize: 16,
+          fontSize: T.lead,
           lineHeight: 24,
           textAlign: "center",
         }}
@@ -368,7 +368,7 @@ export function TutorialModal({
             hitSlop={{ top: 12, bottom: 12, left: 16, right: 16 }}
             accessibilityRole="button"
           >
-            <Text style={{ color: c.dim, fontSize: 15, fontWeight: "600" }}>
+            <Text style={{ color: c.dim, fontSize: T.body, fontWeight: "600" }}>
               {t("tutorial.skip")}
             </Text>
           </TouchableOpacity>
@@ -433,7 +433,9 @@ export function TutorialModal({
             }}
             accessibilityRole="button"
           >
-            <Text style={{ color: c.btnText, fontSize: 16, fontWeight: "700" }}>
+            <Text
+              style={{ color: c.btnText, fontSize: T.lead, fontWeight: "700" }}
+            >
               {isLast ? t("tutorial.start") : t("tutorial.next")}
             </Text>
           </TouchableOpacity>

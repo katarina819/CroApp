@@ -12,6 +12,7 @@ import {
   View,
 } from "react-native";
 import { API_ENDPOINTS } from "./config/api";
+import { T } from "../styles/varaTheme";
 
 type PasswordStrength = "empty" | "weak" | "medium" | "strong";
 
@@ -160,7 +161,7 @@ export default function SetPasswordScreen() {
           onPress={() => setShowPassword((v) => !v)}
           hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
         >
-          <Text style={{ fontSize: 18, opacity: showPassword ? 1 : 0.5 }}>
+          <Text style={{ fontSize: T.title, opacity: showPassword ? 1 : 0.5 }}>
             👁️
           </Text>
         </TouchableOpacity>
@@ -170,7 +171,7 @@ export default function SetPasswordScreen() {
       <View style={{ marginTop: -6, marginBottom: 14 }}>
         <Text
           style={{
-            fontSize: 12,
+            fontSize: T.meta,
             color:
               password.length === 0
                 ? "rgba(255,255,255,0.65)"
@@ -203,7 +204,7 @@ export default function SetPasswordScreen() {
             </View>
             <Text
               style={{
-                fontSize: 12,
+                fontSize: T.meta,
                 fontWeight: "700",
                 marginTop: 4,
                 color: STRENGTH_COLORS[strength].color,
@@ -221,7 +222,7 @@ export default function SetPasswordScreen() {
         >
           <Text
             style={{
-              fontSize: 13,
+              fontSize: T.meta,
               fontWeight: "700",
               color: "#8BC97B",
               textDecorationLine: "underline",
@@ -254,7 +255,10 @@ export default function SetPasswordScreen() {
           hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
         >
           <Text
-            style={{ fontSize: 18, opacity: showConfirmPassword ? 1 : 0.5 }}
+            style={{
+              fontSize: T.title,
+              opacity: showConfirmPassword ? 1 : 0.5,
+            }}
           >
             👁️
           </Text>
@@ -284,14 +288,14 @@ const s = StyleSheet.create({
     justifyContent: "center",
   },
   title: {
-    fontSize: 22,
+    fontSize: T.screen,
     fontWeight: "800",
     color: "#fff",
     marginBottom: 8,
     textAlign: "center",
   },
   subtitle: {
-    fontSize: 14,
+    fontSize: T.body,
     color: "rgba(255,255,255,0.7)",
     marginBottom: 28,
     textAlign: "center",
@@ -302,7 +306,7 @@ const s = StyleSheet.create({
     borderRadius: 12,
     paddingVertical: 14,
     paddingHorizontal: 16,
-    fontSize: 16,
+    fontSize: T.lead,
     marginBottom: 14,
     color: "#142F09",
   },
@@ -313,5 +317,5 @@ const s = StyleSheet.create({
     alignItems: "center",
     marginTop: 8,
   },
-  saveBtnText: { color: "#fff", fontSize: 16, fontWeight: "700" },
+  saveBtnText: { color: "#fff", fontSize: T.lead, fontWeight: "700" },
 });

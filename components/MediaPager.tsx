@@ -28,6 +28,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { CloseButton } from "./CloseButton";
+import { T } from "../styles/varaTheme";
 
 /** Objava u pregledu. Polja koja objava nema jednostavno se ne prikažu. */
 export interface PagerItem {
@@ -162,7 +163,9 @@ function DetailsSheet({
               paddingBottom: 10,
             }}
           >
-            <Text style={{ color: "#fff", fontSize: 17, fontWeight: "800" }}>
+            <Text
+              style={{ color: "#fff", fontSize: T.lead, fontWeight: "800" }}
+            >
               {t("pager.detailsTitle")}
             </Text>
             <CloseButton onPress={onClose} tone="light" />
@@ -173,13 +176,19 @@ function DetailsSheet({
           >
             {!!item.authorName && (
               <Text
-                style={{ color: "#8fd06a", fontSize: 14, fontWeight: "700" }}
+                style={{
+                  color: "#8fd06a",
+                  fontSize: T.body,
+                  fontWeight: "700",
+                }}
               >
                 {item.authorName}
               </Text>
             )}
             {!!item.title && (
-              <Text style={{ color: "#fff", fontSize: 20, fontWeight: "800" }}>
+              <Text
+                style={{ color: "#fff", fontSize: T.title, fontWeight: "800" }}
+              >
                 {item.title}
               </Text>
             )}
@@ -188,7 +197,7 @@ function DetailsSheet({
                 style={{ flexDirection: "row", alignItems: "center", gap: 8 }}
               >
                 <Ionicons name="location-outline" size={16} color="#b6cfae" />
-                <Text style={{ color: "#dcdcdc", fontSize: 15, flex: 1 }}>
+                <Text style={{ color: "#dcdcdc", fontSize: T.body, flex: 1 }}>
                   {item.location}
                 </Text>
               </View>
@@ -208,7 +217,7 @@ function DetailsSheet({
               >
                 <Ionicons name="calendar" size={15} color="#fff" />
                 <Text
-                  style={{ color: "#fff", fontSize: 15, fontWeight: "700" }}
+                  style={{ color: "#fff", fontSize: T.body, fontWeight: "700" }}
                 >
                   {t("post.eventStarts", {
                     when: eventWhen(item.eventStartAt),
@@ -217,7 +226,9 @@ function DetailsSheet({
               </View>
             )}
             {!!item.description && (
-              <Text style={{ color: "#d0d8cc", fontSize: 15, lineHeight: 23 }}>
+              <Text
+                style={{ color: "#d0d8cc", fontSize: T.body, lineHeight: 23 }}
+              >
                 {item.description}
               </Text>
             )}
@@ -273,7 +284,7 @@ export function MediaPager({
             paddingVertical: 10,
           }}
         >
-          <Text style={{ color: "#fff", fontSize: 15, fontWeight: "700" }}>
+          <Text style={{ color: "#fff", fontSize: T.body, fontWeight: "700" }}>
             {items.length > 0 ? `${index + 1} / ${items.length}` : ""}
           </Text>
 

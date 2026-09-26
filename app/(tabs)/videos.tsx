@@ -89,7 +89,7 @@ const AGE_GROUP_IDS = [
 // Ovdje je stajala jos jedna kopija palete — cetvrta u aplikaciji, i vec
 // zaostala: imala je stari danger (#8B3030, omjer 1.77) i stari silverDim.
 // Sada dolazi iz sustava boja, pa se ispravci vide i ovdje.
-import { V } from "../../styles/varaTheme";
+import { T, V } from "../../styles/varaTheme";
 import { StateView } from "../../components/StateView";
 
 function getVT(dark: boolean) {
@@ -1350,7 +1350,9 @@ function ShareModal({
             style={{ flex: 1, justifyContent: "center", alignItems: "center" }}
           >
             <ActivityIndicator size="large" color={VT.accent} />
-            <Text style={{ color: VT.textMuted, marginTop: 12, fontSize: 14 }}>
+            <Text
+              style={{ color: VT.textMuted, marginTop: 12, fontSize: T.body }}
+            >
               Učitavanje...
             </Text>
           </View>
@@ -1874,7 +1876,7 @@ export function UploadModal({
                   >
                     <Ionicons name="refresh" size={16} color="#fff" />
                     <Text
-                      style={{ color: "#fff", fontSize: 12, marginLeft: 4 }}
+                      style={{ color: "#fff", fontSize: T.meta, marginLeft: 4 }}
                     >
                       Promijeni
                     </Text>
@@ -1893,7 +1895,7 @@ export function UploadModal({
 
                 <Text style={upload.fieldLabel}>
                   Lokacija *
-                  <Text style={{ color: "#C05050", fontSize: 12 }}>
+                  <Text style={{ color: "#C05050", fontSize: T.meta }}>
                     {" "}
                     (obavezno)
                   </Text>
@@ -1972,7 +1974,10 @@ export function UploadModal({
                             onPress={() => selectLocation(s)}
                           >
                             <Text
-                              style={{ color: VT.textPrimary, fontSize: 14 }}
+                              style={{
+                                color: VT.textPrimary,
+                                fontSize: T.body,
+                              }}
                             >
                               {s.displayName}
                             </Text>
@@ -1985,7 +1990,7 @@ export function UploadModal({
 
                 <Text style={upload.fieldLabel}>
                   Kategorije *
-                  <Text style={{ color: "#C05050", fontSize: 12 }}>
+                  <Text style={{ color: "#C05050", fontSize: T.meta }}>
                     {" "}
                     (obavezno)
                   </Text>
@@ -2038,7 +2043,7 @@ export function UploadModal({
 
                 <Text style={upload.fieldLabel}>
                   Primjereno za *
-                  <Text style={{ color: "#C05050", fontSize: 12 }}>
+                  <Text style={{ color: "#C05050", fontSize: T.meta }}>
                     {" "}
                     (obavezno)
                   </Text>
@@ -2276,7 +2281,7 @@ export function UploadModal({
               >
                 <Text
                   style={{
-                    fontSize: 17,
+                    fontSize: T.lead,
                     fontWeight: "800",
                     color: VT.textPrimary,
                     marginBottom: 12,
@@ -2300,7 +2305,9 @@ export function UploadModal({
                           borderBottomColor: VT.border,
                         }}
                       >
-                        <Text style={{ color: VT.textPrimary, fontSize: 15 }}>
+                        <Text
+                          style={{ color: VT.textPrimary, fontSize: T.body }}
+                        >
                           {t(`categories.${id}`, { defaultValue: id })}
                         </Text>
                         {active && (
@@ -2356,7 +2363,7 @@ export function UploadModal({
               >
                 <Text
                   style={{
-                    fontSize: 17,
+                    fontSize: T.lead,
                     fontWeight: "800",
                     color: VT.textPrimary,
                     marginBottom: 12,
@@ -2380,7 +2387,9 @@ export function UploadModal({
                           borderBottomColor: VT.border,
                         }}
                       >
-                        <Text style={{ color: VT.textPrimary, fontSize: 15 }}>
+                        <Text
+                          style={{ color: VT.textPrimary, fontSize: T.body }}
+                        >
                           {t(`ageGroups.${id}`, { defaultValue: id })}
                         </Text>
                         {active && (
@@ -3014,7 +3023,7 @@ const vs = StyleSheet.create({
   },
   actionText: {
     color: "white",
-    fontSize: 11,
+    fontSize: T.caption,
     fontWeight: "600",
     textAlign: "center",
     maxWidth: 68,
@@ -3045,7 +3054,7 @@ const vs = StyleSheet.create({
   userInfo: { flexDirection: "row", alignItems: "center", marginBottom: 6 },
   userName: {
     color: "white",
-    fontSize: 15,
+    fontSize: T.body,
     fontWeight: "600",
     marginLeft: 8,
     textShadowColor: "rgba(0,0,0,0.75)",
@@ -3054,7 +3063,7 @@ const vs = StyleSheet.create({
   },
   videoTitle: {
     color: "white",
-    fontSize: 15,
+    fontSize: T.body,
     fontWeight: "bold",
     marginBottom: 2,
     textShadowColor: "rgba(0,0,0,0.75)",
@@ -3069,7 +3078,7 @@ const vs = StyleSheet.create({
   },
   locationText: {
     color: "rgba(255,255,255,0.92)",
-    fontSize: 12,
+    fontSize: T.meta,
     textShadowColor: "rgba(0,0,0,0.75)",
     textShadowOffset: { width: 0, height: 1 },
     textShadowRadius: 5,
@@ -3088,8 +3097,8 @@ const vs = StyleSheet.create({
     marginTop: 4,
     marginBottom: 3,
   },
-  eventText: { color: "#1a2e1a", fontSize: 12, fontWeight: "700" },
-  videoDescription: { color: "rgba(255,255,255,0.75)", fontSize: 12 },
+  eventText: { color: "#1a2e1a", fontSize: T.meta, fontWeight: "700" },
+  videoDescription: { color: "rgba(255,255,255,0.75)", fontSize: T.meta },
   scopeBar: {
     position: "absolute",
     top: Platform.OS === "ios" ? 54 : 36,
@@ -3108,7 +3117,7 @@ const vs = StyleSheet.create({
     borderRadius: 999,
   },
   scopeBtnActive: { backgroundColor: "#5a8a48" },
-  scopeText: { color: "#c0d8b0", fontSize: 13, fontWeight: "600" },
+  scopeText: { color: "#c0d8b0", fontSize: T.meta, fontWeight: "600" },
   scopeTextActive: { color: "#fff" },
   radiusBackdrop: {
     flex: 1,
@@ -3128,13 +3137,13 @@ const vs = StyleSheet.create({
   },
   radiusTitle: {
     color: "#fff",
-    fontSize: 17,
+    fontSize: T.lead,
     fontWeight: "700",
     marginBottom: 4,
   },
   radiusHint: {
     color: "#b6cfae",
-    fontSize: 13,
+    fontSize: T.meta,
     lineHeight: 18,
     marginBottom: 14,
   },
@@ -3150,14 +3159,14 @@ const vs = StyleSheet.create({
     marginBottom: 8,
   },
   radiusRowActive: { backgroundColor: "#5a8a48", borderColor: "#5a8a48" },
-  radiusRowText: { color: "#d8e8d0", fontSize: 15, fontWeight: "600" },
+  radiusRowText: { color: "#d8e8d0", fontSize: T.body, fontWeight: "600" },
   radiusRowTextActive: { color: "#fff" },
   radiusClose: {
     marginTop: 6,
     alignItems: "center",
     paddingVertical: 12,
   },
-  radiusCloseText: { color: "#b6cfae", fontSize: 15, fontWeight: "600" },
+  radiusCloseText: { color: "#b6cfae", fontSize: T.body, fontWeight: "600" },
   addButton: {
     position: "absolute",
     top: Platform.OS === "ios" ? 56 : 40,
@@ -3191,14 +3200,14 @@ const vs = StyleSheet.create({
 //     backgroundColor: V.forestDeep, // ← identičan dashboard (#1a2e1a)
 //   },
 //   headerTitle: {
-//     fontSize: 20,
+//     fontSize: T.title,
 //     fontWeight: "800",
 //     color: V.silverBright, // ← identičan dashboard (#e8e8e8)
 //   },
 //   // ── "Zatvori" — čisti tekst, identičan dashboard ────────────────────────────
-//   // Dashboard koristi: fontSize: 14, color: "#b0b0b0", fontWeight: "600"
+//   // Dashboard koristi: fontSize: T.body, color: "#b0b0b0", fontWeight: "600"
 //   closeTxt: {
-//     fontSize: 14,
+//     fontSize: T.body,
 //     fontWeight: "600",
 //     color: V.silverDim, // ← #8A9486, blizu "#b0b0b0"
 //   },
@@ -3215,7 +3224,7 @@ const vs = StyleSheet.create({
 //     alignItems: "center",
 //   },
 //   emptyText: {
-//     fontSize: 16,
+//     fontSize: T.lead,
 //     color: V.silverDim,
 //     textAlign: "center",
 //     paddingHorizontal: 32,
@@ -3232,19 +3241,19 @@ const vs = StyleSheet.create({
 //     alignItems: "flex-start",
 //   },
 //   commentUser: {
-//     fontSize: 14,
+//     fontSize: T.body,
 //     fontWeight: "700",
 //     color: V.silverBright,
 //     marginBottom: 4,
 //   },
 //   commentText: {
-//     fontSize: 14,
+//     fontSize: T.body,
 //     color: V.silver,
 //     lineHeight: 20,
 //     marginBottom: 4,
 //   },
 //   commentDate: {
-//     fontSize: 11,
+//     fontSize: T.caption,
 //     color: V.silverDim,
 //   },
 
@@ -3268,7 +3277,7 @@ const vs = StyleSheet.create({
 //     paddingHorizontal: 16,
 //     paddingVertical: 10,
 //     maxHeight: 100,
-//     fontSize: 15,
+//     fontSize: T.body,
 //     color: V.silverBright,
 //   },
 //   sendBtn: {
@@ -3298,12 +3307,12 @@ const vs = StyleSheet.create({
 //     backgroundColor: V.forestDeep,
 //   },
 //   recipientName: {
-//     fontSize: 15,
+//     fontSize: T.body,
 //     fontWeight: "700",
 //     color: V.silverBright,
 //   },
 //   recipientSub: {
-//     fontSize: 13,
+//     fontSize: T.meta,
 //     color: V.silverDim,
 //     marginTop: 2,
 //   },
@@ -3328,7 +3337,7 @@ const vs = StyleSheet.create({
 //     paddingVertical: 7,
 //   },
 //   quickChipText: {
-//     fontSize: 13,
+//     fontSize: T.meta,
 //     color: V.silver,
 //     fontWeight: "600",
 //   },
@@ -3352,7 +3361,7 @@ const vs = StyleSheet.create({
 //   },
 //   searchInput: {
 //     flex: 1,
-//     fontSize: 15,
+//     fontSize: T.body,
 //     color: V.silverBright,
 //   },
 
@@ -3387,7 +3396,7 @@ const vs = StyleSheet.create({
 //     paddingTop: 40,
 //   },
 //   pickHint: {
-//     fontSize: 16,
+//     fontSize: T.lead,
 //     color: V.silverDim,
 //     marginBottom: 8,
 //   },
@@ -3414,12 +3423,12 @@ const vs = StyleSheet.create({
 //     backgroundColor: V.forestMid,
 //   },
 //   pickBtnText: {
-//     fontSize: 16,
+//     fontSize: T.lead,
 //     color: V.visited,
 //     fontWeight: "700",
 //   },
 //   pickBtnSub: {
-//     fontSize: 13,
+//     fontSize: T.meta,
 //     color: V.silverDim,
 //   },
 //   previewContainer: {
@@ -3447,7 +3456,7 @@ const vs = StyleSheet.create({
 //   },
 //   mediaTypeBadgeText: {
 //     color: V.silver,
-//     fontSize: 12,
+//     fontSize: T.meta,
 //     fontWeight: "600",
 //   },
 //   changeBtn: {
@@ -3464,7 +3473,7 @@ const vs = StyleSheet.create({
 //     borderColor: V.borderDim,
 //   },
 //   fieldLabel: {
-//     fontSize: 14,
+//     fontSize: T.body,
 //     fontWeight: "700",
 //     color: V.silver,
 //     marginBottom: 8,
@@ -3479,7 +3488,7 @@ const vs = StyleSheet.create({
 //     borderColor: V.borderGreen,
 //     paddingHorizontal: 16,
 //     paddingVertical: 12,
-//     fontSize: 15,
+//     fontSize: T.body,
 //     color: V.silverBright,
 //   },
 //   actionBtn: {
@@ -3493,7 +3502,7 @@ const vs = StyleSheet.create({
 //   },
 //   actionBtnText: {
 //     color: V.silverBright,
-//     fontSize: 15,
+//     fontSize: T.body,
 //     fontWeight: "700",
 //   },
 // });
@@ -3513,8 +3522,12 @@ function makeModalStyles(VT: ReturnType<typeof getVT>) {
       borderBottomColor: VT.borderBright,
       backgroundColor: VT.bg,
     },
-    headerTitle: { fontSize: 20, fontWeight: "800", color: VT.textPrimary },
-    closeTxt: { fontSize: 14, fontWeight: "600", color: VT.textMuted },
+    headerTitle: {
+      fontSize: T.title,
+      fontWeight: "800",
+      color: VT.textPrimary,
+    },
+    closeTxt: { fontSize: T.body, fontWeight: "600", color: VT.textMuted },
     emptyIconWrap: {
       width: 88,
       height: 88,
@@ -3526,7 +3539,7 @@ function makeModalStyles(VT: ReturnType<typeof getVT>) {
       alignItems: "center",
     },
     emptyText: {
-      fontSize: 16,
+      fontSize: T.lead,
       color: VT.textMuted,
       textAlign: "center",
       paddingHorizontal: 32,
@@ -3541,18 +3554,18 @@ function makeModalStyles(VT: ReturnType<typeof getVT>) {
       alignItems: "flex-start",
     },
     commentUser: {
-      fontSize: 14,
+      fontSize: T.body,
       fontWeight: "700",
       color: VT.textPrimary,
       marginBottom: 4,
     },
     commentText: {
-      fontSize: 14,
+      fontSize: T.body,
       color: VT.textSecondary,
       lineHeight: 20,
       marginBottom: 4,
     },
-    commentDate: { fontSize: 11, color: VT.textMuted },
+    commentDate: { fontSize: T.caption, color: VT.textMuted },
     inputRow: {
       flexDirection: "row",
       padding: 12,
@@ -3572,7 +3585,7 @@ function makeModalStyles(VT: ReturnType<typeof getVT>) {
       paddingHorizontal: 16,
       paddingVertical: 10,
       maxHeight: 100,
-      fontSize: 15,
+      fontSize: T.body,
       color: VT.textPrimary,
     },
     sendBtn: {
@@ -3596,8 +3609,12 @@ function makeModalStyles(VT: ReturnType<typeof getVT>) {
       borderBottomColor: VT.border,
       backgroundColor: VT.bg,
     },
-    recipientName: { fontSize: 15, fontWeight: "700", color: VT.textPrimary },
-    recipientSub: { fontSize: 13, color: VT.textMuted, marginTop: 2 },
+    recipientName: {
+      fontSize: T.body,
+      fontWeight: "700",
+      color: VT.textPrimary,
+    },
+    recipientSub: { fontSize: T.meta, color: VT.textMuted, marginTop: 2 },
     quickRow: {
       flexDirection: "row",
       flexWrap: "wrap",
@@ -3616,7 +3633,11 @@ function makeModalStyles(VT: ReturnType<typeof getVT>) {
       paddingHorizontal: 12,
       paddingVertical: 7,
     },
-    quickChipText: { fontSize: 13, color: VT.textSecondary, fontWeight: "600" },
+    quickChipText: {
+      fontSize: T.meta,
+      color: VT.textSecondary,
+      fontWeight: "600",
+    },
     searchBar: {
       flexDirection: "row",
       alignItems: "center",
@@ -3627,7 +3648,7 @@ function makeModalStyles(VT: ReturnType<typeof getVT>) {
       paddingHorizontal: 14,
       paddingVertical: 10,
     },
-    searchInput: { flex: 1, fontSize: 15, color: VT.textPrimary },
+    searchInput: { flex: 1, fontSize: T.body, color: VT.textPrimary },
     userRow: {
       flexDirection: "row",
       alignItems: "center",
@@ -3653,7 +3674,7 @@ function makeModalStyles(VT: ReturnType<typeof getVT>) {
 function makeUploadStyles(VT: ReturnType<typeof getVT>) {
   return StyleSheet.create({
     pickContainer: { alignItems: "center", gap: 20, paddingTop: 40 },
-    pickHint: { fontSize: 16, color: VT.textMuted, marginBottom: 8 },
+    pickHint: { fontSize: T.lead, color: VT.textMuted, marginBottom: 8 },
     pickIconWrap: {
       width: 80,
       height: 80,
@@ -3676,8 +3697,8 @@ function makeUploadStyles(VT: ReturnType<typeof getVT>) {
       gap: 4,
       backgroundColor: VT.bgCard,
     },
-    pickBtnText: { fontSize: 16, color: VT.accent, fontWeight: "700" },
-    pickBtnSub: { fontSize: 13, color: VT.textMuted },
+    pickBtnText: { fontSize: T.lead, color: VT.accent, fontWeight: "700" },
+    pickBtnSub: { fontSize: T.meta, color: VT.textMuted },
     previewContainer: { position: "relative", marginBottom: 20 },
     previewMedia: { width: "100%", height: 260, borderRadius: 12 },
     mediaTypeBadge: {
@@ -3696,7 +3717,7 @@ function makeUploadStyles(VT: ReturnType<typeof getVT>) {
     },
     mediaTypeBadgeText: {
       color: VT.textSecondary,
-      fontSize: 12,
+      fontSize: T.meta,
       fontWeight: "600",
     },
     changeBtn: {
@@ -3724,15 +3745,15 @@ function makeUploadStyles(VT: ReturnType<typeof getVT>) {
       paddingVertical: 12,
       marginTop: 16,
     },
-    eventLabel: { fontSize: 15, fontWeight: "700", color: VT.textPrimary },
+    eventLabel: { fontSize: T.body, fontWeight: "700", color: VT.textPrimary },
     eventHint: {
-      fontSize: 12,
+      fontSize: T.meta,
       lineHeight: 16,
       color: VT.textMuted,
       marginTop: 2,
     },
     fieldLabel: {
-      fontSize: 14,
+      fontSize: T.body,
       fontWeight: "700",
       color: VT.textSecondary,
       marginBottom: 8,
@@ -3747,7 +3768,7 @@ function makeUploadStyles(VT: ReturnType<typeof getVT>) {
       borderColor: VT.borderBright,
       paddingHorizontal: 16,
       paddingVertical: 12,
-      fontSize: 15,
+      fontSize: T.body,
       color: VT.textPrimary,
     },
     actionBtn: {
@@ -3759,6 +3780,10 @@ function makeUploadStyles(VT: ReturnType<typeof getVT>) {
       gap: 8,
       borderWidth: 1.5,
     },
-    actionBtnText: { color: VT.textPrimary, fontSize: 15, fontWeight: "700" },
+    actionBtnText: {
+      color: VT.textPrimary,
+      fontSize: T.body,
+      fontWeight: "700",
+    },
   });
 }
